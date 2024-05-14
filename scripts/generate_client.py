@@ -2,6 +2,15 @@ import requests
 import json
 import os
 from jinja2 import Template
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+
+# Get the API key from environment variables
+api_key = os.getenv('API_KEY')
+if not api_key:
+    raise ValueError("Please set API_KEY in the .env file")
 
 def fetch_abi(contract_address, api_key):
     url = f"https://api-sepolia.etherscan.io/api?module=contract&action=getabi&address={contract_address}&apikey={api_key}"
@@ -95,8 +104,6 @@ def generate_python_classes_from_abi(abi, contract_name, functions, output_dir):
 def main(config_path, output_dir):
     with open(config_path, 'r') as config_file:
         config = json.load(config_file)
-    
-    api_key = config['api_key']
     
     for contract in config['contracts']:
         contract_name = contract['contract_name']

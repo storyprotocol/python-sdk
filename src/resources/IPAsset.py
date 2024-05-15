@@ -25,7 +25,11 @@ class IPAsset:
         raise ValueError(f"Contract {contract_name} not found in configuration")
 
     def _get_ip_id(self, token_contract, token_id):
-        return self.ip_asset_registry_client.contract.functions.ipId(self.chain_id, token_contract, token_id).call()
+        return self.ip_asset_registry_client.contract.functions.ipId(
+            self.chain_id, 
+            token_contract,
+            token_id
+        ).call()
 
     def _is_registered(self, ip_id):
         return self.ip_asset_registry_client.contract.functions.isRegistered(ip_id).call()
@@ -36,7 +40,7 @@ class IPAsset:
             ip_id = self._get_ip_id(token_contract, token_id)
             if self._is_registered(ip_id):
                 return {
-                    'message': 'Token is already registered',
+                    'txHash': None,
                     'ipId': ip_id
                 }
 

@@ -72,7 +72,11 @@ class {{ class_name }}:
     
     {% for function in functions %}
     def {{ function.name }}(self, {{ function.inputs | join(', ') }}):
+        {% if function.stateMutability == 'view' or function.stateMutability == 'pure' %}
+        return self.contract.functions.{{ function.name }}({{ function.inputs | join(', ') }}).call()
+        {% else %}
         return self.contract.functions.{{ function.name }}({{ function.inputs | join(', ') }}).transact()
+        {% endif %}
     
     {% endfor %}
 ''')
@@ -85,9 +89,13 @@ def generate_python_classes_from_abi(abi, contract_name, functions, output_dir):
         if item['type'] == 'function' and item['name'] in functions:
             function = {
                 'name': item['name'],
-                'inputs': [input['name'] for input in item['inputs']]
+                'inputs': [input['name'] for input in item['inputs']],
+                'stateMutability': item['stateMutability'] if 'stateMutability' in item else 'nonpayable'
             }
             selected_functions.append(function)
+    
+    # Sort functions to have transact functions first and call functions after
+    selected_functions.sort(key=lambda x: x['stateMutability'] in ['view', 'pure'])
     
     rendered_class = class_template.render(
         class_name=class_name,

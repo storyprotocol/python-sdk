@@ -42,6 +42,20 @@
                 "setLicensingConfigForLicense",
                 "upgradeToAndCall"
             ]
+        },
+        {
+            "contract_name": "PILicenseTemplate",
+            "contract_address": "0x260B6CB6284c89dbE660c0004233f7bB99B5edE7",
+            "functions": [
+                "initialize",
+                "registerLicenseTerms",
+                "setApproval",
+                "setAuthority",
+                "upgradeToAndCall",
+                "verifyMintLicenseToken",
+                "verifyRegisterDerivative",
+                "verifyRegisterDerivativeForAllParents"
+            ]
         }
     ]
 }

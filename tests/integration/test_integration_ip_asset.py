@@ -10,8 +10,6 @@ src_path = os.path.abspath(os.path.join(current_dir, '..', '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-from src.story_client import StoryClient
-from src.resources.IPAsset import IPAsset
 from utils import get_token_id, get_story_client_in_sepolia, MockERC721
 
 load_dotenv()

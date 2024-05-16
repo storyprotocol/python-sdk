@@ -103,7 +103,10 @@ def generate_python_classes_from_abi(abi, contract_name, functions, output_dir):
         functions=selected_functions
     )
     
-    output_file_path = os.path.join(output_dir, f"{contract_name}_client.py")
+    contract_output_dir = os.path.join(output_dir, contract_name)
+    os.makedirs(contract_output_dir, exist_ok=True)
+
+    output_file_path = os.path.join(contract_output_dir, f"{contract_name}_client.py")
     with open(output_file_path, 'w') as output_file:
         output_file.write(rendered_class)
     
@@ -120,7 +123,10 @@ def main(config_path, output_dir):
         
         abi = fetch_proxy_abi(contract_address, api_key)
         if abi:
-            save_abi(abi, os.path.join(output_dir, f'{contract_name}.json'))
+            contract_output_dir = os.path.join(output_dir, contract_name)
+            os.makedirs(contract_output_dir, exist_ok=True)
+
+            save_abi(abi, os.path.join(contract_output_dir, f'{contract_name}.json'))
             generate_python_classes_from_abi(abi, contract_name, functions, output_dir)
         else:
             print(f"Skipping generation for {contract_name} due to failed ABI fetch.")

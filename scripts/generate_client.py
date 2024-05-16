@@ -8,9 +8,9 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 
 # Get the API key from environment variables
-api_key = os.getenv('API_KEY')
+api_key = os.getenv('ETHERSCAN_API_KEY')
 if not api_key:
-    raise ValueError("Please set API_KEY in the .env file")
+    raise ValueError("Please set ETHERSCAN_API_KEY in the .env file")
 
 def fetch_abi(contract_address, api_key):
     url = f"https://api-sepolia.etherscan.io/api?module=contract&action=getabi&address={contract_address}&apikey={api_key}"
@@ -34,7 +34,7 @@ def fetch_proxy_implementation_address(proxy_address, api_key):
     }
     response = requests.get(url, params=params)
     response_json = response.json()
-    print(f"Response JSON for {proxy_address}: {response_json}")  # Debugging output
+    # print(f"Response JSON for {proxy_address}: {response_json}")  # Debugging output
     if 'result' in response_json:
         storage_value = response_json['result']
         if storage_value and storage_value != '0x':

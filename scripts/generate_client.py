@@ -3,6 +3,7 @@ import json
 import os
 from jinja2 import Template
 from dotenv import load_dotenv
+import time
 
 # Load environment variables from .env file
 load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
@@ -116,20 +117,27 @@ def main(config_path, output_dir):
     with open(config_path, 'r') as config_file:
         config = json.load(config_file)
     
-    for contract in config['contracts']:
-        contract_name = contract['contract_name']
-        contract_address = contract['contract_address']
-        functions = contract['functions']
-        
-        abi = fetch_proxy_abi(contract_address, api_key)
-        if abi:
-            contract_output_dir = os.path.join(output_dir, contract_name)
-            os.makedirs(contract_output_dir, exist_ok=True)
 
-            save_abi(abi, os.path.join(contract_output_dir, f'{contract_name}.json'))
-            generate_python_classes_from_abi(abi, contract_name, functions, output_dir)
-        else:
-            print(f"Skipping generation for {contract_name} due to failed ABI fetch.")
+        for contract in config['contracts']:
+            contract_name = contract['contract_name']
+            contract_address = contract['contract_address']
+            functions = contract['functions']
+
+            for attempt in range(3):  # Retry up to 3 times
+                try:
+                    abi = fetch_proxy_abi(contract_address, api_key)
+                    if abi:
+                        contract_output_dir = os.path.join(output_dir, contract_name)
+                        os.makedirs(contract_output_dir, exist_ok=True)
+
+                        save_abi(abi, os.path.join(contract_output_dir, f'{contract_name}.json'))
+                        generate_python_classes_from_abi(abi, contract_name, functions, output_dir)
+                        break  # If successful, break out of the retry loop
+                    else:
+                        raise Exception("Failed to fetch ABI")
+                except Exception as e:
+                    print(f"Error on attempt {attempt + 1} for {contract_name}: {e}")
+                    time.sleep(2)  # Wait for 2 seconds before retrying
 
 if __name__ == "__main__":
     config_path = os.path.join(os.path.dirname(__file__), 'config.json')

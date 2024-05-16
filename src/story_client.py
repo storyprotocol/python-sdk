@@ -9,7 +9,6 @@ src_path = os.path.abspath(os.path.join(current_dir, '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-# Now you can import from src
 from src.resources.IPAsset import IPAsset
 
 # Configure logging

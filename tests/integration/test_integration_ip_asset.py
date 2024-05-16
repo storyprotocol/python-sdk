@@ -10,14 +10,11 @@ src_path = os.path.abspath(os.path.join(current_dir, '..', '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-# Now you can import from src
 from src.story_client import StoryClient
 from src.resources.IPAsset import IPAsset
 from utils import get_token_id, get_story_client_in_sepolia, MockERC721
 
 load_dotenv()
-
-# Get environment variables
 private_key = os.getenv('WALLET_PRIVATE_KEY')
 rpc_url = os.getenv('RPC_PROVIDER_URL')
 

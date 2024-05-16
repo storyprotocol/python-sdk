@@ -34,7 +34,7 @@ def fetch_proxy_implementation_address(proxy_address, api_key):
     }
     response = requests.get(url, params=params)
     response_json = response.json()
-    print(f"Response JSON for {proxy_address}: {response_json}")  # Debugging output
+    # print(f"Response JSON for {proxy_address}: {response_json}")  # Debugging output
     if 'result' in response_json:
         storage_value = response_json['result']
         if storage_value and storage_value != '0x':

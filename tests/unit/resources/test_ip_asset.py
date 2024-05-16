@@ -12,13 +12,10 @@ src_path = os.path.abspath(os.path.join(current_dir, '..', '..', '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-# Now you can import from src
 from src.resources.IPAsset import IPAsset
 
 # Load environment variables from .env file
 load_dotenv()
-
-# Get the private key and RPC URL from environment variables
 private_key = os.getenv('WALLET_PRIVATE_KEY')
 rpc_url = os.getenv('RPC_PROVIDER_URL')
 
@@ -50,10 +47,8 @@ def test_ip_asset_register_token_already_registered(ip_asset):
     with patch.object(ip_asset.ip_asset_registry_client.contract.functions, 'ipId', return_value=MagicMock(call=MagicMock(return_value=ip_id))), \
          patch.object(ip_asset.ip_asset_registry_client.contract.functions, 'isRegistered', return_value=MagicMock(call=MagicMock(return_value=True))):
 
-        # Call the register method
         response = ip_asset.register(token_contract, token_id)
 
-        # Assert the result
         assert response['ipId'] == ip_id
         assert response['txHash'] is None
 
@@ -74,11 +69,8 @@ def test_ip_asset_register_token_not_registered(ip_asset):
 
             # Mock the return value for the send_raw_transaction to include the '0x' prefix
             with patch.object(web3.eth, 'send_raw_transaction', return_value=bytes.fromhex("0x129f7dd802200f096221dd89d5b086e4bd3ad6eafb378a0c75e3b04fc375f997"[2:])):
-
-                # Call the register method
                 res = ip_asset.register("0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c", "3")
 
-                # Assert the result
                 assert res['txHash'] == "129f7dd802200f096221dd89d5b086e4bd3ad6eafb378a0c75e3b04fc375f997"
                 assert res['ipId'] == "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"
 
@@ -93,8 +85,7 @@ def test_ip_asset_register_error(ip_asset):
          patch.object(ip_asset.ip_asset_registry_client.contract.functions, 'register', side_effect=Exception("revert error")):
 
         try:
-            # Call the register method
             ip_asset.register(token_contract, token_id)
+
         except Exception as err:
-            # Assert the error message
             assert str(err) == "Failed to register IP: revert error"

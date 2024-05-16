@@ -8,9 +8,9 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 
 # Get the API key from environment variables
-api_key = os.getenv('API_KEY')
+api_key = os.getenv('ETHERSCAN_API_KEY')
 if not api_key:
-    raise ValueError("Please set API_KEY in the .env file")
+    raise ValueError("Please set ETHERSCAN_API_KEY in the .env file")
 
 def fetch_abi(contract_address, api_key):
     url = f"https://api-sepolia.etherscan.io/api?module=contract&action=getabi&address={contract_address}&apikey={api_key}"

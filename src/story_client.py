@@ -1,3 +1,5 @@
+# src/story_client.py
+
 import os
 import json
 import sys
@@ -10,6 +12,7 @@ if src_path not in sys.path:
     sys.path.append(src_path)
 
 from src.resources.IPAsset import IPAsset
+from src.resources.License import License
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -24,18 +27,18 @@ class StoryClient:
         self.account = account
         self.chain_id = chain_id
 
-        # Internal configuration path
-        config_path = os.path.join(os.path.dirname(__file__), '../scripts/config.json')
-
-        # Load contract configuration
-        with open(config_path, 'r') as config_file:
-            self.config = json.load(config_file)
-
-        # Initialize IPAsset client only when accessed
+        # Initialize clients only when accessed
         self._ip_asset = None
+        self._license = None
 
     @property
     def IPAsset(self):
         if self._ip_asset is None:
-            self._ip_asset = IPAsset(self.web3, self.account, self.chain_id, self.config)
+            self._ip_asset = IPAsset(self.web3, self.account, self.chain_id)
         return self._ip_asset
+
+    @property
+    def License(self):
+        if self._license is None:
+            self._license = License(self.web3, self.account, self.chain_id)
+        return self._license

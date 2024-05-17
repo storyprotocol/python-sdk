@@ -6,8 +6,11 @@ on:
       - main
 
 jobs:
+  Timestamp:
+    uses: storyprotocol/gha-workflows/.github/workflows/reusable-timestamp.yml@main
   
   build:
+    needs: [Timestamp]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -25,7 +28,7 @@ jobs:
         run: python setup.py sdist bdist_wheel
       
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release
+        uses: pypa/gh-action-pypi-publish@v1.8.14
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}

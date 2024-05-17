@@ -4,7 +4,6 @@
             "contract_name": "IPAssetRegistry",
             "contract_address": "0xd43fE0d865cb5C26b1351d3eAf2E3064BE3276F6",
             "functions": [
-                "__ProtocolPausable_init",
                 "initialize",
                 "pause",
                 "register",
@@ -12,10 +11,6 @@
                 "setAuthority",
                 "unpause",
                 "upgradeToAndCall",
-                "ERC6551_PUBLIC_REGISTRY",
-                "IP_ACCOUNT_IMPL",
-                "IP_ACCOUNT_SALT",
-                "UPGRADE_INTERFACE_VERSION",
                 "authority",
                 "getIPAccountImpl",
                 "ipAccount",
@@ -36,16 +31,17 @@
                 "setApproval",
                 "setAuthority",
                 "upgradeToAndCall",
-                "verifyMintLicenseToken",
                 "verifyRegisterDerivative",
-                "verifyRegisterDerivativeForAllParents"
+                "verifyRegisterDerivativeForAllParents",
+                "exists",
+                "getLicenseTerms",
+                "getLicenseTermsId"
             ]
         },
         {
             "contract_name": "LicensingModule",
             "contract_address": "0xe89b0EaA8a0949738efA80bB531a165FB3456CBe",
             "functions": [
-                "__ProtocolPausable_init",
                 "attachLicenseTerms",
                 "initialize",
                 "mintLicenseTokens",

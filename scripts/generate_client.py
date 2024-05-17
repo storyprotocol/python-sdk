@@ -64,21 +64,30 @@ import os
 from web3 import Web3
 
 class {{ class_name }}:
-    def __init__(self, web3: Web3, contract_address: str):
+    def __init__(self, web3: Web3):
         self.web3 = web3
+        # Assuming config.json is located at the root of the project
+        config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'scripts', 'config.json'))
+        with open(config_path, 'r') as config_file:
+            config = json.load(config_file)
+        contract_address = None
+        for contract in config['contracts']:
+            if contract['contract_name'] == '{{ contract_name }}':
+                contract_address = contract['contract_address']
+                break
+        if not contract_address:
+            raise ValueError(f"Contract address for {{ contract_name }} not found in config.json")
         abi_path = os.path.join(os.path.dirname(__file__), '{{ contract_name }}.json')
         with open(abi_path, 'r') as abi_file:
             abi = json.load(abi_file)
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
-    
     {% for function in functions %}
-    def {{ function.name }}(self, {{ function.inputs | join(', ') }}):
-        {% if function.stateMutability == 'view' or function.stateMutability == 'pure' %}
-        return self.contract.functions.{{ function.name }}({{ function.inputs | join(', ') }}).call()
-        {% else %}
-        return self.contract.functions.{{ function.name }}({{ function.inputs | join(', ') }}).transact()
+    def {{ function.name }}(self, {% if function.inputs %}{{ function.inputs | join(', ') }}{% endif %}):
+        {% if function.stateMutability == 'view' or function.stateMutability == 'pure' %}return self.contract.functions.{{ function.name }}({% if function.inputs %}{{ function.inputs | join(', ') }}{% endif %}).call()
+        {% else %}return self.contract.functions.{{ function.name }}({% if function.inputs %}{{ function.inputs | join(', ') }}{% endif %}).transact()
         {% endif %}
-    
+    def build_{{ function.name }}_transaction(self, {% if function.inputs %}{{ function.inputs | join(', ') }}, {% endif %}tx_params):
+        return self.contract.functions.{{ function.name }}({% if function.inputs %}{{ function.inputs | join(', ') }}{% endif %}).build_transaction(tx_params)
     {% endfor %}
 ''')
 
@@ -132,6 +141,7 @@ def main(config_path, output_dir):
 
                         save_abi(abi, os.path.join(contract_output_dir, f'{contract_name}.json'))
                         generate_python_classes_from_abi(abi, contract_name, functions, output_dir)
+                        time.sleep(1)  # Wait for 1 seconds before moving to next contract
                         break  # If successful, break out of the retry loop
                     else:
                         raise Exception("Failed to fetch ABI")

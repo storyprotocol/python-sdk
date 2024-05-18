@@ -35,7 +35,8 @@
                 "verifyRegisterDerivativeForAllParents",
                 "exists",
                 "getLicenseTerms",
-                "getLicenseTermsId"
+                "getLicenseTermsId",
+                "getRoyaltyPolicy"
             ]
         },
         {
@@ -52,6 +53,39 @@
                 "setLicensingConfig",
                 "unpause",
                 "upgradeToAndCall"
+            ]
+        },
+        {
+            "contract_name": "LicenseRegistry",
+            "contract_address": "0x4f4b1bf7135C7ff1462826CCA81B048Ed19562ed",
+            "functions": [
+                "authority",
+                "exists",
+                "getAttachedLicenseTerms",
+                "getAttachedLicenseTermsCount",
+                "getDefaultLicenseTerms",
+                "getDerivativeIp",
+                "getDerivativeIpCount",
+                "getExpireTime",
+                "getLicensingConfig",
+                "getParentIp",
+                "getParentIpCount",
+                "hasDerivativeIps",
+                "hasIpAttachedLicenseTerms",
+                "isConsumingScheduledOp",
+                "isDerivativeIp",
+                "isExpiredNow",
+                "isParentIp",
+                "isRegisteredLicenseTemplate",
+                "proxiableUUID",
+                "verifyMintLicenseToken"
+            ]
+        },
+        {
+            "contract_name": "LicenseToken",
+            "contract_address": "0x1333c78A821c9a576209B01a16dDCEF881cAb6f2",
+            "functions": [
+                "ownerOf"
             ]
         }
     ]

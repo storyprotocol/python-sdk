@@ -64,7 +64,7 @@ class License:
                 logger.info(f"Transaction receipt: {tx_receipt}")
 
                 # Parse the event logs for LicenseTermsRegistered
-                target_logs = self.parse_tx_license_terms_registered_event(tx_receipt)
+                target_logs = self._parse_tx_license_terms_registered_event(tx_receipt)
                 return {
                     'txHash': tx_hash.hex(),
                     'licenseTermsId': target_logs
@@ -125,7 +125,7 @@ class License:
                     logger.error(f"No logs found in transaction receipt: {tx_receipt}")
                     return None
 
-                target_logs = self.parse_tx_license_terms_registered_event(tx_receipt)
+                target_logs = self._parse_tx_license_terms_registered_event(tx_receipt)
                 return {
                     'txHash': tx_hash.hex(),
                     'licenseTermsId': target_logs
@@ -186,7 +186,7 @@ class License:
                 logger.error(f"No logs found in transaction receipt: {tx_receipt}")
                 return None
 
-            target_logs = self.parse_tx_license_terms_registered_event(tx_receipt)
+            target_logs = self._parse_tx_license_terms_registered_event(tx_receipt)
             return {
                 'txHash': tx_hash.hex(),
                 'licenseTermsId': target_logs
@@ -317,7 +317,9 @@ class License:
                 token_ids.append(start_license_token_id)
 
         return token_ids if token_ids else None
-
+    
     def getLicenseTerms(self, selectedLicenseTermsId):
-        return self.license_template_client.getLicenseTerms(selectedLicenseTermsId)
-
+        try:
+            return self.license_template_client.getLicenseTerms(selectedLicenseTermsId)
+        except Exception as e:
+            raise ValueError(f"Failed to get license terms: {str(e)}")

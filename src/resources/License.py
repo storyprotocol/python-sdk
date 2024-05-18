@@ -91,7 +91,7 @@ class License:
             logger.info(f"Complete license terms: {complete_license_terms}")
 
             # Check if the license terms are already registered
-            license_terms_id = self.get_license_terms_id(complete_license_terms)
+            license_terms_id = self._get_license_terms_id(complete_license_terms)
             logger.info(f"License terms ID: {license_terms_id}")
             if (license_terms_id is not None) and (license_terms_id != 0):
                 return {'licenseTermsId': license_terms_id}
@@ -153,7 +153,7 @@ class License:
             logger.info(f"Complete license terms: {complete_license_terms}")
 
             # Check if the license terms are already registered
-            license_terms_id = self.get_license_terms_id(complete_license_terms)
+            license_terms_id = self._get_license_terms_id(complete_license_terms)
             logger.info(f"License terms ID: {license_terms_id}")
             if license_terms_id and license_terms_id != 0:
                 return {'licenseTermsId': license_terms_id}

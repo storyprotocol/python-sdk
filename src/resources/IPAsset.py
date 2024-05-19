@@ -5,6 +5,7 @@ from web3 import Web3
 from src.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
 from src.abi.LicensingModule.LicensingModule_client import LicensingModuleClient
 from src.abi.LicenseToken.LicenseToken_client import LicenseTokenClient
+from src.abi.LicenseRegistry.LicenseRegistry_client import LicenseRegistryClient
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -19,6 +20,7 @@ class IPAsset:
         self.ip_asset_registry_client = IPAssetRegistryClient(web3)
         self.licensing_module_client = LicensingModuleClient(web3)
         self.license_token_client = LicenseTokenClient(web3)
+        self.license_registry_client = LicenseRegistryClient(web3)
 
     def _get_ip_id(self, token_contract, token_id):
         return self.ip_asset_registry_client.ipId(
@@ -63,7 +65,7 @@ class IPAsset:
 
         except Exception as e:
             logger.error(f"Error interacting with contract: {e}")
-            return None
+            raise e
 
     def registerDerivative(self, child_ip_id, parent_ip_ids, license_terms_ids, license_template):
         try:
@@ -84,7 +86,7 @@ class IPAsset:
 
             # Check if license terms are attached to parent IPs
             for parent_id, terms_id in zip(parent_ip_ids, license_terms_ids):
-                if not self.ip_asset_registry_client.hasIpAttachedLicenseTerms(parent_id, license_template, terms_id):
+                if not self.license_registry_client.hasIpAttachedLicenseTerms(parent_id, license_template, terms_id):
                     raise ValueError(f"License terms id {terms_id} must be attached to the parent ipId {parent_id} before registering derivative.")
 
             # Build the transaction
@@ -109,9 +111,8 @@ class IPAsset:
 
         except Exception as e:
             logger.error(f"Failed to register derivative: {e}")
-            return None
+            raise e
         
-
     def registerDerivativeWithLicenseTokens(self, child_ip_id, license_token_ids):
         try:
             # Check if the child IP is registered
@@ -146,4 +147,4 @@ class IPAsset:
 
         except Exception as e:
             logger.error(f"Failed to register derivative with license tokens: {e}")
-            return None
+            raise e

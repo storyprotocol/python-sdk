@@ -1,5 +1,3 @@
-import os
-import json
 from web3 import Web3
 from dotenv import load_dotenv
 from src.story_client import StoryClient
@@ -32,7 +30,7 @@ def get_token_id(nft_contract, web3, account):
         'from': account.address,
         'nonce': web3.eth.get_transaction_count(account.address),
         'gas': 2000000,
-        'gasPrice': web3.to_wei('100', 'gwei')
+        'gasPrice': web3.to_wei('300', 'gwei')
     })
     signed_txn = account.sign_transaction(transaction)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)

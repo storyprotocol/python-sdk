@@ -59,24 +59,20 @@ class License:
             logger.info(f"Transaction hash: {tx_hash.hex()}")
 
             # Wait for transaction receipt with a longer timeout
-            try:
-                tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=600)  # 10 minutes timeout
-                logger.info(f"Transaction receipt: {tx_receipt}")
 
-                # Parse the event logs for LicenseTermsRegistered
-                target_logs = self._parse_tx_license_terms_registered_event(tx_receipt)
-                return {
-                    'txHash': tx_hash.hex(),
-                    'licenseTermsId': target_logs
-                }
+            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=600)  # 10 minutes timeout
+            logger.info(f"Transaction receipt: {tx_receipt}")
 
-            except Exception as e:
-                logger.error(f"Transaction {tx_hash.hex()} was not mined within the timeout period: {e}")
-                return None
+            # Parse the event logs for LicenseTermsRegistered
+            target_logs = self._parse_tx_license_terms_registered_event(tx_receipt)
+            return {
+                'txHash': tx_hash.hex(),
+                'licenseTermsId': target_logs
+            }
 
         except Exception as e:
             logger.error(f"Error interacting with contract: {e}")
-            return None
+            raise e
         
     def registerCommercialUsePIL(self, minting_fee, currency, royalty_policy, tx_options=None):
         try:
@@ -116,28 +112,23 @@ class License:
             logger.info(f"Transaction hash: {tx_hash.hex()}")
 
             # Wait for transaction receipt with a longer timeout
-            try:
-                tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=600)  # 10 minutes timeout
-                logger.info(f"Transaction receipt: {tx_receipt}")
+            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=600)  # 10 minutes timeout
+            logger.info(f"Transaction receipt: {tx_receipt}")
 
-                # Parse the event logs for LicenseTermsRegistered
-                if not tx_receipt.logs:
-                    logger.error(f"No logs found in transaction receipt: {tx_receipt}")
-                    return None
-
-                target_logs = self._parse_tx_license_terms_registered_event(tx_receipt)
-                return {
-                    'txHash': tx_hash.hex(),
-                    'licenseTermsId': target_logs
-                }
-
-            except Exception as e:
-                logger.error(f"Transaction {tx_hash.hex()} was not mined within the timeout period: {e}")
+            # Parse the event logs for LicenseTermsRegistered
+            if not tx_receipt.logs:
+                logger.error(f"No logs found in transaction receipt: {tx_receipt}")
                 return None
+
+            target_logs = self._parse_tx_license_terms_registered_event(tx_receipt)
+            return {
+                'txHash': tx_hash.hex(),
+                'licenseTermsId': target_logs
+            }
 
         except Exception as e:
             logger.error(f"Error interacting with contract: {e}")
-            return None
+            raise e
 
     def registerCommercialRemixPIL(self, minting_fee, currency, commercial_rev_share, royalty_policy, tx_options=None):
         try:
@@ -194,7 +185,7 @@ class License:
 
         except Exception as e:
             logger.error(f"Error interacting with contract: {e}")
-            return None
+            raise e
 
     def _parse_tx_license_terms_registered_event(self, tx_receipt):
         event_signature = self.web3.keccak(text="LicenseTermsRegistered(uint256,address,bytes)").hex()
@@ -208,6 +199,10 @@ class License:
     def attachLicenseTerms(self, ip_id, license_template, license_terms_id):
         try:
             logger.info(f"Starting attachLicenseTerms with ip_id: {ip_id}, license_template: {license_template}, license_terms_id: {license_terms_id}")
+
+            # Validate the license template address
+            if not Web3.is_address(license_template):
+                raise ValueError(f'Address "{license_template}" is invalid.')
 
             # Check if the IP is registered
             is_registered = self.ip_asset_registry_client.isRegistered(ip_id)
@@ -251,11 +246,19 @@ class License:
         
         except Exception as e:
             logger.error(f"Failed to attach license terms: {e}")
-            return None
+            raise e
         
     def mintLicenseTokens(self, licensor_ip_id, license_template, license_terms_id, amount, receiver):
         try:
             logger.info(f"Starting mintLicenseTokens with licensor_ip_id: {licensor_ip_id}, license_template: {license_template}, license_terms_id: {license_terms_id}, amount: {amount}, receiver: {receiver}")
+
+            # Validate the license template address
+            if not Web3.is_address(license_template):
+                raise ValueError(f'Address "{license_template}" is invalid.')
+            
+            # Validate the license template address
+            if not Web3.is_address(receiver):
+                raise ValueError(f'Address "{receiver}" is invalid.')
 
             # Check if the licensor IP is registered
             is_registered = self.ip_asset_registry_client.isRegistered(licensor_ip_id)
@@ -297,7 +300,7 @@ class License:
 
             # Parse the event logs for LicenseTokensMinted
             target_logs = self._parse_tx_license_tokens_minted_event(tx_receipt)
-            print("the license token id is " , target_logs)
+            # print("the license token id is " , target_logs)
             return {
                 'txHash': tx_hash.hex(),
                 'licenseTokenIds': target_logs
@@ -305,7 +308,7 @@ class License:
 
         except Exception as e:
             logger.error(f"Failed to mint license tokens: {e}")
-            return None
+            raise e
 
     def _parse_tx_license_tokens_minted_event(self, tx_receipt):
         event_signature = self.web3.keccak(text="LicenseTokenMinted(address,address,uint256)").hex()

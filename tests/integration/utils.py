@@ -39,3 +39,64 @@ def get_token_id(nft_contract, web3, account):
     logs = tx_receipt['logs']
     if logs[0]['topics'][3]:
         return int(logs[0]['topics'][3].hex(), 16)
+
+def mint_tokens(erc20_contract_address, web3, account, to_address, amount):
+    contract_abi = [
+        {
+            "inputs": [
+                {"internalType": "address", "name": "to", "type": "address"},
+                {"internalType": "uint256", "name": "amount", "type": "uint256"}
+            ],
+            "name": "mint",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        }
+    ]
+
+    contract = web3.eth.contract(address=erc20_contract_address, abi=contract_abi)
+    transaction = contract.functions.mint(to_address, amount).build_transaction({
+        'from': account.address,
+        'nonce': web3.eth.get_transaction_count(account.address),
+        'gas': 2000000,
+        'gasPrice': web3.to_wei('300', 'gwei')
+    })
+    
+    signed_txn = account.sign_transaction(transaction)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    
+    return tx_receipt
+
+def approve(erc20_contract_address, web3, account, spender_address, amount):
+    erc20_contract_address = web3.to_checksum_address(erc20_contract_address)
+    spender_address = web3.to_checksum_address(spender_address)
+
+    contract_abi = [
+        {
+            "inputs": [
+                {"internalType": "address", "name": "spender", "type": "address"},
+                {"internalType": "uint256", "name": "value", "type": "uint256"}
+            ],
+            "name": "approve",
+            "outputs": [
+                {"internalType": "bool", "name": "", "type": "bool"}
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        }
+    ]
+
+    contract = web3.eth.contract(address=erc20_contract_address, abi=contract_abi)
+    transaction = contract.functions.approve(spender_address, amount).build_transaction({
+        'from': account.address,
+        'nonce': web3.eth.get_transaction_count(account.address),
+        'gas': 2000000,
+        'gasPrice': web3.to_wei('300', 'gwei')
+    })
+    
+    signed_txn = account.sign_transaction(transaction)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    
+    return tx_receipt

@@ -153,3 +153,85 @@ def test_claimableRevenue_success(royalty_client):
 
                 response = royalty_client.claimableRevenue(child_ip_id, account_address, snapshot_id, token)
                 assert response == 0
+
+def test_claimRevenue_royaltyVaultIpId_error(royalty_client):
+    with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', return_value=False):
+        child_ip_id = "0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"
+        ERC20 = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"
+        snapshot_ids = [1, 2]
+
+        with pytest.raises(ValueError, match=f"The royalty vault IP with id {child_ip_id} is not registered."):
+            royalty_client.claimRevenue(snapshot_ids, child_ip_id, ERC20)
+
+def test_claimRevenue_royaltyVaultAddress_error(royalty_client):
+    with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', return_value=True):
+        with patch.object(royalty_client.royalty_policy_lap_client, 'getRoyaltyData', return_value=[True, "0x", 1, ["0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"], [1]]):
+            child_ip_id = "0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"
+            ERC20 = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"
+            snapshot_ids = [1, 2]
+
+            with pytest.raises(ValueError, match=f"The royalty vault IP with id {child_ip_id} address is not set."):
+                royalty_client.claimRevenue(snapshot_ids, child_ip_id, ERC20)
+
+def test_claimRevenue_success(royalty_client):
+    with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', return_value=True):
+        with patch.object(royalty_client.royalty_policy_lap_client, 'getRoyaltyData', return_value=[True, "0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7", 1, ["0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"], [1]]):
+            with patch.object(royalty_client, '_parseTxRevenueTokenClaimedEvent', return_value=0):
+                with patch('src.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client.IpRoyaltyVaultImplClient.build_claimRevenueBySnapshotBatch_transaction', return_value={
+                    'data': '0x',
+                    'nonce': 0,
+                    'gas': 2000000,
+                    'gasPrice': Web3.to_wei('300', 'gwei')
+                }):
+                    with patch('web3.eth.Eth.send_raw_transaction', return_value=Web3.to_bytes(hexstr='0x7065317271b179a2b4d47ff23b9b12ea50cdf668b892c8912cd7df71797b6561')):
+                        with patch('web3.eth.Eth.wait_for_transaction_receipt', return_value={'status': 1, 'logs': []}):
+                            child_ip_id = "0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"
+                            ERC20 = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"
+                            snapshot_ids = [1, 2]
+
+                            response = royalty_client.claimRevenue(snapshot_ids, child_ip_id, ERC20)
+                            assert response is not None
+                            assert 'txHash' in response
+                            assert response['txHash'] == '7065317271b179a2b4d47ff23b9b12ea50cdf668b892c8912cd7df71797b6561'
+                            assert 'claimableToken' in response
+                            assert response['claimableToken'] == 0
+
+def test_payRoyaltyOnBehalf_receiverIpId_error(royalty_client):
+    with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', return_value=False):
+        receiver_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"
+        payer_ip_id = "0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"
+        ERC20 = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"
+        amount = 1
+
+        with pytest.raises(ValueError, match=f"The receiver IP with id {receiver_ip_id} is not registered."):
+            royalty_client.payRoyaltyOnBehalf(receiver_ip_id, payer_ip_id, ERC20, amount)
+
+def test_payRoyaltyOnBehalf_payerIpId_error(royalty_client):
+    with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', side_effect=[True, False]):
+        receiver_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"
+        payer_ip_id = "0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"
+        ERC20 = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"
+        amount = 1
+
+        with pytest.raises(ValueError, match=f"The payer IP with id {payer_ip_id} is not registered."):
+            royalty_client.payRoyaltyOnBehalf(receiver_ip_id, payer_ip_id, ERC20, amount)
+
+def test_payRoyaltyOnBehalf_success(royalty_client):
+    with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', return_value=True):
+        with patch('src.abi.RoyaltyModule.RoyaltyModule_client.RoyaltyModuleClient.build_payRoyaltyOnBehalf_transaction', return_value={
+            'data': '0x',
+            'nonce': 0,
+            'gas': 2000000,
+            'gasPrice': Web3.to_wei('300', 'gwei')
+        }):
+            with patch('web3.eth.Eth.send_raw_transaction', return_value=Web3.to_bytes(hexstr='0xbadf64f2c220e27407c4d2ccbc772fb72c7dc590ac25000dc316e4dc519fbfa2')):
+                with patch('web3.eth.Eth.wait_for_transaction_receipt', return_value={'status': 1, 'logs': []}):
+                    receiver_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"
+                    payer_ip_id = "0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"
+                    ERC20 = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"
+                    amount = 1
+
+                    response = royalty_client.payRoyaltyOnBehalf(receiver_ip_id, payer_ip_id, ERC20, amount, tx_options={'wait_for_transaction': True})
+                    assert response is not None
+                    assert 'txHash' in response
+                    assert response['txHash'] == 'badf64f2c220e27407c4d2ccbc772fb72c7dc590ac25000dc316e4dc519fbfa2'

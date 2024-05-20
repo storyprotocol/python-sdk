@@ -155,7 +155,7 @@ class Royalty:
             # Get the royalty vault address
             proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
             logger.info(f"The proxy address: {proxy_address}")
-            print("Thne proxy addres: ", proxy_address)
+            # print("Thne proxy addres: ", proxy_address)
 
             # Initialize the IP Royalty Vault client with the proxy address
             ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
@@ -219,7 +219,7 @@ class Royalty:
             # Get the royalty vault address
             proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
             logger.info(f"The proxy address: {proxy_address}")
-            #print("Thne proxy addres: ", proxy_address)
+            # print("The proxy addres: ", proxy_address)
 
             # Initialize the IP Royalty Vault client with the proxy address
             ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
@@ -244,25 +244,27 @@ class Royalty:
             tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=600)  # 10 minutes timeout
             logger.info(f"Transaction receipt: {tx_receipt}")
 
-            claimableToken =  self._parseTxRevenueTokenClaimedEvent(tx_receipt)
+            revenue_tokens_claimed =  self._parseTxRevenueTokenClaimedEvent(tx_receipt)
+            # print("Amount: ", revenue_tokens_claimed)
 
             return {
                 'txHash': tx_hash.hex(),
-                'claimableToken': claimableToken
+                'claimableToken': revenue_tokens_claimed
             }
         except Exception as e:
             logger.error(f"Failed to claim revenue: {e}")
             raise e
         
     def _parseTxRevenueTokenClaimedEvent(self, tx_receipt):
-        event_signature = self.web3.keccak(text="RoyaltyTokensCollected(address,uint256)").hex()
+        event_signature = self.web3.keccak(text="RevenueTokenClaimed(address,address,uint256)").hex()
         
         for log in tx_receipt['logs']:
             if log['topics'][0].hex() == event_signature:
                 data = log['data']
+                # print("the data is ", data)
 
                 # Convert the last 32 bytes to an integer
-                royalty_tokens_collected = int.from_bytes(data[-32:], byteorder='big')
-                return royalty_tokens_collected
+                revenue_tokens_claimed = int.from_bytes(data[-32:], byteorder='big')
+                return revenue_tokens_claimed
 
         return None

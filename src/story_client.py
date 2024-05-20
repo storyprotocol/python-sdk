@@ -13,6 +13,7 @@ if src_path not in sys.path:
 
 from src.resources.IPAsset import IPAsset
 from src.resources.License import License
+from src.resources.Royalty import Royalty
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -30,6 +31,7 @@ class StoryClient:
         # Initialize clients only when accessed
         self._ip_asset = None
         self._license = None
+        self._royalty = None
 
     @property
     def IPAsset(self):
@@ -42,3 +44,9 @@ class StoryClient:
         if self._license is None:
             self._license = License(self.web3, self.account, self.chain_id)
         return self._license
+    
+    @property
+    def Royalty(self):
+        if self._royalty is None:
+            self._royalty = Royalty(self.web3, self.account, self.chain_id)
+        return self._royalty

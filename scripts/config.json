@@ -87,6 +87,13 @@
             "functions": [
                 "ownerOf"
             ]
+        },
+        {
+            "contract_name": "RoyaltyPolicyLAP",
+            "contract_address": "0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86",
+            "functions": [
+                "getRoyaltyData"
+            ]
         }
     ]
 }

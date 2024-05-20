@@ -11,6 +11,14 @@ class IpRoyaltyVaultImplClient:
             abi = json.load(abi_file)
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
+    def claimRevenueBySnapshotBatch(self, snapshotIds, token):
+        
+        return self.contract.functions.claimRevenueBySnapshotBatch(snapshotIds, token).transact()
+        
+    def build_claimRevenueBySnapshotBatch_transaction(self, snapshotIds, token, tx_params):
+        return self.contract.functions.claimRevenueBySnapshotBatch(snapshotIds, token).build_transaction(tx_params)
+    
+    
     def collectRoyaltyTokens(self, ancestorIpId):
         
         return self.contract.functions.collectRoyaltyTokens(ancestorIpId).transact()

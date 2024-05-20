@@ -5,6 +5,7 @@ from web3 import Web3
 from src.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
 from src.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client import IpRoyaltyVaultImplClient
 from src.abi.RoyaltyPolicyLAP.RoyaltyPolicyLAP_client import RoyaltyPolicyLAPClient
+from src.abi.RoyaltyModule.RoyaltyModule_client import RoyaltyModuleClient
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -18,6 +19,7 @@ class Royalty:
 
         self.ip_asset_registry_client = IPAssetRegistryClient(web3)
         self.royalty_policy_lap_client = RoyaltyPolicyLAPClient(web3)
+        self.royalty_module_client = RoyaltyModuleClient(web3)
 
     def collectRoyaltyTokens(self, parent_ip_id, child_ip_id, tx_options=None):
         try:
@@ -170,3 +172,97 @@ class Royalty:
         except Exception as e:
             logger.error(f"Failed to calculate claimable revenue: {e}")
             raise e
+        
+    def payRoyaltyOnBehalf(self, receiver_ip_id, payer_ip_id, token, amount, tx_options=None):
+        try:
+            # Check if the receiver IP is registered
+            is_receiver_registered = self.ip_asset_registry_client.isRegistered(receiver_ip_id)
+            if not is_receiver_registered:
+                raise ValueError(f"The receiver IP with id {receiver_ip_id} is not registered.")
+
+            # Check if the payer IP is registered
+            is_payer_registered = self.ip_asset_registry_client.isRegistered(payer_ip_id)
+            if not is_payer_registered:
+                raise ValueError(f"The payer IP with id {payer_ip_id} is not registered.")
+            
+            # Build the transaction
+            transaction = self.royalty_module_client.build_payRoyaltyOnBehalf_transaction(receiver_ip_id, payer_ip_id, token, amount, {
+                'from': self.account.address,
+                'nonce': self.web3.eth.get_transaction_count(self.account.address),
+                'gas': 2000000,
+                'gasPrice': self.web3.to_wei('300', 'gwei')
+            })
+
+            # Sign the transaction using the account object
+            signed_txn = self.account.sign_transaction(transaction)
+            logger.info(f"Signed transaction: {signed_txn}")
+
+            # Send the transaction
+            tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+            logger.info(f"Transaction hash: {tx_hash.hex()}")
+
+            # Wait for transaction receipt with a longer timeout
+            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=600)  # 10 minutes timeout
+            logger.info(f"Transaction receipt: {tx_receipt}")
+
+            if tx_options and tx_options.get('wait_for_transaction'):
+                self.web3.eth.wait_for_transaction_receipt(tx_hash)
+
+            return {'txHash': tx_hash.hex()}
+
+        except Exception as e:
+            logger.error(f"Failed to pay royalty on behalf: {e}")
+            raise e
+    
+    def claimRevenue(self, snapshotIds, child_ip_id, token):
+        try:
+            # Get the royalty vault address
+            proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
+            logger.info(f"The proxy address: {proxy_address}")
+            #print("Thne proxy addres: ", proxy_address)
+
+            # Initialize the IP Royalty Vault client with the proxy address
+            ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
+
+            # Build the transaction
+            transaction = ip_royalty_vault_client.build_claimRevenueBySnapshotBatch_transaction(snapshotIds, token, {
+                'from': self.account.address,
+                'nonce': self.web3.eth.get_transaction_count(self.account.address),
+                'gas': 2000000,
+                'gasPrice': self.web3.to_wei('300', 'gwei')
+            })
+
+            # Sign the transaction using the account object
+            signed_txn = self.account.sign_transaction(transaction)
+            logger.info(f"Signed transaction: {signed_txn}")
+
+            # Send the transaction
+            tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+            logger.info(f"Transaction hash: {tx_hash.hex()}")
+
+            # Wait for transaction receipt with a longer timeout
+            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=600)  # 10 minutes timeout
+            logger.info(f"Transaction receipt: {tx_receipt}")
+
+            claimableToken =  self._parseTxRevenueTokenClaimedEvent(tx_receipt)
+
+            return {
+                'txHash': tx_hash.hex(),
+                'claimableToken': claimableToken
+            }
+        except Exception as e:
+            logger.error(f"Failed to claim revenue: {e}")
+            raise e
+        
+    def _parseTxRevenueTokenClaimedEvent(self, tx_receipt):
+        event_signature = self.web3.keccak(text="RoyaltyTokensCollected(address,uint256)").hex()
+        
+        for log in tx_receipt['logs']:
+            if log['topics'][0].hex() == event_signature:
+                data = log['data']
+
+                # Convert the last 32 bytes to an integer
+                royalty_tokens_collected = int.from_bytes(data[-32:], byteorder='big')
+                return royalty_tokens_collected
+
+        return None

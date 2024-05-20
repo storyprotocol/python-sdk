@@ -94,6 +94,13 @@
             "functions": [
                 "getRoyaltyData"
             ]
+        },
+        {
+            "contract_name": "RoyaltyModule",
+            "contract_address": "0xFAE961dd2b87CD5818dbCDc2591e6AB0b50E96b0",
+            "functions": [
+                "payRoyaltyOnBehalf"
+            ]
         }
     ]
 }

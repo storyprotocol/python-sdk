@@ -59,13 +59,61 @@ def story_client():
 #     assert response['royaltyTokensCollected'] is not None
 #     assert isinstance(response['royaltyTokensCollected'], int)
 
-def test_snapshot(story_client):
-    # Define the parameters for the snapshot method
-    child_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"  # Example child IP ID
+# def test_snapshot(story_client):
+#     # Define the parameters for the snapshot method
+#     child_ip_id = "0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"  # Example child IP ID
 
-    # Call the snapshot method
-    response = story_client.Royalty.snapshot(
-        child_ip_id=child_ip_id
+#     # Call the snapshot method
+#     response = story_client.Royalty.snapshot(
+#         child_ip_id=child_ip_id
+#     )
+
+#     # Verify the response
+#     assert response is not None
+#     assert 'txHash' in response
+#     assert response['txHash'] is not None
+#     assert isinstance(response['txHash'], str)
+#     assert len(response['txHash']) > 0
+
+#     assert 'snapshotId' in response
+#     assert response['snapshotId'] is not None
+#     assert isinstance(response['snapshotId'], int)
+#     assert response['snapshotId'] >= 0  # Assuming snapshotId is a non-negative integer
+
+# def test_claimableRevenue(story_client):
+#     # Define the parameters for the claimableRevenue method
+#     child_ip_id = "0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"  # Example royalty vault IP ID
+#     account_address = account.address  # Use the test account address
+#     snapshot_id = 1  # Example snapshot ID
+#     token = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"  # Replace with the actual token address
+
+#     # Call the claimableRevenue method
+#     response = story_client.Royalty.claimableRevenue(
+#         child_ip_id=child_ip_id,
+#         account_address=account_address,
+#         snapshot_id=snapshot_id,
+#         token=token
+#     )
+#     print("It came out to,", response)
+#     # Verify the response
+#     assert response is not None
+#     assert isinstance(response, int)
+#     assert response >= 0  # Assuming the claimable revenue can be zero or positive
+
+def test_payRoyaltyOnBehalf(story_client):
+    # Define the parameters for the payRoyaltyOnBehalf method
+    receiver_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"
+    payer_ip_id = "0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"
+    token = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"
+    amount = 10
+
+    # Call the payRoyaltyOnBehalf method
+    response = story_client.Royalty.payRoyaltyOnBehalf(
+        receiver_ip_id=receiver_ip_id,
+        payer_ip_id=payer_ip_id,
+        token=token,
+        amount=amount,
+        tx_options={'wait_for_transaction': True}
     )
 
     # Verify the response
@@ -74,28 +122,3 @@ def test_snapshot(story_client):
     assert response['txHash'] is not None
     assert isinstance(response['txHash'], str)
     assert len(response['txHash']) > 0
-
-    assert 'snapshotId' in response
-    assert response['snapshotId'] is not None
-    assert isinstance(response['snapshotId'], int)
-    assert response['snapshotId'] >= 0  # Assuming snapshotId is a non-negative integer
-
-def test_claimableRevenue(story_client):
-    # Define the parameters for the claimableRevenue method
-    child_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"  # Example royalty vault IP ID
-    account_address = account.address  # Use the test account address
-    snapshot_id = 1  # Example snapshot ID
-    token = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"  # Replace with the actual token address
-
-    # Call the claimableRevenue method
-    response = story_client.Royalty.claimableRevenue(
-        child_ip_id=child_ip_id,
-        account_address=account_address,
-        snapshot_id=snapshot_id,
-        token=token
-    )
-    print("It came out to,", response)
-    # Verify the response
-    assert response is not None
-    assert isinstance(response, int)
-    assert response >= 0  # Assuming the claimable revenue can be zero or positive

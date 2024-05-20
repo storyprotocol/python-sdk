@@ -19,6 +19,19 @@ class IpRoyaltyVaultImplClient:
         return self.contract.functions.collectRoyaltyTokens(ancestorIpId).build_transaction(tx_params)
     
     
+    def snapshot(self, ):
+        
+        return self.contract.functions.snapshot().transact()
+        
+    def build_snapshot_transaction(self, tx_params):
+        return self.contract.functions.snapshot().build_transaction(tx_params)
+    
+    
+    def claimableRevenue(self, account, snapshotId, token):
+        
+        return self.contract.functions.claimableRevenue(account, snapshotId, token).call()
+        
+    
     def unclaimedRoyaltyTokens(self, ):
         
         return self.contract.functions.unclaimedRoyaltyTokens().call()

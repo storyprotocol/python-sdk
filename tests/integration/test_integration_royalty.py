@@ -12,7 +12,7 @@ src_path = os.path.abspath(os.path.join(current_dir, '..', '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-from utils import get_token_id, get_story_client_in_sepolia, MockERC721
+from utils import get_story_client_in_sepolia
 
 load_dotenv()
 private_key = os.getenv('WALLET_PRIVATE_KEY')
@@ -41,20 +41,61 @@ def story_client():
 # register derivative done
 
 
-def test_collectRoyaltyTokens(story_client): #can only run each child ip id once
-    # Register derivative IP
-    response = story_client.Royalty.collectRoyaltyTokens(
-        parent_ip_id="0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c",
-        child_ip_id="0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"
-    )
+# def test_collectRoyaltyTokens(story_client): #can only run each child ip id once
+#     # Register derivative IP
+#     response = story_client.Royalty.collectRoyaltyTokens(
+#         parent_ip_id="0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c",
+#         child_ip_id="0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"
+#     )
     
-    assert response is not None
+#     assert response is not None
 
+#     assert 'txHash' in response
+#     assert response['txHash'] is not None
+#     assert isinstance(response['txHash'], str)
+#     assert len(response['txHash']) > 0
+
+#     assert 'royaltyTokensCollected' in response
+#     assert response['royaltyTokensCollected'] is not None
+#     assert isinstance(response['royaltyTokensCollected'], int)
+
+def test_snapshot(story_client):
+    # Define the parameters for the snapshot method
+    child_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"  # Example child IP ID
+
+    # Call the snapshot method
+    response = story_client.Royalty.snapshot(
+        child_ip_id=child_ip_id
+    )
+
+    # Verify the response
+    assert response is not None
     assert 'txHash' in response
     assert response['txHash'] is not None
     assert isinstance(response['txHash'], str)
     assert len(response['txHash']) > 0
 
-    assert 'royaltyTokensCollected' in response
-    assert response['royaltyTokensCollected'] is not None
-    assert isinstance(response['royaltyTokensCollected'], int)
+    assert 'snapshotId' in response
+    assert response['snapshotId'] is not None
+    assert isinstance(response['snapshotId'], int)
+    assert response['snapshotId'] >= 0  # Assuming snapshotId is a non-negative integer
+
+def test_claimableRevenue(story_client):
+    # Define the parameters for the claimableRevenue method
+    child_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"  # Example royalty vault IP ID
+    account_address = account.address  # Use the test account address
+    snapshot_id = 1  # Example snapshot ID
+    token = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"  # Replace with the actual token address
+
+    # Call the claimableRevenue method
+    response = story_client.Royalty.claimableRevenue(
+        child_ip_id=child_ip_id,
+        account_address=account_address,
+        snapshot_id=snapshot_id,
+        token=token
+    )
+    print("It came out to,", response)
+    # Verify the response
+    assert response is not None
+    assert isinstance(response, int)
+    assert response >= 0  # Assuming the claimable revenue can be zero or positive

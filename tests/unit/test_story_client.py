@@ -12,6 +12,8 @@ if src_path not in sys.path:
 
 from src.story_client import StoryClient
 from src.resources.IPAsset import IPAsset
+from src.resources.License import License
+from src.resources.Royalty import Royalty
 
 # Load environment variables from .env file
 load_dotenv()
@@ -58,3 +60,13 @@ def test_ip_asset_client_getter(story_client):
     ip_asset = story_client.IPAsset
     assert ip_asset is not None
     assert isinstance(ip_asset, IPAsset)
+
+def test_license_client_getter(story_client):
+    license = story_client.License
+    assert license is not None
+    assert isinstance(license, License)
+
+def test_royalty_client_getter(story_client):
+    royalty = story_client.Royalty
+    assert royalty is not None
+    assert isinstance(royalty, Royalty)

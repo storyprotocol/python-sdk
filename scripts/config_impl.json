@@ -1,0 +1,15 @@
+{
+    "contracts": [
+        {
+            "contract_name": "IpRoyaltyVaultImpl",
+            "contract_address": "0xD6c2AfB61085f1359d47159f2271BDD0EeBf19C2",
+            "functions": [
+                "collectRoyaltyTokens",
+                "unclaimedRoyaltyTokens",
+                "claimableRevenue",
+                "snapshot",
+                "claimRevenueBySnapshotBatch"
+            ]
+        }
+    ]
+}

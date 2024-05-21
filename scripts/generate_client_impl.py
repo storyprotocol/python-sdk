@@ -1,5 +1,3 @@
-#scripts/generate_client.py
-
 import requests
 import json
 import os
@@ -25,37 +23,6 @@ def fetch_abi(contract_address, api_key):
     else:
         raise Exception(f"Error fetching ABI for address {contract_address}: {response_json.get('message')}")
 
-def fetch_proxy_implementation_address(proxy_address, api_key):
-    url = "https://api-sepolia.etherscan.io/api"
-    params = {
-        "module": "proxy",
-        "action": "eth_getStorageAt",
-        "address": proxy_address,
-        "position": "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
-        "tag": "latest",
-        "apikey": api_key
-    }
-    response = requests.get(url, params=params)
-    response_json = response.json()
-    # print(f"Response JSON for {proxy_address}: {response_json}")  # Debugging output
-    if 'result' in response_json:
-        storage_value = response_json['result']
-        if storage_value and storage_value != '0x':
-            implementation_address = "0x" + storage_value[-40:]
-            return implementation_address
-        else:
-            raise Exception(f"No valid implementation address found in storage for proxy {proxy_address}")
-    else:
-        raise Exception(f"Error fetching implementation address from storage for proxy {proxy_address}: {response_json}")
-
-def fetch_proxy_abi(proxy_address, api_key):
-    try:
-        implementation_address = fetch_proxy_implementation_address(proxy_address, api_key)
-        return fetch_abi(implementation_address, api_key)
-    except Exception as e:
-        print(f"Failed to fetch proxy implementation address for {proxy_address}: {e}")
-        return None
-
 def save_abi(abi, output_path):
     with open(output_path, 'w') as abi_file:
         json.dump(abi, abi_file, indent=2)
@@ -66,19 +33,8 @@ import os
 from web3 import Web3
 
 class {{ class_name }}:
-    def __init__(self, web3: Web3):
+    def __init__(self, web3: Web3, contract_address=None):
         self.web3 = web3
-        # Assuming config.json is located at the root of the project
-        config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'scripts', 'config.json'))
-        with open(config_path, 'r') as config_file:
-            config = json.load(config_file)
-        contract_address = None
-        for contract in config['contracts']:
-            if contract['contract_name'] == '{{ contract_name }}':
-                contract_address = contract['contract_address']
-                break
-        if not contract_address:
-            raise ValueError(f"Contract address for {{ contract_name }} not found in config.json")
         abi_path = os.path.join(os.path.dirname(__file__), '{{ contract_name }}.json')
         with open(abi_path, 'r') as abi_file:
             abi = json.load(abi_file)
@@ -131,7 +87,6 @@ def main(config_path, output_dir):
     with open(config_path, 'r') as config_file:
         config = json.load(config_file)
     
-
         for contract in config['contracts']:
             contract_name = contract['contract_name']
             contract_address = contract['contract_address']
@@ -139,14 +94,14 @@ def main(config_path, output_dir):
 
             for attempt in range(3):  # Retry up to 3 times
                 try:
-                    abi = fetch_proxy_abi(contract_address, api_key)
+                    abi = fetch_abi(contract_address, api_key)
                     if abi:
                         contract_output_dir = os.path.join(output_dir, contract_name)
                         os.makedirs(contract_output_dir, exist_ok=True)
 
                         save_abi(abi, os.path.join(contract_output_dir, f'{contract_name}.json'))
                         generate_python_classes_from_abi(abi, contract_name, functions, output_dir)
-                        time.sleep(1)  # Wait for 1 seconds before moving to next contract
+                        time.sleep(1)  # Wait for 1 second before moving to the next contract
                         break  # If successful, break out of the retry loop
                     else:
                         raise Exception("Failed to fetch ABI")
@@ -155,7 +110,7 @@ def main(config_path, output_dir):
                     time.sleep(2)  # Wait for 2 seconds before retrying
 
 if __name__ == "__main__":
-    config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+    config_path = os.path.join(os.path.dirname(__file__), 'config_impl.json')
     output_dir = os.path.join(os.path.dirname(__file__), '../src/abi')
     os.makedirs(output_dir, exist_ok=True)
     main(config_path, output_dir)

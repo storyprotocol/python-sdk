@@ -8,8 +8,8 @@ from story_protocol_python_sdk.abi.LicenseToken.LicenseToken_client import Licen
 from story_protocol_python_sdk.abi.LicenseRegistry.LicenseRegistry_client import LicenseRegistryClient
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger(__name__)
 
 class IPAsset:
     def __init__(self, web3: Web3, account, chain_id):
@@ -64,7 +64,7 @@ class IPAsset:
             }
 
         except Exception as e:
-            logger.error(f"Error interacting with contract: {e}")
+            # logger.error(f"Error interacting with contract: {e}")
             raise e
 
     def registerDerivative(self, child_ip_id, parent_ip_ids, license_terms_ids, license_template):
@@ -110,7 +110,7 @@ class IPAsset:
             }
 
         except Exception as e:
-            logger.error(f"Failed to register derivative: {e}")
+            # logger.error(f"Failed to register derivative: {e}")
             raise e
         
     def registerDerivativeWithLicenseTokens(self, child_ip_id, license_token_ids):
@@ -146,5 +146,5 @@ class IPAsset:
             }
 
         except Exception as e:
-            logger.error(f"Failed to register derivative with license tokens: {e}")
+            # logger.error(f"Failed to register derivative with license tokens: {e}")
             raise e

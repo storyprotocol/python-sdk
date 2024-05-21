@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import time
 
 # Load environment variables from .env file
-load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '..', '..', '.env'))
 
 # Get the API key from environment variables
 api_key = os.getenv('ETHERSCAN_API_KEY')

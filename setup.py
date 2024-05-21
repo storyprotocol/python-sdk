@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='story_protocol_python_sdk',
-    version='0.1.2',
+    version='0.1.3',
     packages=find_packages(where='src', exclude=["tests"]),
     package_dir={'': 'src'},
     install_requires=[
@@ -11,7 +11,7 @@ setup(
         'python-dotenv'
     ],
     include_package_data=True,  # Ensure package data is included
-    url='https://github.com/aandrewchung/python-sdk/tree/andrew/pip-install',
+    url='https://github.com/storyprotocol/python-sdk',
     license='MIT',
     author='Andrew Chung',
     author_email='andrew@storyprotocol.xyz',
@@ -23,5 +23,5 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.7',
 )

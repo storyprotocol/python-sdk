@@ -2,10 +2,10 @@
 
 import logging
 from web3 import Web3
-from src.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
-from src.abi.LicensingModule.LicensingModule_client import LicensingModuleClient
-from src.abi.LicenseToken.LicenseToken_client import LicenseTokenClient
-from src.abi.LicenseRegistry.LicenseRegistry_client import LicenseRegistryClient
+from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
+from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import LicensingModuleClient
+from story_protocol_python_sdk.abi.LicenseToken.LicenseToken_client import LicenseTokenClient
+from story_protocol_python_sdk.abi.LicenseRegistry.LicenseRegistry_client import LicenseRegistryClient
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

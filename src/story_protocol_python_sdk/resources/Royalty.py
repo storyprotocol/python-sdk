@@ -2,10 +2,10 @@
 
 import logging
 from web3 import Web3
-from src.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
-from src.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client import IpRoyaltyVaultImplClient
-from src.abi.RoyaltyPolicyLAP.RoyaltyPolicyLAP_client import RoyaltyPolicyLAPClient
-from src.abi.RoyaltyModule.RoyaltyModule_client import RoyaltyModuleClient
+from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
+from story_protocol_python_sdk.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client import IpRoyaltyVaultImplClient
+from story_protocol_python_sdk.abi.RoyaltyPolicyLAP.RoyaltyPolicyLAP_client import RoyaltyPolicyLAPClient
+from story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client import RoyaltyModuleClient
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

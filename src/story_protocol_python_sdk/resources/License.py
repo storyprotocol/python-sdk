@@ -2,11 +2,11 @@ import logging
 from web3 import Web3
 from web3.exceptions import LogTopicError
 
-from src.abi.PILicenseTemplate.PILicenseTemplate_client import PILicenseTemplateClient
-from src.abi.LicenseRegistry.LicenseRegistry_client import LicenseRegistryClient
-from src.abi.LicensingModule.LicensingModule_client import LicensingModuleClient
-from src.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
-from src.utils.license_terms import get_license_term_by_type, PIL_TYPE
+from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client import PILicenseTemplateClient
+from story_protocol_python_sdk.abi.LicenseRegistry.LicenseRegistry_client import LicenseRegistryClient
+from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import LicensingModuleClient
+from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
+from story_protocol_python_sdk.utils.license_terms import get_license_term_by_type, PIL_TYPE
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)  # Set to DEBUG to capture all log messages

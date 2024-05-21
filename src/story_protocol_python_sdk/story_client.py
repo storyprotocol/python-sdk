@@ -11,9 +11,9 @@ src_path = os.path.abspath(os.path.join(current_dir, '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-from src.resources.IPAsset import IPAsset
-from src.resources.License import License
-from src.resources.Royalty import Royalty
+from story_protocol_python_sdk.resources.IPAsset import IPAsset
+from story_protocol_python_sdk.resources.License import License
+from story_protocol_python_sdk.resources.Royalty import Royalty
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

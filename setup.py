@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='story_protocol_python_sdk',
-    version='0.1.0',
+    version='0.1.2',
     packages=find_packages(where='src', exclude=["tests"]),
     package_dir={'': 'src'},
     install_requires=[
@@ -10,6 +10,7 @@ setup(
         'pytest',
         'python-dotenv'
     ],
+    include_package_data=True,  # Ensure package data is included
     url='https://github.com/aandrewchung/python-sdk/tree/andrew/pip-install',
     license='MIT',
     author='Andrew Chung',

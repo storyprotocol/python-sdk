@@ -69,7 +69,7 @@ class {{ class_name }}:
     def __init__(self, web3: Web3):
         self.web3 = web3
         # Assuming config.json is located at the root of the project
-        config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'scripts', 'config.json'))
+        config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'scripts', 'config.json'))
         with open(config_path, 'r') as config_file:
             config = json.load(config_file)
         contract_address = None
@@ -156,6 +156,6 @@ def main(config_path, output_dir):
 
 if __name__ == "__main__":
     config_path = os.path.join(os.path.dirname(__file__), 'config.json')
-    output_dir = os.path.join(os.path.dirname(__file__), '../src/abi')
+    output_dir = os.path.join(os.path.dirname(__file__), '../abi')
     os.makedirs(output_dir, exist_ok=True)
     main(config_path, output_dir)

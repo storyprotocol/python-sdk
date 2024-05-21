@@ -111,6 +111,6 @@ def main(config_path, output_dir):
 
 if __name__ == "__main__":
     config_path = os.path.join(os.path.dirname(__file__), 'config_impl.json')
-    output_dir = os.path.join(os.path.dirname(__file__), '../src/abi')
+    output_dir = os.path.join(os.path.dirname(__file__), '../abi')
     os.makedirs(output_dir, exist_ok=True)
     main(config_path, output_dir)

@@ -7,7 +7,7 @@ class LicenseTokenClient:
     def __init__(self, web3: Web3):
         self.web3 = web3
         # Assuming config.json is located at the root of the project
-        config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'scripts', 'config.json'))
+        config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'scripts', 'config.json'))
         with open(config_path, 'r') as config_file:
             config = json.load(config_file)
         contract_address = None

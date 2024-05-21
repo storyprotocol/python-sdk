@@ -2,26 +2,21 @@ from setuptools import setup, find_packages
 
 setup(
     name='story-protocol-python-sdk',
-    version='1.0.0',
-    description='A Python SDK for interacting with the Story Protocol',
-    long_description=open('README.md').read(),
-    long_description_content_type='text/markdown',
-    author='Andrew Chung',
-    author_email='andrew@storyprotocol.xyz',
-    url='https://github.com/aandrewchung/python-sdk/tree/andrew/pip-install',
-    packages=find_packages(where='src'),
+    version='0.1.0',
+    packages=find_packages(where='src', exclude=["tests"]),
     package_dir={'': 'src'},
-    include_package_data=True,
     install_requires=[
         'web3>=5.0.0',
         'pytest',
         'python-dotenv'
     ],
-    entry_points={
-        'console_scripts': [
-            'generate-client=scripts.generate_client:main',
-        ],
-    },
+    url='https://github.com/aandrewchung/python-sdk/tree/andrew/pip-install',
+    license='MIT',
+    author='Andrew Chung',
+    author_email='andrew@storyprotocol.xyz',
+    description='A Python SDK for interacting with the Story Protocol.',
+    long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',

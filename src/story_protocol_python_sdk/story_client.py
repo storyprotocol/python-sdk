@@ -16,8 +16,8 @@ from story_protocol_python_sdk.resources.License import License
 from story_protocol_python_sdk.resources.Royalty import Royalty
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger(__name__)
 
 class StoryClient:
     def __init__(self, web3, account, chain_id):

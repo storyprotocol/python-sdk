@@ -11,7 +11,7 @@ src_path = os.path.abspath(os.path.join(current_dir, '..', '..', '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-from src.resources.IPAsset import IPAsset
+from src.story_protocol_python_sdk.resources.IPAsset import IPAsset
 
 # Load environment variables from .env file
 load_dotenv()

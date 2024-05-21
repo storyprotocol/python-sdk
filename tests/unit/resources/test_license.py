@@ -11,7 +11,7 @@ src_path = os.path.abspath(os.path.join(current_dir, '..', '..', '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-from src.resources.License import License
+from src.story_protocol_python_sdk.resources.License import License
 
 # Load environment variables from .env file
 from dotenv import load_dotenv

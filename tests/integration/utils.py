@@ -1,6 +1,6 @@
 from web3 import Web3
 from dotenv import load_dotenv
-from src.story_client import StoryClient
+from src.story_protocol_python_sdk.story_client import StoryClient
 
 load_dotenv()
 

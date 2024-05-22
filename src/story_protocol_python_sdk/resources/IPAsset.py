@@ -1,6 +1,6 @@
 #src/resources/IPAsset.py
 
-import logging
+import logging, time
 from web3 import Web3
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
 from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import LicensingModuleClient
@@ -42,7 +42,6 @@ class IPAsset:
                     'ipId': ip_id
                 }
 
-
             # Fetch the current average gas price from the node plus 10%
             current_gas_price = int(self.web3.eth.gas_price * 1.1)
 
@@ -62,6 +61,10 @@ class IPAsset:
             # Send the transaction
             tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
             
+            if ip_id != None:
+                while self.ip_asset_registry_client.isRegistered(ip_id) == False:
+                    time.sleep(1)
+
             return {
                 'txHash': tx_hash.hex(),
                 'ipId': ip_id

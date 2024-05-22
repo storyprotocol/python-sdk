@@ -61,9 +61,8 @@ class IPAsset:
             # Send the transaction
             tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
             
-            if ip_id != None:
-                while self.ip_asset_registry_client.isRegistered(ip_id) == False:
-                    time.sleep(1)
+            # Wait for the transaction receipt
+            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)  # 5 minutes timeout
 
             return {
                 'txHash': tx_hash.hex(),
@@ -115,6 +114,9 @@ class IPAsset:
             # Send the transaction
             tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
             
+            # Wait for the transaction receipt
+            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)  # 5 minutes timeout
+
             return {
                 'txHash': tx_hash.hex()
             }
@@ -154,6 +156,9 @@ class IPAsset:
             # Send the transaction
             tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
             
+            # Wait for the transaction receipt
+            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)  # 5 minutes timeout
+
             return {
                 'txHash': tx_hash.hex()
             }

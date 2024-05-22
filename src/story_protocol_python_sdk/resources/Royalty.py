@@ -127,7 +127,6 @@ class Royalty:
             tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
             # logger.info(f"Transaction hash: {tx_hash.hex()}")
 
-
             # Wait for transaction receipt with a longer timeout
             tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=600)  # 10 minutes timeout
             # logger.info(f"Transaction receipt: {tx_receipt}")
@@ -223,7 +222,7 @@ class Royalty:
             # logger.error(f"Failed to pay royalty on behalf: {e}")
             raise e
     
-    def claimRevenue(self, snapshotIds, child_ip_id, token):
+    def claimRevenue(self, snapshot_ids, child_ip_id, token):
         try:
             # Get the royalty vault address
             proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
@@ -237,7 +236,7 @@ class Royalty:
             current_gas_price = int(self.web3.eth.gas_price * 1.1)
 
             # Build the transaction
-            transaction = ip_royalty_vault_client.build_claimRevenueBySnapshotBatch_transaction(snapshotIds, token, {
+            transaction = ip_royalty_vault_client.build_claimRevenueBySnapshotBatch_transaction(snapshot_ids, token, {
                 'from': self.account.address,
                 'nonce': self.web3.eth.get_transaction_count(self.account.address),
                 'gas': 2000000,

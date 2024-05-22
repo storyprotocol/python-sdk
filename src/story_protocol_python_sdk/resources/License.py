@@ -63,7 +63,7 @@ class License:
 
             # Wait for transaction receipt with a longer timeout
 
-            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=600)  # 10 minutes timeout
+            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)  # 5 minutes timeout
             # logger.info(f"Transaction receipt: {tx_receipt}")
 
             # Parse the event logs for LicenseTermsRegistered
@@ -118,7 +118,7 @@ class License:
             # logger.info(f"Transaction hash: {tx_hash.hex()}")
 
             # Wait for transaction receipt with a longer timeout
-            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=600)  # 10 minutes timeout
+            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)  # 5 minutes timeout
             # logger.info(f"Transaction receipt: {tx_receipt}")
 
             # Parse the event logs for LicenseTermsRegistered
@@ -178,7 +178,7 @@ class License:
             # logger.info(f"Transaction hash: {tx_hash.hex()}")
 
             # Wait for transaction receipt with a longer timeout
-            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=600)
+            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)  # 5 minutes timeout
             # logger.info(f"Transaction receipt: {tx_receipt}")
 
             # Parse the event logs for LicenseTermsRegistered
@@ -251,7 +251,7 @@ class License:
             # logger.info(f"Transaction hash: {tx_hash.hex()}")
 
             # Wait for the transaction receipt
-            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=600)
+            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)  # 5 minutes timeout
             # logger.info(f"Transaction receipt: {tx_receipt}")
 
             return {'txHash': tx_hash.hex()}
@@ -310,7 +310,7 @@ class License:
             # logger.info(f"Transaction hash: {tx_hash.hex()}")
 
             # Wait for the transaction receipt
-            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=600)
+            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)  # 5 minutes timeout
             # logger.info(f"Transaction receipt: {tx_receipt}")
 
             # Parse the event logs for LicenseTokensMinted

@@ -25,12 +25,15 @@ def get_token_id(nft_contract, web3, account):
         }
     ]
 
+    # Fetch the current average gas price from the node plus 10%
+    current_gas_price = int(web3.eth.gas_price * 1.1)
+
     contract = web3.eth.contract(address=nft_contract, abi=contract_abi)
     transaction = contract.functions.mint(account.address).build_transaction({
         'from': account.address,
         'nonce': web3.eth.get_transaction_count(account.address),
         'gas': 2000000,
-        'gasPrice': web3.to_wei('300', 'gwei')
+        'gasPrice': current_gas_price
     })
     signed_txn = account.sign_transaction(transaction)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)

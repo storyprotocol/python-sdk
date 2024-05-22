@@ -42,13 +42,17 @@ class IPAsset:
                     'ipId': ip_id
                 }
 
+
+            # Fetch the current average gas price from the node plus 10%
+            current_gas_price = int(self.web3.eth.gas_price * 1.1)
+
             # Build the transaction
             transaction = self.ip_asset_registry_client.build_register_transaction(
                 self.chain_id, token_contract, token_id, {
                     'from': self.account.address,
                     'nonce': self.web3.eth.get_transaction_count(self.account.address),
                     'gas': 2000000,
-                    'gasPrice': self.web3.to_wei('300', 'gwei')  # Adjusted gas price for faster processing
+                    'gasPrice': current_gas_price
                 }
             )
 
@@ -89,13 +93,16 @@ class IPAsset:
                 if not self.license_registry_client.hasIpAttachedLicenseTerms(parent_id, license_template, terms_id):
                     raise ValueError(f"License terms id {terms_id} must be attached to the parent ipId {parent_id} before registering derivative.")
 
+            # Fetch the current average gas price from the node plus 10%
+            current_gas_price = int(self.web3.eth.gas_price * 1.1)
+
             # Build the transaction
             transaction = self.licensing_module_client.build_registerDerivative_transaction(
                 child_ip_id, parent_ip_ids, license_terms_ids, license_template, '0x0000000000000000000000000000000000000000', {
                     'from': self.account.address,
                     'nonce': self.web3.eth.get_transaction_count(self.account.address),
                     'gas': 2000000,
-                    'gasPrice': self.web3.to_wei('100', 'gwei')
+                    'gasPrice': current_gas_price
                 }
             )
 
@@ -125,13 +132,16 @@ class IPAsset:
                 if token_owner.lower() != self.account.address.lower():
                     raise ValueError(f"License token id {token_id} must be owned by the caller.")
 
+            # Fetch the current average gas price from the node plus 10%
+            current_gas_price = int(self.web3.eth.gas_price * 1.1)
+
             # Build the transaction
             transaction = self.licensing_module_client.build_registerDerivativeWithLicenseTokens_transaction(
                 child_ip_id, license_token_ids, '0x0000000000000000000000000000000000000000', {
                     'from': self.account.address,
                     'nonce': self.web3.eth.get_transaction_count(self.account.address),
                     'gas': 2000000,
-                    'gasPrice': self.web3.to_wei('300', 'gwei')
+                    'gasPrice': current_gas_price
                 }
             )
 

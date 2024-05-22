@@ -36,12 +36,15 @@ class Royalty:
             # Initialize the IP Royalty Vault client with the proxy address
             ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
 
+            # Fetch the current average gas price from the node plus 10%
+            current_gas_price = int(self.web3.eth.gas_price * 1.1)
+
             # Build the transaction
             transaction = ip_royalty_vault_client.build_collectRoyaltyTokens_transaction(parent_ip_id, {
                 'from': self.account.address,
                 'nonce': self.web3.eth.get_transaction_count(self.account.address),
                 'gas': 2000000,
-                'gasPrice': self.web3.to_wei('300', 'gwei')
+                'gasPrice': current_gas_price
             })
 
             # Sign the transaction using the account object
@@ -105,12 +108,15 @@ class Royalty:
             # Initialize the IP Royalty Vault client with the proxy address
             ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
 
+            # Fetch the current average gas price from the node plus 10%
+            current_gas_price = int(self.web3.eth.gas_price * 1.1)
+
             # Build the transaction
             transaction = ip_royalty_vault_client.build_snapshot_transaction({
                 'from': self.account.address,
                 'nonce': self.web3.eth.get_transaction_count(self.account.address),
                 'gas': 2000000,
-                'gasPrice': self.web3.to_wei('300', 'gwei')
+                'gasPrice': current_gas_price
             })
 
             # Sign the transaction using the account object
@@ -185,12 +191,15 @@ class Royalty:
             if not is_payer_registered:
                 raise ValueError(f"The payer IP with id {payer_ip_id} is not registered.")
             
+            # Fetch the current average gas price from the node plus 10%
+            current_gas_price = int(self.web3.eth.gas_price * 1.1)
+
             # Build the transaction
             transaction = self.royalty_module_client.build_payRoyaltyOnBehalf_transaction(receiver_ip_id, payer_ip_id, token, amount, {
                 'from': self.account.address,
                 'nonce': self.web3.eth.get_transaction_count(self.account.address),
                 'gas': 2000000,
-                'gasPrice': self.web3.to_wei('300', 'gwei')
+                'gasPrice': current_gas_price
             })
 
             # Sign the transaction using the account object
@@ -224,12 +233,15 @@ class Royalty:
             # Initialize the IP Royalty Vault client with the proxy address
             ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
 
+            # Fetch the current average gas price from the node plus 10%
+            current_gas_price = int(self.web3.eth.gas_price * 1.1)
+
             # Build the transaction
             transaction = ip_royalty_vault_client.build_claimRevenueBySnapshotBatch_transaction(snapshotIds, token, {
                 'from': self.account.address,
                 'nonce': self.web3.eth.get_transaction_count(self.account.address),
                 'gas': 2000000,
-                'gasPrice': self.web3.to_wei('300', 'gwei')
+                'gasPrice': current_gas_price
             })
 
             # Sign the transaction using the account object

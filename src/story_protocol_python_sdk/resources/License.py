@@ -39,13 +39,16 @@ class License:
             if (license_terms_id is not None) and (license_terms_id != 0):
                 return {'licenseTermsId': license_terms_id}
 
+            # Fetch the current average gas price from the node plus 10%
+            current_gas_price = int(self.web3.eth.gas_price * 1.1)
+
             # Build the transaction
             transaction = self.license_template_client.build_registerLicenseTerms_transaction(
                 license_terms, {
                     'from': self.account.address,
                     'nonce': self.web3.eth.get_transaction_count(self.account.address),
                     'gas': 2000000,
-                    'gasPrice': self.web3.to_wei('100', 'gwei')  # Adjusted gas price for faster processing
+                    'gasPrice': current_gas_price
                 }
             )
             # logger.info(f"Transaction: {transaction}")
@@ -92,13 +95,16 @@ class License:
             if (license_terms_id is not None) and (license_terms_id != 0):
                 return {'licenseTermsId': license_terms_id}
 
+            # Fetch the current average gas price from the node plus 10%
+            current_gas_price = int(self.web3.eth.gas_price * 1.1)
+
             # Build the transaction
             transaction = self.license_template_client.build_registerLicenseTerms_transaction(
                 complete_license_terms, {
                     'from': self.account.address,
                     'nonce': self.web3.eth.get_transaction_count(self.account.address),
                     'gas': 2000000,
-                    'gasPrice': self.web3.to_wei('100', 'gwei')  # Adjusted gas price for faster processing
+                    'gasPrice': current_gas_price
                 }
             )
             # logger.info(f"Built transaction: {transaction}")
@@ -149,13 +155,16 @@ class License:
             if license_terms_id and license_terms_id != 0:
                 return {'licenseTermsId': license_terms_id}
 
+            # Fetch the current average gas price from the node plus 10%
+            current_gas_price = int(self.web3.eth.gas_price * 1.1)
+
             # Build the transaction
             transaction = self.license_template_client.build_registerLicenseTerms_transaction(
                 complete_license_terms, {
                     'from': self.account.address,
                     'nonce': self.web3.eth.get_transaction_count(self.account.address),
                     'gas': 2000000,
-                    'gasPrice': self.web3.to_wei('100', 'gwei')
+                    'gasPrice': current_gas_price
                 }
             )
             # logger.info(f"Built transaction: {transaction}")
@@ -219,13 +228,16 @@ class License:
             if is_attached_license_terms:
                 raise ValueError(f"License terms id {license_terms_id} is already attached to the IP with id {ip_id}.")
 
+            # Fetch the current average gas price from the node plus 10%
+            current_gas_price = int(self.web3.eth.gas_price * 1.1)
+
             # Build the transaction
             transaction = self.licensing_module_client.build_attachLicenseTerms_transaction(
                 ip_id, license_template, license_terms_id, {
                     'from': self.account.address,
                     'nonce': self.web3.eth.get_transaction_count(self.account.address),
                     'gas': 2000000,
-                    'gasPrice': self.web3.to_wei('100', 'gwei')
+                    'gasPrice': current_gas_price
                 }
             )
             # logger.info(f"Built transaction: {transaction}")
@@ -275,13 +287,16 @@ class License:
             if not is_attached_license_terms:
                 raise ValueError(f"License terms id {license_terms_id} is not attached to the IP with id {licensor_ip_id}.")
 
+            # Fetch the current average gas price from the node plus 10%
+            current_gas_price = int(self.web3.eth.gas_price * 1.1)
+
             # Build the transaction
             transaction = self.licensing_module_client.build_mintLicenseTokens_transaction(
                 licensor_ip_id, license_template, license_terms_id, amount, receiver, '0x0000000000000000000000000000000000000000', {
                     'from': self.account.address,
                     'nonce': self.web3.eth.get_transaction_count(self.account.address),
                     'gas': 2000000,
-                    'gasPrice': self.web3.to_wei('100', 'gwei')
+                    'gasPrice': current_gas_price
                 }
             )
             # logger.info(f"Built transaction: {transaction}")

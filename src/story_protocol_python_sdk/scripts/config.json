@@ -1,0 +1,106 @@
+{
+    "contracts": [
+        {
+            "contract_name": "IPAssetRegistry",
+            "contract_address": "0xd43fE0d865cb5C26b1351d3eAf2E3064BE3276F6",
+            "functions": [
+                "initialize",
+                "pause",
+                "register",
+                "registerIpAccount",
+                "setAuthority",
+                "unpause",
+                "upgradeToAndCall",
+                "authority",
+                "getIPAccountImpl",
+                "ipAccount",
+                "ipId",
+                "isConsumingScheduledOp",
+                "isRegistered",
+                "paused",
+                "proxiableUUID",
+                "totalSupply"
+            ]
+        },
+        {
+            "contract_name": "PILicenseTemplate",
+            "contract_address": "0x260B6CB6284c89dbE660c0004233f7bB99B5edE7",
+            "functions": [
+                "initialize",
+                "registerLicenseTerms",
+                "setApproval",
+                "setAuthority",
+                "upgradeToAndCall",
+                "verifyRegisterDerivative",
+                "verifyRegisterDerivativeForAllParents",
+                "exists",
+                "getLicenseTerms",
+                "getLicenseTermsId",
+                "getRoyaltyPolicy"
+            ]
+        },
+        {
+            "contract_name": "LicensingModule",
+            "contract_address": "0xe89b0EaA8a0949738efA80bB531a165FB3456CBe",
+            "functions": [
+                "attachLicenseTerms",
+                "initialize",
+                "mintLicenseTokens",
+                "pause",
+                "registerDerivative",
+                "registerDerivativeWithLicenseTokens",
+                "setAuthority",
+                "setLicensingConfig",
+                "unpause",
+                "upgradeToAndCall"
+            ]
+        },
+        {
+            "contract_name": "LicenseRegistry",
+            "contract_address": "0x4f4b1bf7135C7ff1462826CCA81B048Ed19562ed",
+            "functions": [
+                "authority",
+                "exists",
+                "getAttachedLicenseTerms",
+                "getAttachedLicenseTermsCount",
+                "getDefaultLicenseTerms",
+                "getDerivativeIp",
+                "getDerivativeIpCount",
+                "getExpireTime",
+                "getLicensingConfig",
+                "getParentIp",
+                "getParentIpCount",
+                "hasDerivativeIps",
+                "hasIpAttachedLicenseTerms",
+                "isConsumingScheduledOp",
+                "isDerivativeIp",
+                "isExpiredNow",
+                "isParentIp",
+                "isRegisteredLicenseTemplate",
+                "proxiableUUID",
+                "verifyMintLicenseToken"
+            ]
+        },
+        {
+            "contract_name": "LicenseToken",
+            "contract_address": "0x1333c78A821c9a576209B01a16dDCEF881cAb6f2",
+            "functions": [
+                "ownerOf"
+            ]
+        },
+        {
+            "contract_name": "RoyaltyPolicyLAP",
+            "contract_address": "0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86",
+            "functions": [
+                "getRoyaltyData"
+            ]
+        },
+        {
+            "contract_name": "RoyaltyModule",
+            "contract_address": "0xFAE961dd2b87CD5818dbCDc2591e6AB0b50E96b0",
+            "functions": [
+                "payRoyaltyOnBehalf"
+            ]
+        }
+    ]
+}

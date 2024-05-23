@@ -1,18 +1,8 @@
-from web3 import Web3
-from dotenv import load_dotenv
-from src.story_protocol_python_sdk.story_client import StoryClient
-
-load_dotenv()
-
 # Mock ERC721 contract address
 MockERC721 = "0x7ee32b8B515dEE0Ba2F25f612A04a731eEc24F49"
 
 # Mock ERC20 contract address (same as used in TypeScript tests)
 MockERC20 = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"
-
-def get_story_client_in_sepolia(web3: Web3, account) -> StoryClient:
-    chain_id = 11155111  # Sepolia chain ID
-    return StoryClient(web3, account, chain_id)
 
 def get_token_id(nft_contract, web3, account):
     contract_abi = [

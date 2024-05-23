@@ -206,7 +206,7 @@ class License:
                 license_terms_id,
                 amount,
                 receiver,
-                '0x0000000000000000000000000000000000000000',
+                self.web3.constants.ADDRESS_ZERO,
                 tx_options=tx_options
             )
 

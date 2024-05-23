@@ -80,7 +80,7 @@ class IPAsset:
                 if not self.license_registry_client.hasIpAttachedLicenseTerms(parent_id, license_template, terms_id):
                     raise ValueError(f"License terms id {terms_id} must be attached to the parent ipId {parent_id} before registering derivative.")
 
-            zero_address = "0x0000000000000000000000000000000000000000"
+            zero_address = self.web3.constants.ADDRESS_ZERO
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -112,7 +112,7 @@ class IPAsset:
                 if token_owner.lower() != self.account.address.lower():
                     raise ValueError(f"License token id {token_id} must be owned by the caller.")
 
-            zero_address = "0x0000000000000000000000000000000000000000"
+            zero_address = self.web3.constants.ADDRESS_ZERO
             response = build_and_send_transaction(
                 self.web3,
                 self.account,

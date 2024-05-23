@@ -4,16 +4,16 @@ import pytest
 from web3 import Web3
 from dotenv import load_dotenv
 
-# Ensure the src directory is in the Python path
+# Ensure the src/story_protocol_python_sdk directory is in the Python path
 current_dir = os.path.dirname(__file__)
-src_path = os.path.abspath(os.path.join(current_dir, '..', '..'))
+src_path = os.path.abspath(os.path.join(current_dir, '..', '..', 'src'))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-from src.story_client import StoryClient
-from src.resources.IPAsset import IPAsset
-from src.resources.License import License
-from src.resources.Royalty import Royalty
+from story_protocol_python_sdk.story_client import StoryClient
+from story_protocol_python_sdk.resources.IPAsset import IPAsset
+from story_protocol_python_sdk.resources.License import License
+from story_protocol_python_sdk.resources.Royalty import Royalty
 
 # Load environment variables from .env file
 load_dotenv()

@@ -8,7 +8,7 @@ src_path = os.path.abspath(os.path.join(current_dir, '..', '..', '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-from src.resources.Royalty import Royalty
+from src.story_protocol_python_sdk.resources.Royalty import Royalty
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
@@ -104,7 +104,7 @@ def test_snapshot_success(royalty_client):
     with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', return_value=True):
         with patch.object(royalty_client.royalty_policy_lap_client, 'getRoyaltyData', return_value=[True, "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c", 1, ["0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"], [1]]):
             with patch.object(royalty_client, '_parseTxSnapshotCompletedEvent', return_value=2):
-                with patch('src.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client.IpRoyaltyVaultImplClient.build_snapshot_transaction', return_value={
+                with patch('story_protocol_python_sdk.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client.IpRoyaltyVaultImplClient.build_snapshot_transaction', return_value={
                     'data': '0x',
                     'nonce': 0,
                     'gas': 2000000,
@@ -145,7 +145,7 @@ def test_claimableRevenue_royaltyVaultAddress_error(royalty_client):
 def test_claimableRevenue_success(royalty_client):
     with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', return_value=True):
         with patch.object(royalty_client.royalty_policy_lap_client, 'getRoyaltyData', return_value=[True, "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c", 1, ["0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"], [1]]):
-            with patch('src.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client.IpRoyaltyVaultImplClient.claimableRevenue', return_value=0):
+            with patch('story_protocol_python_sdk.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client.IpRoyaltyVaultImplClient.claimableRevenue', return_value=0):
                 child_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"
                 account_address = account.address
                 snapshot_id = 1
@@ -177,7 +177,7 @@ def test_claimRevenue_success(royalty_client):
     with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', return_value=True):
         with patch.object(royalty_client.royalty_policy_lap_client, 'getRoyaltyData', return_value=[True, "0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7", 1, ["0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"], [1]]):
             with patch.object(royalty_client, '_parseTxRevenueTokenClaimedEvent', return_value=0):
-                with patch('src.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client.IpRoyaltyVaultImplClient.build_claimRevenueBySnapshotBatch_transaction', return_value={
+                with patch('story_protocol_python_sdk.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client.IpRoyaltyVaultImplClient.build_claimRevenueBySnapshotBatch_transaction', return_value={
                     'data': '0x',
                     'nonce': 0,
                     'gas': 2000000,
@@ -218,7 +218,7 @@ def test_payRoyaltyOnBehalf_payerIpId_error(royalty_client):
 
 def test_payRoyaltyOnBehalf_success(royalty_client):
     with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', return_value=True):
-        with patch('src.abi.RoyaltyModule.RoyaltyModule_client.RoyaltyModuleClient.build_payRoyaltyOnBehalf_transaction', return_value={
+        with patch('story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client.RoyaltyModuleClient.build_payRoyaltyOnBehalf_transaction', return_value={
             'data': '0x',
             'nonce': 0,
             'gas': 2000000,

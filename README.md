@@ -54,7 +54,8 @@ To set up the SDK client, import `StoryClient` from `story_protocol_python_sdk`.
 from story_protocol_python_sdk import StoryClient
 
 # Create StoryClient instance
-story_client = StoryClient(web3, account, 11155111)
+sepolia_chain_id = 11155111
+story_client = StoryClient(web3, account, sepolia_chain_id)
 ```
 
 ## Release

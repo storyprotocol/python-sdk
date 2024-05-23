@@ -24,7 +24,7 @@ class License:
     def _get_license_terms_id(self, license_terms):
         return self.license_template_client.getLicenseTermsId(license_terms)
 
-    def registerNonComSocialRemixingPIL(self):
+    def registerNonComSocialRemixingPIL(self, tx_options=None):
         try:
             # Get the license terms for non-commercial social remixing PIL
             license_terms = get_license_term_by_type(PIL_TYPE['NON_COMMERCIAL_REMIX'])
@@ -34,32 +34,19 @@ class License:
             if (license_terms_id is not None) and (license_terms_id != 0):
                 return {'licenseTermsId': license_terms_id}
 
-            # Fetch the current average gas price from the node plus 10%
-            current_gas_price = int(self.web3.eth.gas_price * 1.1)
-
-            # Build the transaction
-            transaction = self.license_template_client.build_registerLicenseTerms_transaction(
-                license_terms, {
-                    'from': self.account.address,
-                    'nonce': self.web3.eth.get_transaction_count(self.account.address),
-                    'gas': 2000000,
-                    'gasPrice': current_gas_price
-                }
+            # Build and send the transaction
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.license_template_client.build_registerLicenseTerms_transaction,
+                license_terms,
+                tx_options=tx_options
             )
 
-            # Sign the transaction using the account object
-            signed_txn = self.account.sign_transaction(transaction)
-
-            # Send the transaction
-            tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-
-            # Wait for transaction receipt with a longer timeout
-            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)  # 5 minutes timeout
-
             # Parse the event logs for LicenseTermsRegistered
-            target_logs = self._parse_tx_license_terms_registered_event(tx_receipt)
+            target_logs = self._parse_tx_license_terms_registered_event(response['txReceipt'])
             return {
-                'txHash': tx_hash.hex(),
+                'txHash': response['txHash'],
                 'licenseTermsId': target_logs
             }
 
@@ -80,35 +67,22 @@ class License:
             if (license_terms_id is not None) and (license_terms_id != 0):
                 return {'licenseTermsId': license_terms_id}
 
-            # Fetch the current average gas price from the node plus 10%
-            current_gas_price = int(self.web3.eth.gas_price * 1.1)
-
-            # Build the transaction
-            transaction = self.license_template_client.build_registerLicenseTerms_transaction(
-                complete_license_terms, {
-                    'from': self.account.address,
-                    'nonce': self.web3.eth.get_transaction_count(self.account.address),
-                    'gas': 2000000,
-                    'gasPrice': current_gas_price
-                }
+            # Build and send the transaction
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.license_template_client.build_registerLicenseTerms_transaction,
+                complete_license_terms,
+                tx_options=tx_options
             )
 
-            # Sign the transaction using the account object
-            signed_txn = self.account.sign_transaction(transaction)
-
-            # Send the transaction
-            tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-
-            # Wait for transaction receipt with a longer timeout
-            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)  # 5 minutes timeout
-
             # Parse the event logs for LicenseTermsRegistered
-            if not tx_receipt.logs:
+            if not response['txReceipt'].logs:
                 return None
 
-            target_logs = self._parse_tx_license_terms_registered_event(tx_receipt)
+            target_logs = self._parse_tx_license_terms_registered_event(response['txReceipt'])
             return {
-                'txHash': tx_hash.hex(),
+                'txHash': response['txHash'],
                 'licenseTermsId': target_logs
             }
 
@@ -129,35 +103,22 @@ class License:
             if license_terms_id and license_terms_id != 0:
                 return {'licenseTermsId': license_terms_id}
 
-            # Fetch the current average gas price from the node plus 10%
-            current_gas_price = int(self.web3.eth.gas_price * 1.1)
-
-            # Build the transaction
-            transaction = self.license_template_client.build_registerLicenseTerms_transaction(
-                complete_license_terms, {
-                    'from': self.account.address,
-                    'nonce': self.web3.eth.get_transaction_count(self.account.address),
-                    'gas': 2000000,
-                    'gasPrice': current_gas_price
-                }
+            # Build and send the transaction
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.license_template_client.build_registerLicenseTerms_transaction,
+                complete_license_terms,
+                tx_options=tx_options
             )
 
-            # Sign the transaction using the account object
-            signed_txn = self.account.sign_transaction(transaction)
-
-            # Send the transaction
-            tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-
-            # Wait for transaction receipt with a longer timeout
-            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)  # 5 minutes timeout
-
             # Parse the event logs for LicenseTermsRegistered
-            if not tx_receipt.logs:
+            if not response['txReceipt'].logs:
                 return None
 
-            target_logs = self._parse_tx_license_terms_registered_event(tx_receipt)
+            target_logs = self._parse_tx_license_terms_registered_event(response['txReceipt'])
             return {
-                'txHash': tx_hash.hex(),
+                'txHash': response['txHash'],
                 'licenseTermsId': target_logs
             }
 
@@ -173,7 +134,7 @@ class License:
 
         return None
     
-    def attachLicenseTerms(self, ip_id, license_template, license_terms_id):
+    def attachLicenseTerms(self, ip_id, license_template, license_terms_id, tx_options=None):
         try:
             # Validate the license template address
             if not Web3.is_address(license_template):
@@ -194,34 +155,23 @@ class License:
             if is_attached_license_terms:
                 raise ValueError(f"License terms id {license_terms_id} is already attached to the IP with id {ip_id}.")
 
-            # Fetch the current average gas price from the node plus 10%
-            current_gas_price = int(self.web3.eth.gas_price * 1.1)
-
-            # Build the transaction
-            transaction = self.licensing_module_client.build_attachLicenseTerms_transaction(
-                ip_id, license_template, license_terms_id, {
-                    'from': self.account.address,
-                    'nonce': self.web3.eth.get_transaction_count(self.account.address),
-                    'gas': 2000000,
-                    'gasPrice': current_gas_price
-                }
+            # Build and send the transaction
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.licensing_module_client.build_attachLicenseTerms_transaction,
+                ip_id,
+                license_template,
+                license_terms_id,
+                tx_options=tx_options
             )
 
-            # Sign the transaction
-            signed_txn = self.account.sign_transaction(transaction)
-
-            # Send the transaction
-            tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-
-            # Wait for the transaction receipt
-            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)  # 5 minutes timeout
-
-            return {'txHash': tx_hash.hex()}
+            return {'txHash': response['txHash']}
         
         except Exception as e:
             raise e
         
-    def mintLicenseTokens(self, licensor_ip_id, license_template, license_terms_id, amount, receiver):
+    def mintLicenseTokens(self, licensor_ip_id, license_template, license_terms_id, amount, receiver, tx_options=None):
         try:
             # Validate the license template address
             if not Web3.is_address(license_template):
@@ -246,33 +196,25 @@ class License:
             if not is_attached_license_terms:
                 raise ValueError(f"License terms id {license_terms_id} is not attached to the IP with id {licensor_ip_id}.")
 
-            # Fetch the current average gas price from the node plus 10%
-            current_gas_price = int(self.web3.eth.gas_price * 1.1)
-
-            # Build the transaction
-            transaction = self.licensing_module_client.build_mintLicenseTokens_transaction(
-                licensor_ip_id, license_template, license_terms_id, amount, receiver, '0x0000000000000000000000000000000000000000', {
-                    'from': self.account.address,
-                    'nonce': self.web3.eth.get_transaction_count(self.account.address),
-                    'gas': 2000000,
-                    'gasPrice': current_gas_price
-                }
+            # Build and send the transaction
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.licensing_module_client.build_mintLicenseTokens_transaction,
+                licensor_ip_id,
+                license_template,
+                license_terms_id,
+                amount,
+                receiver,
+                '0x0000000000000000000000000000000000000000',
+                tx_options=tx_options
             )
 
-            # Sign the transaction
-            signed_txn = self.account.sign_transaction(transaction)
-
-            # Send the transaction
-            tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-
-            # Wait for the transaction receipt
-            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)  # 5 minutes timeout
-
             # Parse the event logs for LicenseTokensMinted
-            target_logs = self._parse_tx_license_tokens_minted_event(tx_receipt)
+            target_logs = self._parse_tx_license_tokens_minted_event(response['txReceipt'])
 
             return {
-                'txHash': tx_hash.hex(),
+                'txHash': response['txHash'],
                 'licenseTokenIds': target_logs
             }
 

@@ -5,7 +5,6 @@ from web3 import Web3
 from story_protocol_python_sdk import StoryClient
 from demo_utils import get_token_id, MockERC721, MockERC20, mint_tokens
 
-
 def main():
     # 1. Set up your Story Config
     load_dotenv()
@@ -107,30 +106,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Test 1 of the license functions
-try:
-    licensor_ip_id = "0x431A7Cc86381F9bA437b575D3F9E931652fFbbdd"  # Replace with actual Licensor IP ID
-    license_template = "0x260B6CB6284c89dbE660c0004233f7bB99B5edE7"  # Replace with actual License Template address
-    license_terms_id = 2  # Replace with actual License Terms ID
-    amount = 2  # Replace with the amount of license tokens to mint
-    receiver = "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"  # Replace with the address of the receiver
-
-    response = story_client.License.mintLicenseTokens(licensor_ip_id, license_template, license_terms_id, amount, receiver)
-    
-    print("Response: ", response)
-
-except Exception as e:
-    print(f"An error occurred: {e}")

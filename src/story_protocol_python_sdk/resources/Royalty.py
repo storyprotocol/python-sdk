@@ -59,7 +59,7 @@ class Royalty:
 
         # Fetch the royalty vault address
         data = self.royalty_policy_lap_client.getRoyaltyData(royalty_vault_ip_id)
-        # print("The get royalty data looks like: ")
+
         if not data or not data[1] or data[1] == "0x":
             raise ValueError(f"The royalty vault IP with id {royalty_vault_ip_id} address is not set.")
         

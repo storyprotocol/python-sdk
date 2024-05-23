@@ -33,8 +33,6 @@ def story_client():
 def test_register_ip_asset(story_client):
     token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
 
-    print(token_id)
-
     response = story_client.IPAsset.register(
         token_contract=MockERC721,
         token_id=token_id
@@ -43,8 +41,6 @@ def test_register_ip_asset(story_client):
     assert response is not None
     assert 'ipId' in response
     assert response['ipId'] is not None
-
-    print(response['ipId'])
 
 # def test_registerDerivative(story_client): #can only run once since using preset variables
 #     parent_ip_id = "0x567603411Fb957759Ac2090659B73cC5f099456D"

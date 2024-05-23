@@ -89,14 +89,9 @@ def test_collectRoyaltyTokens_success(royalty_client):
          patch('web3.eth.Eth.send_raw_transaction', return_value=Web3.to_bytes(hexstr=tx_hash)), \
          patch('web3.eth.Eth.wait_for_transaction_receipt', return_value={'status': 1, 'logs': [{'topics': [Web3.keccak(text="RoyaltyTokensCollected(address,uint256)").hex()], 'data': bytes.fromhex('000000000000000000000000000000000000000000000000000000000000000a')}]}):
         
-        # Log the start of the test
-        # print(f"Starting test_collectRoyaltyTokens_success with parent_ip_id: {parent_ip_id} and child_ip_id: {child_ip_id}")
-
         # Call the function being tested
         result = royalty_client.collectRoyaltyTokens(parent_ip_id, child_ip_id)
-
-        # Log and assert the results
-        # print(f"Result: {result}")
+        
         assert result['txHash'] == tx_hash[2:]
         assert result['royaltyTokensCollected'] == royalty_tokens_collected
         

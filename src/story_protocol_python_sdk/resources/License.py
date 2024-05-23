@@ -1,4 +1,4 @@
-#src/resources/License.py
+#src/story_protcol_python_sdk/resources/License.py
 
 from web3 import Web3
 
@@ -6,7 +6,9 @@ from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client im
 from story_protocol_python_sdk.abi.LicenseRegistry.LicenseRegistry_client import LicenseRegistryClient
 from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import LicensingModuleClient
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
+
 from story_protocol_python_sdk.utils.license_terms import get_license_term_by_type, PIL_TYPE
+from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
 class License:
     def __init__(self, web3: Web3, account, chain_id):

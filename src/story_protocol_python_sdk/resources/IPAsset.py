@@ -1,10 +1,13 @@
-#src/resources/IPAsset.py
+#src/story_protcol_python_sdk/resources/IPAsset.py
 
 from web3 import Web3
+
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
 from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import LicensingModuleClient
 from story_protocol_python_sdk.abi.LicenseToken.LicenseToken_client import LicenseTokenClient
 from story_protocol_python_sdk.abi.LicenseRegistry.LicenseRegistry_client import LicenseRegistryClient
+
+from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
 class IPAsset:
     def __init__(self, web3: Web3, account, chain_id):
@@ -27,7 +30,7 @@ class IPAsset:
     def _is_registered(self, ip_id):
         return self.ip_asset_registry_client.isRegistered(ip_id)
 
-    def register(self, token_contract, token_id):
+    def register(self, token_contract, token_id, tx_options=None):
         try:
             # Check if the token is already registered
             ip_id = self._get_ip_id(token_contract, token_id)
@@ -37,37 +40,25 @@ class IPAsset:
                     'ipId': ip_id
                 }
 
-            # Fetch the current average gas price from the node plus 10%
-            current_gas_price = int(self.web3.eth.gas_price * 1.1)
-
-            # Build the transaction
-            transaction = self.ip_asset_registry_client.build_register_transaction(
-                self.chain_id, token_contract, token_id, {
-                    'from': self.account.address,
-                    'nonce': self.web3.eth.get_transaction_count(self.account.address),
-                    'gas': 2000000,
-                    'gasPrice': current_gas_price
-                }
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.ip_asset_registry_client.build_register_transaction,
+                self.chain_id,
+                token_contract,
+                token_id,
+                tx_options=tx_options
             )
 
-            # Sign the transaction using the account object
-            signed_txn = self.account.sign_transaction(transaction)
-
-            # Send the transaction
-            tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-            
-            # Wait for the transaction receipt
-            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)  # 5 minutes timeout
-
             return {
-                'txHash': tx_hash.hex(),
+                'txHash': response['txHash'],
                 'ipId': ip_id
             }
 
         except Exception as e:
             raise e
 
-    def registerDerivative(self, child_ip_id, parent_ip_ids, license_terms_ids, license_template):
+    def registerDerivative(self, child_ip_id, parent_ip_ids, license_terms_ids, license_template, tx_options=None):
         try:
             # Check if the child IP is registered
             if not self._is_registered(child_ip_id):
@@ -89,36 +80,27 @@ class IPAsset:
                 if not self.license_registry_client.hasIpAttachedLicenseTerms(parent_id, license_template, terms_id):
                     raise ValueError(f"License terms id {terms_id} must be attached to the parent ipId {parent_id} before registering derivative.")
 
-            # Fetch the current average gas price from the node plus 10%
-            current_gas_price = int(self.web3.eth.gas_price * 1.1)
-
-            # Build the transaction
-            transaction = self.licensing_module_client.build_registerDerivative_transaction(
-                child_ip_id, parent_ip_ids, license_terms_ids, license_template, '0x0000000000000000000000000000000000000000', {
-                    'from': self.account.address,
-                    'nonce': self.web3.eth.get_transaction_count(self.account.address),
-                    'gas': 2000000,
-                    'gasPrice': current_gas_price
-                }
+            zero_address = "0x0000000000000000000000000000000000000000"
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.licensing_module_client.build_registerDerivative_transaction,
+                child_ip_id,
+                parent_ip_ids,
+                license_terms_ids,
+                license_template,
+                zero_address,
+                tx_options=tx_options
             )
 
-            # Sign the transaction using the account object
-            signed_txn = self.account.sign_transaction(transaction)
-
-            # Send the transaction
-            tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-            
-            # Wait for the transaction receipt
-            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)  # 5 minutes timeout
-
             return {
-                'txHash': tx_hash.hex()
+                'txHash': response['txHash']
             }
 
         except Exception as e:
             raise e
         
-    def registerDerivativeWithLicenseTokens(self, child_ip_id, license_token_ids):
+    def registerDerivativeWithLicenseTokens(self, child_ip_id, license_token_ids, tx_options=None):
         try:
             # Check if the child IP is registered
             if not self._is_registered(child_ip_id):
@@ -130,30 +112,19 @@ class IPAsset:
                 if token_owner.lower() != self.account.address.lower():
                     raise ValueError(f"License token id {token_id} must be owned by the caller.")
 
-            # Fetch the current average gas price from the node plus 10%
-            current_gas_price = int(self.web3.eth.gas_price * 1.1)
-
-            # Build the transaction
-            transaction = self.licensing_module_client.build_registerDerivativeWithLicenseTokens_transaction(
-                child_ip_id, license_token_ids, '0x0000000000000000000000000000000000000000', {
-                    'from': self.account.address,
-                    'nonce': self.web3.eth.get_transaction_count(self.account.address),
-                    'gas': 2000000,
-                    'gasPrice': current_gas_price
-                }
+            zero_address = "0x0000000000000000000000000000000000000000"
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.licensing_module_client.build_registerDerivativeWithLicenseTokens_transaction,
+                child_ip_id,
+                license_token_ids,
+                zero_address,
+                tx_options=tx_options
             )
 
-            # Sign the transaction using the account object
-            signed_txn = self.account.sign_transaction(transaction)
-
-            # Send the transaction
-            tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-            
-            # Wait for the transaction receipt
-            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)  # 5 minutes timeout
-
             return {
-                'txHash': tx_hash.hex()
+                'txHash': response['txHash']
             }
 
         except Exception as e:

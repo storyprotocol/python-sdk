@@ -11,7 +11,7 @@ from story_protocol_python_sdk.utils.transaction_utils import build_and_send_tra
 
 class IPAsset:
     """
-    A class to register IP assets on Story Protocol.
+    IPAssetClient allows you to create, get, and list IP Assets with Story Protocol.
 
     :param web3 Web3: An instance of Web3.
     :param account: The account to use for transactions.
@@ -31,8 +31,8 @@ class IPAsset:
         """
         Get the IP ID for a given token.
 
-        :param token_contract str: The address of the token contract.
-        :param token_id int: The ID of the token.
+        :param token_contract str: The address of the NFT.
+        :param token_id int: The token identifier of the NFT.
         :return str: The IP ID.
         """
         return self.ip_asset_registry_client.ipId(
@@ -52,11 +52,11 @@ class IPAsset:
 
     def register(self, token_contract: str, token_id: int, tx_options: dict = None) -> dict:
         """
-        Register a token as an IP asset.
+        Registers an NFT as IP, creating a corresponding IP record.
 
-        :param token_contract str: The address of the token contract.
-        :param token_id int: The ID of the token.
-        :param tx_options dict: Optional transaction options.
+        :param token_contract str: The address of the NFT.
+        :param token_id int: The token identifier of the NFT.
+        :param tx_options dict: [Optional] transaction options.
         :return dict: A dictionary with the transaction hash and IP ID.
         """
         try:
@@ -87,13 +87,17 @@ class IPAsset:
 
     def registerDerivative(self, child_ip_id: str, parent_ip_ids: list, license_terms_ids: list, license_template: str, tx_options: dict = None) -> dict:
         """
-        Register a derivative IP asset.
+        Registers an IP Asset as a derivative of another IP Asset without needing License Tokens.
 
-        :param child_ip_id str: The child IP ID.
-        :param parent_ip_ids list: A list of parent IP IDs.
-        :param license_terms_ids list: A list of license terms IDs.
+        The License Terms must be attached to the parent IP before calling this function. Remember that all IPAs have default license terms attached by default.
+
+        The derivative IP owner must be the caller or an authorized operator.
+
+        :param child_ip_id str: The derivative IP ID.
+        :param parent_ip_ids list: The parent IP IDs.
+        :param license_terms_ids list: The IDs of the license terms that the parent IP supports.
         :param license_template str: The address of the license template.
-        :param tx_options dict: Optional transaction options.
+        :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash.
         """
         try:
@@ -134,11 +138,13 @@ class IPAsset:
         
     def registerDerivativeWithLicenseTokens(self, child_ip_id: str, license_token_ids: list, tx_options: dict = None) -> dict:
         """
-        Register a derivative IP asset with license tokens.
+        Uses a pre-minted License Token to register an IP Asset as a derivative of another IP Asset. The derivative IPA will inherit the License Terms in the License Token.
 
-        :param child_ip_id str: The child IP ID.
-        :param license_token_ids list: A list of license token IDs.
-        :param tx_options dict: Optional transaction options.
+        The derivative IP owner must be the caller or an authorized operator.
+
+        :param child_ip_id str: The derivative IP ID.
+        :param license_token_ids list: The IDs of the license tokens.
+        :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash.
         """
         try:

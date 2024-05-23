@@ -37,7 +37,6 @@ def test_registerNonComSocialRemixingPIL(story_client):
     assert 'licenseTermsId' in response
     assert response['licenseTermsId'] is not None
     assert isinstance(response['licenseTermsId'], int)
-    print(response['licenseTermsId'])
     
 def test_registerCommercialUsePIL(story_client):
     response = story_client.License.registerCommercialUsePIL(
@@ -62,7 +61,6 @@ def test_registerCommercialRemixPIL(story_client):
     assert response is not None, "Response is None, indicating the contract interaction failed."
     assert 'licenseTermsId' in response, "Response does not contain 'licenseTermsId'."
     assert response['licenseTermsId'] is not None, "'licenseTermsId' is None."
-    # print("ye", response['licenseTermsId'])
     assert isinstance(response['licenseTermsId'], int), "'licenseTermsId' is not an integer."
 
 def test_attachLicenseTerms(story_client):
@@ -101,6 +99,5 @@ def test_getLicenseTerms(story_client):
     selectedLicenseTermsId = 2  # Use license terms ID 2 for the test
 
     response = story_client.License.getLicenseTerms(selectedLicenseTermsId)
-    # print(response)
 
     assert response is not None, "Response is None, indicating the call failed."

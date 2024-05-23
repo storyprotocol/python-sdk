@@ -93,7 +93,7 @@ def test_claimableRevenue(story_client):
         snapshot_id=snapshot_id,
         token=token
     )
-    print("It came out to,", response)
+
     # Verify the response
     assert response is not None
     assert isinstance(response, int)

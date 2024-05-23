@@ -1,10 +1,13 @@
-#src/resources/Royalty.py
+#src/story_protcol_python_sdk/resources/Royalty.py
 
 from web3 import Web3
+
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
 from story_protocol_python_sdk.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client import IpRoyaltyVaultImplClient
 from story_protocol_python_sdk.abi.RoyaltyPolicyLAP.RoyaltyPolicyLAP_client import RoyaltyPolicyLAPClient
 from story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client import RoyaltyModuleClient
+
+from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
 class Royalty:
     def __init__(self, web3: Web3, account, chain_id):
@@ -29,30 +32,19 @@ class Royalty:
             # Initialize the IP Royalty Vault client with the proxy address
             ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
 
-            # Fetch the current average gas price from the node plus 10%
-            current_gas_price = int(self.web3.eth.gas_price * 1.1)
-
-            # Build the transaction
-            transaction = ip_royalty_vault_client.build_collectRoyaltyTokens_transaction(parent_ip_id, {
-                'from': self.account.address,
-                'nonce': self.web3.eth.get_transaction_count(self.account.address),
-                'gas': 2000000,
-                'gasPrice': current_gas_price
-            })
-
-            # Sign the transaction using the account object
-            signed_txn = self.account.sign_transaction(transaction)
-
-            # Send the transaction
-            tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-
-            # Wait for transaction receipt with a longer timeout
-            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=600)  # 10 minutes timeout
+            # Build and send the transaction
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                ip_royalty_vault_client.build_collectRoyaltyTokens_transaction,
+                parent_ip_id,
+                tx_options=tx_options
+            )
     
-            royaltyTokensCollected = self._parseTxRoyaltyTokensCollectedEvent(tx_receipt)
+            royaltyTokensCollected = self._parseTxRoyaltyTokensCollectedEvent(response['txReceipt'])
 
             return {
-                'txHash': tx_hash.hex(),
+                'txHash': response['txHash'],
                 'royaltyTokensCollected': royaltyTokensCollected
             }
         
@@ -67,7 +59,7 @@ class Royalty:
 
         # Fetch the royalty vault address
         data = self.royalty_policy_lap_client.getRoyaltyData(royalty_vault_ip_id)
-        # print("The get royalty data looks like: ")
+
         if not data or not data[1] or data[1] == "0x":
             raise ValueError(f"The royalty vault IP with id {royalty_vault_ip_id} address is not set.")
         
@@ -94,30 +86,18 @@ class Royalty:
             # Initialize the IP Royalty Vault client with the proxy address
             ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
 
-            # Fetch the current average gas price from the node plus 10%
-            current_gas_price = int(self.web3.eth.gas_price * 1.1)
+            # Build and send the transaction
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                ip_royalty_vault_client.build_snapshot_transaction,
+                tx_options=tx_options
+            )
 
-            # Build the transaction
-            transaction = ip_royalty_vault_client.build_snapshot_transaction({
-                'from': self.account.address,
-                'nonce': self.web3.eth.get_transaction_count(self.account.address),
-                'gas': 2000000,
-                'gasPrice': current_gas_price
-            })
-
-            # Sign the transaction using the account object
-            signed_txn = self.account.sign_transaction(transaction)
-
-            # Send the transaction
-            tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-
-            # Wait for transaction receipt with a longer timeout
-            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=600)  # 10 minutes timeout
-
-            snapshotId =  self._parseTxSnapshotCompletedEvent(tx_receipt)
+            snapshotId =  self._parseTxSnapshotCompletedEvent(response['txReceipt'])
 
             return {
-                'txHash': tx_hash.hex(),
+                'txHash': response['txHash'],
                 'snapshotId': snapshotId
             }
         except Exception as e:
@@ -137,7 +117,7 @@ class Royalty:
 
         return None
 
-    def claimableRevenue(self, child_ip_id, account_address, snapshot_id, token, tx_options=None):
+    def claimableRevenue(self, child_ip_id, account_address, snapshot_id, token):
         try:
             # Get the royalty vault address
             proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
@@ -168,36 +148,25 @@ class Royalty:
             is_payer_registered = self.ip_asset_registry_client.isRegistered(payer_ip_id)
             if not is_payer_registered:
                 raise ValueError(f"The payer IP with id {payer_ip_id} is not registered.")
-            
-            # Fetch the current average gas price from the node plus 10%
-            current_gas_price = int(self.web3.eth.gas_price * 1.1)
+                
+            # Build and send the transaction
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.royalty_module_client.build_payRoyaltyOnBehalf_transaction,
+                receiver_ip_id,
+                payer_ip_id,
+                token,
+                amount,
+                tx_options=tx_options
+            )
 
-            # Build the transaction
-            transaction = self.royalty_module_client.build_payRoyaltyOnBehalf_transaction(receiver_ip_id, payer_ip_id, token, amount, {
-                'from': self.account.address,
-                'nonce': self.web3.eth.get_transaction_count(self.account.address),
-                'gas': 2000000,
-                'gasPrice': current_gas_price
-            })
-
-            # Sign the transaction using the account object
-            signed_txn = self.account.sign_transaction(transaction)
-
-            # Send the transaction
-            tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-
-            # Wait for transaction receipt with a longer timeout
-            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=600)  # 10 minutes timeout
-
-            if tx_options and tx_options.get('wait_for_transaction'):
-                self.web3.eth.wait_for_transaction_receipt(tx_hash)
-
-            return {'txHash': tx_hash.hex()}
-
+            return {'txHash': response['txHash']}
+        
         except Exception as e:
             raise e
     
-    def claimRevenue(self, snapshot_ids, child_ip_id, token):
+    def claimRevenue(self, snapshot_ids, child_ip_id, token, tx_options=None):
         try:
             # Get the royalty vault address
             proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
@@ -205,32 +174,23 @@ class Royalty:
             # Initialize the IP Royalty Vault client with the proxy address
             ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
 
-            # Fetch the current average gas price from the node plus 10%
-            current_gas_price = int(self.web3.eth.gas_price * 1.1)
+            # Build and send the transaction
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                ip_royalty_vault_client.build_claimRevenueBySnapshotBatch_transaction,
+                snapshot_ids,
+                token,
+                tx_options=tx_options
+            )
 
-            # Build the transaction
-            transaction = ip_royalty_vault_client.build_claimRevenueBySnapshotBatch_transaction(snapshot_ids, token, {
-                'from': self.account.address,
-                'nonce': self.web3.eth.get_transaction_count(self.account.address),
-                'gas': 2000000,
-                'gasPrice': current_gas_price
-            })
-
-            # Sign the transaction using the account object
-            signed_txn = self.account.sign_transaction(transaction)
-
-            # Send the transaction
-            tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-
-            # Wait for transaction receipt with a longer timeout
-            tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=600)  # 10 minutes timeout
-
-            revenue_tokens_claimed =  self._parseTxRevenueTokenClaimedEvent(tx_receipt)
+            revenue_tokens_claimed = self._parseTxRevenueTokenClaimedEvent(response['txReceipt'])
 
             return {
-                'txHash': tx_hash.hex(),
+                'txHash': response['txHash'],
                 'claimableToken': revenue_tokens_claimed
             }
+    
         except Exception as e:
             raise e
         

@@ -73,18 +73,28 @@ def test_collectRoyaltyTokens_success(royalty_client):
     parent_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"
     child_ip_id = "0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"
     tx_hash = "0x39f7ea8b04f383d7b60e1882f6bb7d94d3c9efa9251cef4543a1bb655faf21fb"
+    checksum_address = "0x344A37c7086Ee79E51894949119878112487eaD7"
+    royalty_tokens_collected = 10
 
-    with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', return_value=True, autospec=True), \
-         patch.object(royalty_client.royalty_policy_lap_client, 'getRoyaltyData', return_value=[True, "0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7", 1, [child_ip_id], [1]], autospec=True), \
-         patch.object(web3.eth, 'send_raw_transaction', return_value=bytes.fromhex(tx_hash[2:]), autospec=True), \
-         patch.object(web3.eth, 'wait_for_transaction_receipt', return_value=MagicMock(logs=[{'topics': [web3.keccak(text="RoyaltyTokensCollected(address,uint256)").hex()], 'data': bytes.fromhex('000000000000000000000000000000000000000000000000000000000000000a')}]), autospec=True), \
-         patch.object(royalty_client, '_parseTxRoyaltyTokensCollectedEvent', return_value=10, autospec=True):
-
+    # Mocking the expected behavior of the functions
+    with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', return_value=True), \
+         patch.object(royalty_client, '_getRoyaltyVaultAddress', return_value=checksum_address), \
+         patch.object(royalty_client, '_parseTxRoyaltyTokensCollectedEvent', return_value=royalty_tokens_collected), \
+         patch('story_protocol_python_sdk.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client.IpRoyaltyVaultImplClient.build_collectRoyaltyTokens_transaction', return_value={
+            'data': '0x',
+            'nonce': 0,
+            'gas': 2000000,
+            'gasPrice': Web3.to_wei('300', 'gwei')
+         }), \
+         patch('web3.eth.Eth.send_raw_transaction', return_value=Web3.to_bytes(hexstr=tx_hash)), \
+         patch('web3.eth.Eth.wait_for_transaction_receipt', return_value={'status': 1, 'logs': [{'topics': [Web3.keccak(text="RoyaltyTokensCollected(address,uint256)").hex()], 'data': bytes.fromhex('000000000000000000000000000000000000000000000000000000000000000a')}]}):
+        
+        # Call the function being tested
         result = royalty_client.collectRoyaltyTokens(parent_ip_id, child_ip_id)
-
+        
         assert result['txHash'] == tx_hash[2:]
-        assert result['royaltyTokensCollected'] == 10
-
+        assert result['royaltyTokensCollected'] == royalty_tokens_collected
+        
 def test_snapshot_royaltyVaultIpId_error(royalty_client):
     with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', return_value=False):
         child_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"

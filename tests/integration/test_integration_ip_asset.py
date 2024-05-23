@@ -30,21 +30,17 @@ account = web3.eth.account.from_key(private_key)
 def story_client():
     return get_story_client_in_sepolia(web3, account)
 
-# def test_register_ip_asset(story_client):
-#     token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+def test_register_ip_asset(story_client):
+    token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
 
-#     print(token_id)
+    response = story_client.IPAsset.register(
+        token_contract=MockERC721,
+        token_id=token_id
+    )
 
-#     response = story_client.IPAsset.register(
-#         token_contract=MockERC721,
-#         token_id=token_id
-#     )
-
-#     assert response is not None
-#     assert 'ipId' in response
-#     assert response['ipId'] is not None
-
-#     print(response['ipId'])
+    assert response is not None
+    assert 'ipId' in response
+    assert response['ipId'] is not None
 
 # def test_registerDerivative(story_client): #can only run once since using preset variables
 #     parent_ip_id = "0x567603411Fb957759Ac2090659B73cC5f099456D"
@@ -79,21 +75,21 @@ def story_client():
 #     assert isinstance(response['txHash'], str)
 #     assert len(response['txHash']) > 0
 
-def test_registerDerivativeWithLicenseTokens(story_client): #can only run once since using preset variables
+# def test_registerDerivativeWithLicenseTokens(story_client): #can only run once since using preset variables
 
-    child_ip_id = "0xDd4330c5aeA6ab3a3E9620D2c74799bAb3BD117D"  #make sure the child ip has access to these token ids
-    assert child_ip_id is not None
+#     child_ip_id = "0xDd4330c5aeA6ab3a3E9620D2c74799bAb3BD117D"  #make sure the child ip has access to these token ids
+#     assert child_ip_id is not None
 
-    licenseTokenIds = [1199]
+#     licenseTokenIds = [1199]
 
-    # Register derivative IP
-    response = story_client.IPAsset.registerDerivativeWithLicenseTokens(
-        child_ip_id=child_ip_id,
-        license_token_ids=licenseTokenIds
-    )
+#     # Register derivative IP
+#     response = story_client.IPAsset.registerDerivativeWithLicenseTokens(
+#         child_ip_id=child_ip_id,
+#         license_token_ids=licenseTokenIds
+#     )
     
-    assert response is not None
-    assert 'txHash' in response
-    assert response['txHash'] is not None
-    assert isinstance(response['txHash'], str)
-    assert len(response['txHash']) > 0
+#     assert response is not None
+#     assert 'txHash' in response
+#     assert response['txHash'] is not None
+#     assert isinstance(response['txHash'], str)
+#     assert len(response['txHash']) > 0

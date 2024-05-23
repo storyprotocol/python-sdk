@@ -1,9 +1,7 @@
 # src/story_client.py
 
 import os
-import json
 import sys
-import logging
 
 # Ensure the src directory is in the Python path
 current_dir = os.path.dirname(__file__)
@@ -14,10 +12,6 @@ if src_path not in sys.path:
 from story_protocol_python_sdk.resources.IPAsset import IPAsset
 from story_protocol_python_sdk.resources.License import License
 from story_protocol_python_sdk.resources.Royalty import Royalty
-
-# Configure logging
-# logging.basicConfig(level=logging.INFO)
-# logger = logging.getLogger(__name__)
 
 class StoryClient:
     def __init__(self, web3, account, chain_id):

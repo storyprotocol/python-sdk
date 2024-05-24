@@ -47,7 +47,7 @@ def test_collectRoyaltyTokens_royalty_vault_ip_id_not_registered(royalty_client)
     with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', side_effect=[True, False], autospec=True):
         with pytest.raises(ValueError) as excinfo:
             royalty_client.collectRoyaltyTokens(parent_ip_id, child_ip_id)
-        assert str(excinfo.value) == f"The royalty vault IP with id {child_ip_id} is not registered."
+        assert str(excinfo.value) == f"The child IP with id {child_ip_id} is not registered."
 
 def test_collectRoyaltyTokens_royalty_vault_address_empty(royalty_client):
     parent_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"
@@ -99,7 +99,7 @@ def test_snapshot_royaltyVaultIpId_error(royalty_client):
     with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', return_value=False):
         child_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"
         
-        with pytest.raises(ValueError, match=f"The royalty vault IP with id {child_ip_id} is not registered."):
+        with pytest.raises(ValueError, match=f"The child IP with id {child_ip_id} is not registered."):
             royalty_client.snapshot(child_ip_id)
 
 def test_snapshot_royaltyVaultAddress_error(royalty_client):
@@ -138,7 +138,7 @@ def test_claimableRevenue_royaltyVaultIpId_error(royalty_client):
         snapshot_id = 1
         token = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"
 
-        with pytest.raises(ValueError, match=f"The royalty vault IP with id {child_ip_id} is not registered."):
+        with pytest.raises(ValueError, match=f"The child IP with id {child_ip_id} is not registered."):
             royalty_client.claimableRevenue(child_ip_id, account_address, snapshot_id, token)
 
 def test_claimableRevenue_royaltyVaultAddress_error(royalty_client):
@@ -170,7 +170,7 @@ def test_claimRevenue_royaltyVaultIpId_error(royalty_client):
         ERC20 = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"
         snapshot_ids = [1, 2]
 
-        with pytest.raises(ValueError, match=f"The royalty vault IP with id {child_ip_id} is not registered."):
+        with pytest.raises(ValueError, match=f"The child IP with id {child_ip_id} is not registered."):
             royalty_client.claimRevenue(snapshot_ids, child_ip_id, ERC20)
 
 def test_claimRevenue_royaltyVaultAddress_error(royalty_client):

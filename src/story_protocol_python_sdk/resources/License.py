@@ -10,6 +10,8 @@ from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import
 from story_protocol_python_sdk.utils.license_terms import get_license_term_by_type, PIL_TYPE
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
+ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+
 class License:
     """
     A class to manage licenses on Story Protocol.
@@ -248,7 +250,7 @@ class License:
                 license_terms_id,
                 amount,
                 receiver,
-                self.web3.constants.ADDRESS_ZERO,
+                ZERO_ADDRESS,
                 tx_options=tx_options
             )
 

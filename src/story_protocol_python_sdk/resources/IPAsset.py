@@ -9,6 +9,8 @@ from story_protocol_python_sdk.abi.LicenseRegistry.LicenseRegistry_client import
 
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
+ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+
 class IPAsset:
     """
     IPAssetClient allows you to create, get, and list IP Assets with Story Protocol.
@@ -125,7 +127,7 @@ class IPAsset:
                 parent_ip_ids,
                 license_terms_ids,
                 license_template,
-                self.web3.constants.ADDRESS_ZERO,
+                ZERO_ADDRESS,
                 tx_options=tx_options
             )
 
@@ -162,7 +164,7 @@ class IPAsset:
                 self.licensing_module_client.build_registerDerivativeWithLicenseTokens_transaction,
                 child_ip_id,
                 license_token_ids,
-                self.web3.constants.ADDRESS_ZERO,
+                ZERO_ADDRESS,
                 tx_options=tx_options
             )
 

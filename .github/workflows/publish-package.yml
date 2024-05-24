@@ -47,15 +47,15 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      
-      - name: Update version
-        run: python update_version.py
 
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
           python -m pip install --upgrade pip
           pip install setuptools wheel
+      
+      - name: Update version
+        run: python update_version.py
         
       - name: Build package
         run: python setup.py sdist bdist_wheel

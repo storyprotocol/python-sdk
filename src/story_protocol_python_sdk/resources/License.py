@@ -10,8 +10,17 @@ from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import
 from story_protocol_python_sdk.utils.license_terms import get_license_term_by_type, PIL_TYPE
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
+ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+
 class License:
-    def __init__(self, web3: Web3, account, chain_id):
+    """
+    A class to manage licenses on Story Protocol.
+
+    :param web3 Web3: An instance of Web3.
+    :param account: The account to use for transactions.
+    :param chain_id int: The ID of the blockchain network.
+    """
+    def __init__(self, web3: Web3, account, chain_id: int):
         self.web3 = web3
         self.account = account
         self.chain_id = chain_id
@@ -21,20 +30,29 @@ class License:
         self.licensing_module_client  = LicensingModuleClient(web3)
         self.ip_asset_registry_client = IPAssetRegistryClient(web3)
 
-    def _get_license_terms_id(self, license_terms):
+    def _get_license_terms_id(self, license_terms: dict) -> int:
+        """
+        Get the ID of the license terms.
+
+        :param license_terms dict: The license terms.
+        :return int: The ID of the license terms.
+        """
         return self.license_template_client.getLicenseTermsId(license_terms)
 
-    def registerNonComSocialRemixingPIL(self, tx_options=None):
+    def registerNonComSocialRemixingPIL(self, tx_options: dict = None) -> dict:
+        """
+        Convenient function to register a PIL non-commercial social remix license to the registry.
+
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash and the license terms ID.
+        """
         try:
-            # Get the license terms for non-commercial social remixing PIL
             license_terms = get_license_term_by_type(PIL_TYPE['NON_COMMERCIAL_REMIX'])
 
-            # Check if the license terms are already registered
             license_terms_id = self._get_license_terms_id(license_terms)
             if (license_terms_id is not None) and (license_terms_id != 0):
                 return {'licenseTermsId': license_terms_id}
 
-            # Build and send the transaction
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -43,7 +61,6 @@ class License:
                 tx_options=tx_options
             )
 
-            # Parse the event logs for LicenseTermsRegistered
             target_logs = self._parse_tx_license_terms_registered_event(response['txReceipt'])
             return {
                 'txHash': response['txHash'],
@@ -53,21 +70,27 @@ class License:
         except Exception as e:
             raise e
         
-    def registerCommercialUsePIL(self, minting_fee, currency, royalty_policy, tx_options=None):
+    def registerCommercialUsePIL(self, minting_fee: int, currency: str, royalty_policy: str, tx_options: dict = None) -> dict:
+        """
+        Convenient function to register a PIL commercial use license to the registry.
+
+        :param minting_fee int: The fee to be paid when minting a license.
+        :param currency str: The ERC20 token to be used to pay the minting fee.
+        :param royalty_policy str: The address of the royalty policy contract.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash and the license terms ID.
+        """
         try:
-            # Construct complete license terms
             complete_license_terms = get_license_term_by_type(PIL_TYPE['COMMERCIAL_USE'], {
                 'mintingFee': minting_fee,
                 'currency': currency,
                 'royaltyPolicy': royalty_policy,
             })
 
-            # Check if the license terms are already registered
             license_terms_id = self._get_license_terms_id(complete_license_terms)
             if (license_terms_id is not None) and (license_terms_id != 0):
                 return {'licenseTermsId': license_terms_id}
 
-            # Build and send the transaction
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -76,7 +99,6 @@ class License:
                 tx_options=tx_options
             )
 
-            # Parse the event logs for LicenseTermsRegistered
             if not response['txReceipt'].logs:
                 return None
 
@@ -89,21 +111,29 @@ class License:
         except Exception as e:
             raise e
 
-    def registerCommercialRemixPIL(self, minting_fee, currency, commercial_rev_share, royalty_policy, tx_options=None):
+    def registerCommercialRemixPIL(self, minting_fee: int, currency: str, commercial_rev_share: int, royalty_policy: str, tx_options: dict = None) -> dict:
+        """
+        Convenient function to register a PIL commercial remix license to the registry.
+
+        :param minting_fee int: The fee to be paid when minting a license.
+        :param currency str: The ERC20 token to be used to pay the minting fee.
+        :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor.
+        :param royalty_policy str: The address of the royalty policy contract.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash and the license terms ID.
+        """
         try:
-            # Construct complete license terms
             complete_license_terms = get_license_term_by_type(PIL_TYPE['COMMERCIAL_REMIX'], {
                 'mintingFee': minting_fee,
                 'currency': currency,
                 'commercialRevShare': commercial_rev_share,
                 'royaltyPolicy': royalty_policy,
             })
-            # Check if the license terms are already registered
+
             license_terms_id = self._get_license_terms_id(complete_license_terms)
             if license_terms_id and license_terms_id != 0:
                 return {'licenseTermsId': license_terms_id}
 
-            # Build and send the transaction
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -112,7 +142,6 @@ class License:
                 tx_options=tx_options
             )
 
-            # Parse the event logs for LicenseTermsRegistered
             if not response['txReceipt'].logs:
                 return None
 
@@ -125,7 +154,13 @@ class License:
         except Exception as e:
             raise e
 
-    def _parse_tx_license_terms_registered_event(self, tx_receipt):
+    def _parse_tx_license_terms_registered_event(self, tx_receipt: dict) -> int:
+        """
+        Parse the LicenseTermsRegistered event from a transaction receipt.
+
+        :param tx_receipt dict: The transaction receipt.
+        :return int: The ID of the license terms.
+        """
         event_signature = self.web3.keccak(text="LicenseTermsRegistered(uint256,address,bytes)").hex()
 
         for log in tx_receipt['logs']:
@@ -134,28 +169,32 @@ class License:
 
         return None
     
-    def attachLicenseTerms(self, ip_id, license_template, license_terms_id, tx_options=None):
+    def attachLicenseTerms(self, ip_id: str, license_template: str, license_terms_id: int, tx_options: dict = None) -> dict:
+        """
+        Attaches license terms to an IP.
+
+        :param ip_id str: The address of the IP to which the license terms are attached.
+        :param license_template str: The address of the license template.
+        :param license_terms_id int: The ID of the license terms.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash.
+        """
         try:
-            # Validate the license template address
             if not Web3.is_address(license_template):
                 raise ValueError(f'Address "{license_template}" is invalid.')
 
-            # Check if the IP is registered
             is_registered = self.ip_asset_registry_client.isRegistered(ip_id)
             if not is_registered:
                 raise ValueError(f"The IP with id {ip_id} is not registered.")
 
-            # Check if the license terms exist
             is_existed = self.license_registry_client.exists(license_template, license_terms_id)
             if not is_existed:
                 raise ValueError(f"License terms id {license_terms_id} do not exist.")
 
-            # Check if the license terms are already attached to the IP
             is_attached_license_terms = self.license_registry_client.hasIpAttachedLicenseTerms(ip_id, license_template, license_terms_id)
             if is_attached_license_terms:
                 raise ValueError(f"License terms id {license_terms_id} is already attached to the IP with id {ip_id}.")
 
-            # Build and send the transaction
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -171,32 +210,37 @@ class License:
         except Exception as e:
             raise e
         
-    def mintLicenseTokens(self, licensor_ip_id, license_template, license_terms_id, amount, receiver, tx_options=None):
+    def mintLicenseTokens(self, licensor_ip_id: str, license_template: str, license_terms_id: int, amount: int, receiver: str, tx_options: dict = None) -> dict:
+        """
+        Mints license tokens for the license terms attached to an IP.
+
+        :param licensor_ip_id str: The licensor IP ID.
+        :param license_template str: The address of the license template.
+        :param license_terms_id int: The ID of the license terms within the license template.
+        :param amount int: The amount of license tokens to mint.
+        :param receiver str: The address of the receiver.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash and the license token IDs.
+        """
         try:
-            # Validate the license template address
             if not Web3.is_address(license_template):
                 raise ValueError(f'Address "{license_template}" is invalid.')
             
-            # Validate the license template address
             if not Web3.is_address(receiver):
                 raise ValueError(f'Address "{receiver}" is invalid.')
 
-            # Check if the licensor IP is registered
             is_registered = self.ip_asset_registry_client.isRegistered(licensor_ip_id)
             if not is_registered:
                 raise ValueError(f"The licensor IP with id {licensor_ip_id} is not registered.")
 
-            # Check if the license terms exist
             is_existed = self.license_template_client.exists(license_terms_id)
             if not is_existed:
                 raise ValueError(f"License terms id {license_terms_id} do not exist.")
 
-            # Check if the license terms are attached to the IP
             is_attached_license_terms = self.license_registry_client.hasIpAttachedLicenseTerms(licensor_ip_id, license_template, license_terms_id)
             if not is_attached_license_terms:
                 raise ValueError(f"License terms id {license_terms_id} is not attached to the IP with id {licensor_ip_id}.")
 
-            # Build and send the transaction
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -206,11 +250,10 @@ class License:
                 license_terms_id,
                 amount,
                 receiver,
-                self.web3.constants.ADDRESS_ZERO,
+                ZERO_ADDRESS,
                 tx_options=tx_options
             )
 
-            # Parse the event logs for LicenseTokensMinted
             target_logs = self._parse_tx_license_tokens_minted_event(response['txReceipt'])
 
             return {
@@ -221,7 +264,13 @@ class License:
         except Exception as e:
             raise e
 
-    def _parse_tx_license_tokens_minted_event(self, tx_receipt):
+    def _parse_tx_license_tokens_minted_event(self, tx_receipt: dict) -> list:
+        """
+        Parse the LicenseTokenMinted event from a transaction receipt.
+
+        :param tx_receipt dict: The transaction receipt.
+        :return list: A list of license token IDs.
+        """
         event_signature = self.web3.keccak(text="LicenseTokenMinted(address,address,uint256)").hex()
         token_ids = []
 
@@ -232,8 +281,15 @@ class License:
 
         return token_ids if token_ids else None
     
-    def getLicenseTerms(self, selectedLicenseTermsId):
+    def getLicenseTerms(self, selectedLicenseTermsId: int) -> dict:
+        """
+        Gets License Terms of the given ID.
+
+        :param selectedLicenseTermsId int: The ID of the license terms to retrieve.
+        :return dict: An object containing all of the selected license terms.
+        """
         try:
             return self.license_template_client.getLicenseTerms(selectedLicenseTermsId)
         except Exception as e:
             raise ValueError(f"Failed to get license terms: {str(e)}")
+        

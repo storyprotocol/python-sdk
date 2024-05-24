@@ -1,4 +1,4 @@
-# src/utils/license_terms.py
+# src/story_protocol_python_sdk/utils/license_terms.py
 
 PIL_TYPE = {
     'NON_COMMERCIAL_REMIX': 'non_commercial_remix',

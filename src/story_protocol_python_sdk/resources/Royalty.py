@@ -10,7 +10,14 @@ from story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client import Roy
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
 class Royalty:
-    def __init__(self, web3: Web3, account, chain_id):
+    """
+    A class to claim and pay royalties on Story Protocol.
+
+    :param web3 Web3: An instance of Web3.
+    :param account: The account to use for transactions.
+    :param chain_id int: The ID of the blockchain network.
+    """
+    def __init__(self, web3: Web3, account, chain_id: int):
         self.web3 = web3
         self.account = account
         self.chain_id = chain_id
@@ -19,20 +26,23 @@ class Royalty:
         self.royalty_policy_lap_client = RoyaltyPolicyLAPClient(web3)
         self.royalty_module_client = RoyaltyModuleClient(web3)
 
-    def collectRoyaltyTokens(self, parent_ip_id, child_ip_id, tx_options=None):
+    def collectRoyaltyTokens(self, parent_ip_id: str, child_ip_id: str, tx_options: dict = None) -> dict:
+        """
+        Allows ancestors to claim the royalty tokens and any accrued revenue tokens.
+
+        :param parent_ip_id str: The IP ID of the ancestor to whom the royalty tokens belong.
+        :param child_ip_id str: The derivative IP ID.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash and the number of royalty tokens collected.
+        """
         try:
-            # Check if the parent IP is registered
             is_registered = self.ip_asset_registry_client.isRegistered(parent_ip_id)
             if not is_registered:
                 raise ValueError(f"The parent IP with id {parent_ip_id} is not registered.")
 
-            # Get the royalty vault address
             proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
-
-            # Initialize the IP Royalty Vault client with the proxy address
             ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
 
-            # Build and send the transaction
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -51,42 +61,54 @@ class Royalty:
         except Exception as e:
             raise e
 
-    def _getRoyaltyVaultAddress(self, royalty_vault_ip_id):
-        # Check if the royalty vault IP is registered
-        is_registered = self.ip_asset_registry_client.isRegistered(royalty_vault_ip_id)
-        if not is_registered:
-            raise ValueError(f"The royalty vault IP with id {royalty_vault_ip_id} is not registered.")
+    def _getRoyaltyVaultAddress(self, child_ip_id: str) -> str:
+        """
+        Get the royalty vault address for a given child IP ID.
 
-        # Fetch the royalty vault address
-        data = self.royalty_policy_lap_client.getRoyaltyData(royalty_vault_ip_id)
+        :param child_ip_id str: The derivative IP ID.
+        :return str: The respective royalty vault address.
+        """
+        is_registered = self.ip_asset_registry_client.isRegistered(child_ip_id)
+        if not is_registered:
+            raise ValueError(f"The child IP with id {child_ip_id} is not registered.")
+
+        data = self.royalty_policy_lap_client.getRoyaltyData(child_ip_id)
 
         if not data or not data[1] or data[1] == "0x":
-            raise ValueError(f"The royalty vault IP with id {royalty_vault_ip_id} address is not set.")
+            raise ValueError(f"The royalty vault IP with id {child_ip_id} address is not set.")
         
         return data[1]
 
-    def _parseTxRoyaltyTokensCollectedEvent(self, tx_receipt):
+    def _parseTxRoyaltyTokensCollectedEvent(self, tx_receipt: dict) -> int:
+        """
+        Parse the RoyaltyTokensCollected event from a transaction receipt.
+
+        :param tx_receipt dict: The transaction receipt.
+        :return int: The number of royalty tokens collected.
+        """
         event_signature = self.web3.keccak(text="RoyaltyTokensCollected(address,uint256)").hex()
         
         for log in tx_receipt['logs']:
             if log['topics'][0].hex() == event_signature:
                 data = log['data']
 
-                # Convert the last 32 bytes to an integer
                 royalty_tokens_collected = int.from_bytes(data[-32:], byteorder='big')
                 return royalty_tokens_collected
 
         return None
     
-    def snapshot(self, child_ip_id, tx_options=None):
-        try:
-            # Get the royalty vault address
-            proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
+    def snapshot(self, child_ip_id: str, tx_options: dict = None) -> dict:
+        """
+        Snapshots the claimable revenue and royalty token amounts.
 
-            # Initialize the IP Royalty Vault client with the proxy address
+        :param child_ip_id str: The derivative IP ID.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash and the snapshot ID.
+        """
+        try:
+            proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
             ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
 
-            # Build and send the transaction
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -103,29 +125,39 @@ class Royalty:
         except Exception as e:
             raise e
 
-    def _parseTxSnapshotCompletedEvent(self, tx_receipt):
+    def _parseTxSnapshotCompletedEvent(self, tx_receipt: dict) -> int:
+        """
+        Parse the SnapshotCompleted event from a transaction receipt.
+
+        :param tx_receipt dict: The transaction receipt.
+        :return int: The snapshot ID.
+        """
         event_signature = self.web3.keccak(text="SnapshotCompleted(uint256,uint256,uint32)").hex()
         
         for log in tx_receipt['logs']:
             if log['topics'][0].hex() == event_signature:
                 data = log['data']
                 
-                # Convert the last 32 bytes to an integer
                 snapshotId = int.from_bytes(data[:32], byteorder='big')
 
                 return snapshotId
 
         return None
 
-    def claimableRevenue(self, child_ip_id, account_address, snapshot_id, token):
-        try:
-            # Get the royalty vault address
-            proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
+    def claimableRevenue(self, child_ip_id: str, account_address: str, snapshot_id: int, token: str) -> int:
+        """
+        Calculates the amount of revenue token claimable by a token holder at certain snapshot.
 
-            # Initialize the IP Royalty Vault client with the proxy address
+        :param child_ip_id str: The derivative IP ID.
+        :param account_address str: The address of the token holder.
+        :param snapshot_id int: The snapshot ID.
+        :param token str: The revenue token to claim.
+        :return int: The claimable revenue amount.
+        """
+        try:
+            proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
             ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
 
-            # Get the claimable revenue
             claimable_revenue = ip_royalty_vault_client.claimableRevenue(
                 account=account_address,
                 snapshotId=snapshot_id,
@@ -137,19 +169,26 @@ class Royalty:
         except Exception as e:
             raise e
         
-    def payRoyaltyOnBehalf(self, receiver_ip_id, payer_ip_id, token, amount, tx_options=None):
+    def payRoyaltyOnBehalf(self, receiver_ip_id: str, payer_ip_id: str, token: str, amount: int, tx_options: dict = None) -> dict:
+        """
+        Allows the function caller to pay royalties to the receiver IP asset on behalf of the payer IP asset.
+
+        :param receiver_ip_id str: The IP ID that receives the royalties.
+        :param payer_ip_id str: The ID of the IP asset that pays the royalties.
+        :param token str: The token to use to pay the royalties.
+        :param amount int: The amount to pay.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash.
+        """
         try:
-            # Check if the receiver IP is registered
             is_receiver_registered = self.ip_asset_registry_client.isRegistered(receiver_ip_id)
             if not is_receiver_registered:
                 raise ValueError(f"The receiver IP with id {receiver_ip_id} is not registered.")
 
-            # Check if the payer IP is registered
             is_payer_registered = self.ip_asset_registry_client.isRegistered(payer_ip_id)
             if not is_payer_registered:
                 raise ValueError(f"The payer IP with id {payer_ip_id} is not registered.")
                 
-            # Build and send the transaction
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -166,15 +205,20 @@ class Royalty:
         except Exception as e:
             raise e
     
-    def claimRevenue(self, snapshot_ids, child_ip_id, token, tx_options=None):
-        try:
-            # Get the royalty vault address
-            proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
+    def claimRevenue(self, snapshot_ids: list, child_ip_id: str, token: str, tx_options: dict = None) -> dict:
+        """
+        Allows token holders to claim by a list of snapshot IDs based on the token balance at certain snapshot.
 
-            # Initialize the IP Royalty Vault client with the proxy address
+        :param snapshot_ids list: The list of snapshot IDs.
+        :param child_ip_id str: The derivative IP ID.
+        :param token str: The revenue token to claim.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash and the number of claimable tokens.
+        """
+        try:
+            proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
             ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
 
-            # Build and send the transaction
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -194,14 +238,19 @@ class Royalty:
         except Exception as e:
             raise e
         
-    def _parseTxRevenueTokenClaimedEvent(self, tx_receipt):
+    def _parseTxRevenueTokenClaimedEvent(self, tx_receipt: dict) -> int:
+        """
+        Parse the RevenueTokenClaimed event from a transaction receipt.
+
+        :param tx_receipt dict: The transaction receipt.
+        :return int: The number of revenue tokens claimed.
+        """
         event_signature = self.web3.keccak(text="RevenueTokenClaimed(address,address,uint256)").hex()
         
         for log in tx_receipt['logs']:
             if log['topics'][0].hex() == event_signature:
                 data = log['data']
 
-                # Convert the last 32 bytes to an integer
                 revenue_tokens_claimed = int.from_bytes(data[-32:], byteorder='big')
                 return revenue_tokens_claimed
 

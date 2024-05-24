@@ -34,12 +34,14 @@ jobs:
         
       - name: Build package
         run: python setup.py sdist bdist_wheel
-        
+
   publish:
     needs: [Timestamp, build]
     runs-on: ubuntu-latest
 
     steps:
+      - name: Build package
+        run: python setup.py sdist bdist_wheel
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@v1.8.14
         with:

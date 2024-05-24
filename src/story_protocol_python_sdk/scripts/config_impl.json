@@ -10,6 +10,14 @@
                 "snapshot",
                 "claimRevenueBySnapshotBatch"
             ]
+        },
+        {
+            "contract_name": "IPAccountImpl",
+            "contract_address": "0x36a5f0D61f6Bab3C6Dde211E5a6762Cb18a8060d",
+            "functions": [
+                "execute",
+                "executeWithSig"
+            ]
         }
     ]
 }

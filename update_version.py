@@ -12,5 +12,3 @@ new_version = f"{major}.{minor}.{patch}"
 with open('setup.py', 'w') as f:
     f.write(re.sub(r"version='(\d+\.\d+\.\d+)'", f"version='{new_version}'", setup_py))
 
-with open('your_package/version.py', 'w') as f:
-    f.write(f"__version__ = '{new_version}'")

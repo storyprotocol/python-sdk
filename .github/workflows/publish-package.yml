@@ -35,12 +35,6 @@ jobs:
       - name: Build package
         run: python setup.py sdist bdist_wheel
       
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: dist
-          path: ./build
-
   publish:
     needs: [Timestamp, build]
     runs-on: ubuntu-latest
@@ -49,16 +43,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v2
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
         with:
-          name: dist
-          path: dist
-    
-      - name: Change working directory
-        run: cd dist
-        shell: bash
+          python-version: "3.12"
+      
+      - name: Update version
+        run: python update_version.py
 
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install setuptools wheel
+        
+      - name: Build package
+        run: python setup.py sdist bdist_wheel
+      
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@v1.8.14
         with:

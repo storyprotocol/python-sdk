@@ -238,7 +238,13 @@ class Royalty:
         except Exception as e:
             raise e
         
-    def _parseTxRevenueTokenClaimedEvent(self, tx_receipt):
+    def _parseTxRevenueTokenClaimedEvent(self, tx_receipt: dict) -> int:
+        """
+        Parse the RevenueTokenClaimed event from a transaction receipt.
+
+        :param tx_receipt dict: The transaction receipt.
+        :return int: The number of revenue tokens claimed.
+        """
         event_signature = self.web3.keccak(text="RevenueTokenClaimed(address,address,uint256)").hex()
         
         for log in tx_receipt['logs']:

@@ -2,12 +2,21 @@
 
 from web3 import Web3
 
-def build_and_send_transaction(web3: Web3, account, client_function, *client_args, tx_options=None):
+def build_and_send_transaction(web3: Web3, account, client_function, *client_args, tx_options: dict = None) -> dict:
+    """
+    Builds and sends a transaction using the provided client function and arguments.
+
+    :param web3 Web3: An instance of Web3.
+    :param account: The account to use for signing the transaction.
+    :param client_function: The client function to build the transaction.
+    :param client_args: Arguments to pass to the client function.
+    :param tx_options dict: Optional transaction options.
+    :return dict: A dictionary with the transaction hash and receipt.
+    :raises Exception: If there is an error during the transaction process.
+    """
     try:
-        # If tx_options is provided, use the values; otherwise, do not include them
         tx_options = tx_options or {}
 
-        # Build the transaction options
         transaction_options = {
             'from': account.address,
             'nonce': web3.eth.get_transaction_count(account.address),
@@ -18,17 +27,13 @@ def build_and_send_transaction(web3: Web3, account, client_function, *client_arg
         if 'maxFeePerGas' in tx_options:
             transaction_options['maxFeePerGas'] = tx_options['maxFeePerGas']
 
-        # Build the transaction using the client function and arguments
         transaction = client_function(*client_args, transaction_options)
 
-        # Sign the transaction using the account object
         signed_txn = account.sign_transaction(transaction)
 
-        # Send the transaction
         tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
 
-        # Wait for the transaction receipt
-        tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)  # 5 minutes timeout
+        tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)
 
         return {
             'txHash': tx_hash.hex(),

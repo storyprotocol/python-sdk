@@ -6,7 +6,20 @@ with open('setup.py', 'r') as f:
 
 version = re.search(r"version='(\d+\.\d+\.\d+)'", setup_py).group(1)
 major, minor, patch = map(int, version.split('.'))
-patch += 1
+
+if minor == 9:
+    if patch == 9:
+        major += 1
+        minor = 0
+        patch = 0
+    else:
+        patch += 1
+elif patch == 9:
+    patch = 0
+    minor += 1
+else:
+    patch += 1
+
 new_version = f"{major}.{minor}.{patch}"
 
 with open('setup.py', 'w') as f:

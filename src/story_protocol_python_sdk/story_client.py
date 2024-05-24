@@ -1,4 +1,4 @@
-# src/story_client.py
+# src/story_protocol_python_sdk/story_client.py
 
 import os
 import sys
@@ -14,7 +14,22 @@ from story_protocol_python_sdk.resources.License import License
 from story_protocol_python_sdk.resources.Royalty import Royalty
 
 class StoryClient:
-    def __init__(self, web3, account, chain_id):
+    """
+    A client for interacting with Story Protocol, providing access to IPAsset, License, and Royalty resources.
+
+    :param web3 Web3: An instance of Web3.
+    :param account: The account to use for transactions.
+    :param chain_id int: The ID of the blockchain network.
+    """
+    def __init__(self, web3, account, chain_id: int):
+        """
+        Initialize the StoryClient with the given web3 instance, account, and chain ID.
+
+        :param web3 Web3: An instance of Web3.
+        :param account: The account to use for transactions.
+        :param chain_id int: The ID of the blockchain network.
+        :raises ValueError: If web3 or account is not provided.
+        """
         if not web3 or not account:
             raise ValueError("web3 and account must be provided")
 
@@ -22,25 +37,39 @@ class StoryClient:
         self.account = account
         self.chain_id = chain_id
 
-        # Initialize clients only when accessed
         self._ip_asset = None
         self._license = None
         self._royalty = None
 
     @property
-    def IPAsset(self):
+    def IPAsset(self) -> IPAsset:
+        """
+        Access the IPAsset resource.
+
+        :return IPAsset: An instance of IPAsset.
+        """
         if self._ip_asset is None:
             self._ip_asset = IPAsset(self.web3, self.account, self.chain_id)
         return self._ip_asset
 
     @property
-    def License(self):
+    def License(self) -> License:
+        """
+        Access the License resource.
+
+        :return License: An instance of License.
+        """
         if self._license is None:
             self._license = License(self.web3, self.account, self.chain_id)
         return self._license
     
     @property
-    def Royalty(self):
+    def Royalty(self) -> Royalty:
+        """
+        Access the Royalty resource.
+
+        :return Royalty: An instance of Royalty.
+        """
         if self._royalty is None:
             self._royalty = Royalty(self.web3, self.account, self.chain_id)
         return self._royalty

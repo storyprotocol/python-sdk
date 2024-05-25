@@ -27,3 +27,8 @@ class IPAccountImplClient:
         return self.contract.functions.executeWithSig(to, value, data, signer, deadline, signature).build_transaction(tx_params)
     
     
+    def state(self, ):
+        
+        return self.contract.functions.state().call()
+        
+    

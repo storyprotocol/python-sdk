@@ -101,6 +101,14 @@
             "functions": [
                 "payRoyaltyOnBehalf"
             ]
+        },
+        {
+            "contract_name": "AccessController",
+            "contract_address": "0xF9936a224b3Deb6f9A4645ccAfa66f7ECe83CF0A",
+            "functions": [
+                "checkPermission"
+            ]
         }
+
     ]
 }

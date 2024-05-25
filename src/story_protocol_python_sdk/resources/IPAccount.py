@@ -3,6 +3,7 @@
 from web3 import Web3
 
 from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import IPAccountImplClient
+from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
 
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
@@ -19,6 +20,8 @@ class IPAccount:
         self.account = account
         self.chain_id = chain_id
 
+        self.ip_asset_registry_client = IPAssetRegistryClient(web3)
+
     def execute(self, to: str, value: int, account_address: str, data: str) -> dict:
         """
         Executes a transaction from the IP Account.
@@ -30,6 +33,12 @@ class IPAccount:
         :return dict: A dictionary with the transaction hash.
         """
         try:
+            if not self.web3.is_address(to):
+                raise ValueError(f"The recipient of the transaction {to} is not a valid address.")
+            
+            if not self._is_registered(account_address):
+                raise ValueError(f"The IP account with id {account_address} is not registered.")
+
             ip_account_client = IPAccountImplClient(self.web3, contract_address=account_address)
 
             response = build_and_send_transaction(
@@ -62,6 +71,12 @@ class IPAccount:
         :return dict: A dictionary with the transaction hash.
         """
         try:
+            if not self.web3.is_address(to):
+                raise ValueError(f"The recipient of the transaction {to} is not a valid address.")
+            
+            if not self._is_registered(account_address):
+                raise ValueError(f"The IP account with id {account_address} is not registered.")
+
             ip_account_client = IPAccountImplClient(self.web3, contract_address=account_address)
 
             response = build_and_send_transaction(
@@ -82,3 +97,22 @@ class IPAccount:
         
         except Exception as e:
             raise e
+        
+    def getIpAccountNonce(self, ip_id: str) -> int:
+        """
+        Returns the IPAccount's internal nonce for transaction ordering.
+
+        :param ip_id str: The derivative IP ID
+        :return int: The IPAccount's internal nonce for transaction ordering.
+        """
+        ip_account_client = IPAccountImplClient(self.web3, contract_address=ip_id)
+        return ip_account_client.state()
+
+    def _is_registered(self, ip_id: str) -> bool:
+        """
+        Check if an IP is registered.
+
+        :param ip_id str: The IP ID to check.
+        :return bool: True if registered, False otherwise.
+        """        
+        return self.ip_asset_registry_client.isRegistered(ip_id)

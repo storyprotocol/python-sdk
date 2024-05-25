@@ -12,6 +12,7 @@ if src_path not in sys.path:
 from story_protocol_python_sdk.resources.IPAsset import IPAsset
 from story_protocol_python_sdk.resources.License import License
 from story_protocol_python_sdk.resources.Royalty import Royalty
+from story_protocol_python_sdk.resources.IPAccount import IPAccount
 
 class StoryClient:
     """
@@ -40,6 +41,7 @@ class StoryClient:
         self._ip_asset = None
         self._license = None
         self._royalty = None
+        self._ip_account = None
 
     @property
     def IPAsset(self) -> IPAsset:
@@ -73,3 +75,14 @@ class StoryClient:
         if self._royalty is None:
             self._royalty = Royalty(self.web3, self.account, self.chain_id)
         return self._royalty
+    
+    @property
+    def IPAccount(self) -> IPAccount:
+        """
+        Access the IPAccount resource.
+
+        :return IPAccount: An instance of IPAccount.
+        """
+        if self._ip_account is None:
+            self._ip_account = IPAccount(self.web3, self.account, self.chain_id)
+        return self._ip_account

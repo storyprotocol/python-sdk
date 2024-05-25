@@ -103,3 +103,6 @@ def approve(erc20_contract_address, web3, account, spender_address, amount):
     tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
     
     return tx_receipt
+
+def getBlockTimestamp(web3):
+    return (web3.eth.get_block('latest'))['timestamp']

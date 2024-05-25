@@ -167,4 +167,3 @@ def test_executeWithSig(story_client):
     assert response['txHash'] is not None, "'txHash' is None."
     assert isinstance(response['txHash'], str), "'txHash' is not a string."
     assert len(response['txHash']) > 0, "'txHash' is empty."
-

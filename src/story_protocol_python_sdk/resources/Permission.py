@@ -4,6 +4,9 @@ from web3 import Web3
 import os, json
 
 from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import IPAccountImplClient
+from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
+from story_protocol_python_sdk.resources.IPAccount import IPAccount
+
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
 class Permission:
@@ -18,6 +21,9 @@ class Permission:
         self.web3 = web3
         self.account = account
         self.chain_id = chain_id
+
+        self.ip_asset_registry_client = IPAssetRegistryClient(web3)
+        self.ip_account = IPAccount(web3, account, chain_id)
 
     def setPermission(self, ip_asset: str, signer: str, to: str, permission: int, func: str = "0x00000000", tx_options: dict = None) -> dict:
         """
@@ -41,8 +47,6 @@ class Permission:
             if not self._is_registered(ip_asset):
                 raise ValueError(f"The IP account with id {ip_asset} is not registered.")
 
-            ip_account_client = IPAccountImplClient(self.web3, contract_address=ip_asset)
-
             config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts', 'config.json'))
             with open(config_path, 'r') as config_file:
                 config = json.load(config_file)
@@ -59,7 +63,7 @@ class Permission:
 
             contract = self.web3.eth.contract(address=contract_address, abi=abi)
             
-            data = contract.encodeABI(
+            data = contract.encode_abi(
                 fn_name="setPermission",
                 args=[
                     ip_asset,
@@ -70,11 +74,11 @@ class Permission:
                 ]
             )
 
-            response = ip_account_client.execute(
-                 to=contract_address,
-                 value=0,
-                 account_address=ip_asset,
-                 data=data
+            response = self.ip_account.execute(
+                to=contract_address,
+                value=0,
+                account_address=ip_asset,
+                data=data
             )
 
             return {
@@ -83,3 +87,12 @@ class Permission:
 
         except Exception as e:
             raise e
+
+    def _is_registered(self, ip_id: str) -> bool:
+        """
+        Check if an IP is registered.
+
+        :param ip_id str: The IP ID to check.
+        :return bool: True if registered, False otherwise.
+        """        
+        return self.ip_asset_registry_client.isRegistered(ip_id)

@@ -4,8 +4,6 @@ import os, json, sys
 import pytest
 from dotenv import load_dotenv
 from web3 import Web3
-from eth_account import Account
-from eth_account.messages import encode_typed_data
 
 # Ensure the src directory is in the Python path
 current_dir = os.path.dirname(__file__)
@@ -13,7 +11,7 @@ src_path = os.path.abspath(os.path.join(current_dir, '..', '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-from utils import get_token_id, get_story_client_in_sepolia, MockERC721, getBlockTimestamp
+from utils import get_token_id, get_story_client_in_sepolia, MockERC721, check_event_in_tx
 
 load_dotenv()
 private_key = os.getenv('WALLET_PRIVATE_KEY')
@@ -68,3 +66,5 @@ def test_setPermission(story_client):
     assert response['txHash'] is not None, "'txHash' is None."
     assert isinstance(response['txHash'], str), "'txHash' is not a string."
     assert len(response['txHash']) > 0, "'txHash' is empty."
+
+    assert check_event_in_tx(web3, response['txHash'], "PermissionSet(address,address,address,address,bytes4,uint8)") is True

@@ -106,3 +106,13 @@ def approve(erc20_contract_address, web3, account, spender_address, amount):
 
 def getBlockTimestamp(web3):
     return (web3.eth.get_block('latest'))['timestamp']
+
+def check_event_in_tx(web3, tx_hash: str, event_text: str) -> bool:
+    tx_receipt = web3.eth.get_transaction_receipt(tx_hash)
+    event_signature = web3.keccak(text=event_text).hex()
+
+    for log in tx_receipt['logs']:
+        if log['topics'][0].hex() == event_signature:
+            return True
+
+    return False

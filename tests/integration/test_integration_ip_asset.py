@@ -12,7 +12,7 @@ src_path = os.path.abspath(os.path.join(current_dir, '..', '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-from utils import get_token_id, get_story_client_in_sepolia, MockERC721
+from utils import get_token_id, get_story_client_in_sepolia, MockERC721, MockERC20
 
 load_dotenv()
 private_key = os.getenv('WALLET_PRIVATE_KEY')
@@ -96,8 +96,7 @@ def story_client():
 #     assert isinstance(response['txHash'], str)
 #     assert len(response['txHash']) > 0
 
-def test_mint_register(story_client):
-
+def test_mint_register_non_commercial(story_client):
     txData = story_client.NFTClient.createNFTCollection(
         name="test-collection",
         symbol="TEST",
@@ -121,13 +120,104 @@ def test_mint_register(story_client):
         metadata=metadata
     )
 
-    print(f"Transaction Hash: {response['txHash']}")
-    print(f"IP ID: {response['ipId']}")
-    print(f"Token ID: {response['tokenId']}")
-    print(f"License Terms ID: {response['licenseTermsId']}")
+    assert 'txHash' in response
+    assert isinstance(response['txHash'], str)
+    assert response['txHash'].startswith("0x")
+
+    assert 'ipId' in response
+    assert isinstance(response['ipId'], str)
+    assert response['ipId'].startswith("0x")
+
+    assert 'tokenId' in response
+    assert isinstance(response['tokenId'], int)
+
+    assert 'licenseTermsId' in response
+    assert isinstance(response['licenseTermsId'], int)
+
+def test_mint_register_commercial_use(story_client):
+    txData = story_client.NFTClient.createNFTCollection(
+        name="test-collection",
+        symbol="TEST",
+        max_supply=25,
+        mint_fee=0,
+        mint_fee_token=ZERO_ADDRESS,
+        owner=None
+    )
+
+    nft_contract = txData['nftContract']
+    pil_type = 'commercial_use'
+    metadata = {
+        'metadataURI': "test-uri",
+        'metadataHash': web3.to_hex(web3.keccak(text="test-metadata-hash")),
+        'nftMetadataHash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash"))
+    }
+    minting_fee = 100
+    commercial_rev_share = 10
+    currency = MockERC20
+
+    response = story_client.IPAsset.mintAndRegisterIpAssetWithPilTerms(
+        nft_contract=nft_contract,
+        pil_type=pil_type,
+        metadata=metadata,
+        minting_fee=minting_fee,
+        commercial_rev_share=commercial_rev_share,
+        currency=currency
+    )
 
     assert 'txHash' in response
+    assert isinstance(response['txHash'], str)
     assert response['txHash'].startswith("0x")
+
     assert 'ipId' in response
+    assert isinstance(response['ipId'], str)
+    assert response['ipId'].startswith("0x")
+
     assert 'tokenId' in response
+    assert isinstance(response['tokenId'], int)
+
     assert 'licenseTermsId' in response
+    assert isinstance(response['licenseTermsId'], int)
+
+def test_mint_register_commercial_remix(story_client):
+    txData = story_client.NFTClient.createNFTCollection(
+        name="test-collection",
+        symbol="TEST",
+        max_supply=25,
+        mint_fee=0,
+        mint_fee_token=ZERO_ADDRESS,
+        owner=None
+    )
+
+    nft_contract = txData['nftContract']
+    pil_type = 'commercial_remix'
+    metadata = {
+        'metadataURI': "test-uri",
+        'metadataHash': web3.to_hex(web3.keccak(text="test-metadata-hash")),
+        'nftMetadataHash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash"))
+    }
+    minting_fee = 100
+    commercial_rev_share = 10
+    currency = MockERC20
+
+    response = story_client.IPAsset.mintAndRegisterIpAssetWithPilTerms(
+        nft_contract=nft_contract,
+        pil_type=pil_type,
+        metadata=metadata,
+        minting_fee=minting_fee,
+        commercial_rev_share=commercial_rev_share,
+        currency=currency
+    )
+    
+    assert 'txHash' in response
+    assert isinstance(response['txHash'], str)
+    assert response['txHash'].startswith("0x")
+
+    assert 'ipId' in response
+    assert isinstance(response['ipId'], str)
+    assert response['ipId'].startswith("0x")
+
+    assert 'tokenId' in response
+    assert isinstance(response['tokenId'], int)
+
+    assert 'licenseTermsId' in response
+    assert isinstance(response['licenseTermsId'], int)

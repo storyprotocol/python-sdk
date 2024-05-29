@@ -22,6 +22,14 @@ class SPGClient:
             abi = json.load(abi_file)
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
+    def createCollection(self, name, symbol, maxSupply, mintFee, mintFeeToken, owner):
+        
+        return self.contract.functions.createCollection(name, symbol, maxSupply, mintFee, mintFeeToken, owner).transact()
+        
+    def build_createCollection_transaction(self, name, symbol, maxSupply, mintFee, mintFeeToken, owner, tx_params):
+        return self.contract.functions.createCollection(name, symbol, maxSupply, mintFee, mintFeeToken, owner).build_transaction(tx_params)
+    
+    
     def mintAndRegisterIpAndAttachPILTerms(self, nftContract, recipient, metadata, terms):
         
         return self.contract.functions.mintAndRegisterIpAndAttachPILTerms(nftContract, recipient, metadata, terms).transact()

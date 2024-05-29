@@ -13,6 +13,7 @@ from story_protocol_python_sdk.resources.IPAsset import IPAsset
 from story_protocol_python_sdk.resources.License import License
 from story_protocol_python_sdk.resources.Royalty import Royalty
 from story_protocol_python_sdk.resources.IPAccount import IPAccount
+from story_protocol_python_sdk.resources.Permission import Permission
 
 class StoryClient:
     """
@@ -42,6 +43,7 @@ class StoryClient:
         self._license = None
         self._royalty = None
         self._ip_account = None
+        self._permission = None
 
     @property
     def IPAsset(self) -> IPAsset:
@@ -86,3 +88,14 @@ class StoryClient:
         if self._ip_account is None:
             self._ip_account = IPAccount(self.web3, self.account, self.chain_id)
         return self._ip_account
+    
+    @property
+    def Permission(self) -> Permission:
+        """
+        Access the Permission resource.
+
+        :return Permission: An instance of Permission.
+        """
+        if self._permission is None:
+            self._permission = Permission(self.web3, self.account, self.chain_id)
+        return self._permission

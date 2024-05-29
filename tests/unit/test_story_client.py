@@ -14,6 +14,8 @@ from story_protocol_python_sdk.story_client import StoryClient
 from story_protocol_python_sdk.resources.IPAsset import IPAsset
 from story_protocol_python_sdk.resources.License import License
 from story_protocol_python_sdk.resources.Royalty import Royalty
+from story_protocol_python_sdk.resources.IPAccount import IPAccount
+from story_protocol_python_sdk.resources.Permission import Permission
 
 # Load environment variables from .env file
 load_dotenv()
@@ -70,3 +72,13 @@ def test_royalty_client_getter(story_client):
     royalty = story_client.Royalty
     assert royalty is not None
     assert isinstance(royalty, Royalty)
+
+def test_ip_account_client_getter(story_client):
+    ip_account = story_client.IPAccount
+    assert ip_account is not None
+    assert isinstance(ip_account, IPAccount)
+
+def test_permission_getter(story_client):
+    permission = story_client.Permission
+    assert permission is not None
+    assert isinstance(permission, Permission)

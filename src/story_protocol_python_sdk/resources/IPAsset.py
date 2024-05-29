@@ -206,7 +206,7 @@ class IPAsset:
             license_term = get_license_term_by_type(pil_type, {
                 'mintingFee': minting_fee,
                 'currency': currency,
-                'royaltyPolicy': "0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86", 
+                'royaltyPolicy': "0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86", #default royalty policy
                 'commercialRevShare': commercial_rev_share,
             })
 

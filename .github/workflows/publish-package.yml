@@ -11,7 +11,6 @@ on:
           - minor
           - patch
 
-
 jobs:
   Timestamp:
     uses: storyprotocol/gha-workflows/.github/workflows/reusable-timestamp.yml@main
@@ -82,17 +81,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install setuptools wheel
       
-      - name: Run major script
-        if: ${{ github.event.inputs.version_type == 'major' }}
-        run: python update_major.py
-
-      - name: Run minor script
-        if: ${{ github.event.inputs.version_type == 'minor' }}
-        run: python update_minor.py
-
-      - name: Run patch script
-        if: ${{ github.event.inputs.version_type == 'patch' }}
-        run: python update_patch.py
+      - name: Change version number
+        env:
+          VERSION_TYPE: ${{ github.event.inputs.version_type }}
+        run: python update_version.py
 
       - name: Commit version change
         run: |

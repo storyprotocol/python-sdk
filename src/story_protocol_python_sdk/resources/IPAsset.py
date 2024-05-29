@@ -200,6 +200,9 @@ class IPAsset:
             if pil_type is None or pil_type not in PIL_TYPE.values():
                 raise ValueError("PIL type is required and must be one of the predefined PIL types.")
 
+            if not self.web3.is_address(nft_contract):
+                raise ValueError(f"The NFT contract address {nft_contract} is not valid.")
+
             license_term = get_license_term_by_type(pil_type, {
                 'mintingFee': minting_fee,
                 'currency': currency,

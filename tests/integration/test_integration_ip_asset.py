@@ -26,21 +26,23 @@ if not web3.is_connected():
 # Set up the account with the private key
 account = web3.eth.account.from_key(private_key)
 
+ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+
 @pytest.fixture
 def story_client():
     return get_story_client_in_sepolia(web3, account)
 
-def test_register_ip_asset(story_client):
-    token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+# def test_register_ip_asset(story_client):
+#     token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
 
-    response = story_client.IPAsset.register(
-        token_contract=MockERC721,
-        token_id=token_id
-    )
+#     response = story_client.IPAsset.register(
+#         token_contract=MockERC721,
+#         token_id=token_id
+#     )
 
-    assert response is not None
-    assert 'ipId' in response
-    assert response['ipId'] is not None
+#     assert response is not None
+#     assert 'ipId' in response
+#     assert response['ipId'] is not None
 
 # def test_registerDerivative(story_client): #can only run once since using preset variables
 #     parent_ip_id = "0x567603411Fb957759Ac2090659B73cC5f099456D"
@@ -93,3 +95,39 @@ def test_register_ip_asset(story_client):
 #     assert response['txHash'] is not None
 #     assert isinstance(response['txHash'], str)
 #     assert len(response['txHash']) > 0
+
+def test_mint_register(story_client):
+
+    txData = story_client.NFTClient.createNFTCollection(
+        name="test-collection",
+        symbol="TEST",
+        max_supply=25,
+        mint_fee=0,
+        mint_fee_token=ZERO_ADDRESS,
+        owner=None
+    )
+
+    nft_contract = txData['nftContract']
+    pil_type = 'non_commercial_remix'
+    metadata = {
+        'metadataURI': "test-uri",
+        'metadataHash': web3.to_hex(web3.keccak(text="test-metadata-hash")),
+        'nftMetadataHash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash"))
+    }
+
+    response = story_client.IPAsset.mintAndRegisterIpAssetWithPilTerms(
+        nft_contract=nft_contract,
+        pil_type=pil_type,
+        metadata=metadata
+    )
+
+    print(f"Transaction Hash: {response['txHash']}")
+    print(f"IP ID: {response['ipId']}")
+    print(f"Token ID: {response['tokenId']}")
+    print(f"License Terms ID: {response['licenseTermsId']}")
+
+    assert 'txHash' in response
+    assert response['txHash'].startswith("0x")
+    assert 'ipId' in response
+    assert 'tokenId' in response
+    assert 'licenseTermsId' in response

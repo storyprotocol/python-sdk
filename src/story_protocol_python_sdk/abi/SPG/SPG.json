@@ -1,0 +1,1366 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "accessController",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "ipAssetRegistry",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "licensingModule",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "coreMetadataModule",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "pilTemplate",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "licenseToken",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "authority",
+        "type": "address"
+      }
+    ],
+    "name": "AccessManagedInvalidAuthority",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "internalType": "uint32",
+        "name": "delay",
+        "type": "uint32"
+      }
+    ],
+    "name": "AccessManagedRequiredDelay",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      }
+    ],
+    "name": "AccessManagedUnauthorized",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
+    ],
+    "name": "AddressEmptyCode",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "ERC1967InvalidImplementation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ERC1967NonPayable",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FailedInnerCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidInitialization",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotInitializing",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "SPG__CallerNotMinterRole",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "SPG__EmptyLicenseTokens",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "SPG__ZeroAddressParam",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UUPSUnauthorizedCallContext",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "slot",
+        "type": "bytes32"
+      }
+    ],
+    "name": "UUPSUnsupportedProxiableUUID",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "authority",
+        "type": "address"
+      }
+    ],
+    "name": "AuthorityUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "nftContract",
+        "type": "address"
+      }
+    ],
+    "name": "CollectionCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "version",
+        "type": "uint64"
+      }
+    ],
+    "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "Upgraded",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "ACCESS_CONTROLLER",
+    "outputs": [
+      {
+        "internalType": "contract IAccessController",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "CORE_METADATA_MODULE",
+    "outputs": [
+      {
+        "internalType": "contract ICoreMetadataModule",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "IP_ASSET_REGISTRY",
+    "outputs": [
+      {
+        "internalType": "contract IIPAssetRegistry",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "LICENSE_TOKEN",
+    "outputs": [
+      {
+        "internalType": "contract ILicenseToken",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "LICENSING_MODULE",
+    "outputs": [
+      {
+        "internalType": "contract ILicensingModule",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "PIL_TEMPLATE",
+    "outputs": [
+      {
+        "internalType": "contract IPILicenseTemplate",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "UPGRADE_INTERFACE_VERSION",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "authority",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "symbol",
+        "type": "string"
+      },
+      {
+        "internalType": "uint32",
+        "name": "maxSupply",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "mintFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "mintFeeToken",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "createCollection",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "nftContract",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "accessManager",
+        "type": "address"
+      }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "isConsumingScheduledOp",
+    "outputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "nftContract",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "metadataURI",
+            "type": "string"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metadataHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "nftMetadataHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct IStoryProtocolGateway.IPMetadata",
+        "name": "metadata",
+        "type": "tuple"
+      }
+    ],
+    "name": "mintAndRegisterIp",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "nftContract",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "metadataURI",
+            "type": "string"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metadataHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "nftMetadataHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct IStoryProtocolGateway.IPMetadata",
+        "name": "metadata",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "transferable",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "royaltyPolicy",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "mintingFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expiration",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "commercialUse",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "commercialAttribution",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "commercializerChecker",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "commercializerCheckerData",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint32",
+            "name": "commercialRevShare",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "commercialRevCelling",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "derivativesAllowed",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "derivativesAttribution",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "derivativesApproval",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "derivativesReciprocal",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "derivativeRevCelling",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "currency",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "uri",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct PILTerms",
+        "name": "terms",
+        "type": "tuple"
+      }
+    ],
+    "name": "mintAndRegisterIpAndAttachPILTerms",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "licenseTermsId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "nftContract",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address[]",
+            "name": "parentIpIds",
+            "type": "address[]"
+          },
+          {
+            "internalType": "address",
+            "name": "licenseTemplate",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "licenseTermsIds",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "bytes",
+            "name": "royaltyContext",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IStoryProtocolGateway.MakeDerivative",
+        "name": "derivData",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "metadataURI",
+            "type": "string"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metadataHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "nftMetadataHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct IStoryProtocolGateway.IPMetadata",
+        "name": "metadata",
+        "type": "tuple"
+      },
+      {
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      }
+    ],
+    "name": "mintAndRegisterIpAndMakeDerivative",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "nftContract",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "licenseTokenIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "bytes",
+        "name": "royaltyContext",
+        "type": "bytes"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "metadataURI",
+            "type": "string"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metadataHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "nftMetadataHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct IStoryProtocolGateway.IPMetadata",
+        "name": "metadata",
+        "type": "tuple"
+      },
+      {
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      }
+    ],
+    "name": "mintAndRegisterIpAndMakeDerivativeWithLicenseTokens",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "proxiableUUID",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "nftContract",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "metadataURI",
+            "type": "string"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metadataHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "nftMetadataHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct IStoryProtocolGateway.IPMetadata",
+        "name": "metadata",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "signer",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IStoryProtocolGateway.SignatureData",
+        "name": "sigMetadata",
+        "type": "tuple"
+      }
+    ],
+    "name": "registerIp",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "nftContract",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "metadataURI",
+            "type": "string"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metadataHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "nftMetadataHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct IStoryProtocolGateway.IPMetadata",
+        "name": "metadata",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "transferable",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "royaltyPolicy",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "mintingFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expiration",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "commercialUse",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "commercialAttribution",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "commercializerChecker",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "commercializerCheckerData",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint32",
+            "name": "commercialRevShare",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "commercialRevCelling",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "derivativesAllowed",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "derivativesAttribution",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "derivativesApproval",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "derivativesReciprocal",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "derivativeRevCelling",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "currency",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "uri",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct PILTerms",
+        "name": "terms",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "signer",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IStoryProtocolGateway.SignatureData",
+        "name": "sigMetadata",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "signer",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IStoryProtocolGateway.SignatureData",
+        "name": "sigAttach",
+        "type": "tuple"
+      }
+    ],
+    "name": "registerIpAndAttachPILTerms",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "licenseTermsId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "nftContract",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address[]",
+            "name": "parentIpIds",
+            "type": "address[]"
+          },
+          {
+            "internalType": "address",
+            "name": "licenseTemplate",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "licenseTermsIds",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "bytes",
+            "name": "royaltyContext",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IStoryProtocolGateway.MakeDerivative",
+        "name": "derivData",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "metadataURI",
+            "type": "string"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metadataHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "nftMetadataHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct IStoryProtocolGateway.IPMetadata",
+        "name": "metadata",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "signer",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IStoryProtocolGateway.SignatureData",
+        "name": "sigMetadata",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "signer",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IStoryProtocolGateway.SignatureData",
+        "name": "sigRegister",
+        "type": "tuple"
+      }
+    ],
+    "name": "registerIpAndMakeDerivative",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "nftContract",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "licenseTokenIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "bytes",
+        "name": "royaltyContext",
+        "type": "bytes"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "metadataURI",
+            "type": "string"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metadataHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "nftMetadataHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct IStoryProtocolGateway.IPMetadata",
+        "name": "metadata",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "signer",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IStoryProtocolGateway.SignatureData",
+        "name": "sigMetadata",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "signer",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IStoryProtocolGateway.SignatureData",
+        "name": "sigRegister",
+        "type": "tuple"
+      }
+    ],
+    "name": "registerIpAndMakeDerivativeWithLicenseTokens",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "transferable",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "royaltyPolicy",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "mintingFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expiration",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "commercialUse",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "commercialAttribution",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "commercializerChecker",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "commercializerCheckerData",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint32",
+            "name": "commercialRevShare",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "commercialRevCelling",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "derivativesAllowed",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "derivativesAttribution",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "derivativesApproval",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "derivativesReciprocal",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "derivativeRevCelling",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "currency",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "uri",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct PILTerms",
+        "name": "terms",
+        "type": "tuple"
+      }
+    ],
+    "name": "registerPILTermsAndAttach",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "licenseTermsId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newAuthority",
+        "type": "address"
+      }
+    ],
+    "name": "setAuthority",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newNftContractBeacon",
+        "type": "address"
+      }
+    ],
+    "name": "setNftContractBeacon",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newNftContract",
+        "type": "address"
+      }
+    ],
+    "name": "upgradeCollections",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newImplementation",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "upgradeToAndCall",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  }
+]

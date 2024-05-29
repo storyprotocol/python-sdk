@@ -6,10 +6,13 @@ from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import
 from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import LicensingModuleClient
 from story_protocol_python_sdk.abi.LicenseToken.LicenseToken_client import LicenseTokenClient
 from story_protocol_python_sdk.abi.LicenseRegistry.LicenseRegistry_client import LicenseRegistryClient
+from story_protocol_python_sdk.abi.SPG.SPG_client import SPGClient
 
+from story_protocol_python_sdk.utils.license_terms import get_license_term_by_type, PIL_TYPE
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000"
 
 class IPAsset:
     """
@@ -28,6 +31,7 @@ class IPAsset:
         self.licensing_module_client = LicensingModuleClient(web3)
         self.license_token_client = LicenseTokenClient(web3)
         self.license_registry_client = LicenseRegistryClient(web3)
+        self.spg_client = SPGClient(web3)
 
     def _get_ip_id(self, token_contract: str, token_id: int) -> str:
         """
@@ -174,3 +178,114 @@ class IPAsset:
 
         except Exception as e:
             raise e
+
+    def mintAndRegisterIpAssetWithPilTerms(self, nft_contract: str, pil_type: str, metadata: dict = None, recipient: str = None, minting_fee: int = None, commercial_rev_share: int = None, currency: str = None, tx_options: dict = None) -> dict:
+        """
+        Mint an NFT from a collection and register it as an IP.
+
+        :param nft_contract str: The address of the NFT collection.
+        :param pil_type str: The type of the PIL.
+        :param metadata dict: [Optional] The metadata for the IP.
+            :param metadataURI str: [Optional] The URI of the metadata for the IP.
+            :param metadataHash str: [Optional] The metadata hash for the IP.
+            :param nftMetadataHash str: [Optional] The metadata hash for the IP NFT.
+        :param recipient str: [Optional] The address of the recipient of the minted NFT.
+        :param minting_fee int: [Optional] The fee to be paid when minting a license.
+        :param commercial_rev_share int: [Optional] Percentage of revenue that must be shared with the licensor.
+        :param currency str: [Optional] The ERC20 token to be used to pay the minting fee. The token must be registered in Story Protocol.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash.
+        """
+        try:
+            if pil_type is None or pil_type not in PIL_TYPE.values():
+                raise ValueError("PIL type is required and must be one of the predefined PIL types.")
+
+            if not self.web3.is_address(nft_contract):
+                raise ValueError(f"The NFT contract address {nft_contract} is not valid.")
+
+            license_term = get_license_term_by_type(pil_type, {
+                'mintingFee': minting_fee,
+                'currency': currency,
+                'royaltyPolicy': "0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86", #default royalty policy
+                'commercialRevShare': commercial_rev_share,
+            })
+
+            req_object = {
+                'nftContract': nft_contract,
+                'recipient': recipient if recipient else self.account.address,
+                'terms': license_term,
+                'metadata': {
+                    'metadataURI': "",
+                    'metadataHash': ZERO_HASH,
+                    'nftMetadataHash': ZERO_HASH,
+                },
+            }
+
+            if metadata:
+                req_object['metadata'].update({
+                    'metadataURI': metadata.get('metadataURI', ""),
+                    'metadataHash': metadata.get('metadataHash', ZERO_HASH),
+                    'nftMetadataHash': metadata.get('nftMetadataHash', ZERO_HASH),
+                })
+
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.spg_client.build_mintAndRegisterIpAndAttachPILTerms_transaction,
+                req_object['nftContract'],
+                req_object['recipient'],
+                req_object['metadata'],
+                req_object['terms'],
+                tx_options=tx_options
+            )
+
+            ip_registered = self._parse_tx_ip_registered_event(response['txReceipt'])
+            license_terms_id = self._parse_tx_license_terms_attached_event(response['txReceipt'])
+
+            return {
+                'txHash': response['txHash'],
+                'ipId': ip_registered['ipId'],
+                'licenseTermsId': license_terms_id,
+                'tokenId': ip_registered['tokenId']
+            }
+
+        except Exception as e:
+            raise e
+        
+    def _parse_tx_ip_registered_event(self, tx_receipt: dict) -> int:
+        """
+        Parse the IPRegistered event from a transaction receipt.
+
+        :param tx_receipt dict: The transaction receipt.
+        :return int: The ID of the license terms.
+        """
+        event_signature = self.web3.keccak(text="IPRegistered(address,uint256,address,uint256,string,string,uint256)").hex()
+
+        for log in tx_receipt['logs']:
+            if log['topics'][0].hex() == event_signature:
+                ip_id = '0x' + log['data'].hex()[26:66]
+                token_id = int(log['topics'][3].hex(), 16)
+
+                return {
+                    'ipId': self.web3.to_checksum_address(ip_id),
+                    'tokenId': token_id
+                }
+            
+        return None
+    
+    def _parse_tx_license_terms_attached_event(self, tx_receipt: dict) -> int:
+        """
+        Parse the LicenseTermsAttached event from a transaction receipt.
+
+        :param tx_receipt dict: The transaction receipt.
+        :return int: The ID of the license terms.
+        """
+        event_signature = self.web3.keccak(text="LicenseTermsAttached(address,address,address,uint256)").hex()
+
+        for log in tx_receipt['logs']:
+            if log['topics'][0].hex() == event_signature:
+                data = log['data']
+
+                license_terms_id  = int.from_bytes(data[-32:], byteorder='big')
+                return license_terms_id 
+        return None

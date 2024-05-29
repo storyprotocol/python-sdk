@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='story_protocol_python_sdk',
-    version='2.0.0',
+    version='0.1.5',
     packages=find_packages(where='src', exclude=["tests"]),
     package_dir={'': 'src'},
     install_requires=[

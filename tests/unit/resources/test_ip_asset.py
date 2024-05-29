@@ -182,3 +182,62 @@ def test_register_derivative_with_license_tokens_success(ip_asset):
         res = ip_asset.registerDerivativeWithLicenseTokens(child_ip_id, license_token_ids)
 
         assert res['txHash'] == tx_hash[2:]
+
+def test_mint_register_pil_type_error(ip_asset):
+    with pytest.raises(ValueError, match="PIL type is required and must be one of the predefined PIL types."):
+        ip_asset.mintAndRegisterIpAssetWithPilTerms(
+            nft_contract="0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c",
+            pil_type="incorrect_type"
+        )
+
+def test_mint_register_invalid_address(ip_asset):
+    with pytest.raises(ValueError, match="The NFT contract address 0x is not valid."):
+        ip_asset.mintAndRegisterIpAssetWithPilTerms(
+            nft_contract="0x",
+            pil_type='non_commercial_remix'
+        )
+        
+def test_mint_register_successful_transaction(ip_asset):
+    tx_receipt_mock = {
+        'status': 1,
+        'logs': [
+            {
+                'topics': [
+                    Web3.keccak(text="IPRegistered(address,uint256,address,uint256,string,string,uint256)").hex(),
+                    Web3.to_hex(Web3.keccak(text="1")),
+                    Web3.to_hex(Web3.keccak(text="0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c")),
+                    Web3.to_hex(Web3.keccak(text="1"))
+                ],
+                'data': '0x000000000000000000000000BD78ec0d5B1320f8A6C6225A73BF4FeBdb95233F0000000000000000000000000000000000000000000000000000000000000000'
+            }
+        ]
+    }
+
+    with patch.object(ip_asset.spg_client, 'build_mintAndRegisterIpAndAttachPILTerms_transaction', return_value={
+                'to': "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c",
+                'value': 0,
+                'data': "0x",
+                'gas': 2000000,
+                'gasPrice': Web3.to_wei('50', 'gwei'),
+                'nonce': 0
+            }), \
+         patch('web3.eth.Eth.send_raw_transaction', return_value=Web3.to_bytes(hexstr="0x129f7dd802200f096221dd89d5b086e4bd3ad6eafb378a0c75e3b04fc375f997")), \
+         patch('web3.eth.Eth.wait_for_transaction_receipt', return_value=tx_receipt_mock), \
+         patch.object(ip_asset, '_parse_tx_ip_registered_event', return_value={
+             'ipId': '0xBD78ec0d5B1320f8A6C6225A73BF4FeBdb95233F',
+             'tokenId': 1
+         }), \
+         patch.object(ip_asset, '_parse_tx_license_terms_attached_event', return_value=1):
+
+        response = ip_asset.mintAndRegisterIpAssetWithPilTerms(
+            nft_contract="0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c",
+            pil_type='commercial_remix',
+            metadata={
+                'nftMetadataHash': Web3.to_hex(Web3.keccak(text="test-nft-metadata-hash")),
+            }
+        )
+
+        assert response['txHash'] == "0x129f7dd802200f096221dd89d5b086e4bd3ad6eafb378a0c75e3b04fc375f997"[2:]
+        assert response['ipId'] == "0xBD78ec0d5B1320f8A6C6225A73BF4FeBdb95233F"
+        assert response['licenseTermsId'] == 1
+        assert response['tokenId'] == 1

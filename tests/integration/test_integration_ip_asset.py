@@ -12,7 +12,7 @@ src_path = os.path.abspath(os.path.join(current_dir, '..', '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-from utils import get_token_id, get_story_client_in_sepolia, MockERC721, MockERC20
+from utils import get_token_id, get_story_client_in_sepolia, MockERC721, MockERC20, getBlockTimestamp
 
 load_dotenv()
 private_key = os.getenv('WALLET_PRIVATE_KEY')
@@ -242,13 +242,14 @@ def test_register_attach(story_client):
         'metadataHash': web3.to_hex(web3.keccak(text="test-metadata-hash")),
         'nftMetadataHash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash"))
     }
+    deadline = getBlockTimestamp(web3) + 1000
 
     response = story_client.IPAsset.registerIpAndAttachPilTerms(
         nft_contract=nft_contract,
         token_id=token_id,
         pil_type=pil_type,
         metadata=metadata,
-        deadline=1000,
+        deadline=deadline,
     )
 
     assert 'txHash' in response
@@ -261,3 +262,60 @@ def test_register_attach(story_client):
 
     assert 'licenseTermsId' in response
     assert isinstance(response['licenseTermsId'], int)
+
+def test_register_ip_derivative(story_client):
+    txData = story_client.NFTClient.createNFTCollection(
+        name="test-collection",
+        symbol="TEST",
+        max_supply=10,
+        mint_fee=0,
+        mint_fee_token=ZERO_ADDRESS,
+        owner=None
+    )
+
+    nft_contract = txData['nftContract']
+
+    child_token_id = get_token_id(nft_contract, story_client.web3, story_client.account)
+
+    pil_type = 'non_commercial_remix'
+    mint_metadata = {
+        'metadataHash': web3.to_hex(web3.keccak(text="test-metadata-hash")),
+        'nftMetadataHash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash"))
+    }
+
+    mint_response = story_client.IPAsset.mintAndRegisterIpAssetWithPilTerms(
+        nft_contract=nft_contract,
+        pil_type=pil_type,
+        metadata=mint_metadata,
+        minting_fee=100,
+        commercial_rev_share=10,
+        currency=MockERC20
+    )
+
+    parent_ip_id = mint_response['ipId']
+    license_terms_id = mint_response['licenseTermsId']
+
+    metadata = {
+        'metadataURI': "test-uri",
+        'metadataHash': web3.to_hex(web3.keccak(text="test-metadata-hash")),
+    }
+    derivData = {
+        'parentIpIds': [parent_ip_id],
+        'licenseTermsIds': [license_terms_id]
+    }
+
+    response = story_client.IPAsset.registerDerivativeIp(
+        nft_contract=nft_contract,
+        token_id=child_token_id,
+        metadata=metadata,
+        deadline=1000,
+        deriv_data=derivData
+    )
+
+    assert 'txHash' in response
+    assert isinstance(response['txHash'], str)
+    assert response['txHash'].startswith("0x")
+
+    assert 'ipId' in response
+    assert isinstance(response['ipId'], str)
+    assert response['ipId'].startswith("0x")

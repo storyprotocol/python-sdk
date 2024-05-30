@@ -117,6 +117,12 @@
                 "createCollection",
                 "registerIpAndAttachPILTerms"
             ]
+        },
+        {
+            "contract_name": "CoreMetadataModule",
+            "contract_address": "0xDa498A3f7c8a88cb72201138C366bE3778dB9575",
+            "functions": [
+            ]
         }
 
     ]

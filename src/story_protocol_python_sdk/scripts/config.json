@@ -114,7 +114,14 @@
             "contract_address": "0x69415CE984A79a3Cfbe3F51024C63b6C107331e3",
             "functions": [
                 "mintAndRegisterIpAndAttachPILTerms",
-                "createCollection"
+                "createCollection",
+                "registerIpAndAttachPILTerms"
+            ]
+        },
+        {
+            "contract_name": "CoreMetadataModule",
+            "contract_address": "0xDa498A3f7c8a88cb72201138C366bE3778dB9575",
+            "functions": [
             ]
         }
 

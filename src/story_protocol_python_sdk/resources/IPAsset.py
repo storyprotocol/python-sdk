@@ -1,12 +1,17 @@
 #src/story_protcol_python_sdk/resources/IPAsset.py
 
 from web3 import Web3
+from eth_account import Account
+from eth_account.messages import encode_typed_data
+from datetime import datetime
 
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
 from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import LicensingModuleClient
 from story_protocol_python_sdk.abi.LicenseToken.LicenseToken_client import LicenseTokenClient
 from story_protocol_python_sdk.abi.LicenseRegistry.LicenseRegistry_client import LicenseRegistryClient
 from story_protocol_python_sdk.abi.SPG.SPG_client import SPGClient
+from story_protocol_python_sdk.abi.CoreMetadataModule.CoreMetadataModule_client import CoreMetadataModuleClient
+from story_protocol_python_sdk.abi.AccessController.AccessController_client import AccessControllerClient
 
 from story_protocol_python_sdk.utils.license_terms import get_license_term_by_type, PIL_TYPE
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
@@ -32,7 +37,9 @@ class IPAsset:
         self.license_token_client = LicenseTokenClient(web3)
         self.license_registry_client = LicenseRegistryClient(web3)
         self.spg_client = SPGClient(web3)
-
+        self.core_metadata_module_client = CoreMetadataModuleClient(web3)
+        self.access_controller_client = AccessControllerClient(web3)
+        
     def _get_ip_id(self, token_contract: str, token_id: int) -> str:
         """
         Get the IP ID for a given token.
@@ -252,6 +259,101 @@ class IPAsset:
         except Exception as e:
             raise e
         
+    def registerIpAndAttachPilTerms(self, nft_contract: str, token_id: int, pil_type: str, metadata: dict = None, deadline: int = None, minting_fee: int = None, commercial_rev_share: int = None, currency: str = None, tx_options: dict = None) -> dict:
+        """
+        Register a given NFT as an IP and attach Programmable IP License Terms.
+
+        :param nft_contract str: The address of the NFT collection.
+        :param token_id int: The ID of the NFT.
+        :param pil_type str: The type of the PIL.
+        :param metadata dict: [Optional] The metadata for the IP.
+            :param metadataURI str: [Optional] The metadata URI for the IP.
+            :param metadataHash str: [Optional] The metadata hash for the IP.
+            :param nftMetadataHash str: [Optional] The metadata hash for the IP NFT.
+        :param deadline int: [Optional] The deadline for the signature in milliseconds.
+        :param minting_fee int: [Optional] The fee to be paid when minting a license.
+        :param commercial_rev_share int: [Optional] Percentage of revenue that must be shared with the licensor.
+        :param currency str: [Optional] The ERC20 token to be used to pay the minting fee. The token must be registered in Story Protocol.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash, license terms ID, and IP ID.
+        """
+        try:
+            if pil_type is None or pil_type not in PIL_TYPE.values():
+                raise ValueError("PIL type is required and must be one of the predefined PIL types.")
+            
+            ip_id = self._get_ip_id(nft_contract, token_id)
+            if self._is_registered(ip_id):
+                raise ValueError(f"The NFT with id {token_id} is already registered as IP.")
+
+            license_term = get_license_term_by_type(pil_type, {
+                'mintingFee': minting_fee,
+                'currency': currency,
+                'royaltyPolicy': "0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86", #default royalty policy
+                'commercialRevShare': commercial_rev_share,
+            })
+
+            calculated_deadline = self._get_deadline(deadline=deadline)
+            sig_attach_signature = self._get_permission_signature_for_spg(ip_id, self.licensing_module_client.contract.address, calculated_deadline, "attachLicenseTerms(address,address,uint256)", 2)
+
+            req_object = {
+                'nftContract': nft_contract,
+                'tokenId': token_id,
+                'terms': license_term,
+                'metadata': {
+                    'metadataURI': "",
+                    'metadataHash': ZERO_HASH,
+                    'nftMetadataHash': ZERO_HASH,
+                },
+                'sigMetadata': {
+                    'signer': ZERO_ADDRESS,
+                    'deadline': 0,
+                    'signature': ZERO_HASH,
+                },
+                'sigAttach': {
+                    'signer': self.web3.to_checksum_address(self.account.address),
+                    'deadline': calculated_deadline,
+                    'signature': sig_attach_signature,
+                },
+            }
+
+            if metadata:
+                req_object['metadata'].update({
+                    'metadataURI': metadata.get('metadataURI', ""),
+                    'metadataHash': metadata.get('metadataHash', ZERO_HASH),
+                    'nftMetadataHash': metadata.get('nftMetadataHash', ZERO_HASH),
+                })
+
+                signature = self._get_permission_signature_for_spg(ip_id, self.core_metadata_module_client.contract.address, calculated_deadline, "setAll(address,string,bytes32,bytes32)", 1)
+                req_object['sigMetadata'] = {
+                    'signer': self.web3.to_checksum_address(self.account.address),
+                    'deadline': calculated_deadline,
+                    'signature': signature,
+                }
+
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.spg_client.build_registerIpAndAttachPILTerms_transaction,
+                req_object['nftContract'],
+                req_object['tokenId'],
+                req_object['metadata'],
+                req_object['terms'],
+                req_object['sigMetadata'],
+                req_object['sigAttach'],
+                tx_options=tx_options
+            )
+
+            license_terms_id = self._parse_tx_license_terms_attached_event(response['txReceipt'])
+
+            return {
+                'txHash': response['txHash'],
+                'licenseTermsId': license_terms_id,
+                'ipId': ip_id
+            }
+
+        except Exception as e:
+            raise e
+
     def _parse_tx_ip_registered_event(self, tx_receipt: dict) -> int:
         """
         Parse the IPRegistered event from a transaction receipt.
@@ -289,3 +391,75 @@ class IPAsset:
                 license_terms_id  = int.from_bytes(data[-32:], byteorder='big')
                 return license_terms_id 
         return None
+    
+    def _get_permission_signature_for_spg(self, ip_id: str, module_address: str, deadline: int, selector: str, nonce: int) -> str:
+        """
+        Generate a permission signature for SPG.
+
+        :param ip_id str: The IP ID.
+        :param module_address str: The module address.
+        :param deadline int: The deadline for the signature in milliseconds.
+        :param selector str: The function selector.
+        :param nonce int: The nonce value.
+        :return str: The generated signature.
+        """
+        try:
+            domain_data = {
+                "name": "Story Protocol IP Account",
+                "version": "1",
+                "chainId": self.chain_id,
+                "verifyingContract": ip_id,
+            }
+
+            message_types = {
+                "Execute": [
+                    {"name": "to", "type": "address"},
+                    {"name": "value", "type": "uint256"},
+                    {"name": "data", "type": "bytes"},
+                    {"name": "nonce", "type": "uint256"},
+                    {"name": "deadline", "type": "uint256"},
+                ],
+            }
+
+            data = self.access_controller_client.contract.encode_abi(
+                fn_name="setPermission", 
+                args=[
+                    ip_id, 
+                    self.spg_client.contract.address, 
+                    module_address, 
+                    Web3.keccak(text=selector).hex()[:10], 
+                    1
+                ]
+            )
+
+            message_data = {
+                "to": self.access_controller_client.contract.address,
+                "value": 0,
+                "data": data,
+                "nonce": nonce,
+                "deadline": deadline,
+            }
+
+            signable_message = encode_typed_data(domain_data, message_types, message_data)
+            signed_message = Account.sign_message(signable_message, self.account.key)
+
+            return signed_message.signature.hex()
+
+        except Exception as e:
+            raise e
+        
+    def _get_deadline(self, deadline: int = None) -> int:
+        """
+        Calculate the deadline for a transaction.
+
+        :param deadline int: [Optional] The deadline value in milliseconds.
+        :return int: The calculated deadline in milliseconds.
+        """
+        current_timestamp = int(datetime.now().timestamp() * 1000)
+        
+        if deadline is not None:
+            if not isinstance(deadline, int) or deadline < 0:
+                raise ValueError("Invalid deadline value.")
+            return current_timestamp + deadline
+        else:
+            return current_timestamp + 1000

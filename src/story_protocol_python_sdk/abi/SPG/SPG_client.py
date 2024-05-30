@@ -38,3 +38,11 @@ class SPGClient:
         return self.contract.functions.mintAndRegisterIpAndAttachPILTerms(nftContract, recipient, metadata, terms).build_transaction(tx_params)
     
     
+    def registerIpAndAttachPILTerms(self, nftContract, tokenId, metadata, terms, sigMetadata, sigAttach):
+        
+        return self.contract.functions.registerIpAndAttachPILTerms(nftContract, tokenId, metadata, terms, sigMetadata, sigAttach).transact()
+        
+    def build_registerIpAndAttachPILTerms_transaction(self, nftContract, tokenId, metadata, terms, sigMetadata, sigAttach, tx_params):
+        return self.contract.functions.registerIpAndAttachPILTerms(nftContract, tokenId, metadata, terms, sigMetadata, sigAttach).build_transaction(tx_params)
+    
+    

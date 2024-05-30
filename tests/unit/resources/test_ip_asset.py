@@ -336,3 +336,143 @@ def test_register_attach_successful_transaction(ip_asset):
         assert response['txHash'] == "0x129f7dd802200f096221dd89d5b086e4bd3ad6eafb378a0c75e3b04fc375f997"[2:]
         assert response['ipId'] == "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"
         assert response['licenseTermsId'] == 1
+
+def test_register_derivative_ip_already_registered(ip_asset):
+    with patch.object(ip_asset, '_get_ip_id', return_value="0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"), \
+         patch.object(ip_asset, '_is_registered', return_value=True):
+        with pytest.raises(ValueError, match="The NFT with id 3 is already registered as IP."):
+            ip_asset.registerDerivativeIp(
+                nft_contract="0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c",
+                token_id=3,
+                deriv_data={
+                    'parentIpIds': ["0xd142822Dc1674154EaF4DDF38bbF7EF8f0D8ECe4"],
+                    'licenseTermsIds': ["1"]
+                }
+            )
+
+def test_register_derivative_ip_length_mismatch(ip_asset):
+    with patch.object(ip_asset, '_get_ip_id', return_value="0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"), \
+         patch.object(ip_asset, '_is_registered', return_value=False):
+        with pytest.raises(ValueError, match="Parent IP IDs and license terms IDs must match in quantity."):
+            ip_asset.registerDerivativeIp(
+                nft_contract="0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c",
+                token_id=3,
+                deriv_data={
+                    'parentIpIds': ["0xd142822Dc1674154EaF4DDF38bbF7EF8f0D8ECe4"],
+                    'licenseTermsIds': ["1", "2"]
+                }
+            )
+
+def test_register_derivative_ip_license_terms_not_attached(ip_asset):
+    with patch.object(ip_asset, '_get_ip_id', return_value="0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"), \
+         patch.object(ip_asset, '_is_registered', return_value=False), \
+         patch.object(ip_asset.license_registry_client, 'hasIpAttachedLicenseTerms', return_value=False):
+        with pytest.raises(ValueError, match="License terms id 1 must be attached to the parent ipId 0xd142822Dc1674154EaF4DDF38bbF7EF8f0D8ECe4 before registering derivative."):
+            ip_asset.registerDerivativeIp(
+                nft_contract="0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c",
+                token_id=3,
+                deriv_data={
+                    'parentIpIds': ["0xd142822Dc1674154EaF4DDF38bbF7EF8f0D8ECe4"],
+                    'licenseTermsIds': ["1"]
+                }
+            )
+
+def test_register_derivative_ip_successful_transaction(ip_asset):
+    tx_receipt_mock = {
+        'status': 1,
+        'logs': [
+            {
+                'topics': [
+                    Web3.keccak(text="IPRegistered(address,uint256,address,uint256,string,string,uint256)").hex(),
+                    Web3.to_hex(Web3.keccak(text="1")),
+                    Web3.to_hex(Web3.keccak(text="0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c")),
+                    Web3.to_hex(Web3.keccak(text="1"))
+                ],
+                'data': '0x000000000000000000000000BD78ec0d5B1320f8A6C6225A73BF4FeBdb95233F0000000000000000000000000000000000000000000000000000000000000000'
+            }
+        ]
+    }
+
+    with patch.object(ip_asset, '_get_ip_id', return_value="0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"), \
+         patch.object(ip_asset, '_is_registered', return_value=False), \
+         patch.object(ip_asset.license_registry_client, 'hasIpAttachedLicenseTerms', return_value=True), \
+         patch.object(ip_asset.spg_client, 'build_registerIpAndMakeDerivative_transaction', return_value={
+                'to': "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c",
+                'value': 0,
+                'data': "0x",
+                'gas': 2000000,
+                'gasPrice': Web3.to_wei('50', 'gwei'),
+                'nonce': 0
+            }), \
+         patch('web3.eth.Eth.send_raw_transaction', return_value=Web3.to_bytes(hexstr="0x129f7dd802200f096221dd89d5b086e4bd3ad6eafb378a0c75e3b04fc375f997")), \
+         patch('web3.eth.Eth.wait_for_transaction_receipt', return_value=tx_receipt_mock), \
+         patch.object(ip_asset, '_get_permission_signature_for_spg', return_value="0xsignature"), \
+         patch.object(ip_asset, '_parse_tx_ip_registered_event', return_value={
+             'ipId': '0xBD78ec0d5B1320f8A6C6225A73BF4FeBdb95233F',
+         }):
+
+        response = ip_asset.registerDerivativeIp(
+            nft_contract="0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c",
+            token_id=3,
+            deriv_data={
+                'parentIpIds': ["0xd142822Dc1674154EaF4DDF38bbF7EF8f0D8ECe4"],
+                'licenseTermsIds': ["1"],
+                'licenseTemplate': "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"
+            },
+            metadata={
+                'metadataHash': Web3.to_hex(Web3.keccak(text="test-metadata-hash")),
+                'metadataURI': ""
+            }
+        )
+
+        assert response['txHash'] == "0x129f7dd802200f096221dd89d5b086e4bd3ad6eafb378a0c75e3b04fc375f997"[2:]
+        assert response['ipId'] == "0xBD78ec0d5B1320f8A6C6225A73BF4FeBdb95233F"
+    tx_receipt_mock = {
+        'status': 1,
+        'logs': [
+            {
+                'topics': [
+                    Web3.keccak(text="IPRegistered(address,uint256,address,uint256,string,string,uint256)").hex(),
+                    Web3.to_hex(Web3.keccak(text="1")),
+                    Web3.to_hex(Web3.keccak(text="0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c")),
+                    Web3.to_hex(Web3.keccak(text="1"))
+                ],
+                'data': '0x000000000000000000000000BD78ec0d5B1320f8A6C6225A73BF4FeBdb95233F0000000000000000000000000000000000000000000000000000000000000000'
+            }
+        ]
+    }
+
+    with patch.object(ip_asset, '_get_ip_id', return_value="0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"), \
+         patch.object(ip_asset, '_is_registered', return_value=False), \
+         patch.object(ip_asset.license_registry_client, 'hasIpAttachedLicenseTerms', return_value=True), \
+         patch.object(ip_asset.spg_client, 'build_registerIpAndMakeDerivative_transaction', return_value={
+                'to': "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c",
+                'value': 0,
+                'data': "0x",
+                'gas': 2000000,
+                'gasPrice': Web3.to_wei('50', 'gwei'),
+                'nonce': 0
+            }), \
+         patch('web3.eth.Eth.send_raw_transaction', return_value=Web3.to_bytes(hexstr="0x129f7dd802200f096221dd89d5b086e4bd3ad6eafb378a0c75e3b04fc375f997")), \
+         patch('web3.eth.Eth.wait_for_transaction_receipt', return_value=tx_receipt_mock), \
+         patch.object(ip_asset, '_get_permission_signature_for_spg', return_value="0xsignature"), \
+         patch.object(ip_asset, '_parse_tx_ip_registered_event', return_value={
+             'ipId': '0xBD78ec0d5B1320f8A6C6225A73BF4FeBdb95233F',
+         }):
+
+        response = ip_asset.registerDerivativeIp(
+            nft_contract="0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c",
+            token_id=3,
+            deriv_data={
+                'parentIpIds': ["0xd142822Dc1674154EaF4DDF38bbF7EF8f0D8ECe4"],
+                'licenseTermsIds': ["1"],
+                'licenseTemplate': "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"
+            },
+            metadata={
+                'metadataHash': Web3.to_hex(Web3.keccak(text="test-metadata-hash")),
+                'metadataURI': ""
+            }
+        )
+
+        assert response['txHash'] == "0x129f7dd802200f096221dd89d5b086e4bd3ad6eafb378a0c75e3b04fc375f997"[2:]
+        assert response['ipId'] == "0xBD78ec0d5B1320f8A6C6225A73BF4FeBdb95233F"

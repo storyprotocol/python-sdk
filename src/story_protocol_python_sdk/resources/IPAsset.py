@@ -378,10 +378,6 @@ class IPAsset:
             ip_id = self._get_ip_id(nft_contract, token_id)
             if self._is_registered(ip_id):
                 raise ValueError(f"The NFT with id {token_id} is already registered as IP.")
-            
-            for parent_id in deriv_data['parentIpIds']:
-                if not self._is_registered(parent_id):
-                    raise ValueError(f"The parent IP with id {parent_id} is not registered.")
 
             if len(deriv_data['parentIpIds']) != len(deriv_data['licenseTermsIds']):
                 raise ValueError("Parent IP IDs and license terms IDs must match in quantity.")

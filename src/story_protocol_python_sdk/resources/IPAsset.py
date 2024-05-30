@@ -323,12 +323,12 @@ class IPAsset:
                     'nftMetadataHash': metadata.get('nftMetadataHash', ZERO_HASH),
                 })
 
-            signature = self._get_permission_signature_for_spg(ip_id, self.core_metadata_module_client.contract.address, calculated_deadline, "setAll(address,string,bytes32,bytes32)", 1)
-            req_object['sigMetadata'] = {
-                'signer': self.web3.to_checksum_address(self.account.address),
-                'deadline': calculated_deadline,
-                'signature': signature,
-            }
+                signature = self._get_permission_signature_for_spg(ip_id, self.core_metadata_module_client.contract.address, calculated_deadline, "setAll(address,string,bytes32,bytes32)", 1)
+                req_object['sigMetadata'] = {
+                    'signer': self.web3.to_checksum_address(self.account.address),
+                    'deadline': calculated_deadline,
+                    'signature': signature,
+                }
 
             response = build_and_send_transaction(
                 self.web3,

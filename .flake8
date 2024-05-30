@@ -1,0 +1,3 @@
+[flake8]
+exclude = abi
+ignore = W, E, F

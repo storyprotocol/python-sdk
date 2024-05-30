@@ -221,3 +221,43 @@ def test_mint_register_commercial_remix(story_client):
 
     assert 'licenseTermsId' in response
     assert isinstance(response['licenseTermsId'], int)
+
+def test_register_attach(story_client):
+    txData = story_client.NFTClient.createNFTCollection(
+        name="test-collection",
+        symbol="TEST",
+        max_supply=25,
+        mint_fee=0,
+        mint_fee_token=ZERO_ADDRESS,
+        owner=None
+    )
+
+    nft_contract = txData['nftContract']
+
+    token_id = get_token_id(nft_contract, story_client.web3, story_client.account)
+
+    pil_type = 'non_commercial_remix'
+    metadata = {
+        'metadataURI': "test-uri",
+        'metadataHash': web3.to_hex(web3.keccak(text="test-metadata-hash")),
+        'nftMetadataHash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash"))
+    }
+
+    response = story_client.IPAsset.register_ip_and_attach_pil_terms(
+        nft_contract=nft_contract,
+        token_id=token_id,
+        pil_type=pil_type,
+        metadata=metadata,
+        deadline=1000,
+    )
+
+    assert 'txHash' in response
+    assert isinstance(response['txHash'], str)
+    assert response['txHash'].startswith("0x")
+
+    assert 'ipId' in response
+    assert isinstance(response['ipId'], str)
+    assert response['ipId'].startswith("0x")
+
+    assert 'licenseTermsId' in response
+    assert isinstance(response['licenseTermsId'], int)

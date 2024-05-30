@@ -114,7 +114,8 @@
             "contract_address": "0x69415CE984A79a3Cfbe3F51024C63b6C107331e3",
             "functions": [
                 "mintAndRegisterIpAndAttachPILTerms",
-                "createCollection"
+                "createCollection",
+                "registerIpAndAttachPILTerms"
             ]
         }
 

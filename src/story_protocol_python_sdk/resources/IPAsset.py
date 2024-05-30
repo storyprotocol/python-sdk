@@ -259,7 +259,7 @@ class IPAsset:
         except Exception as e:
             raise e
         
-    def register_ip_and_attach_pil_terms(self, nft_contract: str, token_id: int, pil_type: str, metadata: dict = None, deadline: int = None, minting_fee: int = None, commercial_rev_share: int = None, currency: str = None, tx_options: dict = None) -> dict:
+    def registerIpAndAttachPilTerms(self, nft_contract: str, token_id: int, pil_type: str, metadata: dict = None, deadline: int = None, minting_fee: int = None, commercial_rev_share: int = None, currency: str = None, tx_options: dict = None) -> dict:
         """
         Register a given NFT as an IP and attach Programmable IP License Terms.
 

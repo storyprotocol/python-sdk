@@ -243,7 +243,7 @@ def test_register_attach(story_client):
         'nftMetadataHash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash"))
     }
 
-    response = story_client.IPAsset.register_ip_and_attach_pil_terms(
+    response = story_client.IPAsset.registerIpAndAttachPilTerms(
         nft_contract=nft_contract,
         token_id=token_id,
         pil_type=pil_type,

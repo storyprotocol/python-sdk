@@ -12,7 +12,7 @@ src_path = os.path.abspath(os.path.join(current_dir, '..', '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-from utils import get_story_client_in_sepolia, mint_tokens, approve
+from utils import get_story_client_in_sepolia, mint_tokens, approve, MockERC721, get_token_id, MockERC20
 
 load_dotenv()
 private_key = os.getenv('WALLET_PRIVATE_KEY')
@@ -26,48 +26,79 @@ if not web3.is_connected():
 # Set up the account with the private key
 account = web3.eth.account.from_key(private_key)
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def story_client():
     return get_story_client_in_sepolia(web3, account)
 
-#Ip id 1: 0xB24cB00a5d9cf2AdB2f6D5B22D479C90F5204c45
-#Ip id 2: 0x99da6cc55f15Fa6dAe239C868877CB5D8Fc6Be05
+@pytest.fixture(scope="module")
+def parent_ip_id(story_client):
+    token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
 
-#ip id with royalty policy: 0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c
-# ip id royalty vault: 0x2626D54671c366e29682c94a2125452Ef3F401D2
-
-#license term: 2
-#attached done
-# register derivative done
-
-# def test_collectRoyaltyTokens(story_client): #can only run each child ip id once
-#     # Register derivative IP
-#     response = story_client.Royalty.collectRoyaltyTokens(
-#         parent_ip_id="0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c",
-#         child_ip_id="0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"
-#     )
-    
-#     assert response is not None
-
-#     assert 'txHash' in response
-#     assert response['txHash'] is not None
-#     assert isinstance(response['txHash'], str)
-#     assert len(response['txHash']) > 0
-
-#     assert 'royaltyTokensCollected' in response
-#     assert response['royaltyTokensCollected'] is not None
-#     assert isinstance(response['royaltyTokensCollected'], int)
-
-def test_snapshot(story_client):
-    # Define the parameters for the snapshot method
-    child_ip_id = "0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"  # Example child IP ID
-
-    # Call the snapshot method
-    response = story_client.Royalty.snapshot(
-        child_ip_id=child_ip_id
+    parent_ip_response = story_client.IPAsset.register(
+        token_contract=MockERC721,
+        token_id=token_id
     )
 
-    # Verify the response
+    parent_ip_id = parent_ip_response['ipId']
+
+    return parent_ip_id
+
+@pytest.fixture(scope="module")
+def child_ip_id(story_client):
+    token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+
+    response = story_client.IPAsset.register(
+        token_contract=MockERC721,
+        token_id=token_id
+    )
+
+    return response['ipId']
+
+@pytest.fixture(scope="module")
+def attach_and_register(story_client, parent_ip_id, child_ip_id):
+    license_terms_response = story_client.License.registerCommercialRemixPIL(
+        minting_fee=1,
+        currency=MockERC20,
+        commercial_rev_share=100,
+        royalty_policy="0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86"
+    )
+
+    attach_license_response = story_client.License.attachLicenseTerms(
+        ip_id=parent_ip_id,
+        license_template="0x260B6CB6284c89dbE660c0004233f7bB99B5edE7",
+        license_terms_id=license_terms_response['licenseTermsId']
+    )
+
+    derivative_response = story_client.IPAsset.registerDerivative(
+        child_ip_id=child_ip_id,
+        parent_ip_ids=[parent_ip_id],
+        license_terms_ids=[license_terms_response['licenseTermsId']],
+        license_template="0x260B6CB6284c89dbE660c0004233f7bB99B5edE7"
+    )
+
+def test_collectRoyaltyTokens(story_client, parent_ip_id, child_ip_id, attach_and_register):
+    response = story_client.Royalty.collectRoyaltyTokens(
+        parent_ip_id=parent_ip_id,
+        child_ip_id=child_ip_id
+    )
+    
+    assert response is not None
+
+    assert 'txHash' in response
+    assert response['txHash'] is not None
+    assert isinstance(response['txHash'], str)
+    assert len(response['txHash']) > 0
+
+    assert 'royaltyTokensCollected' in response
+    assert response['royaltyTokensCollected'] is not None
+    assert isinstance(response['royaltyTokensCollected'], int)
+
+@pytest.fixture(scope="module")
+def snapshot_id(story_client, parent_ip_id):
+    response = story_client.Royalty.snapshot(
+        parent_ip_id=parent_ip_id
+    )
+
     assert response is not None
     assert 'txHash' in response
     assert response['txHash'] is not None
@@ -77,78 +108,61 @@ def test_snapshot(story_client):
     assert 'snapshotId' in response
     assert response['snapshotId'] is not None
     assert isinstance(response['snapshotId'], int)
-    assert response['snapshotId'] >= 0  # Assuming snapshotId is a non-negative integer
+    assert response['snapshotId'] >= 0
 
-def test_claimableRevenue(story_client):
-    # Define the parameters for the claimableRevenue method
-    child_ip_id = "0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"  # Example child IP ID
-    account_address = account.address  # Use the test account address
-    snapshot_id = 1  # Example snapshot ID
-    token = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"  # Replace with the actual token address
+    return response['snapshotId']
 
-    # Call the claimableRevenue method
+def test_snapshot(story_client, snapshot_id):
+    assert snapshot_id is not None
+
+def test_claimableRevenue(story_client, parent_ip_id, snapshot_id):
     response = story_client.Royalty.claimableRevenue(
-        child_ip_id=child_ip_id,
-        account_address=account_address,
+        parent_ip_id=parent_ip_id,
+        account_address=account.address,
         snapshot_id=snapshot_id,
-        token=token
+        token=MockERC20
     )
 
-    # Verify the response
     assert response is not None
     assert isinstance(response, int)
-    assert response >= 0  # Assuming the claimable revenue can be zero or positive
+    assert response >= 0
 
-# # def before(): #run before calling test pay royalty on behalf if testing
-# #     #let me mint a dong ton of tokens
-# #     erc20_contract_address = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"
-# #     to_address = '0x8059F63663576bE3605B3CcD30aaEb858C345640'
+def test_payRoyaltyOnBehalf(story_client, parent_ip_id, child_ip_id):
+    token_ids = mint_tokens(
+        erc20_contract_address=MockERC20, 
+        web3=web3, 
+        account=account, 
+        to_address=account.address, 
+        amount=100000 * 10 ** 6
+    )
+    
+    receipt = approve(
+        erc20_contract_address=MockERC20, 
+        web3=web3, 
+        account=account, 
+        spender_address="0xaabaf349c7a2a84564f9cc4ac130b3f19a718e86", 
+        amount=100000 * 10 ** 6)
 
-# #     token_ids = mint_tokens(erc20_contract_address, web3, account, to_address, 3)
-# #     print("txn reciept: ", token_ids)
-
-# #     # as the msg.sender, you need to approve RoyaltyPolicyLAP 
-# #     # call this as the caller of payRoyaltyOnBehalf
-# #     # approve("0xaabaf349c7a2a84564f9cc4ac130b3f19a718e86") #aab is royalty policy lap contract
-# #     receipt = approve(erc20_contract_address, web3, account, "0xaabaf349c7a2a84564f9cc4ac130b3f19a718e86", 100000 * 10 ** 6)
-# #     print(receipt)
-
-def test_payRoyaltyOnBehalf(story_client):
-    #Define the parameters for the payRoyaltyOnBehalf method
-    receiver_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"
-    payer_ip_id = "0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"
-    ERC20 = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"
-    amount = 1
-
-    # Call the payRoyaltyOnBehalf method
     response = story_client.Royalty.payRoyaltyOnBehalf(
-        receiver_ip_id=receiver_ip_id,
-        payer_ip_id=payer_ip_id,
-        token=ERC20,
-        amount=amount
+        receiver_ip_id=parent_ip_id,
+        payer_ip_id=child_ip_id,
+        token=MockERC20,
+        amount=10
     )
 
-    # Verify the response
     assert response is not None
     assert 'txHash' in response
     assert response['txHash'] is not None
     assert isinstance(response['txHash'], str)
     assert len(response['txHash']) > 0
 
-def test_claimRevenue(story_client):
-    #Define the parameters for the claimRevenue method
-    child_ip_id = "0x9C098DF37b2324aaC8792dDc7BcEF7Bb0057A9C7"
-    ERC20 = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"
-    snapshot_ids = [1, 2]
-
-    # Call the payRoyaltyOnBehalf method
+def test_claimRevenue(story_client, parent_ip_id, snapshot_id):
     response = story_client.Royalty.claimRevenue(
-        snapshotIds=snapshot_ids,
-        child_ip_id=child_ip_id,
-        token=ERC20,
+        snapshot_ids=[snapshot_id],
+        parent_ip_id=parent_ip_id,
+        token=MockERC20,
     )
 
-    # Verify the response
     assert response is not None
     assert 'txHash' in response
     assert response['txHash'] is not None
@@ -158,4 +172,4 @@ def test_claimRevenue(story_client):
     assert 'claimableToken' in response
     assert response['claimableToken'] is not None
     assert isinstance(response['claimableToken'], int)
-    assert response['claimableToken'] >= 0  # Assuming claimableToken is a non-negative integer
+    assert response['claimableToken'] >= 0

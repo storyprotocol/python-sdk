@@ -32,69 +32,83 @@ ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 def story_client():
     return get_story_client_in_sepolia(web3, account)
 
-# def test_register_ip_asset(story_client):
-#     token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+@pytest.fixture(scope="module")
+def parent_ip_id(story_client):
+    token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
 
-#     response = story_client.IPAsset.register(
-#         token_contract=MockERC721,
-#         token_id=token_id
-#     )
+    response = story_client.IPAsset.register(
+        token_contract=MockERC721,
+        token_id=token_id
+    )
 
-#     assert response is not None
-#     assert 'ipId' in response
-#     assert response['ipId'] is not None
+    assert response is not None
+    assert 'ipId' in response
+    assert response['ipId'] is not None
 
-# def test_registerDerivative(story_client): #can only run once since using preset variables
-#     parent_ip_id = "0x567603411Fb957759Ac2090659B73cC5f099456D"
+    return response['ipId']
+
+def test_register_ip_asset(story_client, parent_ip_id):
+    assert parent_ip_id is not None
+
+@pytest.fixture(scope="module")
+def attach_non_commercial_license(story_client, parent_ip_id):
+    license_template = "0x260B6CB6284c89dbE660c0004233f7bB99B5edE7"
+    no_commercial_license_terms_id = 2
+
+    attach_license_response = story_client.License.attachLicenseTerms(
+        ip_id=parent_ip_id,
+        license_template=license_template,
+        license_terms_id=no_commercial_license_terms_id
+    )
+
+def test_register_derivative(story_client, parent_ip_id, attach_non_commercial_license):
+    token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+    child_response = story_client.IPAsset.register(
+        token_contract=MockERC721,
+        token_id=token_id
+    )
+    child_ip_id = child_response['ipId']
+
+    response = story_client.IPAsset.registerDerivative(
+        child_ip_id=child_ip_id,
+        parent_ip_ids=[parent_ip_id],
+        license_terms_ids=[2],
+        license_template="0x260B6CB6284c89dbE660c0004233f7bB99B5edE7"
+    )
     
-#     # Attach license terms to parent IP
-#     license_template = "0x260B6CB6284c89dbE660c0004233f7bB99B5edE7"  # Replace with actual license template address
-#     no_commercial_license_terms_id = 2  # Replace with actual license terms ID
+    assert response is not None
+    assert 'txHash' in response
+    assert response['txHash'] is not None
+    assert isinstance(response['txHash'], str)
+    assert len(response['txHash']) > 0
 
-#     attach_license_response = story_client.License.attachLicenseTerms(
-#         ip_id=parent_ip_id,
-#         license_template=license_template,
-#         license_terms_id=no_commercial_license_terms_id
-#     )
-#     assert attach_license_response is not None
-#     assert 'txHash' in attach_license_response
-#     assert attach_license_response['txHash'] is not None
+def test_registerDerivativeWithLicenseTokens(story_client, parent_ip_id, attach_non_commercial_license):
+    token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+    child_response = story_client.IPAsset.register(
+        token_contract=MockERC721,
+        token_id=token_id
+    )
+    child_ip_id = child_response['ipId']
 
-#     child_ip_id = "0xc478561B1A18331d92b2b6f6a863dbAA874729c3"
-#     assert child_ip_id is not None
+    license_token_response = story_client.License.mintLicenseTokens(
+        licensor_ip_id=parent_ip_id, 
+        license_template="0x260B6CB6284c89dbE660c0004233f7bB99B5edE7", 
+        license_terms_id=2, 
+        amount=1, 
+        receiver=account.address
+    )
+    licenseTokenIds = license_token_response['licenseTokenIds']
 
-#     # Register derivative IP
-#     response = story_client.IPAsset.registerDerivative(
-#         child_ip_id=child_ip_id,
-#         parent_ip_ids=[parent_ip_id],
-#         license_terms_ids=[no_commercial_license_terms_id],
-#         license_template=license_template
-#     )
+    response = story_client.IPAsset.registerDerivativeWithLicenseTokens(
+        child_ip_id=child_ip_id,
+        license_token_ids=licenseTokenIds
+    )
     
-#     assert response is not None
-#     assert 'txHash' in response
-#     assert response['txHash'] is not None
-#     assert isinstance(response['txHash'], str)
-#     assert len(response['txHash']) > 0
-
-# def test_registerDerivativeWithLicenseTokens(story_client): #can only run once since using preset variables
-
-#     child_ip_id = "0xDd4330c5aeA6ab3a3E9620D2c74799bAb3BD117D"  #make sure the child ip has access to these token ids
-#     assert child_ip_id is not None
-
-#     licenseTokenIds = [1199]
-
-#     # Register derivative IP
-#     response = story_client.IPAsset.registerDerivativeWithLicenseTokens(
-#         child_ip_id=child_ip_id,
-#         license_token_ids=licenseTokenIds
-#     )
-    
-#     assert response is not None
-#     assert 'txHash' in response
-#     assert response['txHash'] is not None
-#     assert isinstance(response['txHash'], str)
-#     assert len(response['txHash']) > 0
+    assert response is not None
+    assert 'txHash' in response
+    assert response['txHash'] is not None
+    assert isinstance(response['txHash'], str)
+    assert len(response['txHash']) > 0
 
 @pytest.fixture(scope="module")
 def nft_collection(story_client):

@@ -4,6 +4,7 @@ from web3 import Web3
 
 from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import IPAccountImplClient
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
+from story_protocol_python_sdk.abi.AccessController.AccessController_client import AccessControllerClient
 
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
@@ -21,6 +22,7 @@ class IPAccount:
         self.chain_id = chain_id
 
         self.ip_asset_registry_client = IPAssetRegistryClient(web3)
+        self.access_controller_client = AccessControllerClient(web3)
 
     def execute(self, to: str, value: int, account_address: str, data: str) -> dict:
         """

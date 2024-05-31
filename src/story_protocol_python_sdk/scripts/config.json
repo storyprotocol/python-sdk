@@ -115,7 +115,8 @@
             "functions": [
                 "mintAndRegisterIpAndAttachPILTerms",
                 "createCollection",
-                "registerIpAndAttachPILTerms"
+                "registerIpAndAttachPILTerms",
+                "registerIpAndMakeDerivative"
             ]
         },
         {

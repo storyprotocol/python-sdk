@@ -32,22 +32,6 @@ def story_client():
     return get_story_client_in_sepolia(web3, account)
 
 def test_execute(story_client):
-    config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src', 'story_protocol_python_sdk', 'scripts', 'config.json'))
-    with open(config_path, 'r') as config_file:
-        config = json.load(config_file)
-    contract_address = None
-    for contract in config['contracts']:
-        if contract['contract_name'] == 'AccessController':
-            contract_address = contract['contract_address']
-            break
-    if not contract_address:
-        raise ValueError(f"Contract address for AccessController not found in config.json")
-    abi_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src', 'story_protocol_python_sdk', 'abi', 'AccessController', 'AccessController.json'))
-    with open(abi_path, 'r') as abi_file:
-        abi = json.load(abi_file)
-
-    contract = web3.eth.contract(address=contract_address, abi=abi)
-
     token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
 
     response = story_client.IPAsset.register(
@@ -55,7 +39,7 @@ def test_execute(story_client):
         token_id=token_id
     )
 
-    data = contract.encode_abi(
+    data = story_client.IPAccount.access_controller_client.contract.encode_abi(
         fn_name="setPermission", 
         args=[response['ipId'], 
               account.address, 
@@ -65,7 +49,7 @@ def test_execute(story_client):
     )
 
     response = story_client.IPAccount.execute(
-        to=contract_address,
+        to=story_client.IPAccount.access_controller_client.contract.address,
         value=0,
         account_address=response['ipId'],
         data=data
@@ -78,32 +62,16 @@ def test_execute(story_client):
     assert len(response['txHash']) > 0, "'txHash' is empty."
 
 def test_executeWithSig(story_client):
-    config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src', 'story_protocol_python_sdk', 'scripts', 'config.json'))
-    with open(config_path, 'r') as config_file:
-        config = json.load(config_file)
-    contract_address = None
-    for contract in config['contracts']:
-        if contract['contract_name'] == 'AccessController':
-            contract_address = contract['contract_address']
-            break
-    if not contract_address:
-        raise ValueError(f"Contract address for AccessController not found in config.json")
-    abi_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src', 'story_protocol_python_sdk', 'abi', 'AccessController', 'AccessController.json'))
-    with open(abi_path, 'r') as abi_file:
-        abi = json.load(abi_file)
-
-    contract = web3.eth.contract(address=contract_address, abi=abi)
-
     token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
 
     response = story_client.IPAsset.register(
         token_contract=MockERC721,
         token_id=token_id
     )
-    # response={'ipId': "0x33633A1C01E30618244e5877A4F3E1c85dFa4CCa"}
+
     ipId = response['ipId']
 
-    data = contract.encode_abi(
+    data = story_client.IPAccount.access_controller_client.contract.encode_abi(
         fn_name="setPermission", 
         args=[ipId, 
               account.address, 
@@ -114,10 +82,7 @@ def test_executeWithSig(story_client):
     deadline = getBlockTimestamp(web3) + 100
     state = story_client.IPAccount.getIpAccountNonce(ipId)
     expectedState = state + 1
-    print("State is: ", state)
-    print("Expected state is: ", expectedState)
-    
-    # Define the domain data
+
     domain_data = {
         "name": "Story Protocol IP Account",
         "version": "1",
@@ -125,7 +90,6 @@ def test_executeWithSig(story_client):
         "verifyingContract": ipId,
     }
 
-    # Define the custom types
     message_types = {
         "Execute": [
             {"name": "to", "type": "address"},
@@ -136,24 +100,19 @@ def test_executeWithSig(story_client):
         ],
     }
 
-    # Define the message data
     message_data = {
-        "to": contract_address,
+        "to": story_client.IPAccount.access_controller_client.contract.address,
         "value": 0,
-        "data": data,  # Replace with the actual data
-        "nonce": expectedState,  # Replace with the actual nonce
-        "deadline": deadline,  # Replace with the actual deadline
+        "data": data,
+        "nonce": expectedState,
+        "deadline": deadline,
     }
 
-    # Encode the typed data
     signable_message = encode_typed_data(domain_data, message_types, message_data)
     signed_message = Account.sign_message(signable_message, private_key)
 
-    print("Signed message: ", signed_message)
-    print("Signature: ", signed_message.signature)
-
     response = story_client.IPAccount.executeWithSig(
-        to=contract_address,
+        to=story_client.IPAccount.access_controller_client.contract.address,
         value=0,
         account_address=ipId,
         data=data,

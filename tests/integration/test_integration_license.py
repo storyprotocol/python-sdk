@@ -12,7 +12,7 @@ src_path = os.path.abspath(os.path.join(current_dir, '..', '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-from utils import get_story_client_in_sepolia, MockERC20
+from utils import get_story_client_in_sepolia, MockERC20, MockERC721, get_token_id
 
 load_dotenv()
 private_key = os.getenv('WALLET_PRIVATE_KEY')
@@ -26,7 +26,7 @@ if not web3.is_connected():
 # Set up the account with the private key
 account = web3.eth.account.from_key(private_key)
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def story_client():
     return get_story_client_in_sepolia(web3, account)
 
@@ -63,10 +63,24 @@ def test_registerCommercialRemixPIL(story_client):
     assert response['licenseTermsId'] is not None, "'licenseTermsId' is None."
     assert isinstance(response['licenseTermsId'], int), "'licenseTermsId' is not an integer."
 
-def test_attachLicenseTerms(story_client):
-    ip_id = "0x431A7Cc86381F9bA437b575D3F9E931652fFbbdd"
+@pytest.fixture(scope="module")
+def ip_id(story_client):
+    token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+
+    response = story_client.IPAsset.register(
+        token_contract=MockERC721,
+        token_id=token_id
+    )
+
+    assert response is not None
+    assert 'ipId' in response
+    assert response['ipId'] is not None
+
+    return response['ipId']
+
+def test_attachLicenseTerms(story_client, ip_id):
     license_template = "0x260B6CB6284c89dbE660c0004233f7bB99B5edE7"
-    license_terms_id = 3 
+    license_terms_id = 2
 
     response = story_client.License.attachLicenseTerms(ip_id, license_template, license_terms_id)
     
@@ -76,15 +90,15 @@ def test_attachLicenseTerms(story_client):
     assert isinstance(response['txHash'], str), "'txHash' is not a string."
     assert len(response['txHash']) > 0, "'txHash' is empty."
 
-def test_mintLicenseTokens(story_client):
-    licensor_ip_id = "0x431A7Cc86381F9bA437b575D3F9E931652fFbbdd"  # Replace with actual Licensor IP ID
-    license_template = "0x260B6CB6284c89dbE660c0004233f7bB99B5edE7"  # Replace with actual License Template address
-    license_terms_id = 2  # Replace with actual License Terms ID
-    amount = 2  # Replace with the amount of license tokens to mint
-    receiver = "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"  # Replace with the address of the receiver
+def test_mintLicenseTokens(story_client, ip_id):
+    response = story_client.License.mintLicenseTokens(
+        licensor_ip_id=ip_id, 
+        license_template="0x260B6CB6284c89dbE660c0004233f7bB99B5edE7", 
+        license_terms_id=2, 
+        amount=1, 
+        receiver=account.address
+    )
 
-    response = story_client.License.mintLicenseTokens(licensor_ip_id, license_template, license_terms_id, amount, receiver)
-    
     assert response is not None, "Response is None, indicating the contract interaction failed."
     assert 'txHash' in response, "Response does not contain 'txHash'."
     assert response['txHash'] is not None, "'txHash' is None."
@@ -96,7 +110,7 @@ def test_mintLicenseTokens(story_client):
     assert all(isinstance(i, int) for i in response['licenseTokenIds']), "Not all elements in 'licenseTokenIds' are integers."
 
 def test_getLicenseTerms(story_client):
-    selectedLicenseTermsId = 2  # Use license terms ID 2 for the test
+    selectedLicenseTermsId = 2
 
     response = story_client.License.getLicenseTerms(selectedLicenseTermsId)
 

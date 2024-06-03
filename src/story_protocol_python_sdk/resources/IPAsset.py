@@ -41,29 +41,6 @@ class IPAsset:
         self.core_metadata_module_client = CoreMetadataModuleClient(web3)
         self.access_controller_client = AccessControllerClient(web3)
         self.pi_license_template_client = PILicenseTemplateClient(web3)
-        
-    def _get_ip_id(self, token_contract: str, token_id: int) -> str:
-        """
-        Get the IP ID for a given token.
-
-        :param token_contract str: The address of the NFT.
-        :param token_id int: The token identifier of the NFT.
-        :return str: The IP ID.
-        """
-        return self.ip_asset_registry_client.ipId(
-            self.chain_id, 
-            token_contract,
-            token_id
-        )
-
-    def _is_registered(self, ip_id: str) -> bool:
-        """
-        Check if an IP is registered.
-
-        :param ip_id str: The IP ID to check.
-        :return bool: True if registered, False otherwise.
-        """        
-        return self.ip_asset_registry_client.isRegistered(ip_id)
 
     def register(self, token_contract: str, token_id: int, tx_options: dict = None) -> dict:
         """
@@ -471,6 +448,29 @@ class IPAsset:
 
         except Exception as e:
             raise e
+
+    def _get_ip_id(self, token_contract: str, token_id: int) -> str:
+        """
+        Get the IP ID for a given token.
+
+        :param token_contract str: The address of the NFT.
+        :param token_id int: The token identifier of the NFT.
+        :return str: The IP ID.
+        """
+        return self.ip_asset_registry_client.ipId(
+            self.chain_id, 
+            token_contract,
+            token_id
+        )
+
+    def _is_registered(self, ip_id: str) -> bool:
+        """
+        Check if an IP is registered.
+
+        :param ip_id str: The IP ID to check.
+        :return bool: True if registered, False otherwise.
+        """        
+        return self.ip_asset_registry_client.isRegistered(ip_id)
 
     def _parse_tx_ip_registered_event(self, tx_receipt: dict) -> int:
         """

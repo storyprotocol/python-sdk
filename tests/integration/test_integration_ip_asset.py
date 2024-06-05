@@ -50,6 +50,26 @@ def parent_ip_id(story_client):
 def test_register_ip_asset(story_client, parent_ip_id):
     assert parent_ip_id is not None
 
+def test_register_ip_asset_with_metadata(story_client):
+    token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+    metadata = {
+        'metadataURI': "test-uri",
+        'metadataHash': web3.to_hex(web3.keccak(text="test-metadata-hash")),
+        'nftMetadataHash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash"))
+    }
+
+    response = story_client.IPAsset.register(
+        token_contract=MockERC721,
+        token_id=token_id,
+        metadata=metadata,
+        deadline=1000
+    )
+
+    assert response is not None
+    assert 'ipId' in response
+    assert response['ipId'] is not None
+    assert isinstance(response['ipId'], str)
+
 @pytest.fixture(scope="module")
 def attach_non_commercial_license(story_client, parent_ip_id):
     license_template = "0x260B6CB6284c89dbE660c0004233f7bB99B5edE7"

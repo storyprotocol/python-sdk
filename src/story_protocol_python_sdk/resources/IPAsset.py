@@ -636,3 +636,4 @@ class IPAsset:
             return current_timestamp + deadline
         else:
             return current_timestamp + 1000
+        

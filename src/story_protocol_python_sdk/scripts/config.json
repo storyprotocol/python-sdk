@@ -116,7 +116,8 @@
                 "mintAndRegisterIpAndAttachPILTerms",
                 "createCollection",
                 "registerIpAndAttachPILTerms",
-                "registerIpAndMakeDerivative"
+                "registerIpAndMakeDerivative",
+                "registerIp"
             ]
         },
         {

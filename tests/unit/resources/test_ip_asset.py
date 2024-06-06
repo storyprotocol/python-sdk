@@ -31,8 +31,22 @@ ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000"
 
 @pytest.fixture
 def ip_asset():
-    chain_id = 11155111  # Sepolia chain ID
+    chain_id = 11155111
     return IPAsset(web3, account, chain_id)
+
+def test_register_invalid_deadline_type(ip_asset):
+    with patch.object(ip_asset, '_get_ip_id', return_value="0xd142822Dc1674154EaF4DDF38bbF7EF8f0D8ECe4"), \
+         patch.object(ip_asset, '_is_registered', return_value=False):
+        with pytest.raises(ValueError, match="Invalid deadline value."):
+            ip_asset.register(
+                token_contract="0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c",
+                token_id=3,
+                deadline="error",
+                metadata={
+                    'metadataURI': "1",
+                    'metadataHash': "0x0000000000000000000000000000000000000000000000000000000000000000"
+                }
+            )
 
 def test_ip_asset_register_token_already_registered(ip_asset):
     token_contract = "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"
@@ -47,15 +61,14 @@ def test_ip_asset_register_token_already_registered(ip_asset):
         assert response['ipId'] == ip_id
         assert response['txHash'] is None
 
-def test_ip_asset_register_token_not_registered(ip_asset):
+def test_ip_asset_register_successful(ip_asset):
     token_contract = "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"
     token_id = "3"
     ip_id = "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"
     tx_hash = "0x129f7dd802200f096221dd89d5b086e4bd3ad6eafb378a0c75e3b04fc375f997"
 
-    # Mocking the expected behavior of the functions
-    with patch.object(ip_asset.ip_asset_registry_client, 'ipId', return_value=ip_id), \
-         patch.object(ip_asset.ip_asset_registry_client, 'isRegistered', return_value=False), \
+    with patch.object(ip_asset, '_get_ip_id', return_value=ip_id), \
+         patch.object(ip_asset, '_is_registered', return_value=False), \
          patch('story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client.IPAssetRegistryClient.build_register_transaction', return_value={
              'data': '0x',
              'nonce': 0,
@@ -63,11 +76,46 @@ def test_ip_asset_register_token_not_registered(ip_asset):
              'gasPrice': Web3.to_wei('100', 'gwei')
          }), \
          patch('web3.eth.Eth.send_raw_transaction', return_value=Web3.to_bytes(hexstr=tx_hash)), \
-         patch('web3.eth.Eth.wait_for_transaction_receipt', return_value={'status': 1, 'logs': []}):
+         patch('web3.eth.Eth.wait_for_transaction_receipt', return_value={'status': 1, 'logs': []}), \
+         patch.object(ip_asset, '_parse_tx_ip_registered_event', return_value={'ipId': ip_id}):
 
-        # Call the function being tested
         result = ip_asset.register(token_contract, token_id)
-        
+
+        assert result['txHash'] == tx_hash[2:]
+        assert result['ipId'] == ip_id
+
+def test_ip_asset_register_successful_with_metadata(ip_asset):
+    token_contract = "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"
+    token_id = "3"
+    ip_id = "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"
+    tx_hash = "0x129f7dd802200f096221dd89d5b086e4bd3ad6eafb378a0c75e3b04fc375f997"
+
+    metadata = {
+        'metadataURI': "",
+        'metadataHash': Web3.to_hex(Web3.keccak(text="test-metadata-hash")),
+        'nftMetadataHash': "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c",
+    }
+
+    with patch.object(ip_asset, '_get_ip_id', return_value=ip_id), \
+         patch.object(ip_asset, '_is_registered', return_value=False), \
+         patch.object(ip_asset, '_get_permission_signature_for_spg', return_value="0xsignature"), \
+         patch('story_protocol_python_sdk.abi.SPG.SPG_client.SPGClient.build_registerIp_transaction', return_value={
+             'data': '0x',
+             'nonce': 0,
+             'gas': 2000000,
+             'gasPrice': Web3.to_wei('100', 'gwei')
+         }), \
+         patch('web3.eth.Eth.send_raw_transaction', return_value=Web3.to_bytes(hexstr=tx_hash)), \
+         patch('web3.eth.Eth.wait_for_transaction_receipt', return_value={'status': 1, 'logs': []}), \
+         patch.object(ip_asset, '_parse_tx_ip_registered_event', return_value={'ipId': ip_id}):
+
+        result = ip_asset.register(
+            token_contract=token_contract,
+            token_id=token_id,
+            metadata=metadata,
+            deadline=1000
+        )
+
         assert result['txHash'] == tx_hash[2:]
         assert result['ipId'] == ip_id
 
@@ -132,7 +180,6 @@ def test_register_derivative_success(ip_asset):
     license_terms_ids = ["1"]
     tx_hash = "0x129f7dd802200f096221dd89d5b086e4bd3ad6eafb378a0c75e3b04fc375f997"
 
-    # Mocking the expected behavior of the functions
     with patch.object(ip_asset.ip_asset_registry_client, 'isRegistered', return_value=True), \
          patch.object(ip_asset.license_registry_client, 'hasIpAttachedLicenseTerms', return_value=True), \
          patch('story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client.LicensingModuleClient.build_registerDerivative_transaction', return_value={
@@ -144,7 +191,6 @@ def test_register_derivative_success(ip_asset):
          patch('web3.eth.Eth.send_raw_transaction', return_value=Web3.to_bytes(hexstr=tx_hash)), \
          patch('web3.eth.Eth.wait_for_transaction_receipt', return_value={'status': 1, 'logs': []}):
 
-        # Call the function being tested
         res = ip_asset.registerDerivative(child_ip_id, parent_ip_ids, license_terms_ids, "0x0000000000000000000000000000000000000000")
 
         assert res['txHash'] == tx_hash[2:]
@@ -167,7 +213,6 @@ def test_register_derivative_with_license_tokens_success(ip_asset):
     license_token_ids = ["1"]
     tx_hash = "0x129f7dd802200f096221dd89d5b086e4bd3ad6eafb378a0c75e3b04fc375f997"
 
-    # Mocking the expected behavior of the functions
     with patch.object(ip_asset.ip_asset_registry_client, 'isRegistered', return_value=True), \
          patch.object(ip_asset.license_token_client, 'ownerOf', return_value=ip_asset.account.address), \
          patch('story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client.LicensingModuleClient.build_registerDerivativeWithLicenseTokens_transaction', return_value={
@@ -179,7 +224,6 @@ def test_register_derivative_with_license_tokens_success(ip_asset):
          patch('web3.eth.Eth.send_raw_transaction', return_value=Web3.to_bytes(hexstr=tx_hash)), \
          patch('web3.eth.Eth.wait_for_transaction_receipt', return_value={'status': 1, 'logs': []}):
 
-        # Call the function being tested
         res = ip_asset.registerDerivativeWithLicenseTokens(child_ip_id, license_token_ids)
 
         assert res['txHash'] == tx_hash[2:]

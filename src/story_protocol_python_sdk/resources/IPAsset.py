@@ -41,37 +41,19 @@ class IPAsset:
         self.core_metadata_module_client = CoreMetadataModuleClient(web3)
         self.access_controller_client = AccessControllerClient(web3)
         self.pi_license_template_client = PILicenseTemplateClient(web3)
-        
-    def _get_ip_id(self, token_contract: str, token_id: int) -> str:
-        """
-        Get the IP ID for a given token.
 
-        :param token_contract str: The address of the NFT.
-        :param token_id int: The token identifier of the NFT.
-        :return str: The IP ID.
-        """
-        return self.ip_asset_registry_client.ipId(
-            self.chain_id, 
-            token_contract,
-            token_id
-        )
-
-    def _is_registered(self, ip_id: str) -> bool:
-        """
-        Check if an IP is registered.
-
-        :param ip_id str: The IP ID to check.
-        :return bool: True if registered, False otherwise.
-        """        
-        return self.ip_asset_registry_client.isRegistered(ip_id)
-
-    def register(self, token_contract: str, token_id: int, tx_options: dict = None) -> dict:
+    def register(self, token_contract: str, token_id: int, metadata: dict = None, deadline: int = None, tx_options: dict = None) -> dict:
         """
         Registers an NFT as IP, creating a corresponding IP record.
 
         :param token_contract str: The address of the NFT.
         :param token_id int: The token identifier of the NFT.
-        :param tx_options dict: [Optional] transaction options.
+        :param metadata dict: [Optional] The metadata for the IP.
+            :param metadataURI str: [Optional] The URI of the metadata for the IP.
+            :param metadataHash str: [Optional] The metadata hash for the IP.
+            :param nftMetadataHash str: [Optional] The metadata hash for the IP NFT.
+        :param deadline int: [Optional] The deadline for the signature in milliseconds.
+        :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash and IP ID.
         """
         try:
@@ -82,19 +64,69 @@ class IPAsset:
                     'ipId': ip_id
                 }
 
-            response = build_and_send_transaction(
-                self.web3,
-                self.account,
-                self.ip_asset_registry_client.build_register_transaction,
-                self.chain_id,
-                token_contract,
-                token_id,
-                tx_options=tx_options
-            )
+            req_object = {
+                'tokenId': token_id,
+                'nftContract': self.web3.to_checksum_address(token_contract),
+                'metadata': {
+                    'metadataURI': "",
+                    'metadataHash': ZERO_HASH,
+                    'nftMetadataHash': ZERO_HASH,
+                },
+                'sigMetadata': {
+                    'signer': ZERO_ADDRESS,
+                    'deadline': 0,
+                    'signature': ZERO_HASH,
+                },
+            }
+
+            if metadata:
+                req_object['metadata'].update({
+                    'metadataURI': metadata.get('metadataURI', ""),
+                    'metadataHash': metadata.get('metadataHash', ZERO_HASH),
+                    'nftMetadataHash': metadata.get('nftMetadataHash', ZERO_HASH),
+                })
+
+                calculated_deadline = self._get_deadline(deadline=deadline)
+                signature = self._get_permission_signature_for_spg(
+                    ip_id,
+                    self.core_metadata_module_client.contract.address,
+                    calculated_deadline,
+                    "setAll(address,string,bytes32,bytes32)",
+                    1
+                )
+                req_object['sigMetadata'] = {
+                    'signer': self.web3.to_checksum_address(self.account.address),
+                    'deadline': calculated_deadline,
+                    'signature': signature,
+                }
+
+            if metadata:
+                response = build_and_send_transaction(
+                    self.web3,
+                    self.account,
+                    self.spg_client.build_registerIp_transaction,
+                    req_object['nftContract'],
+                    req_object['tokenId'],
+                    req_object['metadata'],
+                    req_object['sigMetadata'],
+                    tx_options=tx_options
+                )
+            else:
+                response = build_and_send_transaction(
+                    self.web3,
+                    self.account,
+                    self.ip_asset_registry_client.build_register_transaction,
+                    self.chain_id,
+                    token_contract,
+                    token_id,
+                    tx_options=tx_options
+                )
+
+            ip_registered = self._parse_tx_ip_registered_event(response['txReceipt'])
 
             return {
                 'txHash': response['txHash'],
-                'ipId': ip_id
+                'ipId': ip_registered['ipId']
             }
 
         except Exception as e:
@@ -325,12 +357,18 @@ class IPAsset:
                     'nftMetadataHash': metadata.get('nftMetadataHash', ZERO_HASH),
                 })
 
-                signature = self._get_permission_signature_for_spg(ip_id, self.core_metadata_module_client.contract.address, calculated_deadline, "setAll(address,string,bytes32,bytes32)", 1)
-                req_object['sigMetadata'] = {
-                    'signer': self.web3.to_checksum_address(self.account.address),
-                    'deadline': calculated_deadline,
-                    'signature': signature,
-                }
+            signature = self._get_permission_signature_for_spg(
+                ip_id, 
+                self.core_metadata_module_client.contract.address, 
+                calculated_deadline, 
+                "setAll(address,string,bytes32,bytes32)", 
+                1
+            )
+            req_object['sigMetadata'] = {
+                'signer': self.web3.to_checksum_address(self.account.address),
+                'deadline': calculated_deadline,
+                'signature': signature,
+            }
 
             response = build_and_send_transaction(
                 self.web3,
@@ -430,18 +468,18 @@ class IPAsset:
                     'nftMetadataHash': metadata.get('nftMetadataHash', ZERO_HASH),
                 })
 
-                signature = self._get_permission_signature_for_spg(
-                    ip_id,
-                    self.core_metadata_module_client.contract.address,
-                    calculated_deadline,
-                    "setAll(address,string,bytes32,bytes32)",
-                    1
-                )
-                req_object['sigMetadata'] = {
-                    'signer': self.web3.to_checksum_address(self.account.address),
-                    'deadline': calculated_deadline,
-                    'signature': signature,
-                }
+            signature = self._get_permission_signature_for_spg(
+                ip_id,
+                self.core_metadata_module_client.contract.address,
+                calculated_deadline,
+                "setAll(address,string,bytes32,bytes32)",
+                1
+            )
+            req_object['sigMetadata'] = {
+                'signer': self.web3.to_checksum_address(self.account.address),
+                'deadline': calculated_deadline,
+                'signature': signature,
+            }
 
             response = build_and_send_transaction(
                 self.web3,
@@ -465,6 +503,29 @@ class IPAsset:
 
         except Exception as e:
             raise e
+
+    def _get_ip_id(self, token_contract: str, token_id: int) -> str:
+        """
+        Get the IP ID for a given token.
+
+        :param token_contract str: The address of the NFT.
+        :param token_id int: The token identifier of the NFT.
+        :return str: The IP ID.
+        """
+        return self.ip_asset_registry_client.ipId(
+            self.chain_id, 
+            token_contract,
+            token_id
+        )
+
+    def _is_registered(self, ip_id: str) -> bool:
+        """
+        Check if an IP is registered.
+
+        :param ip_id str: The IP ID to check.
+        :return bool: True if registered, False otherwise.
+        """        
+        return self.ip_asset_registry_client.isRegistered(ip_id)
 
     def _parse_tx_ip_registered_event(self, tx_receipt: dict) -> int:
         """
@@ -575,3 +636,4 @@ class IPAsset:
             return current_timestamp + deadline
         else:
             return current_timestamp + 1000
+        

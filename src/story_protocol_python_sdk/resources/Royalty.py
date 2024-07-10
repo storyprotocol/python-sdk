@@ -97,16 +97,16 @@ class Royalty:
 
         return None
     
-    def snapshot(self, parent_ip_id: str, tx_options: dict = None) -> dict:
+    def snapshot(self, child_ip_id: str, tx_options: dict = None) -> dict:
         """
         Snapshots the claimable revenue and royalty token amounts.
 
-        :param parent_ip_id str: The parent IP ID.
+        :param child_ip_id str: The child IP ID.
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash and the snapshot ID.
         """
         try:
-            proxy_address = self._getRoyaltyVaultAddress(parent_ip_id)
+            proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
             ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
 
             response = build_and_send_transaction(
@@ -144,18 +144,18 @@ class Royalty:
 
         return None
 
-    def claimableRevenue(self, parent_ip_id: str, account_address: str, snapshot_id: int, token: str) -> int:
+    def claimableRevenue(self, child_ip_id: str, account_address: str, snapshot_id: int, token: str) -> int:
         """
         Calculates the amount of revenue token claimable by a token holder at certain snapshot.
 
-        :param parent_ip_id str: The parent IP ID.
+        :param child_ip_id str: The child IP ID.
         :param account_address str: The address of the token holder.
         :param snapshot_id int: The snapshot ID.
         :param token str: The revenue token to claim.
         :return int: The claimable revenue amount.
         """
         try:
-            proxy_address = self._getRoyaltyVaultAddress(parent_ip_id)
+            proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
             ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
 
             claimable_revenue = ip_royalty_vault_client.claimableRevenue(
@@ -205,18 +205,18 @@ class Royalty:
         except Exception as e:
             raise e
     
-    def claimRevenue(self, snapshot_ids: list, parent_ip_id: str, token: str, tx_options: dict = None) -> dict:
+    def claimRevenue(self, snapshot_ids: list, child_ip_id: str, token: str, tx_options: dict = None) -> dict:
         """
         Allows token holders to claim by a list of snapshot IDs based on the token balance at certain snapshot.
 
         :param snapshot_ids list: The list of snapshot IDs.
-        :param parent_ip_id str: The parent IP ID.
+        :param child_ip_id str: The child IP ID.
         :param token str: The revenue token to claim.
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash and the number of claimable tokens.
         """
         try:
-            proxy_address = self._getRoyaltyVaultAddress(parent_ip_id)
+            proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
             ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
 
             response = build_and_send_transaction(

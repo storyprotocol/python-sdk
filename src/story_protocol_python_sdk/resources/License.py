@@ -126,7 +126,7 @@ class License:
             complete_license_terms = get_license_term_by_type(PIL_TYPE['COMMERCIAL_REMIX'], {
                 'mintingFee': minting_fee,
                 'currency': currency,
-                'commercialRevShare': commercial_rev_share,
+                'commercialRevShare': int((commercial_rev_share / 100) * 100000000),
                 'royaltyPolicy': royalty_policy,
             })
 

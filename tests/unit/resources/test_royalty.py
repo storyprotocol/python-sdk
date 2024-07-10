@@ -97,18 +97,18 @@ def test_collectRoyaltyTokens_success(royalty_client):
         
 def test_snapshot_royaltyVaultIpId_error(royalty_client):
     with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', return_value=False):
-        parent_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"
+        child_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"
         
-        with pytest.raises(ValueError, match=f"The IP with id {parent_ip_id} is not registered."):
-            royalty_client.snapshot(parent_ip_id)
+        with pytest.raises(ValueError, match=f"The IP with id {child_ip_id} is not registered."):
+            royalty_client.snapshot(child_ip_id=child_ip_id)
 
 def test_snapshot_royaltyVaultAddress_error(royalty_client):
     with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', return_value=True):
         with patch.object(royalty_client.royalty_policy_lap_client, 'getRoyaltyData', return_value=[True, "0x", 1, ["0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"], [1]]):
-            parent_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"
+            child_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"
 
-            with pytest.raises(ValueError, match=f"The royalty vault IP with id {parent_ip_id} address is not set."):
-                royalty_client.snapshot(parent_ip_id)
+            with pytest.raises(ValueError, match=f"The royalty vault IP with id {child_ip_id} address is not set."):
+                royalty_client.snapshot(child_ip_id=child_ip_id)
 
 def test_snapshot_success(royalty_client):
     with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', return_value=True):
@@ -122,9 +122,9 @@ def test_snapshot_success(royalty_client):
                 }):
                     with patch('web3.eth.Eth.send_raw_transaction', return_value=Web3.to_bytes(hexstr='0x471343c1ad3b358843b2079d8c5c1a0a5a86fe88382cdc67604b0209bbedf523')):
                         with patch('web3.eth.Eth.wait_for_transaction_receipt', return_value={'status': 1, 'logs': []}):
-                            parent_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"
+                            child_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"
 
-                            response = royalty_client.snapshot(parent_ip_id)
+                            response = royalty_client.snapshot(child_ip_id=child_ip_id)
                             assert response is not None
                             assert 'txHash' in response
                             assert response['txHash'] == '471343c1ad3b358843b2079d8c5c1a0a5a86fe88382cdc67604b0209bbedf523'
@@ -133,13 +133,13 @@ def test_snapshot_success(royalty_client):
 
 def test_claimableRevenue_royaltyVaultIpId_error(royalty_client):
     with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', return_value=False):
-        parent_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"
+        child_ip_id = "0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c"
         account_address = account.address
         snapshot_id = 1
         token = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"
 
-        with pytest.raises(ValueError, match=f"The IP with id {parent_ip_id} is not registered."):
-            royalty_client.claimableRevenue(parent_ip_id, account_address, snapshot_id, token)
+        with pytest.raises(ValueError, match=f"The IP with id {child_ip_id} is not registered."):
+            royalty_client.claimableRevenue(child_ip_id, account_address, snapshot_id, token)
 
 def test_claimableRevenue_royaltyVaultAddress_error(royalty_client):
     with patch.object(royalty_client.ip_asset_registry_client, 'isRegistered', return_value=True):

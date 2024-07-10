@@ -11,7 +11,7 @@ current_dir = os.path.dirname(__file__)
 src_path = os.path.abspath(os.path.join(current_dir, '..', '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
-
+    
 from utils import get_story_client_in_sepolia, mint_tokens, approve, MockERC721, get_token_id, MockERC20
 
 load_dotenv()
@@ -94,9 +94,9 @@ def test_collectRoyaltyTokens(story_client, parent_ip_id, child_ip_id, attach_an
     assert isinstance(response['royaltyTokensCollected'], int)
 
 @pytest.fixture(scope="module")
-def snapshot_id(story_client, parent_ip_id):
+def snapshot_id(story_client, child_ip_id):
     response = story_client.Royalty.snapshot(
-        parent_ip_id=parent_ip_id
+        child_ip_id=child_ip_id
     )
 
     assert response is not None
@@ -115,9 +115,9 @@ def snapshot_id(story_client, parent_ip_id):
 def test_snapshot(story_client, snapshot_id):
     assert snapshot_id is not None
 
-def test_claimableRevenue(story_client, parent_ip_id, snapshot_id):
+def test_claimableRevenue(story_client, child_ip_id, snapshot_id):
     response = story_client.Royalty.claimableRevenue(
-        parent_ip_id=parent_ip_id,
+        child_ip_id=child_ip_id,
         account_address=account.address,
         snapshot_id=snapshot_id,
         token=MockERC20
@@ -156,10 +156,10 @@ def test_payRoyaltyOnBehalf(story_client, parent_ip_id, child_ip_id):
     assert isinstance(response['txHash'], str)
     assert len(response['txHash']) > 0
 
-def test_claimRevenue(story_client, parent_ip_id, snapshot_id):
+def test_claimRevenue(story_client, child_ip_id, snapshot_id):
     response = story_client.Royalty.claimRevenue(
         snapshot_ids=[snapshot_id],
-        parent_ip_id=parent_ip_id,
+        child_ip_id=child_ip_id,
         token=MockERC20,
     )
 

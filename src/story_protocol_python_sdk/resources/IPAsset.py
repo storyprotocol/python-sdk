@@ -157,8 +157,8 @@ class IPAsset:
 
             if len(parent_ip_ids) != len(license_terms_ids):
                 raise ValueError("Parent IP IDs and license terms IDs must match in quantity.")
-            if len(parent_ip_ids) not in [1, 2]:
-                raise ValueError("There can only be 1 or 2 parent IP IDs.")
+            # if len(parent_ip_ids) not in [1, 2]:
+            #     raise ValueError("There can only be 1 or 2 parent IP IDs.")
 
             for parent_id, terms_id in zip(parent_ip_ids, license_terms_ids):
                 if not self.license_registry_client.hasIpAttachedLicenseTerms(parent_id, license_template, terms_id):

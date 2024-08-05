@@ -60,12 +60,12 @@ def attach_and_register(story_client, parent_ip_id, child_ip_id):
         minting_fee=1,
         currency=MockERC20,
         commercial_rev_share=100,
-        royalty_policy="0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86"
+        royalty_policy="0x1E1cBd300d351354EB17360a3769F23B18bbB77D"
     )
 
     attach_license_response = story_client.License.attachLicenseTerms(
         ip_id=parent_ip_id,
-        license_template="0x260B6CB6284c89dbE660c0004233f7bB99B5edE7",
+        license_template="0xB9bfC97d3b0b1333e079fb392F786a743d14Be56",
         license_terms_id=license_terms_response['licenseTermsId']
     )
 
@@ -73,7 +73,7 @@ def attach_and_register(story_client, parent_ip_id, child_ip_id):
         child_ip_id=child_ip_id,
         parent_ip_ids=[parent_ip_id],
         license_terms_ids=[license_terms_response['licenseTermsId']],
-        license_template="0x260B6CB6284c89dbE660c0004233f7bB99B5edE7"
+        license_template="0xB9bfC97d3b0b1333e079fb392F786a743d14Be56"
     )
 
 def test_collectRoyaltyTokens(story_client, parent_ip_id, child_ip_id, attach_and_register):
@@ -140,7 +140,7 @@ def test_payRoyaltyOnBehalf(story_client, parent_ip_id, child_ip_id):
         erc20_contract_address=MockERC20, 
         web3=web3, 
         account=account, 
-        spender_address="0xaabaf349c7a2a84564f9cc4ac130b3f19a718e86", 
+        spender_address="0x1E1cBd300d351354EB17360a3769F23B18bbB77D", 
         amount=100000 * 10 ** 6)
 
     response = story_client.Royalty.payRoyaltyOnBehalf(

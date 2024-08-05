@@ -34,7 +34,7 @@ def main():
     commercial_use_params = {
         'currency': MockERC20,
         'minting_fee': 2,
-        'royalty_policy': "0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86"
+        'royalty_policy': "0x1E1cBd300d351354EB17360a3769F23B18bbB77D"
     }
     register_pil_terms_response = story_client.License.registerCommercialUsePIL(
         minting_fee=commercial_use_params['minting_fee'],
@@ -50,7 +50,7 @@ def main():
     try:
         attach_license_terms_response = story_client.License.attachLicenseTerms(
             ip_id=registered_ip_asset_response['ipId'],
-            license_template="0x260B6CB6284c89dbE660c0004233f7bB99B5edE7",
+            license_template="0xB9bfC97d3b0b1333e079fb392F786a743d14Be56",
             license_terms_id=register_pil_terms_response['licenseTermsId']
         )
         print(f"Attached License Terms to IP at transaction hash {attach_license_terms_response['txHash']}")
@@ -63,7 +63,7 @@ def main():
     # 5. Mint License
     mint_license_response = story_client.License.mintLicenseTokens(
         licensor_ip_id=registered_ip_asset_response['ipId'],
-        license_template="0x260B6CB6284c89dbE660c0004233f7bB99B5edE7",
+        license_template="0xB9bfC97d3b0b1333e079fb392F786a743d14Be56",
         license_terms_id=register_pil_terms_response['licenseTermsId'],
         amount=1,
         receiver=account.address

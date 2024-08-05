@@ -72,7 +72,7 @@ def test_register_ip_asset_with_metadata(story_client):
 
 @pytest.fixture(scope="module")
 def attach_non_commercial_license(story_client, parent_ip_id):
-    license_template = "0x260B6CB6284c89dbE660c0004233f7bB99B5edE7"
+    license_template = "0xB9bfC97d3b0b1333e079fb392F786a743d14Be56"
     no_commercial_license_terms_id = 2
 
     attach_license_response = story_client.License.attachLicenseTerms(
@@ -93,7 +93,7 @@ def test_register_derivative(story_client, parent_ip_id, attach_non_commercial_l
         child_ip_id=child_ip_id,
         parent_ip_ids=[parent_ip_id],
         license_terms_ids=[2],
-        license_template="0x260B6CB6284c89dbE660c0004233f7bB99B5edE7"
+        license_template="0xB9bfC97d3b0b1333e079fb392F786a743d14Be56"
     )
     
     assert response is not None
@@ -112,7 +112,7 @@ def test_registerDerivativeWithLicenseTokens(story_client, parent_ip_id, attach_
 
     license_token_response = story_client.License.mintLicenseTokens(
         licensor_ip_id=parent_ip_id, 
-        license_template="0x260B6CB6284c89dbE660c0004233f7bB99B5edE7", 
+        license_template="0xB9bfC97d3b0b1333e079fb392F786a743d14Be56", 
         license_terms_id=2, 
         amount=1, 
         receiver=account.address

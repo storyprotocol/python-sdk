@@ -42,7 +42,7 @@ def test_registerCommercialUsePIL(story_client):
     response = story_client.License.registerCommercialUsePIL(
         minting_fee=1,
         currency=MockERC20,
-        royalty_policy="0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86"
+        royalty_policy="0x1E1cBd300d351354EB17360a3769F23B18bbB77D"
     )
 
     assert response is not None, "Response is None, indicating the contract interaction failed."
@@ -55,7 +55,7 @@ def test_registerCommercialRemixPIL(story_client):
         minting_fee=1,
         currency=MockERC20,
         commercial_rev_share=10,
-        royalty_policy="0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86"
+        royalty_policy="0x1E1cBd300d351354EB17360a3769F23B18bbB77D"
     )
 
     assert response is not None, "Response is None, indicating the contract interaction failed."
@@ -79,7 +79,7 @@ def ip_id(story_client):
     return response['ipId']
 
 def test_attachLicenseTerms(story_client, ip_id):
-    license_template = "0x260B6CB6284c89dbE660c0004233f7bB99B5edE7"
+    license_template = "0xB9bfC97d3b0b1333e079fb392F786a743d14Be56"
     license_terms_id = 2
 
     response = story_client.License.attachLicenseTerms(ip_id, license_template, license_terms_id)
@@ -93,7 +93,7 @@ def test_attachLicenseTerms(story_client, ip_id):
 def test_mintLicenseTokens(story_client, ip_id):
     response = story_client.License.mintLicenseTokens(
         licensor_ip_id=ip_id, 
-        license_template="0x260B6CB6284c89dbE660c0004233f7bB99B5edE7", 
+        license_template="0xB9bfC97d3b0b1333e079fb392F786a743d14Be56", 
         license_terms_id=2, 
         amount=1, 
         receiver=account.address

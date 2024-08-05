@@ -2,7 +2,7 @@
     "contracts": [
         {
             "contract_name": "IpRoyaltyVaultImpl",
-            "contract_address": "0xD6c2AfB61085f1359d47159f2271BDD0EeBf19C2",
+            "contract_address": "0x8909688B0b60494afd529c0E72E717eBcB32D46C",
             "functions": [
                 "collectRoyaltyTokens",
                 "unclaimedRoyaltyTokens",
@@ -13,7 +13,7 @@
         },
         {
             "contract_name": "IPAccountImpl",
-            "contract_address": "0x36a5f0D61f6Bab3C6Dde211E5a6762Cb18a8060d",
+            "contract_address": "0x1407c7A7090d75A60ae7BF8F7E241eB0e140B872",
             "functions": [
                 "execute",
                 "executeWithSig",

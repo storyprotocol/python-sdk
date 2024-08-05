@@ -247,7 +247,7 @@ class IPAsset:
             license_term = get_license_term_by_type(pil_type, {
                 'mintingFee': minting_fee,
                 'currency': currency,
-                'royaltyPolicy': "0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86", #default royalty policy
+                'royaltyPolicy': "0x1E1cBd300d351354EB17360a3769F23B18bbB77D",
                 'commercialRevShare': commercial_rev_share,
             })
 
@@ -322,7 +322,7 @@ class IPAsset:
             license_term = get_license_term_by_type(pil_type, {
                 'mintingFee': minting_fee,
                 'currency': currency,
-                'royaltyPolicy': "0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86", #default royalty policy
+                'royaltyPolicy': "0x1E1cBd300d351354EB17360a3769F23B18bbB77D", 
                 'commercialRevShare': commercial_rev_share,
             })
 

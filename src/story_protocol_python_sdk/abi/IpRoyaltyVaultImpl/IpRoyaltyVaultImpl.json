@@ -10,6 +10,11 @@
         "internalType": "address",
         "name": "disputeModule",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "ipGraph",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
@@ -206,6 +211,19 @@
     "outputs": [
       {
         "internalType": "contract IDisputeModule",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "IP_GRAPH_CONTRACT",
+    "outputs": [
+      {
+        "internalType": "address",
         "name": "",
         "type": "address"
       }

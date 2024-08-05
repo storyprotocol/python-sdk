@@ -11,6 +11,14 @@ class IPAccountImplClient:
             abi = json.load(abi_file)
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
+    def execute(self, to, value, data, operation):
+        
+        return self.contract.functions.execute(to, value, data, operation).transact()
+        
+    def build_execute_transaction(self, to, value, data, operation, tx_params):
+        return self.contract.functions.execute(to, value, data, operation).build_transaction(tx_params)
+    
+    
     def execute(self, to, value, data):
         
         return self.contract.functions.execute(to, value, data).transact()

@@ -2,109 +2,165 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_chainId",
-        "type": "uint256"
+        "internalType": "address",
+        "name": "accessController",
+        "type": "address"
       },
       {
-        "internalType": "address[]",
-        "name": "_owners",
-        "type": "address[]"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_signaturesRequired",
-        "type": "uint256"
+        "internalType": "address",
+        "name": "ipAccountRegistry",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
   },
   {
-    "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
         "internalType": "address",
-        "name": "to",
+        "name": "ipAccount",
         "type": "address"
       }
     ],
-    "name": "CloseStream",
-    "type": "event"
+    "name": "AccessControlled__NotIpAccount",
+    "type": "error"
   },
   {
-    "anonymous": false,
+    "inputs": [],
+    "name": "AccessControlled__ZeroAddress",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
-        "indexed": true,
         "internalType": "address",
-        "name": "sender",
+        "name": "authority",
         "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "balance",
-        "type": "uint256"
       }
     ],
-    "name": "Deposit",
-    "type": "event"
+    "name": "AccessManagedInvalidAuthority",
+    "type": "error"
   },
   {
-    "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
         "internalType": "address",
-        "name": "owner",
+        "name": "caller",
         "type": "address"
       },
       {
-        "indexed": false,
-        "internalType": "address payable",
-        "name": "to",
+        "internalType": "uint32",
+        "name": "delay",
+        "type": "uint32"
+      }
+    ],
+    "name": "AccessManagedRequiredDelay",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "caller",
         "type": "address"
-      },
+      }
+    ],
+    "name": "AccessManagedUnauthorized",
+    "type": "error"
+  },
+  {
+    "inputs": [
       {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "value",
-        "type": "uint256"
-      },
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
+    ],
+    "name": "AddressEmptyCode",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreMetadataModule__MetadataAlreadyFrozen",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreMetadataModule__ZeroAccessManager",
+    "type": "error"
+  },
+  {
+    "inputs": [
       {
-        "indexed": false,
-        "internalType": "bytes",
-        "name": "data",
-        "type": "bytes"
-      },
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "ERC1967InvalidImplementation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ERC1967NonPayable",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FailedInnerCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidInitialization",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotInitializing",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UUPSUnauthorizedCallContext",
+    "type": "error"
+  },
+  {
+    "inputs": [
       {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "nonce",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
         "internalType": "bytes32",
-        "name": "hash",
+        "name": "slot",
         "type": "bytes32"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes",
-        "name": "result",
-        "type": "bytes"
       }
     ],
-    "name": "ExecuteTransaction",
+    "name": "UUPSUnsupportedProxiableUUID",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "authority",
+        "type": "address"
+      }
+    ],
+    "name": "AuthorityUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "version",
+        "type": "uint64"
+      }
+    ],
+    "name": "Initialized",
     "type": "event"
   },
   {
@@ -113,23 +169,11 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "to",
+        "name": "ipId",
         "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "frequency",
-        "type": "uint256"
       }
     ],
-    "name": "OpenStream",
+    "name": "MetadataFrozen",
     "type": "event"
   },
   {
@@ -138,151 +182,149 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "owner",
+        "name": "ipId",
         "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "added",
-        "type": "bool"
-      }
-    ],
-    "name": "Owner",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
       },
       {
         "indexed": false,
         "internalType": "string",
-        "name": "reason",
+        "name": "metadataURI",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "metadataHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "MetadataURISet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "nftTokenURI",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "nftMetadataHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "NFTTokenURISet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "Upgraded",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "ACCESS_CONTROLLER",
+    "outputs": [
+      {
+        "internalType": "contract IAccessController",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "IP_ACCOUNT_REGISTRY",
+    "outputs": [
+      {
+        "internalType": "contract IIPAccountRegistry",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "UPGRADE_INTERFACE_VERSION",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
         "type": "string"
       }
     ],
-    "name": "Withdraw",
-    "type": "event"
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "authority",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
     "inputs": [
       {
         "internalType": "address",
-        "name": "newSigner",
+        "name": "ipId",
         "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "newSignaturesRequired",
-        "type": "uint256"
       }
     ],
-    "name": "addSigner",
+    "name": "freezeMetadata",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "accessManager",
+        "type": "address"
+      }
+    ],
+    "name": "initialize",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [],
-    "name": "chainId",
+    "name": "isConsumingScheduledOp",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "bytes4",
         "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address payable",
-        "name": "to",
-        "type": "address"
-      }
-    ],
-    "name": "closeStream",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address payable",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "value",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes",
-        "name": "data",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes[]",
-        "name": "signatures",
-        "type": "bytes[]"
-      }
-    ],
-    "name": "executeTransaction",
-    "outputs": [
-      {
-        "internalType": "bytes",
-        "name": "",
-        "type": "bytes"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_nonce",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "value",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes",
-        "name": "data",
-        "type": "bytes"
-      }
-    ],
-    "name": "getTransactionHash",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
+        "type": "bytes4"
       }
     ],
     "stateMutability": "view",
@@ -292,11 +334,11 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "ipId",
         "type": "address"
       }
     ],
-    "name": "isOwner",
+    "name": "isMetadataFrozen",
     "outputs": [
       {
         "internalType": "bool",
@@ -309,90 +351,25 @@
   },
   {
     "inputs": [],
-    "name": "nonce",
+    "name": "name",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "string",
         "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "frequency",
-        "type": "uint256"
-      }
-    ],
-    "name": "openStream",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "_hash",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes",
-        "name": "_signature",
-        "type": "bytes"
-      }
-    ],
-    "name": "recover",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
+        "type": "string"
       }
     ],
     "stateMutability": "pure",
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "oldSigner",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "newSignaturesRequired",
-        "type": "uint256"
-      }
-    ],
-    "name": "removeSigner",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
-    "name": "signaturesRequired",
+    "name": "proxiableUUID",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "bytes32",
         "name": "",
-        "type": "uint256"
+        "type": "bytes32"
       }
     ],
     "stateMutability": "view",
@@ -402,35 +379,26 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "to",
+        "name": "ipId",
         "type": "address"
-      }
-    ],
-    "name": "streamBalance",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
       },
       {
         "internalType": "string",
-        "name": "reason",
+        "name": "metadataURI",
         "type": "string"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "metadataHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "nftMetadataHash",
+        "type": "bytes32"
       }
     ],
-    "name": "streamWithdraw",
+    "name": "setAll",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -439,26 +407,52 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "newAuthority",
         "type": "address"
       }
     ],
-    "name": "streams",
+    "name": "setAuthority",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "metadataURI",
+        "type": "string"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "metadataHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "setMetadataURI",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "interfaceId",
+        "type": "bytes4"
+      }
+    ],
+    "name": "supportsInterface",
     "outputs": [
       {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "frequency",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "last",
-        "type": "uint256"
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -467,18 +461,37 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "newSignaturesRequired",
-        "type": "uint256"
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "nftMetadataHash",
+        "type": "bytes32"
       }
     ],
-    "name": "updateSignaturesRequired",
+    "name": "updateNftTokenURI",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newImplementation",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "upgradeToAndCall",
+    "outputs": [],
     "stateMutability": "payable",
-    "type": "receive"
+    "type": "function"
   }
 ]

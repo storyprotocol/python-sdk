@@ -10,6 +10,11 @@
         "internalType": "address",
         "name": "licensingModule",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "ipGraph",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
@@ -138,11 +143,6 @@
   },
   {
     "inputs": [],
-    "name": "RoyaltyPolicyLAP__InvalidParentRoyaltiesLength",
-    "type": "error"
-  },
-  {
-    "inputs": [],
     "name": "RoyaltyPolicyLAP__LastPositionNotAbleToMintLicense",
     "type": "error"
   },
@@ -262,18 +262,6 @@
         "internalType": "uint32",
         "name": "royaltyStack",
         "type": "uint32"
-      },
-      {
-        "indexed": false,
-        "internalType": "address[]",
-        "name": "targetAncestors",
-        "type": "address[]"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint32[]",
-        "name": "targetRoyaltyAmount",
-        "type": "uint32[]"
       }
     ],
     "name": "PolicyInitialized",
@@ -323,6 +311,19 @@
     ],
     "name": "Upgraded",
     "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "IP_GRAPH_CONTRACT",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
     "inputs": [],
@@ -465,16 +466,6 @@
         "internalType": "uint32",
         "name": "",
         "type": "uint32"
-      },
-      {
-        "internalType": "address[]",
-        "name": "",
-        "type": "address[]"
-      },
-      {
-        "internalType": "uint32[]",
-        "name": "",
-        "type": "uint32[]"
       }
     ],
     "stateMutability": "view",

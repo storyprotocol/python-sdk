@@ -2,7 +2,7 @@
     "contracts": [
         {
             "contract_name": "IPAssetRegistry",
-            "contract_address": "0xd43fE0d865cb5C26b1351d3eAf2E3064BE3276F6",
+            "contract_address": "0x23941788E4E44d03794c15E5Fb7D82dEBa4819b5",
             "functions": [
                 "initialize",
                 "pause",
@@ -24,7 +24,7 @@
         },
         {
             "contract_name": "PILicenseTemplate",
-            "contract_address": "0x260B6CB6284c89dbE660c0004233f7bB99B5edE7",
+            "contract_address": "0xB9bfC97d3b0b1333e079fb392F786a743d14Be56",
             "functions": [
                 "initialize",
                 "registerLicenseTerms",
@@ -41,7 +41,7 @@
         },
         {
             "contract_name": "LicensingModule",
-            "contract_address": "0xe89b0EaA8a0949738efA80bB531a165FB3456CBe",
+            "contract_address": "0x0D8430e5bBeE4D32420d99DbC48321350204C75F",
             "functions": [
                 "attachLicenseTerms",
                 "initialize",
@@ -57,7 +57,7 @@
         },
         {
             "contract_name": "LicenseRegistry",
-            "contract_address": "0x4f4b1bf7135C7ff1462826CCA81B048Ed19562ed",
+            "contract_address": "0xE50aDE60cb2Bb5E01F4C1C64c36E79B5EB1bF737",
             "functions": [
                 "authority",
                 "exists",
@@ -83,28 +83,28 @@
         },
         {
             "contract_name": "LicenseToken",
-            "contract_address": "0x1333c78A821c9a576209B01a16dDCEF881cAb6f2",
+            "contract_address": "0x973efc6A584ea780Ab4B9237B80F67bA514e38aF",
             "functions": [
                 "ownerOf"
             ]
         },
         {
             "contract_name": "RoyaltyPolicyLAP",
-            "contract_address": "0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86",
+            "contract_address": "0x1E1cBd300d351354EB17360a3769F23B18bbB77D",
             "functions": [
                 "getRoyaltyData"
             ]
         },
         {
             "contract_name": "RoyaltyModule",
-            "contract_address": "0xFAE961dd2b87CD5818dbCDc2591e6AB0b50E96b0",
+            "contract_address": "0xB88aFB410EfBFa343203f2e1a419e34f66f0Dba2",
             "functions": [
                 "payRoyaltyOnBehalf"
             ]
         },
         {
             "contract_name": "AccessController",
-            "contract_address": "0xF9936a224b3Deb6f9A4645ccAfa66f7ECe83CF0A",
+            "contract_address": "0x7f148763e9Afaef52e72855Be1c6c95D79d1A8f5",
             "functions": [
                 "checkPermission"
             ]
@@ -122,7 +122,7 @@
         },
         {
             "contract_name": "CoreMetadataModule",
-            "contract_address": "0xDa498A3f7c8a88cb72201138C366bE3778dB9575",
+            "contract_address": "0xeD61cF1d5E948e8BFbE9576b4317F84eabba52A9",
             "functions": [
             ]
         }

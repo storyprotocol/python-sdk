@@ -81,6 +81,7 @@ def test_executeWithSig(story_client):
     )
     deadline = getBlockTimestamp(web3) + 100
     state = story_client.IPAccount.getIpAccountNonce(ipId)
+    print("this wtv state value is ", state)
     expectedState = state + 1
 
     domain_data = {

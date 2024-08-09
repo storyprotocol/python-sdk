@@ -108,7 +108,7 @@ class IPAccount:
         :return int: The IPAccount's internal nonce for transaction ordering.
         """
         ip_account_client = IPAccountImplClient(self.web3, contract_address=ip_id)
-        return ip_account_client.state()
+        return int.from_bytes(ip_account_client.state(), byteorder='big')
 
     def _is_registered(self, ip_id: str) -> bool:
         """

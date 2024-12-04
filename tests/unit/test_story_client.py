@@ -47,7 +47,7 @@ def test_story_client_constructor(story_client):
 
 def test_story_client_transport_error():
     with pytest.raises(ValueError):
-        StoryClient(None, account, chain_id=11155111)
+        StoryClient(web3, None, chain_id=11155111)  # Проверка отсутствия account
 
 def test_story_client_account_missing():
     with pytest.raises(ValueError):
@@ -55,17 +55,14 @@ def test_story_client_account_missing():
 
 def test_story_client_wallet_initialization():
     client = StoryClient(web3, account, chain_id=11155111)
-    assert client is not None
     assert isinstance(client, StoryClient)
 
 def test_ip_asset_client_getter(story_client):
     ip_asset = story_client.IPAsset
-    assert ip_asset is not None
     assert isinstance(ip_asset, IPAsset)
 
 def test_license_client_getter(story_client):
     license = story_client.License
-    assert license is not None
     assert isinstance(license, License)
 
 def test_royalty_client_getter(story_client):

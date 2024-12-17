@@ -6,25 +6,25 @@ from web3 import Web3
 class IpRoyaltyVaultImplClient:
     def __init__(self, web3: Web3, contract_address=None):
         self.web3 = web3
-        abi_path = os.path.join(os.path.dirname(__file__), 'IpRoyaltyVaultImpl.json')
+        abi_path = os.path.join(os.path.dirname(__file__), '..', '..', 'abi', 'jsons', 'IpRoyaltyVaultImpl.json')
         with open(abi_path, 'r') as abi_file:
             abi = json.load(abi_file)
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
-    def claimRevenueBySnapshotBatch(self, snapshotIds, token):
+    def claimRevenueOnBehalfBySnapshotBatch(self, snapshotIds, token, claimer):
         
-        return self.contract.functions.claimRevenueBySnapshotBatch(snapshotIds, token).transact()
+        return self.contract.functions.claimRevenueOnBehalfBySnapshotBatch(snapshotIds, token, claimer).transact()
         
-    def build_claimRevenueBySnapshotBatch_transaction(self, snapshotIds, token, tx_params):
-        return self.contract.functions.claimRevenueBySnapshotBatch(snapshotIds, token).build_transaction(tx_params)
+    def build_claimRevenueOnBehalfBySnapshotBatch_transaction(self, snapshotIds, token, claimer, tx_params):
+        return self.contract.functions.claimRevenueOnBehalfBySnapshotBatch(snapshotIds, token, claimer).build_transaction(tx_params)
     
     
-    def collectRoyaltyTokens(self, ancestorIpId):
+    def claimRevenueOnBehalfByTokenBatch(self, snapshotId, tokenList, claimer):
         
-        return self.contract.functions.collectRoyaltyTokens(ancestorIpId).transact()
+        return self.contract.functions.claimRevenueOnBehalfByTokenBatch(snapshotId, tokenList, claimer).transact()
         
-    def build_collectRoyaltyTokens_transaction(self, ancestorIpId, tx_params):
-        return self.contract.functions.collectRoyaltyTokens(ancestorIpId).build_transaction(tx_params)
+    def build_claimRevenueOnBehalfByTokenBatch_transaction(self, snapshotId, tokenList, claimer, tx_params):
+        return self.contract.functions.claimRevenueOnBehalfByTokenBatch(snapshotId, tokenList, claimer).build_transaction(tx_params)
     
     
     def snapshot(self, ):
@@ -38,10 +38,5 @@ class IpRoyaltyVaultImplClient:
     def claimableRevenue(self, account, snapshotId, token):
         
         return self.contract.functions.claimableRevenue(account, snapshotId, token).call()
-        
-    
-    def unclaimedRoyaltyTokens(self, ):
-        
-        return self.contract.functions.unclaimedRoyaltyTokens().call()
         
     

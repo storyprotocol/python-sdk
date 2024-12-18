@@ -99,7 +99,9 @@
             "contract_name": "RoyaltyModule",
             "contract_address": "0xEa6eD700b11DfF703665CCAF55887ca56134Ae3B",
             "functions": [
-                "payRoyaltyOnBehalf"
+                "payRoyaltyOnBehalf",
+                "isWhitelistedRoyaltyPolicy",
+                "isWhitelistedRoyaltyToken"
             ]
         },
         {

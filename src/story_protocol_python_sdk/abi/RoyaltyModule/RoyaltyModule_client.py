@@ -30,3 +30,13 @@ class RoyaltyModuleClient:
         return self.contract.functions.payRoyaltyOnBehalf(receiverIpId, payerIpId, token, amount).build_transaction(tx_params)
     
     
+    def isWhitelistedRoyaltyPolicy(self, royaltyPolicy):
+        
+        return self.contract.functions.isWhitelistedRoyaltyPolicy(royaltyPolicy).call()
+        
+    
+    def isWhitelistedRoyaltyToken(self, token):
+        
+        return self.contract.functions.isWhitelistedRoyaltyToken(token).call()
+        
+    

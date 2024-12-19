@@ -30,6 +30,14 @@ class RegistrationWorkflowsClient:
         return self.contract.functions.createCollection(spgNftInitParams).build_transaction(tx_params)
     
     
+    def mintAndRegisterIp(self, spgNftContract, recipient, ipMetadata):
+        
+        return self.contract.functions.mintAndRegisterIp(spgNftContract, recipient, ipMetadata).transact()
+        
+    def build_mintAndRegisterIp_transaction(self, spgNftContract, recipient, ipMetadata, tx_params):
+        return self.contract.functions.mintAndRegisterIp(spgNftContract, recipient, ipMetadata).build_transaction(tx_params)
+    
+    
     def registerIp(self, nftContract, tokenId, ipMetadata, sigMetadata):
         
         return self.contract.functions.registerIp(nftContract, tokenId, ipMetadata, sigMetadata).transact()

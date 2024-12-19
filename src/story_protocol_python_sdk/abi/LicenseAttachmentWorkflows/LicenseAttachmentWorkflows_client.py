@@ -22,6 +22,13 @@ class LicenseAttachmentWorkflowsClient:
             abi = json.load(abi_file)
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
+    def mintAndRegisterIpAndAttachPILTerms(self, spgNftContract, recipient, ipMetadata, terms):
+        
+        return self.contract.functions.mintAndRegisterIpAndAttachPILTerms(spgNftContract, recipient, ipMetadata, terms).transact()
+        
+    def build_mintAndRegisterIpAndAttachPILTerms_transaction(self, spgNftContract, recipient, ipMetadata, terms, tx_params):
+        return self.contract.functions.mintAndRegisterIpAndAttachPILTerms(spgNftContract, recipient, ipMetadata, terms).build_transaction(tx_params)
+    
     def registerIpAndAttachPILTerms(self, nftContract, tokenId, ipMetadata, terms, sigMetadata, sigAttach):
         
         return self.contract.functions.registerIpAndAttachPILTerms(nftContract, tokenId, ipMetadata, terms, sigMetadata, sigAttach).transact()

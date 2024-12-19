@@ -116,7 +116,7 @@
             "contract_address": "0xde13Be395E1cd753471447Cf6A656979ef87881c",
             "functions": [
                 "createCollection",
-                "mintAndRegisterIpAndAttachPILTerms",
+                "mintAndRegisterIp",
                 "registerIp"
             ]
         },
@@ -124,7 +124,8 @@
             "contract_name": "LicenseAttachmentWorkflows", 
             "contract_address": "0x44Bad1E4035a44eAC1606B222873E4a85E8b7D9c",
             "functions": [
-                "registerIpAndAttachPILTerms"
+                "registerIpAndAttachPILTerms",
+                "mintAndRegisterIpAndAttachPILTerms"
             ]
         },
         {

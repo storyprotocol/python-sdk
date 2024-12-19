@@ -30,6 +30,32 @@ account = web3.eth.account.from_key(private_key)
 def story_client():
     return get_story_client_in_odyssey(web3, account)
 
+def test_registerPILTerms(story_client):
+    response = story_client.License.registerPILTerms(
+        transferable=False,
+        royalty_policy=story_client.web3.to_checksum_address("0x0000000000000000000000000000000000000000"),
+        default_minting_fee=92,
+        expiration=0,
+        commercial_use=False,
+        commercial_attribution=False,
+        commercializer_checker=story_client.web3.to_checksum_address("0x0000000000000000000000000000000000000000"),
+        commercializer_checker_data="0x",
+        commercial_rev_share=0,
+        commercial_rev_ceiling=0,
+        derivatives_allowed=False,
+        derivatives_attribution=False,
+        derivatives_approval=False,
+        derivatives_reciprocal=False,
+        derivative_rev_ceiling=0,
+        currency=MockERC20,
+        uri="",
+    )
+
+    assert response is not None
+    assert 'licenseTermsId' in response
+    assert response['licenseTermsId'] is not None
+    assert isinstance(response['licenseTermsId'], int)
+
 def test_registerNonComSocialRemixingPIL(story_client):
     response = story_client.License.registerNonComSocialRemixingPIL()
 
@@ -63,72 +89,70 @@ def test_registerCommercialRemixPIL(story_client):
     assert response['licenseTermsId'] is not None, "'licenseTermsId' is None."
     assert isinstance(response['licenseTermsId'], int), "'licenseTermsId' is not an integer."
 
-# @pytest.fixture(scope="module")
-# def ip_id(story_client):
-#     token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+@pytest.fixture(scope="module")
+def ip_id(story_client):
+    token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
 
-#     response = story_client.IPAsset.register(
-#         nft_contract=MockERC721,
-#         token_id=token_id
-#     )
+    response = story_client.IPAsset.register(
+        nft_contract=MockERC721,
+        token_id=token_id
+    )
 
-#     token_ids = mint_tokens(
-#         erc20_contract_address=MockERC20, 
-#         web3=web3, 
-#         account=account, 
-#         to_address=account.address, 
-#         amount=100000 * 10 ** 6
-#     )
+    token_ids = mint_tokens(
+        erc20_contract_address=MockERC20, 
+        web3=web3, 
+        account=account, 
+        to_address=account.address, 
+        amount=100000 * 10 ** 6
+    )
     
-#     receipt = approve(
-#         erc20_contract_address=MockERC20, 
-#         web3=web3, 
-#         account=account, 
-#         spender_address="0xEa6eD700b11DfF703665CCAF55887ca56134Ae3B", 
-#         amount=100000 * 10 ** 6)
+    receipt = approve(
+        erc20_contract_address=MockERC20, 
+        web3=web3, 
+        account=account, 
+        spender_address="0xEa6eD700b11DfF703665CCAF55887ca56134Ae3B", 
+        amount=100000 * 10 ** 6)
 
-#     assert response is not None
-#     assert 'ipId' in response
-#     assert response['ipId'] is not None
+    assert response is not None
+    assert 'ipId' in response
+    assert response['ipId'] is not None
 
-#     return response['ipId']
+    return response['ipId']
 
-# def test_attachLicenseTerms(story_client, ip_id):
-#     license_template = "0x58E2c909D557Cd23EF90D14f8fd21667A5Ae7a93"
-#     license_terms_id = 184
+def test_attachLicenseTerms(story_client, ip_id):
+    license_template = "0x58E2c909D557Cd23EF90D14f8fd21667A5Ae7a93"
+    license_terms_id = 184
 
-#     response = story_client.License.attachLicenseTerms(ip_id, license_template, license_terms_id)
+    response = story_client.License.attachLicenseTerms(ip_id, license_template, license_terms_id)
     
-#     assert response is not None, "Response is None, indicating the contract interaction failed."
-#     assert 'txHash' in response, "Response does not contain 'txHash'."
-#     assert response['txHash'] is not None, "'txHash' is None."
-#     assert isinstance(response['txHash'], str), "'txHash' is not a string."
-#     assert len(response['txHash']) > 0, "'txHash' is empty."
+    assert response is not None, "Response is None, indicating the contract interaction failed."
+    assert 'txHash' in response, "Response does not contain 'txHash'."
+    assert response['txHash'] is not None, "'txHash' is None."
+    assert isinstance(response['txHash'], str), "'txHash' is not a string."
+    assert len(response['txHash']) > 0, "'txHash' is empty."
 
-# def test_mintLicenseTokens(story_client, ip_id):
-#     response = story_client.License.mintLicenseTokens(
-#         licensor_ip_id=ip_id, 
-#         license_template="0x58E2c909D557Cd23EF90D14f8fd21667A5Ae7a93", 
-#         license_terms_id=184, 
-#         amount=1, 
-#         receiver=account.address
-#     )
+def test_mintLicenseTokens(story_client, ip_id):
+    response = story_client.License.mintLicenseTokens(
+        licensor_ip_id=ip_id, 
+        license_template="0x58E2c909D557Cd23EF90D14f8fd21667A5Ae7a93", 
+        license_terms_id=184, 
+        amount=1, 
+        receiver=account.address
+    )
 
-#     assert response is not None, "Response is None, indicating the contract interaction failed."
-#     assert 'txHash' in response, "Response does not contain 'txHash'."
-#     assert response['txHash'] is not None, "'txHash' is None."
-#     assert isinstance(response['txHash'], str), "'txHash' is not a string."
-#     assert len(response['txHash']) > 0, "'txHash' is empty."
-#     assert 'licenseTokenIds' in response, "Response does not contain 'licenseTokenId'."
-#     assert response['licenseTokenIds'] is not None, "'licenseTokenId' is None."
-#     assert isinstance(response['licenseTokenIds'], list), "'licenseTokenIds' is not a list."
-#     assert all(isinstance(i, int) for i in response['licenseTokenIds']), "Not all elements in 'licenseTokenIds' are integers."
+    assert response is not None, "Response is None, indicating the contract interaction failed."
+    assert 'txHash' in response, "Response does not contain 'txHash'."
+    assert response['txHash'] is not None, "'txHash' is None."
+    assert isinstance(response['txHash'], str), "'txHash' is not a string."
+    assert len(response['txHash']) > 0, "'txHash' is empty."
+    assert 'licenseTokenIds' in response, "Response does not contain 'licenseTokenId'."
+    assert response['licenseTokenIds'] is not None, "'licenseTokenId' is None."
+    assert isinstance(response['licenseTokenIds'], list), "'licenseTokenIds' is not a list."
+    assert all(isinstance(i, int) for i in response['licenseTokenIds']), "Not all elements in 'licenseTokenIds' are integers."
 
-# def test_getLicenseTerms(story_client):
-#     selectedLicenseTermsId = 184
+def test_getLicenseTerms(story_client):
+    selectedLicenseTermsId = 184
 
-#     response = story_client.License.getLicenseTerms(selectedLicenseTermsId)
+    response = story_client.License.getLicenseTerms(selectedLicenseTermsId)
 
-#     print("response is ", response)
-
-#     assert response is not None, "Response is None, indicating the call failed."
+    assert response is not None, "Response is None, indicating the call failed."

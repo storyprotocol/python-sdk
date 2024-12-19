@@ -7,7 +7,7 @@ from story_protocol_python_sdk.abi.LicenseRegistry.LicenseRegistry_client import
 from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import LicensingModuleClient
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
 
-from story_protocol_python_sdk.utils.license_terms import get_license_term_by_type, PIL_TYPE
+from story_protocol_python_sdk.utils.license_terms import LicenseTerms
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
@@ -30,6 +30,8 @@ class License:
         self.licensing_module_client  = LicensingModuleClient(web3)
         self.ip_asset_registry_client = IPAssetRegistryClient(web3)
 
+        self.license_terms_util = LicenseTerms(web3)
+
     def _get_license_terms_id(self, license_terms: dict) -> int:
         """
         Get the ID of the license terms.
@@ -47,7 +49,7 @@ class License:
         :return dict: A dictionary with the transaction hash and the license terms ID.
         """
         try:
-            license_terms = get_license_term_by_type(PIL_TYPE['NON_COMMERCIAL_REMIX'])
+            license_terms = self.license_terms_util.get_license_term_by_type(self.license_terms_util.PIL_TYPE['NON_COMMERCIAL_REMIX'])
 
             license_terms_id = self._get_license_terms_id(license_terms)
             if (license_terms_id is not None) and (license_terms_id != 0):
@@ -70,21 +72,21 @@ class License:
         except Exception as e:
             raise e
         
-    def registerCommercialUsePIL(self, minting_fee: int, currency: str, royalty_policy: str, tx_options: dict = None) -> dict:
+    def registerCommercialUsePIL(self, default_minting_fee: int, currency: str, royalty_policy: str = None, tx_options: dict = None) -> dict:
         """
         Convenient function to register a PIL commercial use license to the registry.
 
-        :param minting_fee int: The fee to be paid when minting a license.
+        :param default_minting_fee int: The fee to be paid when minting a license.
         :param currency str: The ERC20 token to be used to pay the minting fee.
-        :param royalty_policy str: The address of the royalty policy contract.
+        :param royalty_policy str: [Optional] The address of the royalty policy contract.
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash and the license terms ID.
         """
         try:
-            complete_license_terms = get_license_term_by_type(PIL_TYPE['COMMERCIAL_USE'], {
-                'mintingFee': minting_fee,
+            complete_license_terms = self.license_terms_util.get_license_term_by_type(self.license_terms_util.PIL_TYPE['COMMERCIAL_USE'], {
+                'defaultMintingFee': default_minting_fee,
                 'currency': currency,
-                'royaltyPolicy': royalty_policy,
+                'royaltyPolicyAddress': royalty_policy,
             })
 
             license_terms_id = self._get_license_terms_id(complete_license_terms)
@@ -111,11 +113,11 @@ class License:
         except Exception as e:
             raise e
 
-    def registerCommercialRemixPIL(self, minting_fee: int, currency: str, commercial_rev_share: int, royalty_policy: str, tx_options: dict = None) -> dict:
+    def registerCommercialRemixPIL(self, default_minting_fee: int, currency: str, commercial_rev_share: int, royalty_policy: str, tx_options: dict = None) -> dict:
         """
         Convenient function to register a PIL commercial remix license to the registry.
 
-        :param minting_fee int: The fee to be paid when minting a license.
+        :param default_minting_fee int: The fee to be paid when minting a license.
         :param currency str: The ERC20 token to be used to pay the minting fee.
         :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor.
         :param royalty_policy str: The address of the royalty policy contract.
@@ -123,11 +125,11 @@ class License:
         :return dict: A dictionary with the transaction hash and the license terms ID.
         """
         try:
-            complete_license_terms = get_license_term_by_type(PIL_TYPE['COMMERCIAL_REMIX'], {
-                'mintingFee': minting_fee,
+            complete_license_terms = self.license_terms_util.get_license_term_by_type(self.license_terms_util.PIL_TYPE['COMMERCIAL_REMIX'], {
+                'defaultMintingFee': default_minting_fee,
                 'currency': currency,
-                'commercialRevShare': int((commercial_rev_share / 100) * 100000000),
-                'royaltyPolicy': royalty_policy,
+                'commercialRevShare': commercial_rev_share,
+                'royaltyPolicyAddress': royalty_policy,
             })
 
             license_terms_id = self._get_license_terms_id(complete_license_terms)

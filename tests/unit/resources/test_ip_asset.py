@@ -31,7 +31,7 @@ ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000"
 
 @pytest.fixture
 def ip_asset():
-    chain_id = 11155111
+    chain_id = 1516
     return IPAsset(web3, account, chain_id)
 
 def test_register_invalid_deadline_type(ip_asset):

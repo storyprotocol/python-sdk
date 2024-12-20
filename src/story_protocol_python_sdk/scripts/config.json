@@ -2,7 +2,7 @@
     "contracts": [
         {
             "contract_name": "IPAssetRegistry",
-            "contract_address": "0xd43fE0d865cb5C26b1351d3eAf2E3064BE3276F6",
+            "contract_address": "0x28E59E91C0467e89fd0f0438D47Ca839cDfEc095",
             "functions": [
                 "initialize",
                 "pause",
@@ -24,7 +24,7 @@
         },
         {
             "contract_name": "PILicenseTemplate",
-            "contract_address": "0x260B6CB6284c89dbE660c0004233f7bB99B5edE7",
+            "contract_address": "0x58E2c909D557Cd23EF90D14f8fd21667A5Ae7a93",
             "functions": [
                 "initialize",
                 "registerLicenseTerms",
@@ -41,7 +41,7 @@
         },
         {
             "contract_name": "LicensingModule",
-            "contract_address": "0xe89b0EaA8a0949738efA80bB531a165FB3456CBe",
+            "contract_address": "0x5a7D9Fa17DE09350F481A53B470D798c1c1aabae",
             "functions": [
                 "attachLicenseTerms",
                 "initialize",
@@ -57,7 +57,7 @@
         },
         {
             "contract_name": "LicenseRegistry",
-            "contract_address": "0x4f4b1bf7135C7ff1462826CCA81B048Ed19562ed",
+            "contract_address": "0xBda3992c49E98392e75E78d82B934F3598bA495f",
             "functions": [
                 "authority",
                 "exists",
@@ -83,46 +83,61 @@
         },
         {
             "contract_name": "LicenseToken",
-            "contract_address": "0x1333c78A821c9a576209B01a16dDCEF881cAb6f2",
+            "contract_address": "0xB138aEd64814F2845554f9DBB116491a077eEB2D",
             "functions": [
                 "ownerOf"
             ]
         },
         {
             "contract_name": "RoyaltyPolicyLAP",
-            "contract_address": "0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86",
+            "contract_address": "0x28b4F70ffE5ba7A26aEF979226f77Eb57fb9Fdb6",
             "functions": [
                 "getRoyaltyData"
             ]
         },
         {
             "contract_name": "RoyaltyModule",
-            "contract_address": "0xFAE961dd2b87CD5818dbCDc2591e6AB0b50E96b0",
+            "contract_address": "0xEa6eD700b11DfF703665CCAF55887ca56134Ae3B",
             "functions": [
-                "payRoyaltyOnBehalf"
+                "payRoyaltyOnBehalf",
+                "isWhitelistedRoyaltyPolicy",
+                "isWhitelistedRoyaltyToken"
             ]
         },
         {
             "contract_name": "AccessController",
-            "contract_address": "0xF9936a224b3Deb6f9A4645ccAfa66f7ECe83CF0A",
+            "contract_address": "0xf709c8001E94e2ca6F98b7fFBCd5BD3943E46D81",
             "functions": [
                 "checkPermission"
             ]
         },
         {
-            "contract_name": "SPG",
-            "contract_address": "0x69415CE984A79a3Cfbe3F51024C63b6C107331e3",
+            "contract_name": "RegistrationWorkflows",
+            "contract_address": "0xde13Be395E1cd753471447Cf6A656979ef87881c",
             "functions": [
-                "mintAndRegisterIpAndAttachPILTerms",
                 "createCollection",
-                "registerIpAndAttachPILTerms",
-                "registerIpAndMakeDerivative",
+                "mintAndRegisterIp",
                 "registerIp"
             ]
         },
         {
+            "contract_name": "LicenseAttachmentWorkflows", 
+            "contract_address": "0x44Bad1E4035a44eAC1606B222873E4a85E8b7D9c",
+            "functions": [
+                "registerIpAndAttachPILTerms",
+                "mintAndRegisterIpAndAttachPILTerms"
+            ]
+        },
+        {
+            "contract_name": "DerivativeWorkflows",
+            "contract_address": "0xa8815CEB96857FFb8f5F8ce920b1Ae6D70254C7B", 
+            "functions": [
+                "registerIpAndMakeDerivative"
+            ]
+        },
+        {
             "contract_name": "CoreMetadataModule",
-            "contract_address": "0xDa498A3f7c8a88cb72201138C366bE3778dB9575",
+            "contract_address": "0x89630Ccf23277417FBdfd3076C702F5248267e78",
             "functions": [
             ]
         }

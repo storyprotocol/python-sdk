@@ -17,7 +17,7 @@ class PILicenseTemplateClient:
                 break
         if not contract_address:
             raise ValueError(f"Contract address for PILicenseTemplate not found in config.json")
-        abi_path = os.path.join(os.path.dirname(__file__), 'PILicenseTemplate.json')
+        abi_path = os.path.join(os.path.dirname(__file__), '..', '..', 'abi', 'jsons', 'PILicenseTemplate.json')
         with open(abi_path, 'r') as abi_file:
             abi = json.load(abi_file)
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)

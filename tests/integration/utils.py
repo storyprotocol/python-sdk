@@ -5,13 +5,21 @@ from src.story_protocol_python_sdk.story_client import StoryClient
 load_dotenv()
 
 # Mock ERC721 contract address
-MockERC721 = "0x7ee32b8B515dEE0Ba2F25f612A04a731eEc24F49"
+MockERC721 = "0x823Ee98A899970bE0A4d1B5DBb3b9114F0696767"
 
 # Mock ERC20 contract address (same as used in TypeScript tests)
-MockERC20 = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"
+MockERC20 = "0x12A8b0DcC6e3bB0915638361D9D49942Da07F455"
 
 def get_story_client_in_sepolia(web3: Web3, account) -> StoryClient:
     chain_id = 11155111  # Sepolia chain ID
+    return StoryClient(web3, account, chain_id)
+
+def get_story_client_in_iliad(web3: Web3, account) -> StoryClient:
+    chain_id = 1513  # Sepolia chain ID
+    return StoryClient(web3, account, chain_id)
+
+def get_story_client_in_odyssey(web3: Web3, account) -> StoryClient:
+    chain_id = 1516  # Odyssey chain ID
     return StoryClient(web3, account, chain_id)
 
 def get_token_id(nft_contract, web3, account):

@@ -13,7 +13,7 @@ src_path = os.path.abspath(os.path.join(current_dir, '..', '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-from utils import get_token_id, get_story_client_in_sepolia, MockERC721, getBlockTimestamp
+from utils import get_token_id, get_story_client_in_odyssey, MockERC721, getBlockTimestamp
 
 load_dotenv()
 private_key = os.getenv('WALLET_PRIVATE_KEY')
@@ -29,7 +29,7 @@ account = web3.eth.account.from_key(private_key)
 
 @pytest.fixture
 def story_client():
-    return get_story_client_in_sepolia(web3, account)
+    return get_story_client_in_odyssey(web3, account)
 
 def test_execute(story_client):
     token_id = get_token_id(MockERC721, story_client.web3, story_client.account)

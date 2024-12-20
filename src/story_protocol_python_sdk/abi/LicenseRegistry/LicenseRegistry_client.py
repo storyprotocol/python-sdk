@@ -17,7 +17,7 @@ class LicenseRegistryClient:
                 break
         if not contract_address:
             raise ValueError(f"Contract address for LicenseRegistry not found in config.json")
-        abi_path = os.path.join(os.path.dirname(__file__), 'LicenseRegistry.json')
+        abi_path = os.path.join(os.path.dirname(__file__), '..', '..', 'abi', 'jsons', 'LicenseRegistry.json')
         with open(abi_path, 'r') as abi_file:
             abi = json.load(abi_file)
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)

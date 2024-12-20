@@ -6,10 +6,18 @@ from web3 import Web3
 class IPAccountImplClient:
     def __init__(self, web3: Web3, contract_address=None):
         self.web3 = web3
-        abi_path = os.path.join(os.path.dirname(__file__), 'IPAccountImpl.json')
+        abi_path = os.path.join(os.path.dirname(__file__), '..', '..', 'abi', 'jsons', 'IPAccountImpl.json')
         with open(abi_path, 'r') as abi_file:
             abi = json.load(abi_file)
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
+    
+    def execute(self, to, value, data, operation):
+        
+        return self.contract.functions.execute(to, value, data, operation).transact()
+        
+    def build_execute_transaction(self, to, value, data, operation, tx_params):
+        return self.contract.functions.execute(to, value, data, operation).build_transaction(tx_params)
+    
     
     def execute(self, to, value, data):
         

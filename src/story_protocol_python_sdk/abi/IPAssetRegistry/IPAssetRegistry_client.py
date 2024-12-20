@@ -17,7 +17,7 @@ class IPAssetRegistryClient:
                 break
         if not contract_address:
             raise ValueError(f"Contract address for IPAssetRegistry not found in config.json")
-        abi_path = os.path.join(os.path.dirname(__file__), 'IPAssetRegistry.json')
+        abi_path = os.path.join(os.path.dirname(__file__), '..', '..', 'abi', 'jsons', 'IPAssetRegistry.json')
         with open(abi_path, 'r') as abi_file:
             abi = json.load(abi_file)
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
@@ -44,14 +44,6 @@ class IPAssetRegistryClient:
         
     def build_register_transaction(self, chainid, tokenContract, tokenId, tx_params):
         return self.contract.functions.register(chainid, tokenContract, tokenId).build_transaction(tx_params)
-    
-    
-    def registerIpAccount(self, chainId, tokenContract, tokenId):
-        
-        return self.contract.functions.registerIpAccount(chainId, tokenContract, tokenId).transact()
-        
-    def build_registerIpAccount_transaction(self, chainId, tokenContract, tokenId, tx_params):
-        return self.contract.functions.registerIpAccount(chainId, tokenContract, tokenId).build_transaction(tx_params)
     
     
     def setAuthority(self, newAuthority):

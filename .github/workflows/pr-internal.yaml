@@ -27,12 +27,4 @@ jobs:
       WALLET_PRIVATE_KEY: ${{ secrets.WALLET_PRIVATE_KEY }}
       TEST_WALLET_ADDRESS: ${{ secrets.RPC_PROVIDER_URL }}
 
-  push_build_and_test:
-    if: github.event_name == 'push'
-    uses: storyprotocol/gha-workflows/.github/workflows/reusable-build-python-integration-test-workflow.yml@bpolania/python-workflow
-    with:
-      sha: ${{ github.sha }}
-      ENVIRONMENT: "odyssey"
-    secrets:
-      WALLET_PRIVATE_KEY: ${{ secrets.WALLET_PRIVATE_KEY }}
-      TEST_WALLET_ADDRESS: ${{ secrets.RPC_PROVIDER_URL }}
+  

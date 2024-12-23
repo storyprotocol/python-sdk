@@ -19,7 +19,7 @@ jobs:
   pr_build_and_test:
     if: github.event_name == 'pull_request'
     needs: [Timestamp]
-    uses: storyprotocol/gha-workflows/.github/workflows/reusable-build-python-unit-test-workflow.yml@bpolania/python-workflow
+    uses: storyprotocol/gha-workflows/.github/workflows/reusable-build-python-unit-test-workflow.yml@origin/bpolania/python-workflow
     with:
       sha: ${{ github.event.pull_request.head.sha }}
       ENVIRONMENT: "odyssey"
@@ -27,4 +27,12 @@ jobs:
       WALLET_PRIVATE_KEY: ${{ secrets.WALLET_PRIVATE_KEY }}
       TEST_WALLET_ADDRESS: ${{ secrets.RPC_PROVIDER_URL }}
 
-  
+  push_build_and_test:
+    if: github.event_name == 'push'
+    uses: storyprotocol/gha-workflows/.github/workflows/reusable-build-python-integration-test-workflow.yml@origin/bpolania/python-workflow
+    with:
+      sha: ${{ github.sha }}
+      ENVIRONMENT: "odyssey"
+    secrets:
+      WALLET_PRIVATE_KEY: ${{ secrets.WALLET_PRIVATE_KEY }}
+      TEST_WALLET_ADDRESS: ${{ secrets.RPC_PROVIDER_URL }}

@@ -5,9 +5,11 @@ on:
     branches:
       - main
       - dev
+      - bpolania/workflow-1
   push:
     branches:
       - dev
+      - bpolania/workflow-1
 
 jobs:
   Timestamp:

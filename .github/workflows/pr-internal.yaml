@@ -25,7 +25,7 @@ jobs:
       ENVIRONMENT: "odyssey"
     secrets:
       WALLET_PRIVATE_KEY: ${{ secrets.WALLET_PRIVATE_KEY }}
-      TEST_WALLET_ADDRESS: ${{ secrets.RPC_PROVIDER_URL }}
+      RPC_PROVIDER_URL: ${{ secrets.RPC_PROVIDER_URL }}
 
   push_build_and_test:
     if: github.event_name == 'push'
@@ -35,4 +35,4 @@ jobs:
       ENVIRONMENT: "odyssey"
     secrets:
       WALLET_PRIVATE_KEY: ${{ secrets.WALLET_PRIVATE_KEY }}
-      TEST_WALLET_ADDRESS: ${{ secrets.RPC_PROVIDER_URL }}
+      RPC_PROVIDER_URL: ${{ secrets.RPC_PROVIDER_URL }}

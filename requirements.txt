@@ -1,0 +1,53 @@
+aiohappyeyeballs==2.4.4
+aiohttp==3.11.11
+aiosignal==1.3.2
+altgraph @ file:///AppleInternal/Library/BuildRoots/626bfa9c-8221-11ef-b9bf-daac7d5d70b1/Library/Caches/com.apple.xbs/Sources/python3/altgraph-0.17.2-py2.py3-none-any.whl
+annotated-types==0.7.0
+async-timeout==5.0.1
+attrs==24.3.0
+bitarray==3.0.0
+certifi==2024.12.14
+charset-normalizer==3.4.0
+ckzg==2.0.1
+coverage==7.6.9
+cytoolz==1.0.1
+eth-account==0.13.4
+eth-hash==0.7.0
+eth-keyfile==0.8.1
+eth-keys==0.6.0
+eth-rlp==2.1.0
+eth-typing==5.0.1
+eth-utils==5.1.0
+eth_abi==5.1.0
+exceptiongroup==1.2.2
+frozenlist==1.5.0
+future @ file:///AppleInternal/Library/BuildRoots/626bfa9c-8221-11ef-b9bf-daac7d5d70b1/Library/Caches/com.apple.xbs/Sources/python3/future-0.18.2-py3-none-any.whl
+hexbytes==1.2.1
+idna==3.10
+iniconfig==2.0.0
+macholib @ file:///AppleInternal/Library/BuildRoots/626bfa9c-8221-11ef-b9bf-daac7d5d70b1/Library/Caches/com.apple.xbs/Sources/python3/macholib-1.15.2-py2.py3-none-any.whl
+multidict==6.1.0
+packaging==24.2
+parsimonious==0.10.0
+pluggy==1.5.0
+propcache==0.2.1
+pycryptodome==3.21.0
+pydantic==2.10.4
+pydantic_core==2.27.2
+pytest==8.3.4
+pytest-cov==6.0.0
+python-dotenv==1.0.1
+pyunormalize==16.0.0
+regex==2024.11.6
+requests==2.32.3
+rlp==4.0.1
+six @ file:///AppleInternal/Library/BuildRoots/626bfa9c-8221-11ef-b9bf-daac7d5d70b1/Library/Caches/com.apple.xbs/Sources/python3/six-1.15.0-py2.py3-none-any.whl
+story-protocol-python-sdk==0.1.9
+tomli==2.2.1
+toolz==1.0.0
+types-requests==2.32.0.20241016
+typing_extensions==4.12.2
+urllib3==2.2.3
+web3==7.6.1
+websockets==13.1
+yarl==1.18.3

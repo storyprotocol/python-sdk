@@ -31,17 +31,20 @@ account = web3.eth.account.from_key(private_key)
 def story_client():
     return get_story_client_in_odyssey(web3, account)
 
-def test_execute(story_client):
+@pytest.fixture
+def registered_ip_id(story_client):
+    """Fixture to create a registered IP ID for testing"""
     token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
-
     response = story_client.IPAsset.register(
         token_contract=MockERC721,
         token_id=token_id
     )
+    return response['ipId']
 
+def test_execute(story_client, registered_ip_id):
     data = story_client.IPAccount.access_controller_client.contract.encode_abi(
         fn_name="setPermission", 
-        args=[response['ipId'], 
+        args=[registered_ip_id, 
               account.address, 
               "0x2ac240293f12032E103458451dE8A8096c5A72E8", 
               "0x00000000", 
@@ -51,7 +54,7 @@ def test_execute(story_client):
     response = story_client.IPAccount.execute(
         to=story_client.IPAccount.access_controller_client.contract.address,
         value=0,
-        account_address=response['ipId'],
+        account_address=registered_ip_id,
         data=data
     )
 
@@ -61,33 +64,24 @@ def test_execute(story_client):
     assert isinstance(response['txHash'], str), "'txHash' is not a string."
     assert len(response['txHash']) > 0, "'txHash' is empty."
 
-def test_executeWithSig(story_client):
-    token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
-
-    response = story_client.IPAsset.register(
-        token_contract=MockERC721,
-        token_id=token_id
-    )
-
-    ipId = response['ipId']
-
+def test_executeWithSig(story_client, registered_ip_id):
     data = story_client.IPAccount.access_controller_client.contract.encode_abi(
         fn_name="setPermission", 
-        args=[ipId, 
+        args=[registered_ip_id, 
               account.address, 
               "0x2ac240293f12032E103458451dE8A8096c5A72E8", 
               "0x00000000", 
               1]
     )
     deadline = getBlockTimestamp(web3) + 100
-    state = story_client.IPAccount.getIpAccountNonce(ipId)
+    state = story_client.IPAccount.getIpAccountNonce(registered_ip_id)
     expectedState = state + 1
 
     domain_data = {
         "name": "Story Protocol IP Account",
         "version": "1",
         "chainId": 11155111,
-        "verifyingContract": ipId,
+        "verifyingContract": registered_ip_id,
     }
 
     message_types = {
@@ -114,7 +108,7 @@ def test_executeWithSig(story_client):
     response = story_client.IPAccount.executeWithSig(
         to=story_client.IPAccount.access_controller_client.contract.address,
         value=0,
-        account_address=ipId,
+        account_address=registered_ip_id,
         data=data,
         signer=account.address,
         deadline=deadline,
@@ -126,3 +120,47 @@ def test_executeWithSig(story_client):
     assert response['txHash'] is not None, "'txHash' is None."
     assert isinstance(response['txHash'], str), "'txHash' is not a string."
     assert len(response['txHash']) > 0, "'txHash' is empty."
+
+def test_getIpAccountNonce(story_client, registered_ip_id):
+    """Test getting the IP Account's nonce"""
+    nonce = story_client.IPAccount.getIpAccountNonce(registered_ip_id)
+    
+    assert isinstance(nonce, int), "Nonce should be an integer"
+    assert nonce >= 0, "Nonce should be non-negative"
+
+def test_getToken(story_client, registered_ip_id):
+    """Test getting the token information for an IP Account"""
+    response = story_client.IPAccount.getToken(registered_ip_id)
+    
+    assert response is not None, "Response should not be None"
+    assert 'chainId' in response, "Response should contain chainId"
+    assert 'tokenContract' in response, "Response should contain tokenContract"
+    assert 'tokenId' in response, "Response should contain tokenId"
+    assert isinstance(response['chainId'], int), "chainId should be an integer"
+    assert Web3.is_address(response['tokenContract']), "tokenContract should be a valid address"
+    assert isinstance(response['tokenId'], int), "tokenId should be an integer"
+
+def test_execute_with_invalid_address(story_client, registered_ip_id):
+    """Test executing with invalid address should raise ValueError"""
+    data = "0x00"  # dummy data
+    with pytest.raises(ValueError) as exc_info:
+        story_client.IPAccount.execute(
+            to="invalid_address",
+            value=0,
+            account_address=registered_ip_id,
+            data=data
+        )
+    assert "not a valid address" in str(exc_info.value)
+
+def test_execute_with_unregistered_ip_id(story_client):
+    """Test executing with unregistered IP ID should raise ValueError"""
+    unregistered_id = "0x1234567890123456789012345678901234567890"
+    data = "0x00"  # dummy data
+    with pytest.raises(ValueError) as exc_info:
+        story_client.IPAccount.execute(
+            to=story_client.IPAccount.access_controller_client.contract.address,
+            value=0,
+            account_address=unregistered_id,
+            data=data
+        )
+    assert "not registered" in str(exc_info.value)

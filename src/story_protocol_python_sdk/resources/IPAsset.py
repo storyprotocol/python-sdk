@@ -52,104 +52,104 @@ class IPAsset:
         # Instantiate LicenseTerms
         self.license_terms_util = LicenseTerms(web3)
 
-    # def register(self, nft_contract: str, token_id: int, ip_metadata: dict = None, deadline: int = None, tx_options: dict = None) -> dict:
-    #     """
-    #     Registers an NFT as IP, creating a corresponding IP record.
+    def register(self, nft_contract: str, token_id: int, ip_metadata: dict = None, deadline: int = None, tx_options: dict = None) -> dict:
+        """
+        Registers an NFT as IP, creating a corresponding IP record.
 
-    #     :param nft_contract str: The address of the NFT.
-    #     :param token_id int: The token identifier of the NFT.
-    #     :param ip_metadata dict: [Optional] The metadata for the IP.
-    #         :param ip_metadata_URI str: [Optional] The URI of the metadata for the IP.
-    #         :param ip_metadata_hash str: [Optional] The metadata hash for the IP.
-    #         :param nft_metadata_URI str: [Optional] The URI of the metadata for the NFT.
-    #         :param nft_metadata_hash str: [Optional] The metadata hash for the NFT.
-    #     :param deadline int: [Optional] The deadline for the signature in milliseconds.
-    #     :param tx_options dict: [Optional] The transaction options.
-    #     :return dict: A dictionary with the transaction hash and IP ID.
-    #     """
-    #     try:
-    #         ip_id = self._get_ip_id(nft_contract, token_id)
-    #         if self._is_registered(ip_id):
-    #             return {
-    #                 'txHash': None,
-    #                 'ipId': ip_id
-    #             }
+        :param nft_contract str: The address of the NFT.
+        :param token_id int: The token identifier of the NFT.
+        :param ip_metadata dict: [Optional] The metadata for the IP.
+            :param ip_metadata_URI str: [Optional] The URI of the metadata for the IP.
+            :param ip_metadata_hash str: [Optional] The metadata hash for the IP.
+            :param nft_metadata_URI str: [Optional] The URI of the metadata for the NFT.
+            :param nft_metadata_hash str: [Optional] The metadata hash for the NFT.
+        :param deadline int: [Optional] The deadline for the signature in milliseconds.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash and IP ID.
+        """
+        try:
+            ip_id = self._get_ip_id(nft_contract, token_id)
+            if self._is_registered(ip_id):
+                return {
+                    'txHash': None,
+                    'ipId': ip_id
+                }
 
-    #         req_object = {
-    #             'tokenId': token_id,
-    #             'nftContract': self.web3.to_checksum_address(nft_contract),
-    #             'ipMetadata': {
-    #                 'ipMetadataURI': "",
-    #                 'ipMetadataHash': ZERO_HASH,
-    #                 'nftMetadataURI': "",
-    #                 'nftMetadataHash': ZERO_HASH,
-    #             },
-    #             'sigMetadata': {
-    #                 'signer': ZERO_ADDRESS,
-    #                 'deadline': 0,
-    #                 'signature': ZERO_HASH,
-    #             },
-    #         }
+            req_object = {
+                'tokenId': token_id,
+                'nftContract': self.web3.to_checksum_address(nft_contract),
+                'ipMetadata': {
+                    'ipMetadataURI': "",
+                    'ipMetadataHash': ZERO_HASH,
+                    'nftMetadataURI': "",
+                    'nftMetadataHash': ZERO_HASH,
+                },
+                'sigMetadata': {
+                    'signer': ZERO_ADDRESS,
+                    'deadline': 0,
+                    'signature': ZERO_HASH,
+                },
+            }
 
-    #         if ip_metadata:
-    #             req_object['ipMetadata'].update({
-    #                 'ipMetadataURI': ip_metadata.get('ipMetadataURI', ""),
-    #                 'ipMetadataHash': ip_metadata.get('ipMetadataHash', ZERO_HASH),
-    #                 'nftMetadataURI': ip_metadata.get('nftMetadataURI', ""),
-    #                 'nftMetadataHash': ip_metadata.get('nftMetadataHash', ZERO_HASH),
-    #             })
+            if ip_metadata:
+                req_object['ipMetadata'].update({
+                    'ipMetadataURI': ip_metadata.get('ipMetadataURI', ""),
+                    'ipMetadataHash': ip_metadata.get('ipMetadataHash', ZERO_HASH),
+                    'nftMetadataURI': ip_metadata.get('nftMetadataURI', ""),
+                    'nftMetadataHash': ip_metadata.get('nftMetadataHash', ZERO_HASH),
+                })
 
-    #             calculated_deadline = self._get_deadline(deadline=deadline)
-    #             signature = self._get_permission_signature(
-    #                 ip_id=ip_id,
-    #                 deadline=calculated_deadline,
-    #                 state=self.web3.to_hex(0).rjust(66, '0'),
-    #                 permissions=[{
-    #                     'ipId': ip_id,
-    #                     'signer': self.web3.to_checksum_address(self.account.address),
-    #                     'to': self.core_metadata_module_client.contract.address,
-    #                     'func': "setAll(address,string,bytes32,bytes32)",
-    #                     'permission': 1
-    #                 }],
-    #                 permission_func="setAll"
-    #             )
-    #             req_object['sigMetadata'] = {
-    #                 'signer': self.web3.to_checksum_address(self.account.address),
-    #                 'deadline': calculated_deadline,
-    #                 'signature': signature,
-    #             }
+                calculated_deadline = self._get_deadline(deadline=deadline)
+                signature = self._get_permission_signature(
+                    ip_id=ip_id,
+                    deadline=calculated_deadline,
+                    state=self.web3.to_hex(0).rjust(66, '0'),
+                    permissions=[{
+                        'ipId': ip_id,
+                        'signer': self.web3.to_checksum_address(self.account.address),
+                        'to': self.core_metadata_module_client.contract.address,
+                        'func': "setAll(address,string,bytes32,bytes32)",
+                        'permission': 1
+                    }],
+                    permission_func="setAll"
+                )
+                req_object['sigMetadata'] = {
+                    'signer': self.web3.to_checksum_address(self.account.address),
+                    'deadline': calculated_deadline,
+                    'signature': signature,
+                }
 
-    #         if ip_metadata:
-    #             response = build_and_send_transaction(
-    #                 self.web3,
-    #                 self.account,
-    #                 self.registration_workflows_client.build_registerIp_transaction,
-    #                 req_object['nftContract'],
-    #                 req_object['tokenId'],
-    #                 req_object['metadata'],
-    #                 req_object['sigMetadata'],
-    #                 tx_options=tx_options
-    #             )
-    #         else:
-    #             response = build_and_send_transaction(
-    #                 self.web3,
-    #                 self.account,
-    #                 self.ip_asset_registry_client.build_register_transaction,
-    #                 self.chain_id,
-    #                 nft_contract,
-    #                 token_id,
-    #                 tx_options=tx_options
-    #             )
+            if ip_metadata:
+                response = build_and_send_transaction(
+                    self.web3,
+                    self.account,
+                    self.registration_workflows_client.build_registerIp_transaction,
+                    req_object['nftContract'],
+                    req_object['tokenId'],
+                    req_object['metadata'],
+                    req_object['sigMetadata'],
+                    tx_options=tx_options
+                )
+            else:
+                response = build_and_send_transaction(
+                    self.web3,
+                    self.account,
+                    self.ip_asset_registry_client.build_register_transaction,
+                    self.chain_id,
+                    nft_contract,
+                    token_id,
+                    tx_options=tx_options
+                )
 
-    #         ip_registered = self._parse_tx_ip_registered_event(response['txReceipt'])
+            ip_registered = self._parse_tx_ip_registered_event(response['txReceipt'])
 
-    #         return {
-    #             'txHash': response['txHash'],
-    #             'ipId': ip_registered['ipId']
-    #         }
+            return {
+                'txHash': response['txHash'],
+                'ipId': ip_registered['ipId']
+            }
 
-    #     except Exception as e:
-    #         raise e
+        except Exception as e:
+            raise e
 
     # def registerDerivative(self, child_ip_id: str, parent_ip_ids: list, license_terms_ids: list, license_template: str, tx_options: dict = None) -> dict:
     #     """

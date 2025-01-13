@@ -35,7 +35,7 @@ def test_execute(story_client):
     token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
 
     response = story_client.IPAsset.register(
-        token_contract=MockERC721,
+        nft_contract=MockERC721,
         token_id=token_id
     )
 
@@ -43,8 +43,8 @@ def test_execute(story_client):
         fn_name="setPermission", 
         args=[response['ipId'], 
               account.address, 
-              "0x2ac240293f12032E103458451dE8A8096c5A72E8", 
-              "0x00000000", 
+              "0x89630Ccf23277417FBdfd3076C702F5248267e78", 
+              Web3.keccak(text="function setAll(address,string,bytes32,bytes32)")[:4], 
               1]
     )
 

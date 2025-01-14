@@ -23,8 +23,9 @@ class IPAccount:
 
         self.ip_asset_registry_client = IPAssetRegistryClient(web3)
         self.access_controller_client = AccessControllerClient(web3)
+        self.ip_account_client = IPAccountImplClient(web3)
 
-    def execute(self, to: str, value: int, account_address: str, data: str) -> dict:
+    def execute(self, to: str, value: int, ip_id: str, data: str, tx_options: dict = None) -> dict:
         """
         Executes a transaction from the IP Account.
 
@@ -32,16 +33,17 @@ class IPAccount:
         :param value int: The amount of Ether to send.
         :param ip_id str: The IP id to get IP account
         :param data str: The data to send along with the transaction.
+        :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash.
         """
         try:
             if not self.web3.is_address(to):
                 raise ValueError(f"The recipient of the transaction {to} is not a valid address.")
             
-            if not self._is_registered(account_address):
-                raise ValueError(f"The IP account with id {account_address} is not registered.")
+            if not self._is_registered(ip_id):
+                raise ValueError(f"The IP id {ip_id} is not registered.")
 
-            ip_account_client = IPAccountImplClient(self.web3, contract_address=account_address)
+            ip_account_client = IPAccountImplClient(self.web3, contract_address=ip_id)
 
             response = build_and_send_transaction(
                 self.web3,
@@ -49,7 +51,9 @@ class IPAccount:
                 ip_account_client.build_execute_transaction,
                 to,
                 value,
-                data
+                data,
+                0,
+                tx_options=tx_options
             )
     
             return {
@@ -59,53 +63,55 @@ class IPAccount:
         except Exception as e:
             raise e
 
-    # def executeWithSig(self, to: str, value: int, account_address: str, data: str, signer: str, deadline: int, signature: str) -> dict:
-    #     """
-    #     Executes a transaction from the IP Account.
+    def executeWithSig(self, ip_id: str, to: str, data: str, signer: str, deadline: int, signature: str, value: int = 0, tx_options: dict = None) -> dict:
+        """
+        Executes a transaction from the IP Account.
 
-    #     :param to str: The recipient of the transaction.
-    #     :param value int: The amount of Ether to send.
-    #     :param account_address str: The ipId to send.
-    #     :param data str: The data to send along with the transaction.
-    #     :param signer str: The signer of the transaction.
-    #     :param deadline int: The deadline of the transaction signature.
-    #     :param signature str: The signature of the transaction, EIP-712 encoded.
-    #     :return dict: A dictionary with the transaction hash.
-    #     """
-    #     try:
-    #         if not self.web3.is_address(to):
-    #             raise ValueError(f"The recipient of the transaction {to} is not a valid address.")
+        :param ip_id str: The Ip Id to get ip account.
+        :param to str: The recipient of the transaction.
+        :param data str: The data to send along with the transaction.
+        :param signer str: The signer of the transaction.
+        :param deadline int: The deadline of the transaction signature.
+        :param signature str: The signature of the transaction, EIP-712 encoded.
+        :param value int: [Optional] The amount of Ether to send.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash.
+        """
+        try:
+            if not self.web3.is_address(to):
+                raise ValueError(f"The recipient of the transaction {to} is not a valid address.")
             
-    #         if not self._is_registered(account_address):
-    #             raise ValueError(f"The IP account with id {account_address} is not registered.")
+            if not self._is_registered(ip_id):
+                raise ValueError(f"The IP id {ip_id} is not registered.")
 
-    #         ip_account_client = IPAccountImplClient(self.web3, contract_address=account_address)
+            ip_account_client = IPAccountImplClient(self.web3, contract_address=ip_id)
 
-    #         response = build_and_send_transaction(
-    #             self.web3,
-    #             self.account,
-    #             ip_account_client.build_executeWithSig_transaction,
-    #             to,
-    #             value,
-    #             data,
-    #             signer,
-    #             deadline,
-    #             signature
-    #         )
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                ip_account_client.build_executeWithSig_transaction,
+                to,
+                value,
+                data,
+                signer,
+                deadline,
+                signature,
+                tx_options=tx_options
+            )
     
-    #         return {
-    #             'txHash': response['txHash']
-    #         }
+            return {
+                'txHash': response['txHash']
+            }
         
-    #     except Exception as e:
-    #         raise e
+        except Exception as e:
+            raise e
         
-    def getIpAccountNonce(self, ip_id: str) -> int:
+    def getIpAccountNonce(self, ip_id: str) -> bytes:
         """
         Returns the IPAccount's internal nonce for transaction ordering.
 
-        :param ip_id str: The derivative IP ID
-        :return int: The IPAccount's internal nonce for transaction ordering.
+        :param ip_id str: The IP ID
+        :return bytes: The IPAccount's internal nonce for transaction ordering.
         """
         ip_account_client = IPAccountImplClient(self.web3, contract_address=ip_id)
         return ip_account_client.state()

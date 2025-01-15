@@ -174,7 +174,7 @@ def test_mint_register_attach_terms(story_client, nft_collection):
             'derivatives_approval': False,
             'derivatives_reciprocal': True,
             'derivative_rev_ceiling': 0,
-            'currency': web3.to_checksum_address(MockERC20),
+            'currency': MockERC20,
             'uri': ""
         },
         ],

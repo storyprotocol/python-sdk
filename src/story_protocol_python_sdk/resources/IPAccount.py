@@ -13,7 +13,7 @@ class IPAccount:
     A class to execute a transaction from the IP Account.
 
     :param web3 Web3: An instance of Web3.
-    :param account: The account to use for transactions.
+    :param account: The Web3 account used to sign and send transactions.
     :param chain_id int: The ID of the blockchain network.
     """
     def __init__(self, web3: Web3, account, chain_id: int):

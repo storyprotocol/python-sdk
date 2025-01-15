@@ -25,16 +25,16 @@ class IPAccount:
         self.access_controller_client = AccessControllerClient(web3)
         self.ip_account_client = IPAccountImplClient(web3)
 
-    def execute(self, to: str, value: int, ip_id: str, data: str, tx_options: dict = None) -> dict:
+    def _execute_transaction(self, ip_id: str, to: str, build_transaction_method, *args, tx_options: dict = None) -> dict:
         """
-        Executes a transaction from the IP Account.
+        Internal helper to execute a transaction from the IP Account.
 
-        :param to str: The recipient of the transaction.
-        :param value int: The amount of Ether to send.
         :param ip_id str: The IP id to get IP account
-        :param data str: The data to send along with the transaction.
-        :param tx_options dict: [Optional] The transaction options.
-        :return dict: A dictionary with the transaction hash.
+        :param to str: The recipient of the transaction
+        :param build_transaction_method: Method to build the transaction
+        :param args: Arguments to pass to the build method
+        :param tx_options dict: [Optional] The transaction options
+        :return dict: A dictionary with the transaction hash
         """
         try:
             if not self.web3.is_address(to):
@@ -48,20 +48,40 @@ class IPAccount:
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
-                ip_account_client.build_execute_transaction,
-                to,
-                value,
-                data,
-                0,
+                build_transaction_method,
+                *args,
                 tx_options=tx_options
             )
-    
+
             return {
                 'txHash': response['txHash']
             }
-        
+
         except Exception as e:
             raise e
+
+    def execute(self, to: str, value: int, ip_id: str, data: str, tx_options: dict = None) -> dict:
+        """
+        Executes a transaction from the IP Account.
+
+        :param to str: The recipient of the transaction.
+        :param value int: The amount of Ether to send.
+        :param ip_id str: The IP id to get IP account
+        :param data str: The data to send along with the transaction.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash.
+        """
+        ip_account_client = IPAccountImplClient(self.web3, contract_address=ip_id)
+        return self._execute_transaction(
+            ip_id,
+            to,
+            ip_account_client.build_execute_transaction,
+            to,
+            value,
+            data,
+            0,
+            tx_options=tx_options
+        )
 
     def executeWithSig(self, ip_id: str, to: str, data: str, signer: str, deadline: int, signature: str, value: int = 0, tx_options: dict = None) -> dict:
         """
@@ -77,34 +97,19 @@ class IPAccount:
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash.
         """
-        try:
-            if not self.web3.is_address(to):
-                raise ValueError(f"The recipient of the transaction {to} is not a valid address.")
-            
-            if not self._is_registered(ip_id):
-                raise ValueError(f"The IP id {ip_id} is not registered.")
-
-            ip_account_client = IPAccountImplClient(self.web3, contract_address=ip_id)
-
-            response = build_and_send_transaction(
-                self.web3,
-                self.account,
-                ip_account_client.build_executeWithSig_transaction,
-                to,
-                value,
-                data,
-                signer,
-                deadline,
-                signature,
-                tx_options=tx_options
-            )
-    
-            return {
-                'txHash': response['txHash']
-            }
-        
-        except Exception as e:
-            raise e
+        ip_account_client = IPAccountImplClient(self.web3, contract_address=ip_id)
+        return self._execute_transaction(
+            ip_id,
+            to,
+            ip_account_client.build_executeWithSig_transaction,
+            to,
+            value,
+            data,
+            signer,
+            deadline,
+            signature,
+            tx_options=tx_options
+        )
         
     def getIpAccountNonce(self, ip_id: str) -> bytes:
         """

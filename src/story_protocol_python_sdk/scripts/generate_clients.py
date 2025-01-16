@@ -5,7 +5,45 @@ from jinja2 import Template
 # Define the folder containing the ABI JSON files
 JSONS_FOLDER = os.path.join(os.path.dirname(__file__), '..', 'abi', 'jsons')
 
-class_template = Template('''
+# Template for regular clients that read address from config
+regular_class_template = Template('''
+import json
+import os
+from web3 import Web3
+
+class {{ class_name }}:
+    def __init__(self, web3: Web3):
+        self.web3 = web3
+        # Assuming config.json is located at the root of the project
+        config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'scripts', 'config.json'))
+        with open(config_path, 'r') as config_file:
+            config = json.load(config_file)
+        contract_address = None
+        for contract in config['contracts']:
+            if contract['contract_name'] == '{{ contract_name }}':
+                contract_address = contract['contract_address']
+                break
+        if not contract_address:
+            raise ValueError(f"Contract address for {{ contract_name }} not found in config.json")
+        abi_path = os.path.join(os.path.dirname(__file__), '..', '..', 'abi', 'jsons', '{{ contract_name }}.json')
+        with open(abi_path, 'r') as abi_file:
+            abi = json.load(abi_file)
+        self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
+    {% for function in functions %}
+    def {{ function.name }}(self, {% if function.inputs %}{{ function.inputs | join(', ') }}{% endif %}):
+        {% if function.stateMutability == 'view' or function.stateMutability == 'pure' %}
+        return self.contract.functions.{{ function.name }}({% if function.inputs %}{{ function.inputs | join(', ') }}{% endif %}).call()
+        {% else %}
+        return self.contract.functions.{{ function.name }}({% if function.inputs %}{{ function.inputs | join(', ') }}{% endif %}).transact()
+        
+    def build_{{ function.name }}_transaction(self, {% if function.inputs %}{{ function.inputs | join(', ') }}, {% endif %}tx_params):
+        return self.contract.functions.{{ function.name }}({% if function.inputs %}{{ function.inputs | join(', ') }}{% endif %}).build_transaction(tx_params)
+    {% endif %}
+    {% endfor %}
+''')
+
+# Template for Impl clients that require address in constructor
+impl_class_template = Template('''
 import json
 import os
 from web3 import Web3
@@ -38,9 +76,9 @@ def load_abi_from_file(contract_name):
     with open(abi_path, 'r') as abi_file:
         return json.load(abi_file)
 
-def generate_python_classes_from_abi(abi, contract_name, functions, output_dir):
+def generate_python_class_from_abi(abi, contract_name, functions, output_dir):
     """Generate a Python class for interacting with the contract."""
-    class_name = contract_name + 'Client'  # Properly formatted class name
+    class_name = contract_name + 'Client'
     
     selected_functions = []
     for item in abi:
@@ -55,7 +93,10 @@ def generate_python_classes_from_abi(abi, contract_name, functions, output_dir):
     # Sort functions: transact functions first, call functions later
     selected_functions.sort(key=lambda x: x['stateMutability'] in ['view', 'pure'])
     
-    rendered_class = class_template.render(
+    # Choose template based on whether contract name ends with 'Impl'
+    template = impl_class_template if contract_name.endswith('Impl') else regular_class_template
+    
+    rendered_class = template.render(
         class_name=class_name,
         contract_name=contract_name,
         functions=selected_functions
@@ -81,12 +122,12 @@ def main(config_path, output_dir):
         functions = contract['functions']
         try:
             abi = load_abi_from_file(contract_name)
-            generate_python_classes_from_abi(abi, contract_name, functions, output_dir)
+            generate_python_class_from_abi(abi, contract_name, functions, output_dir)
         except Exception as e:
             print(f"Error generating class for {contract_name}: {e}")
 
 if __name__ == "__main__":
-    config_path = os.path.join(os.path.dirname(__file__), 'config_impl.json')
+    config_path = os.path.join(os.path.dirname(__file__), 'config.json')
     output_dir = os.path.join(os.path.dirname(__file__), '../abi')
     os.makedirs(output_dir, exist_ok=True)
-    main(config_path, output_dir)
+    main(config_path, output_dir) 

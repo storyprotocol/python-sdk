@@ -1,146 +1,181 @@
 {
     "contracts": [
         {
-            "contract_name": "IPAssetRegistry",
-            "contract_address": "0x28E59E91C0467e89fd0f0438D47Ca839cDfEc095",
+            "contract_name": "AccessController",
+            "contract_address": "0xcCF37d0a503Ee1D4C11208672e622ed3DFB2275a",
             "functions": [
-                "initialize",
-                "pause",
-                "register",
-                "registerIpAccount",
-                "setAuthority",
-                "unpause",
-                "upgradeToAndCall",
-                "authority",
-                "getIPAccountImpl",
-                "ipAccount",
+                "PermissionSet",
+                "setPermission", 
+                "setAllPermissions",
+                "setBatchPermissions"
+            ]
+        },
+        {
+            "contract_name": "DisputeModule",
+            "contract_address": "0x9b7A9c70AFF961C799110954fc06F3093aeb94C5",
+            "functions": [
+                "DisputeCancelled",
+                "DisputeRaised", 
+                "DisputeResolved",
+                "cancelDispute",
+                "raiseDispute",
+                "resolveDispute" 
+            ]
+        },
+        {
+            "contract_name": "IPAccountImpl",
+            "contract_address": "0xc93d49fEdED1A2fbE3B54223Df65f4edB3845eb0",
+            "functions": [
+                "execute",
+                "executeWithSig",
+                "state",
+                "token"
+            ]
+        },
+        {
+            "contract_name": "IPAssetRegistry",
+            "contract_address": "0x77319B4031e6eF1250907aa00018B8B1c67a244b",
+            "functions": [
+                "IPRegistered",
                 "ipId",
-                "isConsumingScheduledOp",
-                "isRegistered",
-                "paused",
-                "proxiableUUID",
-                "totalSupply"
+                "isRegistered", 
+                "register",
+                "IPAccountRegistered"
+            ]
+        },
+        {
+            "contract_name": "IpRoyaltyVaultImpl",
+            "contract_address": "0x63cC7611316880213f3A4Ba9bD72b0EaA2010298",
+            "functions": [
+                "claimableRevenue",
+                "ipId",
+                "RoyaltyTokensCollected",
+                "RevenueTokenClaimed",
+                "balanceOf"
             ]
         },
         {
             "contract_name": "PILicenseTemplate",
-            "contract_address": "0x58E2c909D557Cd23EF90D14f8fd21667A5Ae7a93",
+            "contract_address": "0x2E896b0b2Fdb7457499B56AAaA4AE55BCB4Cd316",
             "functions": [
-                "initialize",
-                "registerLicenseTerms",
-                "setApproval",
-                "setAuthority",
-                "upgradeToAndCall",
-                "verifyRegisterDerivative",
-                "verifyRegisterDerivativeForAllParents",
-                "exists",
-                "getLicenseTerms",
                 "getLicenseTermsId",
-                "getRoyaltyPolicy"
+                "registerLicenseTerms",
+                "LicenseTermsRegistered",
+                "getLicenseTerms"
             ]
         },
         {
             "contract_name": "LicensingModule",
-            "contract_address": "0x5a7D9Fa17DE09350F481A53B470D798c1c1aabae",
+            "contract_address": "0x04fbd8a2e56dd85CFD5500A4A4DfA955B9f1dE6f",
             "functions": [
                 "attachLicenseTerms",
-                "initialize",
                 "mintLicenseTokens",
-                "pause",
-                "registerDerivative",
+                "LicenseTokensMinted",
                 "registerDerivativeWithLicenseTokens",
-                "setAuthority",
-                "setLicensingConfig",
-                "unpause",
-                "upgradeToAndCall"
+                "registerDerivative",
+                "getLicenseTerms",
+                "LicenseTermsAttached",
+                "predictMintingLicenseFee",
+                "setLicensingConfig"
             ]
         },
         {
-            "contract_name": "LicenseRegistry",
-            "contract_address": "0xBda3992c49E98392e75E78d82B934F3598bA495f",
+            "contract_name": "ModuleRegistry",
+            "contract_address": "0x022DBAAeA5D8fB31a0Ad793335e39Ced5D631fa5",
             "functions": [
-                "authority",
-                "exists",
-                "getAttachedLicenseTerms",
-                "getAttachedLicenseTermsCount",
-                "getDefaultLicenseTerms",
-                "getDerivativeIp",
-                "getDerivativeIpCount",
-                "getExpireTime",
-                "getLicensingConfig",
-                "getParentIp",
-                "getParentIpCount",
-                "hasDerivativeIps",
-                "hasIpAttachedLicenseTerms",
-                "isConsumingScheduledOp",
-                "isDerivativeIp",
-                "isExpiredNow",
-                "isParentIp",
-                "isRegisteredLicenseTemplate",
-                "proxiableUUID",
-                "verifyMintLicenseToken"
+                "isRegistered",
+                "getDefaultLicenseTerms"
+            ]
+        },
+        {
+            "contract_name": "RoyaltyModule",
+            "contract_address": "0xD2f60c40fEbccf6311f8B47c4f2Ec6b040400086",
+            "functions": [
+                "payRoyaltyOnBehalf",
+                "isWhitelistedRoyaltyPolicy",
+                "isWhitelistedRoyaltyToken",
+                "ipRoyaltyVaults",
+                "IpRoyaltyVaultDeployed"
+            ]
+        },
+        {
+            "contract_name": "RoyaltyPolicyLAP",
+            "contract_address": "0xBe54FB168b3c982b7AaE60dB6CF75Bd8447b390E",
+            "functions": [
+                "onRoyaltyPayment",
+                "getRoyaltyData"
             ]
         },
         {
             "contract_name": "LicenseToken",
-            "contract_address": "0xB138aEd64814F2845554f9DBB116491a077eEB2D",
+            "contract_address": "0xFe3838BFb30B34170F00030B52eA4893d8aAC6bC",
             "functions": [
                 "ownerOf"
             ]
         },
         {
-            "contract_name": "RoyaltyPolicyLAP",
-            "contract_address": "0x28b4F70ffE5ba7A26aEF979226f77Eb57fb9Fdb6",
+            "contract_name": "GroupingWorkflows",
+            "contract_address": "0xc274a8Bc6b3F72893E4d3fa84fF87B55292B6edB",
             "functions": [
-                "getRoyaltyData"
-            ]
-        },
-        {
-            "contract_name": "RoyaltyModule",
-            "contract_address": "0xEa6eD700b11DfF703665CCAF55887ca56134Ae3B",
-            "functions": [
-                "payRoyaltyOnBehalf",
-                "isWhitelistedRoyaltyPolicy",
-                "isWhitelistedRoyaltyToken"
-            ]
-        },
-        {
-            "contract_name": "AccessController",
-            "contract_address": "0xf709c8001E94e2ca6F98b7fFBCd5BD3943E46D81",
-            "functions": [
-                "checkPermission"
-            ]
-        },
-        {
-            "contract_name": "RegistrationWorkflows",
-            "contract_address": "0xde13Be395E1cd753471447Cf6A656979ef87881c",
-            "functions": [
-                "createCollection",
-                "mintAndRegisterIp",
-                "registerIp"
-            ]
-        },
-        {
-            "contract_name": "LicenseAttachmentWorkflows", 
-            "contract_address": "0x44Bad1E4035a44eAC1606B222873E4a85E8b7D9c",
-            "functions": [
-                "registerIpAndAttachPILTerms",
-                "mintAndRegisterIpAndAttachPILTerms"
+                "mintAndRegisterIpAndAttachLicenseAndAddToGroup",
+                "registerIpAndAttachLicenseAndAddToGroup",
+                "registerGroupAndAttachLicense",
+                "registerGroupAndAttachLicenseAndAddIps"
             ]
         },
         {
             "contract_name": "DerivativeWorkflows",
-            "contract_address": "0xa8815CEB96857FFb8f5F8ce920b1Ae6D70254C7B", 
+            "contract_address": "0x71Af704a6e083B29215b0F1216a39c5C69e596AF",
             "functions": [
-                "registerIpAndMakeDerivative"
+                "mintAndRegisterIpAndMakeDerivativeWithLicenseTokens",
+                "registerIpAndMakeDerivative",
+                "mintAndRegisterIpAndMakeDerivative",
+                "registerIpAndMakeDerivativeWithLicenseTokens",
+                "mintAndRegisterIpAndMakeDerivativeWithLicenseTokens",
+                "multicall"
             ]
         },
         {
-            "contract_name": "CoreMetadataModule",
-            "contract_address": "0x89630Ccf23277417FBdfd3076C702F5248267e78",
+            "contract_name": "RegistrationWorkflows",
+            "contract_address": "0x15396AE71337ed5d613cafad53f8F289D16f0350",
             "functions": [
+                "createCollection",
+                "mintAndRegisterIp",
+                "registerIp",
+                "CollectionCreated",
+                "multicall"
+            ]
+        },
+        {
+            "contract_name": "LicenseAttachmentWorkflows",
+            "contract_address": "0xfe1157c2Cfd895a4B44749f18087a025A4c37c2B",
+            "functions": [
+                "registerPILTermsAndAttach",
+                "registerIpAndAttachPILTerms",
+                "mintAndRegisterIpAndAttachPILTerms",
+                "multicall"
+            ]
+        },
+        {
+            "contract_name": "RoyaltyWorkflows",
+            "contract_address": "0xc80FF2b5292C928CB86E20803882336c93F22A26",
+            "functions": [
+                "transferToVaultAndSnapshotAndClaimByTokenBatch",
+                "transferToVaultAndSnapshotAndClaimBySnapshotBatch",
+                "snapshotAndClaimByTokenBatch",
+                "snapshotAndClaimBySnapshotBatch"
+            ]
+        },
+        {
+            "contract_name": "RoyaltyTokenDistributionWorkflows",
+            "contract_address": "0x465d808924eC915314c79007f0919Ff380E6D163",
+            "functions": [
+                "mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens",
+                "mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens",
+                "registerIpAndAttachPILTermsAndDeployRoyaltyVault",
+                "distributeRoyaltyTokens",
+                "registerIpAndMakeDerivativeAndDeployRoyaltyVault"
             ]
         }
-
     ]
 }

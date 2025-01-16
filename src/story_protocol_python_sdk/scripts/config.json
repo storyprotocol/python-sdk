@@ -176,6 +176,31 @@
                 "distributeRoyaltyTokens",
                 "registerIpAndMakeDerivativeAndDeployRoyaltyVault"
             ]
+        },
+        {
+            "contract_name": "CoreMetadataModule",
+            "contract_address": "0x6E81a25C99C6e8430aeC7353325EB138aFE5DC16",
+            "functions": []
+        },
+        {
+            "contract_name": "CoreMetadataViewModule",
+            "contract_address": "0xB3F88038A983CeA5753E11D144228Ebb5eACdE20",
+            "functions": []
+        },
+        {
+            "contract_name": "GroupingModule",
+            "contract_address": "0x69D3a7aa9edb72Bc226E745A7cCdd50D947b69Ac",
+            "functions": []
+        },
+        {
+            "contract_name": "LicenseRegistry",
+            "contract_address": "0x529a750E02d8E2f15649c13D69a465286a780e24",
+            "functions": []
+        },
+        {
+            "contract_name": "RoyaltyPolicyLRP",
+            "contract_address": "0x9156e603C949481883B1d3355c6f1132D191fC41",
+            "functions": []
         }
     ]
 }

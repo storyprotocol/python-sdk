@@ -14,9 +14,9 @@ src_path = os.path.abspath(os.path.join(current_dir, '..', '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-from utils import get_token_id, get_story_client_in_odyssey, MockERC721, getBlockTimestamp
+from utils import get_token_id, get_story_client_in_devnet, MockERC721, getBlockTimestamp
 
-load_dotenv()
+load_dotenv(override=True)
 private_key = os.getenv('WALLET_PRIVATE_KEY')
 rpc_url = os.getenv('RPC_PROVIDER_URL')
 
@@ -30,7 +30,7 @@ account = web3.eth.account.from_key(private_key)
 
 @pytest.fixture
 def story_client():
-    return get_story_client_in_odyssey(web3, account)
+    return get_story_client_in_devnet(web3, account)
 
 def test_execute(story_client):
     token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
@@ -81,7 +81,7 @@ def test_executeWithSig(story_client):
         args=[
             ipId,
             account.address,
-            "0x89630Ccf23277417FBdfd3076C702F5248267e78",  # Module address
+            "0x6E81a25C99C6e8430aeC7353325EB138aFE5DC16",  # Module address
             Web3.keccak(text="function setAll(address,string,bytes32,bytes32)")[:4],  # Selector
             1  # ALLOW
         ]
@@ -112,7 +112,7 @@ def test_executeWithSig(story_client):
     domain_data = {
         "name": "Story Protocol IP Account",
         "version": "1",
-        "chainId": 1516,
+        "chainId": 1315,
         "verifyingContract": ipId,
     }
 

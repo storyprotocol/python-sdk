@@ -40,13 +40,13 @@
   },
   {
     "type": "function",
-    "name": "IP_ACCOUNT_REGISTRY",
+    "name": "IP_ASSET_REGISTRY",
     "inputs": [],
     "outputs": [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract IIPAccountRegistry"
+        "internalType": "contract IIPAssetRegistry"
       }
     ],
     "stateMutability": "view"
@@ -112,6 +112,30 @@
         "name": "",
         "type": "address",
         "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "canOverrideRoyaltyPercent",
+    "inputs": [
+      {
+        "name": "licenseTermsId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "newRoyaltyPercent",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
       }
     ],
     "stateMutability": "view"
@@ -1169,6 +1193,17 @@
     "type": "error",
     "name": "PILicenseTemplate__DerivativesDisabled_CantAddReciprocal",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "PILicenseTemplate__PILTermsURIContainsDoubleQuote",
+    "inputs": [
+      {
+        "name": "uri",
+        "type": "string",
+        "internalType": "string"
+      }
+    ]
   },
   {
     "type": "error",

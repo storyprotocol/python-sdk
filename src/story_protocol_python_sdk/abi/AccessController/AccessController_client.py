@@ -22,8 +22,27 @@ class AccessControllerClient:
             abi = json.load(abi_file)
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
-    def checkPermission(self, ipAccount, signer, to, func):
+    def setAllPermissions(self, ipAccount, signer, permission):
         
-        return self.contract.functions.checkPermission(ipAccount, signer, to, func).call()
+        return self.contract.functions.setAllPermissions(ipAccount, signer, permission).transact()
         
+    def build_setAllPermissions_transaction(self, ipAccount, signer, permission, tx_params):
+        return self.contract.functions.setAllPermissions(ipAccount, signer, permission).build_transaction(tx_params)
+    
+    
+    def setBatchPermissions(self, permissions):
+        
+        return self.contract.functions.setBatchPermissions(permissions).transact()
+        
+    def build_setBatchPermissions_transaction(self, permissions, tx_params):
+        return self.contract.functions.setBatchPermissions(permissions).build_transaction(tx_params)
+    
+    
+    def setPermission(self, ipAccount, signer, to, func, permission):
+        
+        return self.contract.functions.setPermission(ipAccount, signer, to, func, permission).transact()
+        
+    def build_setPermission_transaction(self, ipAccount, signer, to, func, permission, tx_params):
+        return self.contract.functions.setPermission(ipAccount, signer, to, func, permission).build_transaction(tx_params)
+    
     

@@ -493,6 +493,11 @@
         "name": "externalData",
         "type": "bytes",
         "internalType": "bytes"
+      },
+      {
+        "name": "maxRts",
+        "type": "uint32",
+        "internalType": "uint32"
       }
     ],
     "outputs": [],
@@ -677,19 +682,6 @@
   },
   {
     "type": "function",
-    "name": "setSnapshotInterval",
-    "inputs": [
-      {
-        "name": "timestampInterval",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "setTreasury",
     "inputs": [
       {
@@ -700,19 +692,6 @@
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "snapshotInterval",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -1301,7 +1280,43 @@
   },
   {
     "type": "error",
+    "name": "RoyaltyModule__AboveMaxRts",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "RoyaltyModule__AboveParentLimit",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "RoyaltyModule__CallFailed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "RoyaltyModule__GroupRewardPoolNotWhitelisted",
+    "inputs": [
+      {
+        "name": "groupId",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "rewardPool",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "RoyaltyModule__InvalidExternalRoyaltyPolicy",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "RoyaltyModule__IpExpired",
     "inputs": []
   },
   {
@@ -1332,6 +1347,11 @@
   {
     "type": "error",
     "name": "RoyaltyModule__NotWhitelistedRoyaltyToken",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "RoyaltyModule__PolicyAlreadyRegisteredAsExternalRoyaltyPolicy",
     "inputs": []
   },
   {

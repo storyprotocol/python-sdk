@@ -22,26 +22,35 @@ class LicenseAttachmentWorkflowsClient:
             abi = json.load(abi_file)
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
-    def mintAndRegisterIpAndAttachPILTerms(self, spgNftContract, recipient, ipMetadata, terms):
+    def mintAndRegisterIpAndAttachPILTerms(self, spgNftContract, recipient, ipMetadata, licenseTermsData, allowDuplicates):
         
-        return self.contract.functions.mintAndRegisterIpAndAttachPILTerms(spgNftContract, recipient, ipMetadata, terms).transact()
+        return self.contract.functions.mintAndRegisterIpAndAttachPILTerms(spgNftContract, recipient, ipMetadata, licenseTermsData, allowDuplicates).transact()
         
-    def build_mintAndRegisterIpAndAttachPILTerms_transaction(self, spgNftContract, recipient, ipMetadata, terms, tx_params):
-        return self.contract.functions.mintAndRegisterIpAndAttachPILTerms(spgNftContract, recipient, ipMetadata, terms).build_transaction(tx_params)
-    
-    def registerIpAndAttachPILTerms(self, nftContract, tokenId, ipMetadata, terms, sigMetadata, sigAttach):
-        
-        return self.contract.functions.registerIpAndAttachPILTerms(nftContract, tokenId, ipMetadata, terms, sigMetadata, sigAttach).transact()
-        
-    def build_registerIpAndAttachPILTerms_transaction(self, nftContract, tokenId, ipMetadata, terms, sigMetadata, sigAttach, tx_params):
-        return self.contract.functions.registerIpAndAttachPILTerms(nftContract, tokenId, ipMetadata, terms, sigMetadata, sigAttach).build_transaction(tx_params)
+    def build_mintAndRegisterIpAndAttachPILTerms_transaction(self, spgNftContract, recipient, ipMetadata, licenseTermsData, allowDuplicates, tx_params):
+        return self.contract.functions.mintAndRegisterIpAndAttachPILTerms(spgNftContract, recipient, ipMetadata, licenseTermsData, allowDuplicates).build_transaction(tx_params)
     
     
-    def registerIpAndAttachPILTerms(self, nftContract, tokenId, ipMetadata, terms, sigMetadata, sigAttach):
+    def multicall(self, data):
         
-        return self.contract.functions.registerIpAndAttachPILTerms(nftContract, tokenId, ipMetadata, terms, sigMetadata, sigAttach).transact()
+        return self.contract.functions.multicall(data).transact()
         
-    def build_registerIpAndAttachPILTerms_transaction(self, nftContract, tokenId, ipMetadata, terms, sigMetadata, sigAttach, tx_params):
-        return self.contract.functions.registerIpAndAttachPILTerms(nftContract, tokenId, ipMetadata, terms, sigMetadata, sigAttach).build_transaction(tx_params)
+    def build_multicall_transaction(self, data, tx_params):
+        return self.contract.functions.multicall(data).build_transaction(tx_params)
+    
+    
+    def registerIpAndAttachPILTerms(self, nftContract, tokenId, ipMetadata, licenseTermsData, sigMetadataAndAttachAndConfig):
+        
+        return self.contract.functions.registerIpAndAttachPILTerms(nftContract, tokenId, ipMetadata, licenseTermsData, sigMetadataAndAttachAndConfig).transact()
+        
+    def build_registerIpAndAttachPILTerms_transaction(self, nftContract, tokenId, ipMetadata, licenseTermsData, sigMetadataAndAttachAndConfig, tx_params):
+        return self.contract.functions.registerIpAndAttachPILTerms(nftContract, tokenId, ipMetadata, licenseTermsData, sigMetadataAndAttachAndConfig).build_transaction(tx_params)
+    
+    
+    def registerPILTermsAndAttach(self, ipId, licenseTermsData, sigAttachAndConfig):
+        
+        return self.contract.functions.registerPILTermsAndAttach(ipId, licenseTermsData, sigAttachAndConfig).transact()
+        
+    def build_registerPILTermsAndAttach_transaction(self, ipId, licenseTermsData, sigAttachAndConfig, tx_params):
+        return self.contract.functions.registerPILTermsAndAttach(ipId, licenseTermsData, sigAttachAndConfig).build_transaction(tx_params)
     
     

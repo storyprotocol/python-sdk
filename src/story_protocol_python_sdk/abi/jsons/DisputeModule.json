@@ -48,19 +48,6 @@
   },
   {
     "type": "function",
-    "name": "IP_ACCOUNT_REGISTRY",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IIPAccountRegistry"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "IP_ASSET_REGISTRY",
     "inputs": [],
     "outputs": [
@@ -124,6 +111,38 @@
     "outputs": [
       {
         "name": "policy",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "arbitrationPolicyCooldown",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "arbitrationRelayer",
+    "inputs": [
+      {
+        "name": "arbitrationPolicy",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
         "type": "address",
         "internalType": "address"
       }
@@ -207,6 +226,11 @@
         "name": "disputeInitiator",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "disputeTimestamp",
+        "type": "uint256",
+        "internalType": "uint256"
       },
       {
         "name": "arbitrationPolicy",
@@ -302,30 +326,6 @@
   },
   {
     "type": "function",
-    "name": "isWhitelistedArbitrationRelayer",
-    "inputs": [
-      {
-        "name": "arbitrationPolicy",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "arbitrationRelayer",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "allowed",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "isWhitelistedDisputeTag",
     "inputs": [
       {
@@ -371,6 +371,44 @@
         "name": "",
         "type": "string",
         "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "nextArbitrationPolicies",
+    "inputs": [
+      {
+        "name": "ipId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "policy",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "nextArbitrationUpdateTimestamps",
+    "inputs": [
+      {
+        "name": "ipId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -470,7 +508,38 @@
         "internalType": "address"
       },
       {
+        "name": "nextArbitrationPolicy",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setArbitrationPolicyCooldown",
+    "inputs": [
+      {
+        "name": "cooldown",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setArbitrationRelayer",
+    "inputs": [
+      {
         "name": "arbitrationPolicy",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "arbPolicyRelayer",
         "type": "address",
         "internalType": "address"
       }
@@ -578,6 +647,25 @@
   },
   {
     "type": "function",
+    "name": "updateActiveArbitrationPolicy",
+    "inputs": [
+      {
+        "name": "ipId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "arbitrationPolicy",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "upgradeToAndCall",
     "inputs": [
       {
@@ -614,29 +702,6 @@
   },
   {
     "type": "function",
-    "name": "whitelistArbitrationRelayer",
-    "inputs": [
-      {
-        "name": "arbitrationPolicy",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "arbPolicyRelayer",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "allowed",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "whitelistDisputeTag",
     "inputs": [
       {
@@ -655,6 +720,19 @@
   },
   {
     "type": "event",
+    "name": "ArbitrationPolicyCooldownUpdated",
+    "inputs": [
+      {
+        "name": "cooldown",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "ArbitrationPolicySet",
     "inputs": [
       {
@@ -668,6 +746,12 @@
         "type": "address",
         "indexed": false,
         "internalType": "address"
+      },
+      {
+        "name": "nextArbitrationUpdateTimestamp",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -693,7 +777,7 @@
   },
   {
     "type": "event",
-    "name": "ArbitrationRelayerWhitelistUpdated",
+    "name": "ArbitrationRelayerUpdated",
     "inputs": [
       {
         "name": "arbitrationPolicy",
@@ -706,12 +790,6 @@
         "type": "address",
         "indexed": false,
         "internalType": "address"
-      },
-      {
-        "name": "allowed",
-        "type": "bool",
-        "indexed": false,
-        "internalType": "bool"
       }
     ],
     "anonymous": false
@@ -769,6 +847,12 @@
         "type": "bytes32",
         "indexed": false,
         "internalType": "bytes32"
+      },
+      {
+        "name": "disputeTimestamp",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -840,6 +924,12 @@
         "internalType": "address"
       },
       {
+        "name": "disputeTimestamp",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
         "name": "arbitrationPolicy",
         "type": "address",
         "indexed": false,
@@ -875,6 +965,12 @@
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      },
+      {
+        "name": "data",
+        "type": "bytes",
+        "indexed": false,
+        "internalType": "bytes"
       }
     ],
     "anonymous": false
@@ -1017,12 +1113,27 @@
   },
   {
     "type": "error",
+    "name": "DisputeModule__CannotBlacklistBaseArbitrationPolicy",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "DisputeModule__DisputeAlreadyPropagated",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "DisputeModule__NotAbleToResolve",
     "inputs": []
   },
   {
     "type": "error",
     "name": "DisputeModule__NotAllowedToWhitelist",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "DisputeModule__NotArbitrationRelayer",
     "inputs": []
   },
   {
@@ -1048,11 +1159,6 @@
   {
     "type": "error",
     "name": "DisputeModule__NotWhitelistedArbitrationPolicy",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "DisputeModule__NotWhitelistedArbitrationRelayer",
     "inputs": []
   },
   {
@@ -1092,7 +1198,7 @@
   },
   {
     "type": "error",
-    "name": "DisputeModule__ZeroArbitrationRelayer",
+    "name": "DisputeModule__ZeroArbitrationPolicyCooldown",
     "inputs": []
   },
   {

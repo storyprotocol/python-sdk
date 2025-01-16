@@ -862,6 +862,11 @@
   },
   {
     "type": "error",
+    "name": "IPAccount__UUPSUpgradeDisabled",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "IPAccount__ZeroAccessController",
     "inputs": []
   },

@@ -341,14 +341,15 @@
         "name": "token",
         "type": "address",
         "internalType": "address"
-      },
+      }
+    ],
+    "outputs": [
       {
-        "name": "amount",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
-    "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
@@ -585,7 +586,7 @@
   },
   {
     "type": "error",
-    "name": "RoyaltyPolicyLAP__ExceedsClaimableRoyalty",
+    "name": "RoyaltyPolicyLAP__CallFailed",
     "inputs": []
   },
   {
@@ -596,11 +597,6 @@
   {
     "type": "error",
     "name": "RoyaltyPolicyLAP__ZeroAccessManager",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "RoyaltyPolicyLAP__ZeroAmount",
     "inputs": []
   },
   {

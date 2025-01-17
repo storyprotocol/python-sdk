@@ -82,12 +82,13 @@ def test_registerCommercialUsePIL(story_client):
 
 def test_registerCommercialRemixPIL(story_client):
     response = story_client.License.registerCommercialRemixPIL(
-        default_minting_fee=11,
+        default_minting_fee=1,
         currency=MockERC20,
-        commercial_rev_share=10,
+        commercial_rev_share=100,
         royalty_policy=royalty_policy
     )
 
+    print("the response license terms id is", response['licenseTermsId'])
     assert response is not None, "Response is None, indicating the contract interaction failed."
     assert 'licenseTermsId' in response, "Response does not contain 'licenseTermsId'."
     assert response['licenseTermsId'] is not None, "'licenseTermsId' is None."
@@ -124,7 +125,7 @@ def ip_id(story_client):
     return response['ipId']
 
 def test_attachLicenseTerms(story_client, ip_id):
-    license_terms_id = 3
+    license_terms_id = 5
 
     response = story_client.License.attachLicenseTerms(ip_id, license_template, license_terms_id)
     
@@ -159,3 +160,19 @@ def test_getLicenseTerms(story_client):
     response = story_client.License.getLicenseTerms(selectedLicenseTermsId)
 
     assert response is not None, "Response is None, indicating the call failed."
+
+def test_predictMintingLicenseFee(story_client, ip_id):
+    response = story_client.License.predictMintingLicenseFee(
+        licensor_ip_id=ip_id, 
+        license_terms_id=5, 
+        amount=1
+    )
+
+    assert response is not None, "Response is None, indicating the contract interaction failed."
+    assert 'currency' in response, "Response does not contain 'currency'."
+    assert response['currency'] is not None, "'currency' is None."
+    assert isinstance(response['currency'], str), "'currency' is not a string."
+    assert len(response['currency']) > 0, "'currency' is empty."
+    assert 'amount' in response, "Response does not contain 'amount'."
+    assert response['amount'] is not None, "'amount' is None."
+    assert isinstance(response['amount'], int), "'amount' is not an integer."

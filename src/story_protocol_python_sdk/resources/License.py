@@ -405,4 +405,52 @@ class License:
             return self.license_template_client.getLicenseTerms(selectedLicenseTermsId)
         except Exception as e:
             raise ValueError(f"Failed to get license terms: {str(e)}")
-        
+
+    def predictMintingLicenseFee(self, licensor_ip_id: str, license_terms_id: int, amount: int, license_template: str = None, receiver: str = None, tx_options: dict = None) -> dict:
+        """
+        Pre-compute the minting license fee for the given IP and license terms.
+
+        :param licensor_ip_id str: The IP ID of the licensor.
+        :param license_terms_id int: The ID of the license terms.
+        :param amount int: The amount of license tokens to mint.
+        :param license_template str: [Optional] The address of the license template, default is Programmable IP License.
+        :param receiver str: [Optional] The address of the receiver, default is your wallet address.
+        :param tx_options dict: [Optional] Transaction options.
+        :return dict: A dictionary containing the currency token and token amount.
+        """
+        try:
+            # Check if IP is registered
+            if not self.ip_asset_registry_client.isRegistered(licensor_ip_id):
+                raise ValueError(f"The licensor IP with id {licensor_ip_id} is not registered.")
+
+            # Check if license terms exist
+            if not self.license_template_client.exists(license_terms_id):
+                raise ValueError(f"License terms id {license_terms_id} does not exist.")
+
+            # Set defaults if not provided
+            if not receiver:
+                receiver = self.account.address
+            if not license_template:
+                license_template = self.license_template_client.contract.address
+
+            # Convert addresses to checksum format
+            licensor_ip_id = self.web3.to_checksum_address(licensor_ip_id)
+            license_template = self.web3.to_checksum_address(license_template)
+            receiver = self.web3.to_checksum_address(receiver)
+
+            response = self.licensing_module_client.predictMintingLicenseFee(
+                licensor_ip_id,
+                license_template,
+                license_terms_id,
+                amount,
+                receiver,
+                ZERO_ADDRESS  # Zero address for royalty context
+            )
+
+            return {
+                'currency': response[0],
+                'amount': response[1]
+            }
+
+        except Exception as e:
+            raise ValueError(f"Failed to predict minting license fee: {str(e)}")

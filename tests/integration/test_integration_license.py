@@ -12,7 +12,7 @@ src_path = os.path.abspath(os.path.join(current_dir, '..', '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-from utils import get_story_client_in_odyssey, MockERC20, MockERC721, get_token_id, approve, mint_tokens
+from utils import get_story_client_in_devnet, MockERC20, MockERC721, get_token_id, approve, mint_tokens
 
 load_dotenv()
 private_key = os.getenv('WALLET_PRIVATE_KEY')
@@ -26,9 +26,13 @@ if not web3.is_connected():
 # Set up the account with the private key
 account = web3.eth.account.from_key(private_key)
 
+royalty_policy="0xBe54FB168b3c982b7AaE60dB6CF75Bd8447b390E"
+royalty_module="0xD2f60c40fEbccf6311f8B47c4f2Ec6b040400086"
+license_template="0x2E896b0b2Fdb7457499B56AAaA4AE55BCB4Cd316"
+
 @pytest.fixture(scope="module")
 def story_client():
-    return get_story_client_in_odyssey(web3, account)
+    return get_story_client_in_devnet(web3, account)
 
 def test_registerPILTerms(story_client):
     response = story_client.License.registerPILTerms(
@@ -68,7 +72,7 @@ def test_registerCommercialUsePIL(story_client):
     response = story_client.License.registerCommercialUsePIL(
         default_minting_fee=11,
         currency=MockERC20,
-        royalty_policy="0x28b4F70ffE5ba7A26aEF979226f77Eb57fb9Fdb6"
+        royalty_policy=royalty_policy
     )
 
     assert response is not None, "Response is None, indicating the contract interaction failed."
@@ -81,7 +85,7 @@ def test_registerCommercialRemixPIL(story_client):
         default_minting_fee=11,
         currency=MockERC20,
         commercial_rev_share=10,
-        royalty_policy="0x28b4F70ffE5ba7A26aEF979226f77Eb57fb9Fdb6"
+        royalty_policy=royalty_policy
     )
 
     assert response is not None, "Response is None, indicating the contract interaction failed."
@@ -110,7 +114,7 @@ def ip_id(story_client):
         erc20_contract_address=MockERC20, 
         web3=web3, 
         account=account, 
-        spender_address="0xEa6eD700b11DfF703665CCAF55887ca56134Ae3B", 
+        spender_address=royalty_module, 
         amount=100000 * 10 ** 6)
 
     assert response is not None
@@ -120,8 +124,7 @@ def ip_id(story_client):
     return response['ipId']
 
 def test_attachLicenseTerms(story_client, ip_id):
-    license_template = "0x58E2c909D557Cd23EF90D14f8fd21667A5Ae7a93"
-    license_terms_id = 184
+    license_terms_id = 3
 
     response = story_client.License.attachLicenseTerms(ip_id, license_template, license_terms_id)
     
@@ -134,8 +137,8 @@ def test_attachLicenseTerms(story_client, ip_id):
 def test_mintLicenseTokens(story_client, ip_id):
     response = story_client.License.mintLicenseTokens(
         licensor_ip_id=ip_id, 
-        license_template="0x58E2c909D557Cd23EF90D14f8fd21667A5Ae7a93", 
-        license_terms_id=184, 
+        license_template=license_template, 
+        license_terms_id=3, 
         amount=1, 
         receiver=account.address
     )
@@ -151,7 +154,7 @@ def test_mintLicenseTokens(story_client, ip_id):
     assert all(isinstance(i, int) for i in response['licenseTokenIds']), "Not all elements in 'licenseTokenIds' are integers."
 
 def test_getLicenseTerms(story_client):
-    selectedLicenseTermsId = 184
+    selectedLicenseTermsId = 3
 
     response = story_client.License.getLicenseTerms(selectedLicenseTermsId)
 

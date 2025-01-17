@@ -30,6 +30,11 @@ class PILicenseTemplateClient:
         return self.contract.functions.registerLicenseTerms(terms).build_transaction(tx_params)
     
     
+    def exists(self, licenseTermsId):
+        
+        return self.contract.functions.exists(licenseTermsId).call()
+        
+    
     def getLicenseTerms(self, selectedLicenseTermsId):
         
         return self.contract.functions.getLicenseTerms(selectedLicenseTermsId).call()

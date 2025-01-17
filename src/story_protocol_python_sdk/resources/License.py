@@ -318,8 +318,8 @@ class License:
         
         except Exception as e:
             raise e
-        
-    def mintLicenseTokens(self, licensor_ip_id: str, license_template: str, license_terms_id: int, amount: int, receiver: str, tx_options: dict = None) -> dict:
+    
+    def mintLicenseTokens(self, licensor_ip_id: str, license_template: str, license_terms_id: int, amount: int, receiver: str, max_minting_fee: int = 0, max_revenue_share: int = 0, tx_options: dict = None) -> dict:
         """
         Mints license tokens for the license terms attached to an IP.
 
@@ -328,6 +328,8 @@ class License:
         :param license_terms_id int: The ID of the license terms within the license template.
         :param amount int: The amount of license tokens to mint.
         :param receiver str: The address of the receiver.
+        :param max_minting_fee int: [Optional] The maximum minting fee that the caller is willing to pay. If set to 0 then no limit. Defaults to 0.
+        :param max_revenue_share int: [Optional] The maximum revenue share percentage allowed for minting the License Tokens. Must be between 0 and 100,000,000 (where 100,000,000 represents 100%). Defaults to 0.
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash and the license token IDs.
         """
@@ -359,7 +361,9 @@ class License:
                 license_terms_id,
                 amount,
                 receiver,
-                ZERO_ADDRESS,
+                ZERO_ADDRESS,  # Zero address for royalty context
+                max_minting_fee,
+                max_revenue_share,
                 tx_options=tx_options
             )
 

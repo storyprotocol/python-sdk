@@ -1,9 +1,6 @@
 #src/story_protcol_python_sdk/resources/IPAsset.py
 
 from web3 import Web3
-from eth_account import Account
-from eth_account.messages import encode_typed_data
-from datetime import datetime
 
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
 from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import LicensingModuleClient
@@ -18,12 +15,10 @@ from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client im
 
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
+from story_protocol_python_sdk.utils.sign import Sign
 
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000"
-
-
-
 
 class IPAsset:
     """
@@ -49,107 +44,108 @@ class IPAsset:
         self.access_controller_client = AccessControllerClient(web3)
         self.pi_license_template_client = PILicenseTemplateClient(web3)
 
-        # Instantiate LicenseTerms
         self.license_terms_util = LicenseTerms(web3)
+        self.sign_util = Sign(web3, self.chain_id, self.account)
 
-    # def register(self, nft_contract: str, token_id: int, ip_metadata: dict = None, deadline: int = None, tx_options: dict = None) -> dict:
-    #     """
-    #     Registers an NFT as IP, creating a corresponding IP record.
+    def register(self, nft_contract: str, token_id: int, ip_metadata: dict = None, deadline: int = None, tx_options: dict = None) -> dict:
+        """
+        Registers an NFT as IP, creating a corresponding IP record.
 
-    #     :param nft_contract str: The address of the NFT.
-    #     :param token_id int: The token identifier of the NFT.
-    #     :param ip_metadata dict: [Optional] The metadata for the IP.
-    #         :param ip_metadata_URI str: [Optional] The URI of the metadata for the IP.
-    #         :param ip_metadata_hash str: [Optional] The metadata hash for the IP.
-    #         :param nft_metadata_URI str: [Optional] The URI of the metadata for the NFT.
-    #         :param nft_metadata_hash str: [Optional] The metadata hash for the NFT.
-    #     :param deadline int: [Optional] The deadline for the signature in milliseconds.
-    #     :param tx_options dict: [Optional] The transaction options.
-    #     :return dict: A dictionary with the transaction hash and IP ID.
-    #     """
-    #     try:
-    #         ip_id = self._get_ip_id(nft_contract, token_id)
-    #         if self._is_registered(ip_id):
-    #             return {
-    #                 'txHash': None,
-    #                 'ipId': ip_id
-    #             }
+        :param nft_contract str: The address of the NFT.
+        :param token_id int: The token identifier of the NFT.
+        :param ip_metadata dict: [Optional] The metadata for the IP.
+            :param ip_metadata_URI str: [Optional] The URI of the metadata for the IP.
+            :param ip_metadata_hash str: [Optional] The metadata hash for the IP.
+            :param nft_metadata_URI str: [Optional] The URI of the metadata for the NFT.
+            :param nft_metadata_hash str: [Optional] The metadata hash for the NFT.
+        :param deadline int: [Optional] The deadline for the signature in milliseconds.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash and IP ID.
+        """
+        try:
+            ip_id = self._get_ip_id(nft_contract, token_id)
+            if self._is_registered(ip_id):
+                return {
+                    'txHash': None,
+                    'ipId': ip_id
+                }
 
-    #         req_object = {
-    #             'tokenId': token_id,
-    #             'nftContract': self.web3.to_checksum_address(nft_contract),
-    #             'ipMetadata': {
-    #                 'ipMetadataURI': "",
-    #                 'ipMetadataHash': ZERO_HASH,
-    #                 'nftMetadataURI': "",
-    #                 'nftMetadataHash': ZERO_HASH,
-    #             },
-    #             'sigMetadata': {
-    #                 'signer': ZERO_ADDRESS,
-    #                 'deadline': 0,
-    #                 'signature': ZERO_HASH,
-    #             },
-    #         }
+            req_object = {
+                'tokenId': token_id,
+                'nftContract': self.web3.to_checksum_address(nft_contract),
+                'ipMetadata': {
+                    'ipMetadataURI': "",
+                    'ipMetadataHash': ZERO_HASH,
+                    'nftMetadataURI': "",
+                    'nftMetadataHash': ZERO_HASH,
+                },
+                'sigMetadata': {
+                    'signer': ZERO_ADDRESS,
+                    'deadline': 0,
+                    'signature': ZERO_HASH,
+                },
+            }
 
-    #         if ip_metadata:
-    #             req_object['ipMetadata'].update({
-    #                 'ipMetadataURI': ip_metadata.get('ipMetadataURI', ""),
-    #                 'ipMetadataHash': ip_metadata.get('ipMetadataHash', ZERO_HASH),
-    #                 'nftMetadataURI': ip_metadata.get('nftMetadataURI', ""),
-    #                 'nftMetadataHash': ip_metadata.get('nftMetadataHash', ZERO_HASH),
-    #             })
+            if ip_metadata:
+                req_object['ipMetadata'].update({
+                    'ipMetadataURI': ip_metadata.get('ipMetadataURI', ""),
+                    'ipMetadataHash': ip_metadata.get('ipMetadataHash', ZERO_HASH),
+                    'nftMetadataURI': ip_metadata.get('nftMetadataURI', ""),
+                    'nftMetadataHash': ip_metadata.get('nftMetadataHash', ZERO_HASH),
+                })
 
-    #             calculated_deadline = self._get_deadline(deadline=deadline)
-    #             signature = self._get_permission_signature(
-    #                 ip_id=ip_id,
-    #                 deadline=calculated_deadline,
-    #                 state=self.web3.to_hex(0).rjust(66, '0'),
-    #                 permissions=[{
-    #                     'ipId': ip_id,
-    #                     'signer': self.web3.to_checksum_address(self.account.address),
-    #                     'to': self.core_metadata_module_client.contract.address,
-    #                     'func': "setAll(address,string,bytes32,bytes32)",
-    #                     'permission': 1
-    #                 }],
-    #                 permission_func="setAll"
-    #             )
-    #             req_object['sigMetadata'] = {
-    #                 'signer': self.web3.to_checksum_address(self.account.address),
-    #                 'deadline': calculated_deadline,
-    #                 'signature': signature,
-    #             }
+                calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
+                signature_response = self.sign_util.get_permission_signature(
+                    ip_id=ip_id,
+                    deadline=calculated_deadline,
+                    state=self.web3.to_bytes(hexstr=ZERO_HASH),
+                    permissions=[{
+                        'ipId': ip_id,
+                        'signer': self.registration_workflows_client.contract.address,
+                        'to': self.core_metadata_module_client.contract.address,
+                        'func': "setAll(address,string,bytes32,bytes32)",
+                        'permission': 1
+                    }]
+                )
 
-    #         if ip_metadata:
-    #             response = build_and_send_transaction(
-    #                 self.web3,
-    #                 self.account,
-    #                 self.registration_workflows_client.build_registerIp_transaction,
-    #                 req_object['nftContract'],
-    #                 req_object['tokenId'],
-    #                 req_object['metadata'],
-    #                 req_object['sigMetadata'],
-    #                 tx_options=tx_options
-    #             )
-    #         else:
-    #             response = build_and_send_transaction(
-    #                 self.web3,
-    #                 self.account,
-    #                 self.ip_asset_registry_client.build_register_transaction,
-    #                 self.chain_id,
-    #                 nft_contract,
-    #                 token_id,
-    #                 tx_options=tx_options
-    #             )
+                signature = signature_response["signature"]
 
-    #         ip_registered = self._parse_tx_ip_registered_event(response['txReceipt'])
+                req_object['sigMetadata'] = {
+                    'signer': self.web3.to_checksum_address(self.account.address),
+                    'deadline': calculated_deadline,
+                    'signature': signature,
+                }
 
-    #         return {
-    #             'txHash': response['txHash'],
-    #             'ipId': ip_registered['ipId']
-    #         }
+                response = build_and_send_transaction(
+                    self.web3,
+                    self.account,
+                    self.registration_workflows_client.build_registerIp_transaction,
+                    req_object['nftContract'],
+                    req_object['tokenId'],
+                    req_object['ipMetadata'],
+                    req_object['sigMetadata'],
+                    tx_options=tx_options
+                )
+            else:
+                response = build_and_send_transaction(
+                    self.web3,
+                    self.account,
+                    self.ip_asset_registry_client.build_register_transaction,
+                    self.chain_id,
+                    nft_contract,
+                    token_id,
+                    tx_options=tx_options
+                )
 
-    #     except Exception as e:
-    #         raise e
+            ip_registered = self._parse_tx_ip_registered_event(response['txReceipt'])
+
+            return {
+                'txHash': response['txHash'],
+                'ipId': ip_registered['ipId']
+            }
+
+        except Exception as e:
+            raise e
 
     # def registerDerivative(self, child_ip_id: str, parent_ip_ids: list, license_terms_ids: list, license_template: str, tx_options: dict = None) -> dict:
     #     """
@@ -239,112 +235,112 @@ class IPAsset:
     #     except Exception as e:
     #         raise e
 
-    def mintAndRegisterIpAssetWithPilTerms(
-        self,
-        spg_nft_contract: str,
-        terms: list,
-        ip_metadata: dict = None,
-        recipient: str = None,
-        tx_options: dict = None
-    ) -> dict:
-        """
-        Mint an NFT from a collection and register it as an IP.
+    # def mintAndRegisterIpAssetWithPilTerms(
+    #     self,
+    #     spg_nft_contract: str,
+    #     terms: list,
+    #     ip_metadata: dict = None,
+    #     recipient: str = None,
+    #     tx_options: dict = None
+    # ) -> dict:
+    #     """
+    #     Mint an NFT from a collection and register it as an IP.
 
-        :param spg_nft_contract str: The address of the NFT collection
-        :param terms list: The array of license terms to be attached
-            :param transferable bool: Whether the license is transferable
-            :param royalty_policy str: Address of the royalty policy contract registered with StoryProtocol
-            :param default_minting_fee int: Fee to be paid when minting a license
-            :param expiration int: Expiration period of the license
-            :param commercial_use bool: Whether work can be used commercially
-            :param commercial_attribution bool: Whether attribution required for commercial reproduction
-            :param commercializer_checker str: Allowed commercializers (zero address for no restrictions)
-            :param commercializer_checker_data str: Data for commercializer checker contract
-            :param commercial_rev_share int: Percentage of revenue shared with licensor
-            :param commercial_rev_ceiling int: Maximum revenue from commercial use
-            :param derivatives_allowed bool: Whether derivatives can be created
-            :param derivatives_attribution bool: Whether attribution required for derivatives
-            :param derivatives_approval bool: Whether licensor must approve derivatives
-            :param derivatives_reciprocal bool: Whether derivatives must use same license terms
-            :param derivative_rev_ceiling int: Maximum revenue from derivative use
-            :param currency str: ERC20 token for minting fee (must be registered)
-            :param uri str: URI for offchain license terms
-        :param ip_metadata dict: [Optional] Metadata for NFT and IP
-            :param ip_metadata_uri str: [Optional] URI of IP metadata
-            :param ip_metadata_hash str: [Optional] Hash of IP metadata
-            :param nft_metadata_uri str: [Optional] URI of NFT metadata
-            :param nft_metadata_hash str: [Optional] Hash of NFT metadata
-        :param recipient str: [Optional] Address of NFT recipient (defaults to caller)
-        :param tx_options dict: [Optional] Transaction options
-        :return dict: Dictionary with transaction hash and optionally IP ID, Token ID, License Terms IDs
-        """
-        try:
-            if not self.web3.is_address(spg_nft_contract):
-                raise ValueError(f"The NFT contract address {spg_nft_contract} is not valid.")
+    #     :param spg_nft_contract str: The address of the NFT collection
+    #     :param terms list: The array of license terms to be attached
+    #         :param transferable bool: Whether the license is transferable
+    #         :param royalty_policy str: Address of the royalty policy contract registered with StoryProtocol
+    #         :param default_minting_fee int: Fee to be paid when minting a license
+    #         :param expiration int: Expiration period of the license
+    #         :param commercial_use bool: Whether work can be used commercially
+    #         :param commercial_attribution bool: Whether attribution required for commercial reproduction
+    #         :param commercializer_checker str: Allowed commercializers (zero address for no restrictions)
+    #         :param commercializer_checker_data str: Data for commercializer checker contract
+    #         :param commercial_rev_share int: Percentage of revenue shared with licensor
+    #         :param commercial_rev_ceiling int: Maximum revenue from commercial use
+    #         :param derivatives_allowed bool: Whether derivatives can be created
+    #         :param derivatives_attribution bool: Whether attribution required for derivatives
+    #         :param derivatives_approval bool: Whether licensor must approve derivatives
+    #         :param derivatives_reciprocal bool: Whether derivatives must use same license terms
+    #         :param derivative_rev_ceiling int: Maximum revenue from derivative use
+    #         :param currency str: ERC20 token for minting fee (must be registered)
+    #         :param uri str: URI for offchain license terms
+    #     :param ip_metadata dict: [Optional] Metadata for NFT and IP
+    #         :param ip_metadata_uri str: [Optional] URI of IP metadata
+    #         :param ip_metadata_hash str: [Optional] Hash of IP metadata
+    #         :param nft_metadata_uri str: [Optional] URI of NFT metadata
+    #         :param nft_metadata_hash str: [Optional] Hash of NFT metadata
+    #     :param recipient str: [Optional] Address of NFT recipient (defaults to caller)
+    #     :param tx_options dict: [Optional] Transaction options
+    #     :return dict: Dictionary with transaction hash and optionally IP ID, Token ID, License Terms IDs
+    #     """
+    #     try:
+    #         if not self.web3.is_address(spg_nft_contract):
+    #             raise ValueError(f"The NFT contract address {spg_nft_contract} is not valid.")
 
-            license_terms = []
-            for term in terms:
-                validated_term = self.license_terms_util.validate_license_terms(term)
-                # Convert snake_case keys to camelCase while keeping the original values
-                camelcase_term = {
-                    'transferable': term['transferable'],
-                    'royaltyPolicy': term['royalty_policy'],
-                    'defaultMintingFee': term['default_minting_fee'],
-                    'expiration': term['expiration'],
-                    'commercialUse': term['commercial_use'],
-                    'commercialAttribution': term['commercial_attribution'],
-                    'commercializerChecker': term['commercializer_checker'],
-                    'commercializerCheckerData': term['commercializer_checker_data'],
-                    'commercialRevShare': term['commercial_rev_share'],
-                    'commercialRevCeiling': term['commercial_rev_ceiling'],
-                    'derivativesAllowed': term['derivatives_allowed'],
-                    'derivativesAttribution': term['derivatives_attribution'],
-                    'derivativesApproval': term['derivatives_approval'],
-                    'derivativesReciprocal': term['derivatives_reciprocal'],
-                    'derivativeRevCeiling': term['derivative_rev_ceiling'],
-                    'currency': term['currency'],
-                    'uri': term['uri']
-                }
-                license_terms.append(camelcase_term)
+    #         license_terms = []
+    #         for term in terms:
+    #             validated_term = self.license_terms_util.validate_license_terms(term)
+    #             # Convert snake_case keys to camelCase while keeping the original values
+    #             camelcase_term = {
+    #                 'transferable': term['transferable'],
+    #                 'royaltyPolicy': term['royalty_policy'],
+    #                 'defaultMintingFee': term['default_minting_fee'],
+    #                 'expiration': term['expiration'],
+    #                 'commercialUse': term['commercial_use'],
+    #                 'commercialAttribution': term['commercial_attribution'],
+    #                 'commercializerChecker': term['commercializer_checker'],
+    #                 'commercializerCheckerData': term['commercializer_checker_data'],
+    #                 'commercialRevShare': term['commercial_rev_share'],
+    #                 'commercialRevCeiling': term['commercial_rev_ceiling'],
+    #                 'derivativesAllowed': term['derivatives_allowed'],
+    #                 'derivativesAttribution': term['derivatives_attribution'],
+    #                 'derivativesApproval': term['derivatives_approval'],
+    #                 'derivativesReciprocal': term['derivatives_reciprocal'],
+    #                 'derivativeRevCeiling': term['derivative_rev_ceiling'],
+    #                 'currency': term['currency'],
+    #                 'uri': term['uri']
+    #             }
+    #             license_terms.append(camelcase_term)
 
-            metadata = {
-                'ipMetadataURI': "",
-                'ipMetadataHash': ZERO_HASH,
-                'nftMetadataURI': "",
-                'nftMetadataHash': ZERO_HASH,
-            }
+    #         metadata = {
+    #             'ipMetadataURI': "",
+    #             'ipMetadataHash': ZERO_HASH,
+    #             'nftMetadataURI': "",
+    #             'nftMetadataHash': ZERO_HASH,
+    #         }
 
-            if ip_metadata:
-                metadata.update({
-                    'ipMetadataURI': ip_metadata.get('ip_metadata_uri', ""),
-                    'ipMetadataHash': ip_metadata.get('ip_metadata_hash', ZERO_HASH),
-                    'nftMetadataURI': ip_metadata.get('nft_metadata_uri', ""),
-                    'nftMetadataHash': ip_metadata.get('nft_metadata_hash', ZERO_HASH),
-                })
+    #         if ip_metadata:
+    #             metadata.update({
+    #                 'ipMetadataURI': ip_metadata.get('ip_metadata_uri', ""),
+    #                 'ipMetadataHash': ip_metadata.get('ip_metadata_hash', ZERO_HASH),
+    #                 'nftMetadataURI': ip_metadata.get('nft_metadata_uri', ""),
+    #                 'nftMetadataHash': ip_metadata.get('nft_metadata_hash', ZERO_HASH),
+    #             })
 
-            response = build_and_send_transaction(
-                self.web3,
-                self.account,
-                self.license_attachment_workflows_client.build_mintAndRegisterIpAndAttachPILTerms_transaction,
-                spg_nft_contract,
-                recipient if recipient else self.account.address,
-                metadata,
-                license_terms,
-                tx_options=tx_options
-            )
+    #         response = build_and_send_transaction(
+    #             self.web3,
+    #             self.account,
+    #             self.license_attachment_workflows_client.build_mintAndRegisterIpAndAttachPILTerms_transaction,
+    #             spg_nft_contract,
+    #             recipient if recipient else self.account.address,
+    #             metadata,
+    #             license_terms,
+    #             tx_options=tx_options
+    #         )
 
-            ip_registered = self._parse_tx_ip_registered_event(response['txReceipt'])
-            license_terms_ids = self._parse_tx_license_terms_attached_event(response['txReceipt'])
+    #         ip_registered = self._parse_tx_ip_registered_event(response['txReceipt'])
+    #         license_terms_ids = self._parse_tx_license_terms_attached_event(response['txReceipt'])
 
-            return {
-                'txHash': response['txHash'],
-                'ipId': ip_registered['ipId'],
-                'licenseTermsIds': license_terms_ids,
-                'tokenId': ip_registered['tokenId']
-            }
+    #         return {
+    #             'txHash': response['txHash'],
+    #             'ipId': ip_registered['ipId'],
+    #             'licenseTermsIds': license_terms_ids,
+    #             'tokenId': ip_registered['tokenId']
+    #         }
 
-        except Exception as e:
-            raise e
+    #     except Exception as e:
+    #         raise e
         
     # def registerIpAndAttachPilTerms(self, nft_contract: str, token_id: int, pil_type: str, metadata: dict = None, deadline: int = None, minting_fee: int = None, commercial_rev_share: int = None, currency: str = None, tx_options: dict = None) -> dict:
     #     """
@@ -636,137 +632,3 @@ class IPAsset:
 
         return license_terms_ids if license_terms_ids else None
     
-    # def _get_signature(self, state: str, to: str, encode_data: bytes, verifying_contract: str, deadline: int) -> dict:
-    #     """
-    #     Get the signature.
-
-    #     :param state str: The IP Account's state.
-    #     :param to str: The recipient address.
-    #     :param encode_data bytes: The encoded data.
-    #     :param verifying_contract str: The verifying contract address.
-    #     :param deadline int: The deadline for the signature in milliseconds.
-    #     :return dict: A dictionary containing the signature and nonce.
-    #     """
-    #     try:
-    #         # Calculate nonce by hashing state and encoded execute function data
-    #         execute_data = self.ip_account_impl_client.contract.encode_abi(
-    #             fn_name="execute",
-    #             args=[to, 0, encode_data]
-    #         )
-            
-    #         nonce = Web3.keccak(
-    #             Web3.keccak(text=state) +
-    #             execute_data
-    #         )
-
-    #         domain_data = {
-    #             "name": "Story Protocol IP Account",
-    #             "version": "1",
-    #             "chainId": self.chain_id,
-    #             "verifyingContract": verifying_contract,
-    #         }
-
-    #         message_types = {
-    #             "Execute": [
-    #                 {"name": "to", "type": "address"},
-    #                 {"name": "value", "type": "uint256"},
-    #                 {"name": "data", "type": "bytes"},
-    #                 {"name": "nonce", "type": "bytes32"},
-    #                 {"name": "deadline", "type": "uint256"},
-    #             ],
-    #         }
-
-    #         message_data = {
-    #             "to": to,
-    #             "value": 0,
-    #             "data": encode_data,
-    #             "nonce": nonce.hex(),
-    #             "deadline": deadline,
-    #         }
-
-    #         signable_message = encode_typed_data(domain_data, message_types, message_data)
-    #         signed_message = Account.sign_message(signable_message, self.account.key)
-
-    #         return {
-    #             "signature": signed_message.signature.hex(),
-    #             "nonce": nonce.hex()
-    #         }
-
-    #     except Exception as e:
-    #         raise e
-        
-    # def _get_deadline(self, deadline: int = None) -> int:
-    #     """
-    #     Calculate the deadline for a transaction.
-
-    #     :param deadline int: [Optional] The deadline value in milliseconds.
-    #     :return int: The calculated deadline in milliseconds.
-    #     """
-    #     current_timestamp = int(datetime.now().timestamp() * 1000)
-        
-    #     if deadline is not None:
-    #         if not isinstance(deadline, int) or deadline < 0:
-    #             raise ValueError("Invalid deadline value.")
-    #         return current_timestamp + deadline
-    #     else:
-    #         return current_timestamp + 1000
-    # def _get_permission_signature(self, ip_id: str, deadline: int, nonce: str, wallet, chain_id: int, permissions: list, permission_func: str = "setPermission", state: str = None) -> dict:
-    #     """
-    #     Get the signature for setting permissions.
-
-    #     :param ip_id str: The IP ID
-    #     :param deadline int: The deadline
-    #     :param nonce str: The nonce
-    #     :param wallet: The wallet client
-    #     :param chain_id int: The chain ID
-    #     :param permissions list: The permissions
-    #     :param permission_func str: The permission function (defaults to "setPermission")
-    #     :param state str: The state
-    #     :return dict: The signature response
-    #     """
-    #     try:
-    #         # Get permission function name
-    #         permission_function = permission_func if permission_func else "setPermission"
-
-    #         # Get access controller address for chain
-    #         access_address = self.access_controller_client.contract.address
-
-    #         if permission_function == "setPermission":
-    #             # Encode single permission
-    #             encode_data = self.access_controller_client.contract.encode_abi(
-    #                 fn_name=permission_function,
-    #                 args=[
-    #                     self.web3.to_checksum_address(permissions[0]['ipId']),
-    #                     self.web3.to_checksum_address(permissions[0]['signer']),
-    #                     self.web3.to_checksum_address(permissions[0]['to']),
-    #                     permissions[0].get('func', "0x00000000"),
-    #                     permissions[0]['permission']
-    #                 ]
-    #             )
-    #         else:
-    #             # Encode multiple permissions
-    #             formatted_permissions = [{
-    #                 'ipAccount': self.web3.to_checksum_address(p['ipId']),
-    #                 'signer': self.web3.to_checksum_address(p['signer']),
-    #                 'to': self.web3.to_checksum_address(p['to']),
-    #                 'func': p.get('func', "0x00000000"),
-    #                 'permission': p['permission']
-    #             } for p in permissions]
-
-    #             encode_data = self.access_controller_client.contract.encode_abi(
-    #                 fn_name=permission_function,
-    #                 args=[formatted_permissions]
-    #             )
-
-    #         return self._get_signature(
-    #             state=state,
-    #             to=access_address,
-    #             encode_data=encode_data,
-    #             wallet=wallet,
-    #             verifying_contract=ip_id,
-    #             deadline=deadline,
-    #             chain_id=chain_id
-    #         )
-
-    #     except Exception as e:
-    #         raise e

@@ -9,7 +9,7 @@ setup(
     packages=find_packages(where='src', exclude=["tests"]),
     package_dir={'': 'src'},
     install_requires=[
-        'web3>=5.0.0',
+        'web3>=7.0.0',
         'pytest',
         'python-dotenv'
     ],

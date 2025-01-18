@@ -40,3 +40,8 @@ class IPAccountImplClient:
         return self.contract.functions.state().call()
         
     
+    def token(self, ):
+        
+        return self.contract.functions.token().call()
+        
+    

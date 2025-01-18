@@ -3,6 +3,11 @@
     "type": "constructor",
     "inputs": [
       {
+        "name": "groupIpAssetRegistry",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
         "name": "licensingModule",
         "type": "address",
         "internalType": "address"
@@ -42,6 +47,19 @@
         "name": "",
         "type": "bytes32",
         "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "GROUP_IP_ASSET_REGISTRY",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IGroupIPAssetRegistry"
       }
     ],
     "stateMutability": "view"
@@ -331,6 +349,26 @@
             "name": "hookData",
             "type": "bytes",
             "internalType": "bytes"
+          },
+          {
+            "name": "commercialRevShare",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "disabled",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "expectMinimumGroupRewardShare",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "expectGroupRewardPool",
+            "type": "address",
+            "internalType": "address"
           }
         ]
       }
@@ -411,6 +449,35 @@
   },
   {
     "type": "function",
+    "name": "getRoyaltyPercent",
+    "inputs": [
+      {
+        "name": "ipId",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "licenseTemplate",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "licenseTermsId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "royaltyPercent",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "hasDerivativeIps",
     "inputs": [
       {
@@ -479,6 +546,30 @@
         "name": "",
         "type": "bytes4",
         "internalType": "bytes4"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isDefaultLicense",
+    "inputs": [
+      {
+        "name": "licenseTemplate",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "licenseTermsId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
       }
     ],
     "stateMutability": "view"
@@ -687,6 +778,26 @@
             "name": "hookData",
             "type": "bytes",
             "internalType": "bytes"
+          },
+          {
+            "name": "commercialRevShare",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "disabled",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "expectMinimumGroupRewardShare",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "expectGroupRewardPool",
+            "type": "address",
+            "internalType": "address"
           }
         ]
       }
@@ -737,6 +848,26 @@
             "name": "hookData",
             "type": "bytes",
             "internalType": "bytes"
+          },
+          {
+            "name": "commercialRevShare",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "disabled",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "expectMinimumGroupRewardShare",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "expectGroupRewardPool",
+            "type": "address",
+            "internalType": "address"
           }
         ]
       }
@@ -761,6 +892,87 @@
     ],
     "outputs": [],
     "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "verifyGroupAddIp",
+    "inputs": [
+      {
+        "name": "groupId",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "groupRewardPool",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "ipId",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "groupLicenseTemplate",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "groupLicenseTermsId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "ipLicensingConfig",
+        "type": "tuple",
+        "internalType": "struct Licensing.LicensingConfig",
+        "components": [
+          {
+            "name": "isSet",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "mintingFee",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "licensingHook",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "hookData",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "commercialRevShare",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "disabled",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "expectMinimumGroupRewardShare",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "expectGroupRewardPool",
+            "type": "address",
+            "internalType": "address"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -812,6 +1024,26 @@
             "name": "hookData",
             "type": "bytes",
             "internalType": "bytes"
+          },
+          {
+            "name": "commercialRevShare",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "disabled",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "expectMinimumGroupRewardShare",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "expectGroupRewardPool",
+            "type": "address",
+            "internalType": "address"
           }
         ]
       }
@@ -930,6 +1162,26 @@
             "name": "hookData",
             "type": "bytes",
             "internalType": "bytes"
+          },
+          {
+            "name": "commercialRevShare",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "disabled",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "expectMinimumGroupRewardShare",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "expectGroupRewardPool",
+            "type": "address",
+            "internalType": "address"
           }
         ]
       }
@@ -957,6 +1209,54 @@
         "type": "uint256",
         "indexed": true,
         "internalType": "uint256"
+      },
+      {
+        "name": "licensingConfig",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct Licensing.LicensingConfig",
+        "components": [
+          {
+            "name": "isSet",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "mintingFee",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "licensingHook",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "hookData",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "commercialRevShare",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "disabled",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "expectMinimumGroupRewardShare",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "expectGroupRewardPool",
+            "type": "address",
+            "internalType": "address"
+          }
+        ]
       }
     ],
     "anonymous": false
@@ -1067,8 +1367,24 @@
   },
   {
     "type": "error",
+    "name": "LicenseRegistry__CallFailed",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "LicenseRegistry__CallerNotLicensingModule",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LicenseRegistry__CannotAddIpWithExpirationToGroup",
+    "inputs": [
+      {
+        "name": "ipId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
     "type": "error",
@@ -1116,7 +1432,7 @@
   },
   {
     "type": "error",
-    "name": "LicenseRegistry__DuplicateLicense",
+    "name": "LicenseRegistry__DuplicateParentIp",
     "inputs": [
       {
         "name": "ipId",
@@ -1124,14 +1440,63 @@
         "internalType": "address"
       },
       {
-        "name": "licenseTemplate",
+        "name": "parentIpId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicenseRegistry__EmptyGroupCannotMintLicenseToken",
+    "inputs": [
+      {
+        "name": "groupId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicenseRegistry__GroupCannotHasParentIp",
+    "inputs": [
+      {
+        "name": "groupId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicenseRegistry__GroupIpAlreadyHasLicenseTerms",
+    "inputs": [
+      {
+        "name": "groupId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicenseRegistry__GroupIpCommercialRevShareConfigMustNotLessThanIp",
+    "inputs": [
+      {
+        "name": "groupId",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "licenseTermsId",
-        "type": "uint256",
-        "internalType": "uint256"
+        "name": "ipCommercialRevShare",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "groupCommercialRevShare",
+        "type": "uint32",
+        "internalType": "uint32"
       }
     ]
   },
@@ -1158,12 +1523,154 @@
   },
   {
     "type": "error",
+    "name": "LicenseRegistry__IpExpectGroupRewardPoolNotMatch",
+    "inputs": [
+      {
+        "name": "ipId",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "expectGroupRewardPool",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "groupId",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "groupRewardPool",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicenseRegistry__IpExpectGroupRewardPoolNotSet",
+    "inputs": [
+      {
+        "name": "ipId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "LicenseRegistry__IpExpired",
     "inputs": [
       {
         "name": "ipId",
         "type": "address",
         "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicenseRegistry__IpHasNoGroupLicenseTerms",
+    "inputs": [
+      {
+        "name": "groupId",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "licenseTemplate",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "licenseTermsId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicenseRegistry__IpLicenseDisabled",
+    "inputs": [
+      {
+        "name": "ipId",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "licenseTemplate",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "licenseTermsId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicenseRegistry__IpLicensingHookDataNotMatchWithGroup",
+    "inputs": [
+      {
+        "name": "ipId",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "hookData",
+        "type": "bytes",
+        "internalType": "bytes"
+      },
+      {
+        "name": "groupHookData",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicenseRegistry__IpLicensingHookNotMatchWithGroup",
+    "inputs": [
+      {
+        "name": "ipId",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "licensingHook",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "groupLicensingHook",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicenseRegistry__IpMintingFeeNotMatchWithGroup",
+    "inputs": [
+      {
+        "name": "ipId",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "mintingFee",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "groupMintingFee",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ]
   },
@@ -1265,6 +1772,17 @@
   },
   {
     "type": "error",
+    "name": "LicenseRegistry__ParentIpIsEmptyGroup",
+    "inputs": [
+      {
+        "name": "groupId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "LicenseRegistry__ParentIpTagged",
     "inputs": [
       {
@@ -1330,6 +1848,11 @@
   {
     "type": "error",
     "name": "LicenseRegistry__ZeroDisputeModule",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LicenseRegistry__ZeroGroupIpRegistry",
     "inputs": []
   },
   {

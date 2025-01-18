@@ -31,6 +31,11 @@
         "name": "royaltyModule",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "disputeModule",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "nonpayable"
@@ -44,6 +49,19 @@
         "name": "",
         "type": "address",
         "internalType": "contract IAccessController"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "DISPUTE_MODULE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IDisputeModule"
       }
     ],
     "stateMutability": "view"
@@ -76,13 +94,13 @@
   },
   {
     "type": "function",
-    "name": "IP_ACCOUNT_REGISTRY",
+    "name": "IP_ASSET_REGISTRY",
     "inputs": [],
     "outputs": [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract IIPAccountRegistry"
+        "internalType": "contract IIPAssetRegistry"
       }
     ],
     "stateMutability": "view"
@@ -219,11 +237,6 @@
         "name": "token",
         "type": "address",
         "internalType": "address"
-      },
-      {
-        "name": "snapshotIds",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
       }
     ],
     "outputs": [
@@ -438,6 +451,11 @@
         "name": "rewardPool",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "allowed",
+        "type": "bool",
+        "internalType": "bool"
       }
     ],
     "outputs": [],
@@ -533,12 +551,6 @@
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
-      },
-      {
-        "name": "snapshots",
-        "type": "uint256[]",
-        "indexed": false,
-        "internalType": "uint256[]"
       }
     ],
     "anonymous": false
@@ -731,6 +743,17 @@
   },
   {
     "type": "error",
+    "name": "GroupingModule__CannotAddDisputedIpToGroup",
+    "inputs": [
+      {
+        "name": "ipId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "GroupingModule__CannotAddGroupToGroup",
     "inputs": [
       {
@@ -801,10 +824,37 @@
   },
   {
     "type": "error",
-    "name": "GroupingModule__GroupRoyaltyVaultNotCreated",
+    "name": "GroupingModule__GroupIPLicenseHasNotSpecifyRevenueToken",
     "inputs": [
       {
         "name": "groupId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "GroupingModule__GroupIPShouldHasNonDefaultLicenseTerms",
+    "inputs": [
+      {
+        "name": "groupId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "GroupingModule__GroupRewardPoolNotWhitelisted",
+    "inputs": [
+      {
+        "name": "groupId",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "groupRewardPool",
         "type": "address",
         "internalType": "address"
       }
@@ -823,7 +873,7 @@
   },
   {
     "type": "error",
-    "name": "GroupingModule__IpHasNoGroupLicenseTerms",
+    "name": "GroupingModule__RoyaltyTokenNotWhitelisted",
     "inputs": [
       {
         "name": "groupId",
@@ -831,12 +881,54 @@
         "internalType": "address"
       },
       {
-        "name": "licenseTemplate",
+        "name": "royaltyToken",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "GroupingModule__TokenNotMatchGroupRevenueToken",
+    "inputs": [
+      {
+        "name": "groupId",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "licenseTermsId",
+        "name": "groupCurrentToken",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "GroupingModule__TotalGroupRewardShareExceeds100Percent",
+    "inputs": [
+      {
+        "name": "groupId",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "totalGroupRewardShare",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "ipId",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "expectGroupRewardShare",
         "type": "uint256",
         "internalType": "uint256"
       }

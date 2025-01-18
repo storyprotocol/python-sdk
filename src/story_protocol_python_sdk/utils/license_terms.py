@@ -139,3 +139,22 @@ class LicenseTerms:
                 raise ValueError("Cannot add derivative reciprocal when derivative use is disabled.")
             if terms.get('derivative_rev_ceiling', 0) > 0:
                 raise ValueError("Cannot add derivative revenue ceiling when derivative use is disabled.")
+
+    def get_revenue_share(self, rev_share: int | str) -> int:
+        """
+        Convert revenue share percentage to token amount.
+
+        :param rev_share int|str: Revenue share percentage between 0-100
+        :return int: Revenue share token amount
+        """
+        try:
+            rev_share_number = float(rev_share)
+        except ValueError:
+            raise ValueError("CommercialRevShare must be a valid number.")
+
+        if rev_share_number < 0 or rev_share_number > 100:
+            raise ValueError("CommercialRevShare should be between 0 and 100.")
+
+        MAX_ROYALTY_TOKEN = 100000000
+        return int((rev_share_number / 100) * MAX_ROYALTY_TOKEN)
+    

@@ -31,7 +31,7 @@ def build_and_send_transaction(web3: Web3, account, client_function, *client_arg
 
         signed_txn = account.sign_transaction(transaction)
 
-        tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
 
         tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)
 

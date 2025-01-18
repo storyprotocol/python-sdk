@@ -61,7 +61,8 @@
                 "getLicenseTermsId",
                 "registerLicenseTerms",
                 "LicenseTermsRegistered",
-                "getLicenseTerms"
+                "getLicenseTerms",
+                "exists"
             ]
         },
         {
@@ -115,7 +116,7 @@
         },
         {
             "contract_name": "GroupingWorkflows",
-            "contract_address": "0xc274a8Bc6b3F72893E4d3fa84fF87B55292B6edB",
+            "contract_address": "0xD7c0beb3aa4DCD4723465f1ecAd045676c24CDCd",
             "functions": [
                 "mintAndRegisterIpAndAttachLicenseAndAddToGroup",
                 "registerIpAndAttachLicenseAndAddToGroup",
@@ -125,7 +126,7 @@
         },
         {
             "contract_name": "DerivativeWorkflows",
-            "contract_address": "0x71Af704a6e083B29215b0F1216a39c5C69e596AF",
+            "contract_address": "0x9e2d496f72C547C2C535B167e06ED8729B374a4f",
             "functions": [
                 "mintAndRegisterIpAndMakeDerivativeWithLicenseTokens",
                 "registerIpAndMakeDerivative",
@@ -137,7 +138,7 @@
         },
         {
             "contract_name": "RegistrationWorkflows",
-            "contract_address": "0x15396AE71337ed5d613cafad53f8F289D16f0350",
+            "contract_address": "0xbe39E1C756e921BD25DF86e7AAa31106d1eb0424",
             "functions": [
                 "createCollection",
                 "mintAndRegisterIp",
@@ -148,7 +149,7 @@
         },
         {
             "contract_name": "LicenseAttachmentWorkflows",
-            "contract_address": "0xfe1157c2Cfd895a4B44749f18087a025A4c37c2B",
+            "contract_address": "0xcC2E862bCee5B6036Db0de6E06Ae87e524a79fd8",
             "functions": [
                 "registerPILTermsAndAttach",
                 "registerIpAndAttachPILTerms",
@@ -158,7 +159,7 @@
         },
         {
             "contract_name": "RoyaltyWorkflows",
-            "contract_address": "0xc80FF2b5292C928CB86E20803882336c93F22A26",
+            "contract_address": "0x9515faE61E0c0447C6AC6dEe5628A2097aFE1890",
             "functions": [
                 "transferToVaultAndSnapshotAndClaimByTokenBatch",
                 "transferToVaultAndSnapshotAndClaimBySnapshotBatch",
@@ -168,7 +169,7 @@
         },
         {
             "contract_name": "RoyaltyTokenDistributionWorkflows",
-            "contract_address": "0x465d808924eC915314c79007f0919Ff380E6D163",
+            "contract_address": "0xa38f42B8d33809917f23997B8423054aAB97322C",
             "functions": [
                 "mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens",
                 "mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens",
@@ -195,7 +196,10 @@
         {
             "contract_name": "LicenseRegistry",
             "contract_address": "0x529a750E02d8E2f15649c13D69a465286a780e24",
-            "functions": []
+            "functions": [
+                "exists",
+                "hasIpAttachedLicenseTerms"
+            ]
         },
         {
             "contract_name": "RoyaltyPolicyLRP",

@@ -5,7 +5,7 @@ from src.story_protocol_python_sdk.story_client import StoryClient
 load_dotenv()
 
 # Mock ERC721 contract address
-MockERC721 = "0x26f69F92b324B15a14dAd93C3454f7B55Ae03504"
+MockERC721 = "0x92f2511528D258CFFF8b2ee56dc74865A525Af7a"
 
 # Mock ERC20 contract address (same as used in TypeScript tests)
 MockERC20 = "0x688abA77b2daA886c0aF029961Dc5fd219cEc3f6"

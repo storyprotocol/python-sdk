@@ -88,7 +88,6 @@ def test_registerCommercialRemixPIL(story_client):
         royalty_policy=royalty_policy
     )
 
-    print("the response license terms id is", response['licenseTermsId'])
     assert response is not None, "Response is None, indicating the contract interaction failed."
     assert 'licenseTermsId' in response, "Response does not contain 'licenseTermsId'."
     assert response['licenseTermsId'] is not None, "'licenseTermsId' is None."
@@ -139,7 +138,7 @@ def test_mintLicenseTokens(story_client, ip_id):
     response = story_client.License.mintLicenseTokens(
         licensor_ip_id=ip_id, 
         license_template=license_template, 
-        license_terms_id=3, 
+        license_terms_id=5, 
         amount=1, 
         receiver=account.address
     )
@@ -176,3 +175,30 @@ def test_predictMintingLicenseFee(story_client, ip_id):
     assert 'amount' in response, "Response does not contain 'amount'."
     assert response['amount'] is not None, "'amount' is None."
     assert isinstance(response['amount'], int), "'amount' is not an integer."
+
+def test_setLicensingConfig(story_client, ip_id):
+    licensing_config = {
+        'mintingFee': 1,
+        'isSet': True,
+        'licensingHook': "0x0000000000000000000000000000000000000000",
+        'hookData': "0xFcd3243590d29B131a26B1554B0b21a5B43e622e",
+        'commercialRevShare': 0,
+        'disabled': False,
+        'expectMinimumGroupRewardShare': 1,
+        'expectGroupRewardPool': "0x0000000000000000000000000000000000000000"
+    }
+
+    response = story_client.License.setLicensingConfig(
+        ip_id=ip_id,
+        license_terms_id=0,
+        licensing_config=licensing_config,
+        license_template=None  # Will default to zero address
+    )
+
+    assert response is not None, "Response is None, indicating the contract interaction failed."
+    assert 'txHash' in response, "Response does not contain 'txHash'"
+    assert response['txHash'] is not None, "'txHash' is None"
+    assert isinstance(response['txHash'], str), "'txHash' is not a string"
+    assert len(response['txHash']) > 0, "'txHash' is empty"
+    assert 'success' in response, "Response does not contain 'success'"
+    assert response['success'] is True, "'success' is not True"

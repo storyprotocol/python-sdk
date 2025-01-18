@@ -108,7 +108,7 @@ class IPAsset:
                     }]
                 )
 
-                signature = signature_response["signature"]
+                signature = self.web3.to_bytes(hexstr=signature_response["signature"])
 
                 req_object['sigMetadata'] = {
                     'signer': self.web3.to_checksum_address(self.account.address),
@@ -584,10 +584,9 @@ class IPAsset:
         :return int: The ID of the license terms.
         """
         event_signature = self.web3.keccak(text="IPRegistered(address,uint256,address,uint256,string,string,uint256)").hex()
-
         for log in tx_receipt['logs']:
             if log['topics'][0].hex() == event_signature:
-                ip_id = '0x' + log['data'].hex()[26:66]
+                ip_id = '0x' + log['data'].hex()[24:64]
                 token_id = int(log['topics'][3].hex(), 16)
 
                 return {

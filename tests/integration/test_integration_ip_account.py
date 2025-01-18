@@ -41,7 +41,7 @@ def test_execute(story_client):
     )
 
     data = story_client.IPAccount.access_controller_client.contract.encode_abi(
-        fn_name="setPermission", 
+        abi_element_identifier="setPermission", 
         args=[response['ipId'], 
               account.address, 
               "0x89630Ccf23277417FBdfd3076C702F5248267e78", 
@@ -77,7 +77,7 @@ def test_executeWithSig(story_client):
 
     # Step 1: Encode the core data for `setPermission`
     core_data = story_client.IPAccount.access_controller_client.contract.encode_abi(
-        fn_name="setPermission",
+        abi_element_identifier="setPermission",
         args=[
             ipId,
             account.address,
@@ -89,7 +89,7 @@ def test_executeWithSig(story_client):
 
     # Step 2: Encode the `execute` function data
     execute_data = story_client.IPAccount.ip_account_client.contract.encode_abi(
-        fn_name="execute",
+        abi_element_identifier="execute",
         args=[
             story_client.IPAccount.access_controller_client.contract.address,  # `to`
             0,  # `value`

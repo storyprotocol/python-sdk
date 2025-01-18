@@ -29,8 +29,6 @@ web3 = Web3(Web3.HTTPProvider(rpc_url))
 if not web3.is_connected():
     raise Exception("Failed to connect to Web3 provider")
 
-print("web3 was succesfully connected to story url")
-
 # Set up the account with the private key
 account = web3.eth.account.from_key(private_key)
 
@@ -52,7 +50,6 @@ def parent_ip_id(story_client):
     assert response is not None
     assert 'ipId' in response
     assert response['ipId'] is not None
-
     return response['ipId']
 
 def test_register_ip_asset(story_client, parent_ip_id):
@@ -77,7 +74,7 @@ def test_register_ip_asset_with_metadata(story_client):
     assert 'ipId' in response
     assert response['ipId'] is not None
     assert isinstance(response['ipId'], str)
-
+    
 # @pytest.fixture(scope="module")
 # def attach_non_commercial_license(story_client, parent_ip_id):
 #     license_template = "0x8BB1ADE72E21090Fc891e1d4b88AC5E57b27cB31"

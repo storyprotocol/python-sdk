@@ -33,7 +33,7 @@ class Sign:
         """
         try:
             execute_data = self.ip_account_client.contract.encode_abi(
-                fn_name="execute",
+                abi_element_identifier="execute",
                 args=[
                     to,
                     0,
@@ -125,12 +125,12 @@ class Sign:
             if permission_function == "setPermission":
                 # Encode single permission
                 encode_data = self.access_controller_client.contract.encode_abi(
-                    fn_name="setPermission",
+                    abi_element_identifier="setPermission",
                     args=[
                         self.web3.to_checksum_address(permissions[0]['ipId']),
                         self.web3.to_checksum_address(permissions[0]['signer']),
                         self.web3.to_checksum_address(permissions[0]['to']),
-                        Web3.keccak(text=permissions[0]['func'])[:4].hex() if permissions[0].get('func') else "0x00000000",
+                        Web3.keccak(text=permissions[0]['func'])[:4] if permissions[0].get('func') else b'\x00\x00\x00\x00',
                         permissions[0]['permission']
                     ]
                 )
@@ -145,7 +145,7 @@ class Sign:
                 } for p in permissions]
 
                 encode_data = self.access_controller_client.contract.encode_abi(
-                    fn_name=permission_function,
+                    abi_element_identifier=permission_function,
                     args=[formatted_permissions]
                 )
 

@@ -14,7 +14,7 @@ if src_path not in sys.path:
 
 from utils import get_story_client_in_devnet, MockERC20, MockERC721, get_token_id, approve, mint_tokens
 
-load_dotenv()
+load_dotenv(override=True)
 private_key = os.getenv('WALLET_PRIVATE_KEY')
 rpc_url = os.getenv('RPC_PROVIDER_URL')
 

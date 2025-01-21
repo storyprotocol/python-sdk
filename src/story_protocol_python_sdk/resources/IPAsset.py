@@ -234,113 +234,142 @@ class IPAsset:
 
     #     except Exception as e:
     #         raise e
+    def mintAndRegisterIpAssetWithPilTerms(
+        self,
+        spg_nft_contract: str,
+        terms: list,
+        ip_metadata: dict = None,
+        recipient: str = None,
+        allow_duplicates: bool = False,
+        tx_options: dict = None
+    ) -> dict:
+        """
+        Mint an NFT from a collection and register it as an IP.
 
-    # def mintAndRegisterIpAssetWithPilTerms(
-    #     self,
-    #     spg_nft_contract: str,
-    #     terms: list,
-    #     ip_metadata: dict = None,
-    #     recipient: str = None,
-    #     tx_options: dict = None
-    # ) -> dict:
-    #     """
-    #     Mint an NFT from a collection and register it as an IP.
+        :param spg_nft_contract str: The address of the NFT collection
+        :param terms list: The array of license terms to be attached
+            :param terms dict: The license terms configuration
+                :param transferable bool: Whether the license is transferable
+                :param royalty_policy str: Address of the royalty policy contract registered with StoryProtocol
+                :param default_minting_fee int: Fee to be paid when minting a license
+                :param expiration int: Expiration period of the license
+                :param commercial_use bool: Whether work can be used commercially
+                :param commercial_attribution bool: Whether attribution required for commercial reproduction
+                :param commercializer_checker str: Allowed commercializers (zero address for no restrictions)
+                :param commercializer_checker_data str: Data for commercializer checker contract
+                :param commercial_rev_share int: Percentage of revenue shared with licensor
+                :param commercial_rev_ceiling int: Maximum revenue from commercial use
+                :param derivatives_allowed bool: Whether derivatives can be created
+                :param derivatives_attribution bool: Whether attribution required for derivatives
+                :param derivatives_approval bool: Whether licensor must approve derivatives
+                :param derivatives_reciprocal bool: Whether derivatives must use same license terms
+                :param derivative_rev_ceiling int: Maximum revenue from derivative use
+                :param currency str: ERC20 token for minting fee (must be registered)
+                :param uri str: URI for offchain license terms
+            :param licensing_config dict: The licensing configuration for the license
+                :param is_set bool: Whether the configuration is set or not
+                :param minting_fee int: The minting fee to be paid when minting license tokens
+                :param hook_data str: The data to be used by the licensing hook
+                :param licensing_hook str: The hook contract address for the licensing module, or address(0) if none
+                :param commercial_rev_share int: The commercial revenue share percentage
+                :param disabled bool: Whether the license is disabled or not
+                :param expect_minimum_group_reward_share int: The minimum percentage of the group's reward share (0-100%, as 100 * 10^6)
+                :param expect_group_reward_pool str: The address of the expected group reward pool
+        :param ip_metadata dict: [Optional] Metadata for NFT and IP
+            :param ip_metadata_uri str: [Optional] URI of IP metadata
+            :param ip_metadata_hash str: [Optional] Hash of IP metadata
+            :param nft_metadata_uri str: [Optional] URI of NFT metadata
+            :param nft_metadata_hash str: [Optional] Hash of NFT metadata
+        :param recipient str: [Optional] Address of NFT recipient (defaults to caller)
+        :param allow_duplicates bool: [Optional] Whether to allow duplicate IP assets
+        :param tx_options dict: [Optional] Transaction options
+        :return dict: Dictionary with transaction hash and optionally IP ID, Token ID, License Terms IDs
+        """
+        try:
+            if not self.web3.is_address(spg_nft_contract):
+                raise ValueError(f"The NFT contract address {spg_nft_contract} is not valid.")
 
-    #     :param spg_nft_contract str: The address of the NFT collection
-    #     :param terms list: The array of license terms to be attached
-    #         :param transferable bool: Whether the license is transferable
-    #         :param royalty_policy str: Address of the royalty policy contract registered with StoryProtocol
-    #         :param default_minting_fee int: Fee to be paid when minting a license
-    #         :param expiration int: Expiration period of the license
-    #         :param commercial_use bool: Whether work can be used commercially
-    #         :param commercial_attribution bool: Whether attribution required for commercial reproduction
-    #         :param commercializer_checker str: Allowed commercializers (zero address for no restrictions)
-    #         :param commercializer_checker_data str: Data for commercializer checker contract
-    #         :param commercial_rev_share int: Percentage of revenue shared with licensor
-    #         :param commercial_rev_ceiling int: Maximum revenue from commercial use
-    #         :param derivatives_allowed bool: Whether derivatives can be created
-    #         :param derivatives_attribution bool: Whether attribution required for derivatives
-    #         :param derivatives_approval bool: Whether licensor must approve derivatives
-    #         :param derivatives_reciprocal bool: Whether derivatives must use same license terms
-    #         :param derivative_rev_ceiling int: Maximum revenue from derivative use
-    #         :param currency str: ERC20 token for minting fee (must be registered)
-    #         :param uri str: URI for offchain license terms
-    #     :param ip_metadata dict: [Optional] Metadata for NFT and IP
-    #         :param ip_metadata_uri str: [Optional] URI of IP metadata
-    #         :param ip_metadata_hash str: [Optional] Hash of IP metadata
-    #         :param nft_metadata_uri str: [Optional] URI of NFT metadata
-    #         :param nft_metadata_hash str: [Optional] Hash of NFT metadata
-    #     :param recipient str: [Optional] Address of NFT recipient (defaults to caller)
-    #     :param tx_options dict: [Optional] Transaction options
-    #     :return dict: Dictionary with transaction hash and optionally IP ID, Token ID, License Terms IDs
-    #     """
-    #     try:
-    #         if not self.web3.is_address(spg_nft_contract):
-    #             raise ValueError(f"The NFT contract address {spg_nft_contract} is not valid.")
+            license_terms = []
+            for term in terms:
+                validated_term = self.license_terms_util.validate_license_terms(term['terms'])
+                
+                validated_licensing_config = self.license_terms_util.validate_licensing_config(term['licensing_config'])
+                
+                # Convert snake_case keys to camelCase while keeping the original values
+                camelcase_term = {
+                    'transferable': term['terms']['transferable'],
+                    'royaltyPolicy': term['terms']['royalty_policy'],
+                    'defaultMintingFee': term['terms']['default_minting_fee'],
+                    'expiration': term['terms']['expiration'],
+                    'commercialUse': term['terms']['commercial_use'],
+                    'commercialAttribution': term['terms']['commercial_attribution'],
+                    'commercializerChecker': term['terms']['commercializer_checker'],
+                    'commercializerCheckerData': term['terms']['commercializer_checker_data'],
+                    'commercialRevShare': term['terms']['commercial_rev_share'],
+                    'commercialRevCeiling': term['terms']['commercial_rev_ceiling'],
+                    'derivativesAllowed': term['terms']['derivatives_allowed'],
+                    'derivativesAttribution': term['terms']['derivatives_attribution'],
+                    'derivativesApproval': term['terms']['derivatives_approval'],
+                    'derivativesReciprocal': term['terms']['derivatives_reciprocal'],
+                    'derivativeRevCeiling': term['terms']['derivative_rev_ceiling'],
+                    'currency': term['terms']['currency'],
+                    'uri': term['terms']['uri']
+                }
 
-    #         license_terms = []
-    #         for term in terms:
-    #             validated_term = self.license_terms_util.validate_license_terms(term)
-    #             # Convert snake_case keys to camelCase while keeping the original values
-    #             camelcase_term = {
-    #                 'transferable': term['transferable'],
-    #                 'royaltyPolicy': term['royalty_policy'],
-    #                 'defaultMintingFee': term['default_minting_fee'],
-    #                 'expiration': term['expiration'],
-    #                 'commercialUse': term['commercial_use'],
-    #                 'commercialAttribution': term['commercial_attribution'],
-    #                 'commercializerChecker': term['commercializer_checker'],
-    #                 'commercializerCheckerData': term['commercializer_checker_data'],
-    #                 'commercialRevShare': term['commercial_rev_share'],
-    #                 'commercialRevCeiling': term['commercial_rev_ceiling'],
-    #                 'derivativesAllowed': term['derivatives_allowed'],
-    #                 'derivativesAttribution': term['derivatives_attribution'],
-    #                 'derivativesApproval': term['derivatives_approval'],
-    #                 'derivativesReciprocal': term['derivatives_reciprocal'],
-    #                 'derivativeRevCeiling': term['derivative_rev_ceiling'],
-    #                 'currency': term['currency'],
-    #                 'uri': term['uri']
-    #             }
-    #             license_terms.append(camelcase_term)
+                camelcase_config = {
+                    'isSet': validated_licensing_config['is_set'],
+                    'mintingFee': validated_licensing_config['minting_fee'],
+                    'hookData': validated_licensing_config['hook_data'],
+                    'licensingHook': validated_licensing_config['licensing_hook'],
+                    'commercialRevShare': validated_licensing_config['commercial_rev_share'],
+                    'disabled': validated_licensing_config['disabled'],
+                    'expectMinimumGroupRewardShare': validated_licensing_config['expect_minimum_group_reward_share'],
+                    'expectGroupRewardPool': validated_licensing_config['expect_group_reward_pool']
+                }
+                license_terms.append({
+                    'terms': camelcase_term,
+                    'licensingConfig': camelcase_config
+                })
 
-    #         metadata = {
-    #             'ipMetadataURI': "",
-    #             'ipMetadataHash': ZERO_HASH,
-    #             'nftMetadataURI': "",
-    #             'nftMetadataHash': ZERO_HASH,
-    #         }
+            metadata = {
+                'ipMetadataURI': "",
+                'ipMetadataHash': ZERO_HASH,
+                'nftMetadataURI': "",
+                'nftMetadataHash': ZERO_HASH,
+            }
 
-    #         if ip_metadata:
-    #             metadata.update({
-    #                 'ipMetadataURI': ip_metadata.get('ip_metadata_uri', ""),
-    #                 'ipMetadataHash': ip_metadata.get('ip_metadata_hash', ZERO_HASH),
-    #                 'nftMetadataURI': ip_metadata.get('nft_metadata_uri', ""),
-    #                 'nftMetadataHash': ip_metadata.get('nft_metadata_hash', ZERO_HASH),
-    #             })
+            if ip_metadata:
+                metadata.update({
+                    'ipMetadataURI': ip_metadata.get('ip_metadata_uri', ""),
+                    'ipMetadataHash': ip_metadata.get('ip_metadata_hash', ZERO_HASH),
+                    'nftMetadataURI': ip_metadata.get('nft_metadata_uri', ""),
+                    'nftMetadataHash': ip_metadata.get('nft_metadata_hash', ZERO_HASH),
+                })
 
-    #         response = build_and_send_transaction(
-    #             self.web3,
-    #             self.account,
-    #             self.license_attachment_workflows_client.build_mintAndRegisterIpAndAttachPILTerms_transaction,
-    #             spg_nft_contract,
-    #             recipient if recipient else self.account.address,
-    #             metadata,
-    #             license_terms,
-    #             tx_options=tx_options
-    #         )
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.license_attachment_workflows_client.build_mintAndRegisterIpAndAttachPILTerms_transaction,
+                spg_nft_contract,
+                recipient if recipient else self.account.address,
+                metadata,
+                license_terms,
+                allow_duplicates,
+                tx_options=tx_options
+            )
 
-    #         ip_registered = self._parse_tx_ip_registered_event(response['txReceipt'])
-    #         license_terms_ids = self._parse_tx_license_terms_attached_event(response['txReceipt'])
+            ip_registered = self._parse_tx_ip_registered_event(response['txReceipt'])
+            license_terms_ids = self._parse_tx_license_terms_attached_event(response['txReceipt'])
 
-    #         return {
-    #             'txHash': response['txHash'],
-    #             'ipId': ip_registered['ipId'],
-    #             'licenseTermsIds': license_terms_ids,
-    #             'tokenId': ip_registered['tokenId']
-    #         }
+            return {
+                'txHash': response['txHash'],
+                'ipId': ip_registered['ipId'],
+                'licenseTermsIds': license_terms_ids,
+                'tokenId': ip_registered['tokenId']
+            }
 
-    #     except Exception as e:
-    #         raise e
+        except Exception as e:
+            raise e
         
     # def registerIpAndAttachPilTerms(self, nft_contract: str, token_id: int, pil_type: str, metadata: dict = None, deadline: int = None, minting_fee: int = None, commercial_rev_share: int = None, currency: str = None, tx_options: dict = None) -> dict:
     #     """

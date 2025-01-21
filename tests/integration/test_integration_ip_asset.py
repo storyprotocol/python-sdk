@@ -17,7 +17,9 @@ from utils import (
     get_story_client_in_devnet,
     MockERC721,
     MockERC20,
-    getBlockTimestamp
+    getBlockTimestamp,
+    ZERO_ADDRESS,
+    ROYALTY_POLICY
 )
 
 load_dotenv(override=True)
@@ -32,8 +34,6 @@ if not web3.is_connected():
 # Set up the account with the private key
 account = web3.eth.account.from_key(private_key)
 
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
-
 @pytest.fixture(scope="module")
 def story_client():
     return get_story_client_in_devnet(web3, account)
@@ -46,6 +46,9 @@ def parent_ip_id(story_client):
         nft_contract=MockERC721,
         token_id=token_id
     )
+
+    assert 'txHash' in response
+    assert isinstance(response['txHash'], str)
 
     assert response is not None
     assert 'ipId' in response
@@ -69,6 +72,9 @@ def test_register_ip_asset_with_metadata(story_client):
         ip_metadata=metadata,
         deadline=1000
     )
+
+    assert 'txHash' in response
+    assert isinstance(response['txHash'], str)
 
     assert response is not None
     assert 'ipId' in response
@@ -135,58 +141,68 @@ def test_register_ip_asset_with_metadata(story_client):
 #     assert isinstance(response['txHash'], str)
 #     assert len(response['txHash']) > 0
 
-# @pytest.fixture(scope="module")
-# def nft_collection(story_client):
-#     txData = story_client.NFTClient.createNFTCollection(
-#         name="test-collection",
-#         symbol="TEST",
-#         max_supply=100,
-#         is_public_minting=True,
-#         mint_open=True,
-#         contract_uri="test-uri",
-#         mint_fee_recipient=account.address,
-#     )
-#     return txData['nftContract']
+@pytest.fixture(scope="module")
+def nft_collection(story_client):
+    txData = story_client.NFTClient.createNFTCollection(
+        name="test-collection",
+        symbol="TEST",
+        max_supply=100,
+        is_public_minting=True,
+        mint_open=True,
+        contract_uri="test-uri",
+        mint_fee_recipient=account.address,
+    )
+    return txData['nftContract']
 
-# def test_mint_register_attach_terms(story_client, nft_collection):
-#     response = story_client.IPAsset.mintAndRegisterIpAssetWithPilTerms(
-#         spg_nft_contract=nft_collection,
-#         terms=[{
-#             'transferable': True,
-#             'royalty_policy': "0x28b4F70ffE5ba7A26aEF979226f77Eb57fb9Fdb6",
-#             'default_minting_fee': 1,
-#             'expiration': 0,
-#             'commercial_use': True,
-#             'commercial_attribution': False,
-#             'commercializer_checker': ZERO_ADDRESS,
-#             'commercializer_checker_data': ZERO_ADDRESS,
-#             'commercial_rev_share': 90,
-#             'commercial_rev_ceiling': 0,
-#             'derivatives_allowed': True,
-#             'derivatives_attribution': True,
-#             'derivatives_approval': False,
-#             'derivatives_reciprocal': True,
-#             'derivative_rev_ceiling': 0,
-#             'currency': MockERC20,
-#             'uri': ""
-#         },
-#         ],
-#     )
+def test_mint_register_attach_terms(story_client, nft_collection):
+    response = story_client.IPAsset.mintAndRegisterIpAssetWithPilTerms(
+        spg_nft_contract=nft_collection,
+        terms=[{
+            'terms': {
+                'transferable': True,
+                'royalty_policy': ROYALTY_POLICY,
+                'default_minting_fee': 1,
+                'expiration': 0,
+                'commercial_use': True,
+                'commercial_attribution': False,
+                'commercializer_checker': ZERO_ADDRESS,
+                'commercializer_checker_data': ZERO_ADDRESS,
+                'commercial_rev_share': 90,
+                'commercial_rev_ceiling': 0,
+                'derivatives_allowed': True,
+                'derivatives_attribution': True,
+                'derivatives_approval': False,
+                'derivatives_reciprocal': True,
+                'derivative_rev_ceiling': 0,
+                'currency': MockERC20,
+                'uri': ""
+            },
+            'licensing_config': {
+                'is_set': True,
+                'minting_fee': 1,
+                'hook_data': "",
+                'licensing_hook': ZERO_ADDRESS,
+                'commercial_rev_share': 90,
+                'disabled': False,
+                'expect_minimum_group_reward_share': 0,
+                'expect_group_reward_pool': ZERO_ADDRESS
+            }
+        }],
+    )
 
-#     assert 'txHash' in response
-#     assert isinstance(response['txHash'], str)
-#     assert response['txHash'].startswith("0x")
+    assert 'txHash' in response
+    assert isinstance(response['txHash'], str)
 
-#     assert 'ipId' in response
-#     assert isinstance(response['ipId'], str)
-#     assert response['ipId'].startswith("0x")
+    assert 'ipId' in response
+    assert isinstance(response['ipId'], str)
+    assert response['ipId'].startswith("0x")
 
-#     assert 'tokenId' in response
-#     assert isinstance(response['tokenId'], int)
+    assert 'tokenId' in response
+    assert isinstance(response['tokenId'], int)
 
-#     assert 'licenseTermsIds' in response
-#     assert isinstance(response['licenseTermsIds'], list)
-#     assert all(isinstance(id, int) for id in response['licenseTermsIds'])
+    assert 'licenseTermsIds' in response
+    assert isinstance(response['licenseTermsIds'], list)
+    assert all(isinstance(id, int) for id in response['licenseTermsIds'])
 
 # def test_register_attach(story_client, nft_collection):
 #     token_id = get_token_id(nft_collection, story_client.web3, story_client.account)

@@ -174,8 +174,6 @@ def test_claimRevenue(story_client, child_ip_id, snapshot_id):
     assert isinstance(response['claimableToken'], int)
     assert response['claimableToken'] >= 0
 
-# Boris tests
-
 def test_snapshot_and_claim_by_token_batch(story_client, child_ip_id):
     """Test taking a snapshot and claiming revenue by token batch."""
     # First approve tokens for royalty payments

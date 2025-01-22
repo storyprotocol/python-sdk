@@ -39,7 +39,7 @@ def story_client():
 
 @pytest.fixture(scope="module")
 def no_commercial_license_terms_id(story_client):
-    response = story_client.License.register_non_com_social_remixing_PIL()
+    response = story_client.License.registerNonComSocialRemixingPIL()
     return response['licenseTermsId']
 
 @pytest.fixture(scope="module")

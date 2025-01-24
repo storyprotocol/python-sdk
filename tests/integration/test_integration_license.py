@@ -208,7 +208,7 @@ def test_register_pil_terms_with_no_minting_fee(story_client):
     response = story_client.License.registerPILTerms(
         transferable=False,
         royalty_policy=story_client.web3.to_checksum_address("0x0000000000000000000000000000000000000000"),
-        default_minting_fee=1,  # Minimal minting fee
+        default_minting_fee=0,  # Minimal minting fee
         expiration=0,
         commercial_use=False,
         commercial_attribution=False,

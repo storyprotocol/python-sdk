@@ -202,3 +202,127 @@ def test_setLicensingConfig(story_client, ip_id):
     assert len(response['txHash']) > 0, "'txHash' is empty"
     assert 'success' in response, "Response does not contain 'success'"
     assert response['success'] is True, "'success' is not True"
+
+def test_register_pil_terms_with_no_minting_fee(story_client):
+    """Test registering PIL terms with no minting fee."""
+    response = story_client.License.registerPILTerms(
+        transferable=False,
+        royalty_policy=story_client.web3.to_checksum_address("0x0000000000000000000000000000000000000000"),
+        default_minting_fee=0,  # Minimal minting fee
+        expiration=0,
+        commercial_use=False,
+        commercial_attribution=False,
+        commercializer_checker=story_client.web3.to_checksum_address("0x0000000000000000000000000000000000000000"),
+        commercializer_checker_data="0x",
+        commercial_rev_share=0,
+        commercial_rev_ceiling=0,
+        derivatives_allowed=False,
+        derivatives_attribution=False,
+        derivatives_approval=False,
+        derivatives_reciprocal=False,
+        derivative_rev_ceiling=0,
+        currency=MockERC20,
+        uri=""
+    )
+
+    assert response is not None
+    assert 'licenseTermsId' in response
+    assert response['licenseTermsId'] is not None
+    assert isinstance(response['licenseTermsId'], int)
+
+def test_register_commercial_use_pil_without_royalty_policy(story_client):
+    """Test registering commercial use PIL without specifying royalty policy."""
+    response = story_client.License.registerCommercialUsePIL(
+        default_minting_fee=1,
+        currency=MockERC20
+    )
+
+    assert response is not None
+    assert 'licenseTermsId' in response
+    assert response['licenseTermsId'] is not None
+    assert isinstance(response['licenseTermsId'], int)
+
+@pytest.fixture(scope="module")
+def setup_license_terms(story_client, ip_id):
+    """Fixture to set up license terms for testing."""
+    response = story_client.License.registerCommercialRemixPIL(
+        default_minting_fee=1,
+        currency=MockERC20,
+        commercial_rev_share=100,
+        royalty_policy=royalty_policy
+    )
+    license_id = response['licenseTermsId']
+
+    # Attach the license terms
+    story_client.License.attachLicenseTerms(
+        ip_id=ip_id,
+        license_template=license_template,
+        license_terms_id=license_id
+    )
+
+    return license_id
+
+def test_multi_token_minting(story_client, ip_id, setup_license_terms):
+    """Test minting multiple license tokens at once."""
+    response = story_client.License.mintLicenseTokens(
+        licensor_ip_id=ip_id,
+        license_template=license_template,
+        license_terms_id=setup_license_terms,
+        amount=3,  # Mint multiple tokens
+        receiver=account.address
+    )
+
+    assert response is not None
+    assert 'txHash' in response
+    assert response['txHash'] is not None
+    assert isinstance(response['txHash'], str)
+    assert len(response['txHash']) > 0
+    assert 'licenseTokenIds' in response
+    assert isinstance(response['licenseTokenIds'], list)
+    assert len(response['licenseTokenIds']) > 0
+
+def test_set_licensing_config_with_hooks(story_client, ip_id):
+    """Test setting licensing configuration with hooks enabled."""
+    licensing_config = {
+        'mintingFee': 100,
+        'isSet': True,
+        'licensingHook': "0x0000000000000000000000000000000000000000",
+        'hookData': "0x1234567890",  # Different hook data
+        'commercialRevShare': 50,  # 50% revenue share
+        'disabled': False,
+        'expectMinimumGroupRewardShare': 10,  # 10% minimum group reward
+        'expectGroupRewardPool': "0x0000000000000000000000000000000000000000"
+    }
+
+    response = story_client.License.setLicensingConfig(
+        ip_id=ip_id,
+        license_terms_id=0,
+        licensing_config=licensing_config,
+        license_template=license_template
+    )
+
+    assert response is not None
+    assert 'txHash' in response
+    assert response['txHash'] is not None
+    assert isinstance(response['txHash'], str)
+    assert len(response['txHash']) > 0
+    assert 'success' in response
+    assert response['success'] is True
+
+def test_predict_minting_fee_with_multiple_tokens(story_client, ip_id, setup_license_terms):
+    """Test predicting minting fee for multiple tokens."""
+    response = story_client.License.predictMintingLicenseFee(
+        licensor_ip_id=ip_id,
+        license_terms_id=setup_license_terms,
+        amount=5  # Predict for 5 tokens
+    )
+
+    assert response is not None
+    assert 'currency' in response
+    assert response['currency'] is not None
+    assert isinstance(response['currency'], str)
+    assert len(response['currency']) > 0
+    assert 'amount' in response
+    assert response['amount'] is not None
+    assert isinstance(response['amount'], int)
+    assert response['amount'] > 0  # Amount should be positive for multiple tokens

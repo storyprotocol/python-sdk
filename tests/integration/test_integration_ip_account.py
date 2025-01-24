@@ -154,3 +154,188 @@ def test_executeWithSig(story_client):
     assert response['txHash'] is not None, "'txHash' is None."
     assert isinstance(response['txHash'], str), "'txHash' is not a string."
     assert len(response['txHash']) > 0, "'txHash' is empty."
+
+# Boris tests
+
+def test_get_ip_account_nonce(story_client):
+    """Test getting IP Account nonce."""
+    # First register an IP
+    token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+    register_response = story_client.IPAsset.register(
+        nft_contract=MockERC721,
+        token_id=token_id
+    )
+    ip_id = register_response['ipId']
+    
+    # Get the nonce
+    state = story_client.IPAccount.getIpAccountNonce(ip_id)
+    
+    assert state is not None
+    assert isinstance(state, bytes)
+
+def test_execute_with_encoded_data(story_client):
+    """Test execute with pre-encoded function data."""
+    # First register an IP
+    token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+    register_response = story_client.IPAsset.register(
+        nft_contract=MockERC721,
+        token_id=token_id
+    )
+    ip_id = register_response['ipId']
+
+    # Encode setPermission function data
+    data = story_client.IPAccount.access_controller_client.contract.encode_abi(
+        abi_element_identifier="setPermission", 
+        args=[
+            ip_id,
+            account.address, 
+            "0x89630Ccf23277417FBdfd3076C702F5248267e78",  # Module address
+            Web3.keccak(text="function execute(address,uint256,bytes,uint8)")[:4],  # Function selector
+            1  # Permission level
+        ]
+    )
+
+    response = story_client.IPAccount.execute(
+        to=story_client.IPAccount.access_controller_client.contract.address,
+        value=0,
+        ip_id=ip_id,
+        data=data
+    )
+
+    assert response is not None
+    assert 'txHash' in response
+    assert isinstance(response['txHash'], str)
+    assert len(response['txHash']) > 0
+
+def test_execute_with_sig_multiple_permissions(story_client):
+    """Test executeWithSig setting multiple permissions."""
+    # First register an IP
+    token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+    register_response = story_client.IPAsset.register(
+        nft_contract=MockERC721,
+        token_id=token_id
+    )
+    ip_id = register_response['ipId']
+
+    deadline = getBlockTimestamp(web3) + 100
+    state = story_client.IPAccount.getIpAccountNonce(ip_id)
+
+    # Encode multiple setPermission calls
+    function_signatures = [
+        "function setAll(address,string,bytes32,bytes32)",
+        "function execute(address,uint256,bytes,uint8)",
+        "function registerDerivative(address,address[],uint256[],address,bytes)"
+    ]
+    
+    data_list = []
+    for func_sig in function_signatures:
+        data = story_client.IPAccount.access_controller_client.contract.encode_abi(
+            abi_element_identifier="setPermission",
+            args=[
+                ip_id,
+                account.address,
+                "0x6E81a25C99C6e8430aeC7353325EB138aFE5DC16",  # Module address
+                Web3.keccak(text=func_sig)[:4],  # Function selector
+                1  # ALLOW
+            ]
+        )
+        # Remove '0x' prefix before adding to list
+        if data.startswith('0x'):
+            data = data[2:]
+        data_list.append(data)
+
+    # Combine all encoded data with '0x' prefix
+    combined_data = '0x' + ''.join(data_list)
+
+    # Create and sign EIP-712 message
+    domain_data = {
+        "name": "Story Protocol IP Account",
+        "version": "1",
+        "chainId": 1315,
+        "verifyingContract": ip_id,
+    }
+
+    message_types = {
+        "Execute": [
+            {"name": "to", "type": "address"},
+            {"name": "value", "type": "uint256"},
+            {"name": "data", "type": "bytes"},
+            {"name": "nonce", "type": "bytes32"},
+            {"name": "deadline", "type": "uint256"},
+        ],
+    }
+
+    # Compute expected state
+    expected_state = Web3.keccak(
+        encode(
+            ["bytes32", "bytes"],
+            [
+                state,
+                Web3.to_bytes(hexstr=combined_data)
+            ]
+        )
+    )
+
+    message_data = {
+        "to": story_client.IPAccount.access_controller_client.contract.address,
+        "value": 0,
+        "data": combined_data,
+        "nonce": expected_state,
+        "deadline": deadline,
+    }
+
+    signable_message = encode_typed_data(domain_data, message_types, message_data)
+    signed_message = Account.sign_message(signable_message, private_key)
+
+    response = story_client.IPAccount.executeWithSig(
+        ip_id=ip_id,
+        to=story_client.IPAccount.access_controller_client.contract.address,
+        value=0,
+        data=combined_data,
+        signer=account.address,
+        deadline=deadline,
+        signature=signed_message.signature
+    )
+
+    assert response is not None
+    assert 'txHash' in response
+    assert isinstance(response['txHash'], str)
+    assert len(response['txHash']) > 0
+
+def test_execute_invalid_address(story_client):
+    """Test execute with invalid address should raise error."""
+    # First register an IP
+    token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+    register_response = story_client.IPAsset.register(
+        nft_contract=MockERC721,
+        token_id=token_id
+    )
+    ip_id = register_response['ipId']
+
+    data = "0x"
+    invalid_address = "0xinvalid"
+    
+    with pytest.raises(ValueError) as exc_info:
+        story_client.IPAccount.execute(
+            to=invalid_address,
+            value=0,
+            ip_id=ip_id,
+            data=data
+        )
+    
+    assert "is not a valid address" in str(exc_info.value)
+
+def test_execute_unregistered_ip(story_client):
+    """Test execute with unregistered IP should raise error."""
+    unregistered_ip = "0x1234567890123456789012345678901234567890"
+    data = "0x"
+    
+    with pytest.raises(ValueError) as exc_info:
+        story_client.IPAccount.execute(
+            to=story_client.IPAccount.access_controller_client.contract.address,
+            value=0,
+            ip_id=unregistered_ip,
+            data=data
+        )
+    
+    assert "is not registered" in str(exc_info.value)

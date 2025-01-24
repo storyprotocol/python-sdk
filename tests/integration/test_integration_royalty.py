@@ -12,7 +12,7 @@ src_path = os.path.abspath(os.path.join(current_dir, '..', '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
     
-from utils import get_story_client_in_sepolia, mint_tokens, approve, MockERC721, get_token_id, MockERC20
+from utils import get_story_client_in_devnet, mint_tokens, approve, MockERC721, get_token_id, MockERC20
 
 load_dotenv()
 private_key = os.getenv('WALLET_PRIVATE_KEY')
@@ -28,7 +28,7 @@ account = web3.eth.account.from_key(private_key)
 
 @pytest.fixture(scope="module")
 def story_client():
-    return get_story_client_in_sepolia(web3, account)
+    return get_story_client_in_devnet(web3, account)
 
 @pytest.fixture(scope="module")
 def parent_ip_id(story_client):
@@ -173,3 +173,128 @@ def test_claimRevenue(story_client, child_ip_id, snapshot_id):
     assert response['claimableToken'] is not None
     assert isinstance(response['claimableToken'], int)
     assert response['claimableToken'] >= 0
+
+def test_snapshot_and_claim_by_token_batch(story_client, child_ip_id):
+    """Test taking a snapshot and claiming revenue by token batch."""
+    # First approve tokens for royalty payments
+    token_amount = 100000 * 10 ** 6
+    mint_tokens(
+        erc20_contract_address=MockERC20,
+        web3=web3,
+        account=account,
+        to_address=account.address,
+        amount=token_amount
+    )
+    approve(
+        erc20_contract_address=MockERC20,
+        web3=web3,
+        account=account,
+        spender_address="0xaabaf349c7a2a84564f9cc4ac130b3f19a718e86",
+        amount=token_amount
+    )
+
+    currency_tokens = [MockERC20]
+    
+    response = story_client.Royalty.snapshotAndClaimByTokenBatch(
+        royalty_vault_ip_id=child_ip_id,
+        currency_tokens=currency_tokens
+    )
+
+    assert response is not None
+    assert 'txHash' in response
+    assert isinstance(response['txHash'], str)
+    assert len(response['txHash']) > 0
+    assert 'snapshotId' in response
+    assert isinstance(response['snapshotId'], int)
+    assert response['snapshotId'] >= 0
+    assert 'amountsClaimed' in response
+    assert isinstance(response['amountsClaimed'], int)
+
+def test_snapshot_and_claim_by_snapshot_batch(story_client, child_ip_id, snapshot_id):
+    """Test taking a snapshot and claiming revenue by snapshot batch."""
+    currency_tokens = [MockERC20]
+    unclaimed_snapshot_ids = [snapshot_id]
+
+    response = story_client.Royalty.snapshotAndClaimBySnapshotBatch(
+        royalty_vault_ip_id=child_ip_id,
+        currency_tokens=currency_tokens,
+        unclaimed_snapshot_ids=unclaimed_snapshot_ids
+    )
+
+    assert response is not None
+    assert 'txHash' in response
+    assert isinstance(response['txHash'], str)
+    assert len(response['txHash']) > 0
+    assert 'snapshotId' in response
+    assert isinstance(response['snapshotId'], int)
+    assert response['snapshotId'] >= 0
+    assert 'amountsClaimed' in response
+    assert isinstance(response['amountsClaimed'], int)
+
+def test_transfer_to_vault_and_snapshot_and_claim_by_token_batch(story_client, parent_ip_id, child_ip_id):
+    """Test transferring to vault, taking snapshot, and claiming by token batch."""
+    royalty_claim_details = [{
+        'child_ip_id': child_ip_id,
+        'royalty_policy': "0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86",
+        'currency_token': MockERC20,
+        'amount': 100
+    }]
+
+    response = story_client.Royalty.transferToVaultAndSnapshotAndClaimByTokenBatch(
+        ancestor_ip_id=parent_ip_id,
+        royalty_claim_details=royalty_claim_details
+    )
+
+    assert response is not None
+    assert 'txHash' in response
+    assert isinstance(response['txHash'], str)
+    assert len(response['txHash']) > 0
+    assert 'snapshotId' in response
+    assert isinstance(response['snapshotId'], int)
+    assert response['snapshotId'] >= 0
+    assert 'amountsClaimed' in response
+    assert isinstance(response['amountsClaimed'], int)
+
+def test_transfer_to_vault_and_snapshot_and_claim_by_snapshot_batch(story_client, parent_ip_id, child_ip_id, snapshot_id):
+    """Test transferring to vault, taking snapshot, and claiming by snapshot batch."""
+    royalty_claim_details = [{
+        'child_ip_id': child_ip_id,
+        'royalty_policy': "0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86",
+        'currency_token': MockERC20,
+        'amount': 100
+    }]
+    unclaimed_snapshot_ids = [snapshot_id]
+
+    response = story_client.Royalty.transferToVaultAndSnapshotAndClaimBySnapshotBatch(
+        ancestor_ip_id=parent_ip_id,
+        royalty_claim_details=royalty_claim_details,
+        unclaimed_snapshot_ids=unclaimed_snapshot_ids
+    )
+
+    assert response is not None
+    assert 'txHash' in response
+    assert isinstance(response['txHash'], str)
+    assert len(response['txHash']) > 0
+    assert 'snapshotId' in response
+    assert isinstance(response['snapshotId'], int)
+    assert response['snapshotId'] >= 0
+    assert 'amountsClaimed' in response
+    assert isinstance(response['amountsClaimed'], int)
+
+def test_royalty_vault_address(story_client, child_ip_id):
+    """Test getting royalty vault address for an IP."""
+    vault_address = story_client.Royalty.getRoyaltyVaultAddress(child_ip_id)
+    
+    assert vault_address is not None
+    assert isinstance(vault_address, str)
+    assert vault_address.startswith('0x')
+    assert len(vault_address) == 42  # Valid Ethereum address length
+
+def test_get_royalty_vault_address_unregistered_ip(story_client):
+    """Test getting royalty vault address for unregistered IP."""
+    unregistered_ip = "0x1234567890123456789012345678901234567890"
+    
+    with pytest.raises(ValueError) as exc_info:
+        story_client.Royalty.getRoyaltyVaultAddress(unregistered_ip)
+    
+    assert "is not registered" in str(exc_info.value)

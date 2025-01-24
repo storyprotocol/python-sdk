@@ -38,7 +38,7 @@ def story_client():
     return get_story_client_in_devnet(web3, account)
 
 @pytest.fixture(scope="module")
-def no_commercial_license_terms_id(story_client):
+def non_commercial_license_terms_id(story_client):
     response = story_client.License.registerNonComSocialRemixingPIL()
     return response['licenseTermsId']
 

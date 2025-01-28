@@ -26,7 +26,7 @@ def get_token_id(nft_contract, web3, account):
         'gasPrice': current_gas_price
     })
     signed_txn = account.sign_transaction(transaction)
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
     tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
 
     logs = tx_receipt['logs']
@@ -56,7 +56,7 @@ def mint_tokens(erc20_contract_address, web3, account, to_address, amount):
     })
     
     signed_txn = account.sign_transaction(transaction)
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
     tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
     
     return tx_receipt
@@ -89,7 +89,7 @@ def approve(erc20_contract_address, web3, account, spender_address, amount):
     })
     
     signed_txn = account.sign_transaction(transaction)
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
     tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
     
     return tx_receipt

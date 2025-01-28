@@ -81,7 +81,6 @@ class LicenseTerms:
     def validate_license_terms(self, params):
         royalty_policy = params.get('royalty_policy')
         currency = params.get('currency')
-
         if royalty_policy != ZERO_ADDRESS:
             is_whitelisted = self.royalty_module_client.isWhitelistedRoyaltyPolicy(royalty_policy)
             if not is_whitelisted:
@@ -109,7 +108,63 @@ class LicenseTerms:
         else:
             params['commercial_rev_share'] = int((commercial_rev_share / 100) * 100000000)
 
+        commercializer_checker_data = params.get('commercializer_checker_data', ZERO_ADDRESS)
+        if isinstance(commercializer_checker_data, str):
+            params['commercializer_checker_data'] = Web3.to_bytes(hexstr=commercializer_checker_data)
+
+        params['expect_minimum_group_reward_share'] = int(params.get('expect_minimum_group_reward_share', 0))
         return params
+
+    def validate_licensing_config(self, params):
+        if not isinstance(params, dict):
+            raise TypeError("Licensing config parameters must be a dictionary")
+
+        required_params = {
+            'is_set': bool,
+            'minting_fee': int,
+            'hook_data': str,
+            'licensing_hook': str,
+            'commercial_rev_share': int,
+            'disabled': bool,
+            'expect_minimum_group_reward_share': int,
+            'expect_group_reward_pool': str
+        }
+
+        for param, expected_type in required_params.items():
+            if param in params:
+                if not isinstance(params[param], expected_type):
+                    raise TypeError(f"{param} must be of type {expected_type.__name__}")
+
+        default_params = {
+            'is_set': False,
+            'minting_fee': 0,
+            'hook_data': "",
+            'licensing_hook': ZERO_ADDRESS,
+            'commercial_rev_share': 0,
+            'disabled': False,
+            'expect_minimum_group_reward_share': 0,
+            'expect_group_reward_pool': ZERO_ADDRESS
+        }
+
+        if not params.get('is_set', False):
+            return default_params
+        
+        if params.get('minting_fee', 0) < 0:
+            raise ValueError("Minting fee cannot be negative")
+        
+        if params.get('commercial_rev_share', 0) < 0 or params.get('commercial_rev_share', 0) > 100:
+            raise ValueError("Commercial revenue share must be between 0 and 100")
+        else:
+            params['commercial_rev_share'] = int((params['commercial_rev_share'] / 100) * 100000000)
+        
+        if params.get('expect_minimum_group_reward_share', 0) < 0 or params.get('expect_minimum_group_reward_share', 0) > 100:
+            raise ValueError("Expect minimum group reward share must be between 0 and 100")
+       
+        params['hook_data'] = Web3.to_bytes(hexstr=params['hook_data'])
+        
+        default_params.update(params)
+
+        return default_params
 
     def verify_commercial_use(self, terms):
         if not terms.get('commercial_use', False):
@@ -139,3 +194,22 @@ class LicenseTerms:
                 raise ValueError("Cannot add derivative reciprocal when derivative use is disabled.")
             if terms.get('derivative_rev_ceiling', 0) > 0:
                 raise ValueError("Cannot add derivative revenue ceiling when derivative use is disabled.")
+
+    def get_revenue_share(self, rev_share: int | str) -> int:
+        """
+        Convert revenue share percentage to token amount.
+
+        :param rev_share int|str: Revenue share percentage between 0-100
+        :return int: Revenue share token amount
+        """
+        try:
+            rev_share_number = float(rev_share)
+        except ValueError:
+            raise ValueError("CommercialRevShare must be a valid number.")
+
+        if rev_share_number < 0 or rev_share_number > 100:
+            raise ValueError("CommercialRevShare should be between 0 and 100.")
+
+        MAX_ROYALTY_TOKEN = 100000000
+        return int((rev_share_number / 100) * MAX_ROYALTY_TOKEN)
+    

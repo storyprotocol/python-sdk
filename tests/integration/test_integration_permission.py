@@ -11,7 +11,7 @@ src_path = os.path.abspath(os.path.join(current_dir, '..', '..'))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-from utils import get_token_id, get_story_client_in_sepolia, MockERC721, check_event_in_tx
+from utils import get_token_id, get_story_client_in_devnet, MockERC721, check_event_in_tx
 
 load_dotenv()
 private_key = os.getenv('WALLET_PRIVATE_KEY')
@@ -27,7 +27,7 @@ account = web3.eth.account.from_key(private_key)
 
 @pytest.fixture
 def story_client():
-    return get_story_client_in_sepolia(web3, account)
+    return get_story_client_in_devnet(web3, account)
 
 def test_setPermission(story_client):
     token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
@@ -52,3 +52,120 @@ def test_setPermission(story_client):
     assert len(response['txHash']) > 0, "'txHash' is empty."
 
     assert check_event_in_tx(web3, response['txHash'], "PermissionSet(address,address,address,address,bytes4,uint8)") is True
+
+@pytest.fixture
+def registered_ip(story_client):
+    """Fixture to create an IP for testing permissions."""
+    token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+    response = story_client.IPAsset.register(
+        nft_contract=MockERC721,
+        token_id=token_id
+    )
+    return response['ipId']
+
+def test_set_permission_with_specific_function(story_client, registered_ip):
+    """Test setting permission for a specific function."""
+    module_address = "0x2ac240293f12032E103458451dE8A8096c5A72E8"
+    function_selector = Web3.keccak(text="transfer(address,uint256)")[:4].hex()
+    
+    response = story_client.Permission.setPermission(
+        ip_asset=registered_ip,
+        signer=account.address,
+        to=module_address,
+        permission=1,  # ALLOW
+        func=function_selector
+    )
+
+    assert response is not None
+    assert 'txHash' in response
+    assert isinstance(response['txHash'], str)
+    assert len(response['txHash']) > 0
+    assert check_event_in_tx(web3, response['txHash'], "PermissionSet(address,address,address,address,bytes4,uint8)")
+
+def test_set_all_permissions(story_client, registered_ip):
+    """Test setting all permissions for a signer."""
+    response = story_client.Permission.setAllPermissions(
+        ip_asset=registered_ip,
+        signer=account.address,
+        permission=1  # ALLOW
+    )
+
+    assert response is not None
+    assert 'txHash' in response
+    assert isinstance(response['txHash'], str)
+    assert len(response['txHash']) > 0
+    assert check_event_in_tx(web3, response['txHash'], "PermissionSet(address,address,address,address,bytes4,uint8)")
+
+def test_set_batch_permissions(story_client, registered_ip):
+    """Test setting multiple permissions in a single transaction."""
+    module_address = "0x2ac240293f12032E103458451dE8A8096c5A72E8"
+    permissions = [
+        {
+            'ip_asset': registered_ip,
+            'signer': account.address,
+            'to': module_address,
+            'permission': 1,
+            'func': "0x00000000"
+        },
+        {
+            'ip_asset': registered_ip,
+            'signer': account.address,
+            'to': module_address,
+            'permission': 2,  # DENY
+            'func': Web3.keccak(text="transfer(address,uint256)")[:4].hex()
+        }
+    ]
+    
+    response = story_client.Permission.setBatchPermissions(permissions)
+
+    assert response is not None
+    assert 'txHash' in response
+    assert isinstance(response['txHash'], str)
+    assert len(response['txHash']) > 0
+    assert check_event_in_tx(web3, response['txHash'], "PermissionSet(address,address,address,address,bytes4,uint8)")
+
+def test_set_permission_invalid_ip(story_client):
+    """Test setting permission for an unregistered IP."""
+    unregistered_ip = "0x1234567890123456789012345678901234567890"
+    
+    with pytest.raises(ValueError) as exc_info:
+        story_client.Permission.setPermission(
+            ip_asset=unregistered_ip,
+            signer=account.address,
+            to="0x2ac240293f12032E103458451dE8A8096c5A72E8",
+            permission=1
+        )
+    
+    assert "is not registered" in str(exc_info.value)
+
+def test_set_permission_invalid_signer(story_client, registered_ip):
+    """Test setting permission with invalid signer address."""
+    with pytest.raises(ValueError) as exc_info:
+        story_client.Permission.setPermission(
+            ip_asset=registered_ip,
+            signer="0xinvalid",
+            to="0x2ac240293f12032E103458451dE8A8096c5A72E8",
+            permission=1
+        )
+    
+    assert "is not a valid address" in str(exc_info.value)
+
+def test_create_permission_signature(story_client, registered_ip):
+    """Test creating and executing a permission signature."""
+    module_address = "0x2ac240293f12032E103458451dE8A8096c5A72E8"
+    deadline = web3.eth.get_block('latest')['timestamp'] + 1000
+    
+    response = story_client.Permission.createSetPermissionSignature(
+        ip_asset=registered_ip,
+        signer=account.address,
+        to=module_address,
+        permission=1,
+        func="0x00000000",
+        deadline=deadline
+    )
+
+    assert response is not None
+    assert 'txHash' in response
+    assert isinstance(response['txHash'], str)
+    assert len(response['txHash']) > 0
+    assert check_event_in_tx(web3, response['txHash'], "PermissionSet(address,address,address,address,bytes4,uint8)")

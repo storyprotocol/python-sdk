@@ -8,6 +8,11 @@
         "internalType": "address"
       },
       {
+        "name": "royaltyPolicyLAP",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
         "name": "ipGraphAcl",
         "type": "address",
         "internalType": "address"
@@ -50,6 +55,19 @@
         "name": "",
         "type": "address",
         "internalType": "contract IRoyaltyModule"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "ROYALTY_POLICY_LAP",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IGraphAwareRoyaltyPolicy"
       }
     ],
     "stateMutability": "view"
@@ -341,14 +359,15 @@
         "name": "token",
         "type": "address",
         "internalType": "address"
-      },
+      }
+    ],
+    "outputs": [
       {
-        "name": "amount",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
-    "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
@@ -585,7 +604,7 @@
   },
   {
     "type": "error",
-    "name": "RoyaltyPolicyLRP__ExceedsClaimableRoyalty",
+    "name": "RoyaltyPolicyLRP__CallFailed",
     "inputs": []
   },
   {
@@ -596,11 +615,6 @@
   {
     "type": "error",
     "name": "RoyaltyPolicyLRP__ZeroAccessManager",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "RoyaltyPolicyLRP__ZeroAmount",
     "inputs": []
   },
   {
@@ -616,6 +630,11 @@
   {
     "type": "error",
     "name": "RoyaltyPolicyLRP__ZeroRoyaltyModule",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "RoyaltyPolicyLRP__ZeroRoyaltyPolicyLAP",
     "inputs": []
   },
   {

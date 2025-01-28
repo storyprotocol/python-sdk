@@ -1,846 +1,831 @@
 [
   {
-      "inputs": [
-          {
-              "internalType": "address",
-              "name": "disputeModule",
-              "type": "address"
-          },
-          {
-              "internalType": "address",
-              "name": "royaltyModule",
-              "type": "address"
-          }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "constructor"
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "disputeModule",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "royaltyModule",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "ipAssetRegistry",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "groupingModule",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "nonpayable"
   },
   {
-      "inputs": [],
-      "name": "IpRoyaltyVault__EnforcedPause",
-      "type": "error"
+    "type": "function",
+    "name": "DISPUTE_MODULE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IDisputeModule"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
-      "inputs": [],
-      "name": "IpRoyaltyVault__InsufficientTimeElapsedSinceLastSnapshot",
-      "type": "error"
+    "type": "function",
+    "name": "GROUPING_MODULE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
-      "inputs": [],
-      "name": "IpRoyaltyVault__InvalidTargetIpId",
-      "type": "error"
+    "type": "function",
+    "name": "IP_ASSET_REGISTRY",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IGroupIPAssetRegistry"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
-      "inputs": [],
-      "name": "IpRoyaltyVault__NoClaimableTokens",
-      "type": "error"
+    "type": "function",
+    "name": "ROYALTY_MODULE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IRoyaltyModule"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
-      "inputs": [],
-      "name": "IpRoyaltyVault__NoNewRevenueSinceLastSnapshot",
-      "type": "error"
+    "type": "function",
+    "name": "allowance",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "spender",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
-      "inputs": [],
-      "name": "IpRoyaltyVault__NotAllowedToAddTokenToVault",
-      "type": "error"
+    "type": "function",
+    "name": "approve",
+    "inputs": [
+      {
+        "name": "spender",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
   },
   {
-      "inputs": [],
-      "name": "IpRoyaltyVault__NotWhitelistedRoyaltyToken",
-      "type": "error"
+    "type": "function",
+    "name": "balanceOf",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
-      "inputs": [],
-      "name": "IpRoyaltyVault__VaultDoesNotBelongToAnAncestor",
-      "type": "error"
+    "type": "function",
+    "name": "claimByTokenBatchAsSelf",
+    "inputs": [
+      {
+        "name": "tokenList",
+        "type": "address[]",
+        "internalType": "address[]"
+      },
+      {
+        "name": "targetIpId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
-      "inputs": [],
-      "name": "IpRoyaltyVault__VaultsMustClaimAsSelf",
-      "type": "error"
+    "type": "function",
+    "name": "claimRevenueOnBehalf",
+    "inputs": [
+      {
+        "name": "claimer",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
   },
   {
-      "inputs": [],
-      "name": "IpRoyaltyVault__ZeroAmount",
-      "type": "error"
+    "type": "function",
+    "name": "claimRevenueOnBehalfByTokenBatch",
+    "inputs": [
+      {
+        "name": "claimer",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "tokenList",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      }
+    ],
+    "stateMutability": "nonpayable"
   },
   {
-      "inputs": [],
-      "name": "IpRoyaltyVault__ZeroDisputeModule",
-      "type": "error"
+    "type": "function",
+    "name": "claimableRevenue",
+    "inputs": [
+      {
+        "name": "claimer",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
-      "inputs": [],
-      "name": "IpRoyaltyVault__ZeroRoyaltyModule",
-      "type": "error"
+    "type": "function",
+    "name": "claimerRevenueDebt",
+    "inputs": [
+      {
+        "name": "claimer",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "int256",
+        "internalType": "int256"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
-      "anonymous": false,
-      "inputs": [
-          {
-              "indexed": true,
-              "internalType": "address",
-              "name": "owner",
-              "type": "address"
-          },
-          {
-              "indexed": true,
-              "internalType": "address",
-              "name": "spender",
-              "type": "address"
-          },
-          {
-              "indexed": false,
-              "internalType": "uint256",
-              "name": "value",
-              "type": "uint256"
-          }
-      ],
-      "name": "Approval",
-      "type": "event"
+    "type": "function",
+    "name": "decimals",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "stateMutability": "pure"
   },
   {
-      "anonymous": false,
-      "inputs": [
-          {
-              "indexed": false,
-              "internalType": "uint8",
-              "name": "version",
-              "type": "uint8"
-          }
-      ],
-      "name": "Initialized",
-      "type": "event"
+    "type": "function",
+    "name": "initialize",
+    "inputs": [
+      {
+        "name": "name",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "symbol",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "supply",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "ipIdAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "rtReceiver",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
-      "anonymous": false,
-      "inputs": [
-          {
-              "indexed": false,
-              "internalType": "address",
-              "name": "token",
-              "type": "address"
-          },
-          {
-              "indexed": false,
-              "internalType": "uint256",
-              "name": "amount",
-              "type": "uint256"
-          }
-      ],
-      "name": "RevenueTokenAddedToVault",
-      "type": "event"
+    "type": "function",
+    "name": "ipId",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
-      "anonymous": false,
-      "inputs": [
-          {
-              "indexed": false,
-              "internalType": "address",
-              "name": "claimer",
-              "type": "address"
-          },
-          {
-              "indexed": false,
-              "internalType": "address",
-              "name": "token",
-              "type": "address"
-          },
-          {
-              "indexed": false,
-              "internalType": "uint256",
-              "name": "amount",
-              "type": "uint256"
-          }
-      ],
-      "name": "RevenueTokenClaimed",
-      "type": "event"
+    "type": "function",
+    "name": "name",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
-      "anonymous": false,
-      "inputs": [
-          {
-              "indexed": false,
-              "internalType": "uint256",
-              "name": "id",
-              "type": "uint256"
-          }
-      ],
-      "name": "Snapshot",
-      "type": "event"
+    "type": "function",
+    "name": "symbol",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
-      "anonymous": false,
-      "inputs": [
-          {
-              "indexed": false,
-              "internalType": "uint256",
-              "name": "snapshotId",
-              "type": "uint256"
-          },
-          {
-              "indexed": false,
-              "internalType": "uint256",
-              "name": "snapshotTimestamp",
-              "type": "uint256"
-          }
-      ],
-      "name": "SnapshotCompleted",
-      "type": "event"
+    "type": "function",
+    "name": "tokens",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
-      "anonymous": false,
-      "inputs": [
-          {
-              "indexed": true,
-              "internalType": "address",
-              "name": "from",
-              "type": "address"
-          },
-          {
-              "indexed": true,
-              "internalType": "address",
-              "name": "to",
-              "type": "address"
-          },
-          {
-              "indexed": false,
-              "internalType": "uint256",
-              "name": "value",
-              "type": "uint256"
-          }
-      ],
-      "name": "Transfer",
-      "type": "event"
+    "type": "function",
+    "name": "totalSupply",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
-      "inputs": [],
-      "name": "DISPUTE_MODULE",
-      "outputs": [
-          {
-              "internalType": "contract IDisputeModule",
-              "name": "",
-              "type": "address"
-          }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+    "type": "function",
+    "name": "transfer",
+    "inputs": [
+      {
+        "name": "to",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
   },
   {
-      "inputs": [],
-      "name": "ROYALTY_MODULE",
-      "outputs": [
-          {
-              "internalType": "contract IRoyaltyModule",
-              "name": "",
-              "type": "address"
-          }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+    "type": "function",
+    "name": "transferFrom",
+    "inputs": [
+      {
+        "name": "from",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
   },
   {
-      "inputs": [
-          {
-              "internalType": "address",
-              "name": "owner",
-              "type": "address"
-          },
-          {
-              "internalType": "address",
-              "name": "spender",
-              "type": "address"
-          }
-      ],
-      "name": "allowance",
-      "outputs": [
-          {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-          }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+    "type": "function",
+    "name": "updateVaultBalance",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
-      "inputs": [
-          {
-              "internalType": "address",
-              "name": "spender",
-              "type": "address"
-          },
-          {
-              "internalType": "uint256",
-              "name": "amount",
-              "type": "uint256"
-          }
-      ],
-      "name": "approve",
-      "outputs": [
-          {
-              "internalType": "bool",
-              "name": "",
-              "type": "bool"
-          }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
+    "type": "function",
+    "name": "vaultAccBalances",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
-      "inputs": [
-          {
-              "internalType": "address",
-              "name": "account",
-              "type": "address"
-          }
-      ],
-      "name": "balanceOf",
-      "outputs": [
-          {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-          }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+    "type": "event",
+    "name": "Approval",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "spender",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
   },
   {
-      "inputs": [
-          {
-              "internalType": "address",
-              "name": "account",
-              "type": "address"
-          },
-          {
-              "internalType": "uint256",
-              "name": "snapshotId",
-              "type": "uint256"
-          }
-      ],
-      "name": "balanceOfAt",
-      "outputs": [
-          {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-          }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+    "type": "event",
+    "name": "Initialized",
+    "inputs": [
+      {
+        "name": "version",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
   },
   {
-      "inputs": [
-          {
-              "internalType": "uint256[]",
-              "name": "snapshotIds",
-              "type": "uint256[]"
-          },
-          {
-              "internalType": "address",
-              "name": "token",
-              "type": "address"
-          },
-          {
-              "internalType": "address",
-              "name": "targetIpId",
-              "type": "address"
-          }
-      ],
-      "name": "claimBySnapshotBatchAsSelf",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+    "type": "event",
+    "name": "RevenueTokenAddedToVault",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
   },
   {
-      "inputs": [
-          {
-              "internalType": "uint256",
-              "name": "snapshotId",
-              "type": "uint256"
-          },
-          {
-              "internalType": "address[]",
-              "name": "tokenList",
-              "type": "address[]"
-          },
-          {
-              "internalType": "address",
-              "name": "targetIpId",
-              "type": "address"
-          }
-      ],
-      "name": "claimByTokenBatchAsSelf",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+    "type": "event",
+    "name": "RevenueTokenClaimed",
+    "inputs": [
+      {
+        "name": "claimer",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
   },
   {
-      "inputs": [
-          {
-              "internalType": "uint256[]",
-              "name": "snapshotIds",
-              "type": "uint256[]"
-          },
-          {
-              "internalType": "address",
-              "name": "token",
-              "type": "address"
-          },
-          {
-              "internalType": "address",
-              "name": "claimer",
-              "type": "address"
-          }
-      ],
-      "name": "claimRevenueOnBehalfBySnapshotBatch",
-      "outputs": [
-          {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-          }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
+    "type": "event",
+    "name": "Transfer",
+    "inputs": [
+      {
+        "name": "from",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
   },
   {
-      "inputs": [
-          {
-              "internalType": "uint256",
-              "name": "snapshotId",
-              "type": "uint256"
-          },
-          {
-              "internalType": "address[]",
-              "name": "tokenList",
-              "type": "address[]"
-          },
-          {
-              "internalType": "address",
-              "name": "claimer",
-              "type": "address"
-          }
-      ],
-      "name": "claimRevenueOnBehalfByTokenBatch",
-      "outputs": [
-          {
-              "internalType": "uint256[]",
-              "name": "",
-              "type": "uint256[]"
-          }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
+    "type": "error",
+    "name": "AddressEmptyCode",
+    "inputs": [
+      {
+        "name": "target",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
-      "inputs": [
-          {
-              "internalType": "address",
-              "name": "token",
-              "type": "address"
-          }
-      ],
-      "name": "claimVaultAmount",
-      "outputs": [
-          {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-          }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+    "type": "error",
+    "name": "AddressInsufficientBalance",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
-      "inputs": [
-          {
-              "internalType": "uint256",
-              "name": "snapshotId",
-              "type": "uint256"
-          },
-          {
-              "internalType": "address",
-              "name": "token",
-              "type": "address"
-          }
-      ],
-      "name": "claimableAtSnapshot",
-      "outputs": [
-          {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-          }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+    "type": "error",
+    "name": "ERC20InsufficientAllowance",
+    "inputs": [
+      {
+        "name": "spender",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "allowance",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "needed",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
-      "inputs": [
-          {
-              "internalType": "address",
-              "name": "account",
-              "type": "address"
-          },
-          {
-              "internalType": "uint256",
-              "name": "snapshotId",
-              "type": "uint256"
-          },
-          {
-              "internalType": "address",
-              "name": "token",
-              "type": "address"
-          }
-      ],
-      "name": "claimableRevenue",
-      "outputs": [
-          {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-          }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+    "type": "error",
+    "name": "ERC20InsufficientBalance",
+    "inputs": [
+      {
+        "name": "sender",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "balance",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "needed",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
-      "inputs": [],
-      "name": "decimals",
-      "outputs": [
-          {
-              "internalType": "uint8",
-              "name": "",
-              "type": "uint8"
-          }
-      ],
-      "stateMutability": "pure",
-      "type": "function"
+    "type": "error",
+    "name": "ERC20InvalidApprover",
+    "inputs": [
+      {
+        "name": "approver",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
-      "inputs": [
-          {
-              "internalType": "address",
-              "name": "spender",
-              "type": "address"
-          },
-          {
-              "internalType": "uint256",
-              "name": "subtractedValue",
-              "type": "uint256"
-          }
-      ],
-      "name": "decreaseAllowance",
-      "outputs": [
-          {
-              "internalType": "bool",
-              "name": "",
-              "type": "bool"
-          }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
+    "type": "error",
+    "name": "ERC20InvalidReceiver",
+    "inputs": [
+      {
+        "name": "receiver",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
-      "inputs": [],
-      "name": "getCurrentSnapshotId",
-      "outputs": [
-          {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-          }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+    "type": "error",
+    "name": "ERC20InvalidSender",
+    "inputs": [
+      {
+        "name": "sender",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
-      "inputs": [
-          {
-              "internalType": "address",
-              "name": "spender",
-              "type": "address"
-          },
-          {
-              "internalType": "uint256",
-              "name": "addedValue",
-              "type": "uint256"
-          }
-      ],
-      "name": "increaseAllowance",
-      "outputs": [
-          {
-              "internalType": "bool",
-              "name": "",
-              "type": "bool"
-          }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
+    "type": "error",
+    "name": "ERC20InvalidSpender",
+    "inputs": [
+      {
+        "name": "spender",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
-      "inputs": [
-          {
-              "internalType": "string",
-              "name": "name",
-              "type": "string"
-          },
-          {
-              "internalType": "string",
-              "name": "symbol",
-              "type": "string"
-          },
-          {
-              "internalType": "uint32",
-              "name": "supply",
-              "type": "uint32"
-          },
-          {
-              "internalType": "address",
-              "name": "ipIdAddress",
-              "type": "address"
-          },
-          {
-              "internalType": "address",
-              "name": "rtReceiver",
-              "type": "address"
-          }
-      ],
-      "name": "initialize",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+    "type": "error",
+    "name": "FailedInnerCall",
+    "inputs": []
   },
   {
-      "inputs": [],
-      "name": "ipId",
-      "outputs": [
-          {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
-          }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+    "type": "error",
+    "name": "InvalidInitialization",
+    "inputs": []
   },
   {
-      "inputs": [
-          {
-              "internalType": "uint256",
-              "name": "snapshotId",
-              "type": "uint256"
-          },
-          {
-              "internalType": "address",
-              "name": "claimer",
-              "type": "address"
-          },
-          {
-              "internalType": "address",
-              "name": "token",
-              "type": "address"
-          }
-      ],
-      "name": "isClaimedAtSnapshot",
-      "outputs": [
-          {
-              "internalType": "bool",
-              "name": "",
-              "type": "bool"
-          }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+    "type": "error",
+    "name": "IpRoyaltyVault__EnforcedPause",
+    "inputs": []
   },
   {
-      "inputs": [],
-      "name": "lastSnapshotTimestamp",
-      "outputs": [
-          {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-          }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+    "type": "error",
+    "name": "IpRoyaltyVault__GroupPoolMustClaimViaGroupingModule",
+    "inputs": []
   },
   {
-      "inputs": [],
-      "name": "name",
-      "outputs": [
-          {
-              "internalType": "string",
-              "name": "",
-              "type": "string"
-          }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+    "type": "error",
+    "name": "IpRoyaltyVault__InsufficientBalance",
+    "inputs": [
+      {
+        "name": "vault",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
-      "inputs": [
-          {
-              "internalType": "address",
-              "name": "token",
-              "type": "address"
-          }
-      ],
-      "name": "pendingVaultAmount",
-      "outputs": [
-          {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-          }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+    "type": "error",
+    "name": "IpRoyaltyVault__InvalidTargetIpId",
+    "inputs": []
   },
   {
-      "inputs": [],
-      "name": "snapshot",
-      "outputs": [
-          {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-          }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
+    "type": "error",
+    "name": "IpRoyaltyVault__NegativeValueUnsafeCastingToUint256",
+    "inputs": []
   },
   {
-      "inputs": [],
-      "name": "symbol",
-      "outputs": [
-          {
-              "internalType": "string",
-              "name": "",
-              "type": "string"
-          }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+    "type": "error",
+    "name": "IpRoyaltyVault__NoClaimableTokens",
+    "inputs": []
   },
   {
-      "inputs": [],
-      "name": "tokens",
-      "outputs": [
-          {
-              "internalType": "address[]",
-              "name": "",
-              "type": "address[]"
-          }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+    "type": "error",
+    "name": "IpRoyaltyVault__NotAllowedToAddTokenToVault",
+    "inputs": []
   },
   {
-      "inputs": [],
-      "name": "totalSupply",
-      "outputs": [
-          {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-          }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+    "type": "error",
+    "name": "IpRoyaltyVault__NotWhitelistedRoyaltyToken",
+    "inputs": []
   },
   {
-      "inputs": [
-          {
-              "internalType": "uint256",
-              "name": "snapshotId",
-              "type": "uint256"
-          }
-      ],
-      "name": "totalSupplyAt",
-      "outputs": [
-          {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-          }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+    "type": "error",
+    "name": "IpRoyaltyVault__SameFromToAddress",
+    "inputs": [
+      {
+        "name": "vault",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "from",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
-      "inputs": [
-          {
-              "internalType": "address",
-              "name": "to",
-              "type": "address"
-          },
-          {
-              "internalType": "uint256",
-              "name": "amount",
-              "type": "uint256"
-          }
-      ],
-      "name": "transfer",
-      "outputs": [
-          {
-              "internalType": "bool",
-              "name": "",
-              "type": "bool"
-          }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
+    "type": "error",
+    "name": "IpRoyaltyVault__VaultDoesNotBelongToAnAncestor",
+    "inputs": []
   },
   {
-      "inputs": [
-          {
-              "internalType": "address",
-              "name": "from",
-              "type": "address"
-          },
-          {
-              "internalType": "address",
-              "name": "to",
-              "type": "address"
-          },
-          {
-              "internalType": "uint256",
-              "name": "amount",
-              "type": "uint256"
-          }
-      ],
-      "name": "transferFrom",
-      "outputs": [
-          {
-              "internalType": "bool",
-              "name": "",
-              "type": "bool"
-          }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
+    "type": "error",
+    "name": "IpRoyaltyVault__VaultsMustClaimAsSelf",
+    "inputs": []
   },
   {
-      "inputs": [
-          {
-              "internalType": "address",
-              "name": "token",
-              "type": "address"
-          },
-          {
-              "internalType": "uint256",
-              "name": "amount",
-              "type": "uint256"
-          }
-      ],
-      "name": "updateVaultBalance",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+    "type": "error",
+    "name": "IpRoyaltyVault__ZeroAmount",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "IpRoyaltyVault__ZeroBalance",
+    "inputs": [
+      {
+        "name": "vault",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "IpRoyaltyVault__ZeroDisputeModule",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "IpRoyaltyVault__ZeroGroupingModule",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "IpRoyaltyVault__ZeroIpAssetRegistry",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "IpRoyaltyVault__ZeroRoyaltyModule",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotInitializing",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ReentrancyGuardReentrantCall",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SafeERC20FailedOperation",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   }
 ]

@@ -36,8 +36,8 @@ class StoryClient:
         if not web3 or not account:
             raise ValueError("web3 and account must be provided")
 
-        if chain_id != 1516:
-            raise ValueError("only support Odyssey chain")
+        if chain_id != 1315:
+            raise ValueError("only support story devnet")
 
         self.web3 = web3
         self.account = account

@@ -6,7 +6,7 @@ from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client im
 from story_protocol_python_sdk.abi.LicenseRegistry.LicenseRegistry_client import LicenseRegistryClient
 from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import LicensingModuleClient
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
-
+from story_protocol_python_sdk.abi.ModuleRegistry.ModuleRegistry_client import ModuleRegistryClient
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
@@ -29,6 +29,7 @@ class License:
         self.license_registry_client = LicenseRegistryClient(web3)
         self.licensing_module_client  = LicensingModuleClient(web3)
         self.ip_asset_registry_client = IPAssetRegistryClient(web3)
+        self.module_registry_client = ModuleRegistryClient(web3)
 
         self.license_terms_util = LicenseTerms(web3)
 
@@ -318,8 +319,8 @@ class License:
         
         except Exception as e:
             raise e
-        
-    def mintLicenseTokens(self, licensor_ip_id: str, license_template: str, license_terms_id: int, amount: int, receiver: str, tx_options: dict = None) -> dict:
+    
+    def mintLicenseTokens(self, licensor_ip_id: str, license_template: str, license_terms_id: int, amount: int, receiver: str, max_minting_fee: int = 0, max_revenue_share: int = 0, tx_options: dict = None) -> dict:
         """
         Mints license tokens for the license terms attached to an IP.
 
@@ -328,6 +329,8 @@ class License:
         :param license_terms_id int: The ID of the license terms within the license template.
         :param amount int: The amount of license tokens to mint.
         :param receiver str: The address of the receiver.
+        :param max_minting_fee int: [Optional] The maximum minting fee that the caller is willing to pay. If set to 0 then no limit. Defaults to 0.
+        :param max_revenue_share int: [Optional] The maximum revenue share percentage allowed for minting the License Tokens. Must be between 0 and 100,000,000 (where 100,000,000 represents 100%). Defaults to 0.
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash and the license token IDs.
         """
@@ -359,7 +362,9 @@ class License:
                 license_terms_id,
                 amount,
                 receiver,
-                ZERO_ADDRESS,
+                ZERO_ADDRESS,  # Zero address for royalty context
+                max_minting_fee,
+                self.license_terms_util.get_revenue_share(max_revenue_share),
                 tx_options=tx_options
             )
 
@@ -401,4 +406,143 @@ class License:
             return self.license_template_client.getLicenseTerms(selectedLicenseTermsId)
         except Exception as e:
             raise ValueError(f"Failed to get license terms: {str(e)}")
+
+    def predictMintingLicenseFee(self, licensor_ip_id: str, license_terms_id: int, amount: int, license_template: str = None, receiver: str = None, tx_options: dict = None) -> dict:
+        """
+        Pre-compute the minting license fee for the given IP and license terms.
+
+        :param licensor_ip_id str: The IP ID of the licensor.
+        :param license_terms_id int: The ID of the license terms.
+        :param amount int: The amount of license tokens to mint.
+        :param license_template str: [Optional] The address of the license template, default is Programmable IP License.
+        :param receiver str: [Optional] The address of the receiver, default is your wallet address.
+        :param tx_options dict: [Optional] Transaction options.
+        :return dict: A dictionary containing the currency token and token amount.
+        """
+        try:
+            # Check if IP is registered
+            if not self.ip_asset_registry_client.isRegistered(licensor_ip_id):
+                raise ValueError(f"The licensor IP with id {licensor_ip_id} is not registered.")
+
+            # Check if license terms exist
+            if not self.license_template_client.exists(license_terms_id):
+                raise ValueError(f"License terms id {license_terms_id} does not exist.")
+
+            # Set defaults if not provided
+            if not receiver:
+                receiver = self.account.address
+            if not license_template:
+                license_template = self.license_template_client.contract.address
+
+            # Convert addresses to checksum format
+            licensor_ip_id = self.web3.to_checksum_address(licensor_ip_id)
+            license_template = self.web3.to_checksum_address(license_template)
+            receiver = self.web3.to_checksum_address(receiver)
+
+            response = self.licensing_module_client.predictMintingLicenseFee(
+                licensor_ip_id,
+                license_template,
+                license_terms_id,
+                amount,
+                receiver,
+                ZERO_ADDRESS  # Zero address for royalty context
+            )
+
+            return {
+                'currency': response[0],
+                'amount': response[1]
+            }
+
+        except Exception as e:
+            raise ValueError(f"Failed to predict minting license fee: {str(e)}")
+
+    def setLicensingConfig(self, ip_id: str, license_terms_id: int, licensing_config: dict, license_template: str = None, tx_options: dict = None) -> dict:
+        """
+        Sets the licensing configuration for a specific license terms of an IP. If both licenseTemplate and licenseTermsId are not specified then the licensing config apply to all licenses of given IP.
+
+        :param ip_id str: The address of the IP for which the configuration is being set.
+        :param license_terms_id int: The ID of the license terms within the license template.
+        :param licensing_config dict: The licensing configuration for the license.
+            :param isSet bool: Whether the configuration is set or not.
+            :param mintingFee int: The minting fee to be paid when minting license tokens.
+            :param hookData str: The data to be used by the licensing hook.
+            :param licensingHook str: The hook contract address for the licensing module, or address(0) if none.
+            :param commercialRevShare int: The commercial revenue share percentage.
+            :param disabled bool: Whether the license is disabled or not.
+            :param expectMinimumGroupRewardShare int: The minimum percentage of the group's reward share (0-100%, as 100 * 10^6).
+            :param expectGroupRewardPool str: The address of the expected group reward pool.
+        :param license_template str: [Optional] The address of the license template used. If not specified, config applies to all licenses.
+        :param tx_options dict: [Optional] Transaction options.
+        :return dict: A dictionary containing the transaction hash and success status.
+        """
+        try:
+            # Input validation
+            required_params = {
+                'isSet',
+                'mintingFee', 
+                'hookData',
+                'licensingHook',
+                'commercialRevShare',
+                'disabled',
+                'expectMinimumGroupRewardShare',
+                'expectGroupRewardPool'
+            }
+
+            # Check for missing parameters
+            missing_params = required_params - set(licensing_config.keys())
+            if missing_params:
+                raise ValueError(f"Missing required licensing_config parameters: {', '.join(missing_params)}. All parameters must be explicitly provided.")
+            
+            licensing_config['commercialRevShare'] = self.license_terms_util.get_revenue_share(licensing_config['commercialRevShare'])
+
+            if licensing_config['mintingFee'] < 0:
+                raise ValueError("The minting fee must be greater than 0.")
+
+            if not license_template:
+                license_template = ZERO_ADDRESS
+            
+            if license_template == ZERO_ADDRESS and licensing_config['commercialRevShare'] != 0:
+                raise ValueError("The license template cannot be zero address if commercial revenue share is not zero.")
+
+            # Convert addresses to checksum format
+            ip_id = self.web3.to_checksum_address(ip_id)
+            if license_template:
+                license_template = self.web3.to_checksum_address(license_template)
+            licensing_config['licensingHook'] = self.web3.to_checksum_address(licensing_config['licensingHook'])
+            licensing_config['expectGroupRewardPool'] = self.web3.to_checksum_address(licensing_config['expectGroupRewardPool'])
+
+            # Check if IP is registered
+            if not self.ip_asset_registry_client.isRegistered(ip_id):
+                raise ValueError(f"The licensor IP with id {ip_id} is not registered.")
+
+            # Check if license terms exist
+            if not self.license_template_client.exists(license_terms_id):
+                raise ValueError(f"License terms id {license_terms_id} does not exist.")
+
+            # Check if licensing hook is registered if provided
+            if licensing_config['licensingHook'] != ZERO_ADDRESS:
+                if not self.module_registry_client.isRegistered(licensing_config['licensingHook']):
+                    raise ValueError("The licensing hook is not registered.")
+
+            if license_template == ZERO_ADDRESS and license_terms_id != 0:
+                raise ValueError("The license template is zero address but license terms id is not zero.")
+            
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.licensing_module_client.build_setLicensingConfig_transaction,
+                ip_id,
+                license_template,
+                license_terms_id,
+                licensing_config,
+                tx_options=tx_options
+            )
+
+            return {
+                'txHash': response['txHash'],
+                'success': True if response.get('txReceipt') else None
+            }
+
+        except Exception as e:
+            raise ValueError(f"Failed to set licensing config: {str(e)}")
         

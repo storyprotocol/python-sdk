@@ -5,10 +5,14 @@ from src.story_protocol_python_sdk.story_client import StoryClient
 load_dotenv()
 
 # Mock ERC721 contract address
-MockERC721 = "0x823Ee98A899970bE0A4d1B5DBb3b9114F0696767"
+MockERC721 = "0xA3999e5ef20874478f1DD7a0534D05F766034478"
 
 # Mock ERC20 contract address (same as used in TypeScript tests)
-MockERC20 = "0x12A8b0DcC6e3bB0915638361D9D49942Da07F455"
+MockERC20 = "0x688abA77b2daA886c0aF029961Dc5fd219cEc3f6"
+
+ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+ROYALTY_POLICY="0xBe54FB168b3c982b7AaE60dB6CF75Bd8447b390E"
+ROYALTY_MODULE="0xD2f60c40fEbccf6311f8B47c4f2Ec6b040400086"
 
 def get_story_client_in_sepolia(web3: Web3, account) -> StoryClient:
     chain_id = 11155111  # Sepolia chain ID
@@ -20,6 +24,10 @@ def get_story_client_in_iliad(web3: Web3, account) -> StoryClient:
 
 def get_story_client_in_odyssey(web3: Web3, account) -> StoryClient:
     chain_id = 1516  # Odyssey chain ID
+    return StoryClient(web3, account, chain_id)
+
+def get_story_client_in_devnet(web3: Web3, account) -> StoryClient:
+    chain_id = 1315  # Devnet chain ID
     return StoryClient(web3, account, chain_id)
 
 def get_token_id(nft_contract, web3, account):
@@ -41,7 +49,7 @@ def get_token_id(nft_contract, web3, account):
     })
 
     signed_txn = account.sign_transaction(transaction)
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
     tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
 
     logs = tx_receipt['logs']
@@ -71,7 +79,7 @@ def mint_tokens(erc20_contract_address, web3, account, to_address, amount):
     })
     
     signed_txn = account.sign_transaction(transaction)
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
     tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
     
     return tx_receipt
@@ -104,7 +112,7 @@ def approve(erc20_contract_address, web3, account, spender_address, amount):
     })
     
     signed_txn = account.sign_transaction(transaction)
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
     tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
     
     return tx_receipt

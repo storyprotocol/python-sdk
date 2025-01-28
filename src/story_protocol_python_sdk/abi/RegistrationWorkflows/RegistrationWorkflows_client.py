@@ -30,12 +30,20 @@ class RegistrationWorkflowsClient:
         return self.contract.functions.createCollection(spgNftInitParams).build_transaction(tx_params)
     
     
-    def mintAndRegisterIp(self, spgNftContract, recipient, ipMetadata):
+    def mintAndRegisterIp(self, spgNftContract, recipient, ipMetadata, allowDuplicates):
         
-        return self.contract.functions.mintAndRegisterIp(spgNftContract, recipient, ipMetadata).transact()
+        return self.contract.functions.mintAndRegisterIp(spgNftContract, recipient, ipMetadata, allowDuplicates).transact()
         
-    def build_mintAndRegisterIp_transaction(self, spgNftContract, recipient, ipMetadata, tx_params):
-        return self.contract.functions.mintAndRegisterIp(spgNftContract, recipient, ipMetadata).build_transaction(tx_params)
+    def build_mintAndRegisterIp_transaction(self, spgNftContract, recipient, ipMetadata, allowDuplicates, tx_params):
+        return self.contract.functions.mintAndRegisterIp(spgNftContract, recipient, ipMetadata, allowDuplicates).build_transaction(tx_params)
+    
+    
+    def multicall(self, data):
+        
+        return self.contract.functions.multicall(data).transact()
+        
+    def build_multicall_transaction(self, data, tx_params):
+        return self.contract.functions.multicall(data).build_transaction(tx_params)
     
     
     def registerIp(self, nftContract, tokenId, ipMetadata, sigMetadata):

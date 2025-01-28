@@ -17,13 +17,13 @@
   },
   {
     "type": "function",
-    "name": "IP_ACCOUNT_REGISTRY",
+    "name": "IP_ASSET_REGISTRY",
     "inputs": [],
     "outputs": [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract IIPAccountRegistry"
+        "internalType": "contract IIPAssetRegistry"
       }
     ],
     "stateMutability": "view"

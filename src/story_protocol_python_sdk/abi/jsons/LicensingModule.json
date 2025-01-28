@@ -68,13 +68,13 @@
   },
   {
     "type": "function",
-    "name": "IP_ACCOUNT_REGISTRY",
+    "name": "IP_ASSET_REGISTRY",
     "inputs": [],
     "outputs": [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract IIPAccountRegistry"
+        "internalType": "contract IIPAssetRegistry"
       }
     ],
     "stateMutability": "view"
@@ -252,6 +252,16 @@
         "name": "royaltyContext",
         "type": "bytes",
         "internalType": "bytes"
+      },
+      {
+        "name": "maxMintingFee",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxRevenueShare",
+        "type": "uint32",
+        "internalType": "uint32"
       }
     ],
     "outputs": [
@@ -386,6 +396,21 @@
         "name": "royaltyContext",
         "type": "bytes",
         "internalType": "bytes"
+      },
+      {
+        "name": "maxMintingFee",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxRts",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "maxRevenueShare",
+        "type": "uint32",
+        "internalType": "uint32"
       }
     ],
     "outputs": [],
@@ -409,6 +434,11 @@
         "name": "royaltyContext",
         "type": "bytes",
         "internalType": "bytes"
+      },
+      {
+        "name": "maxRts",
+        "type": "uint32",
+        "internalType": "uint32"
       }
     ],
     "outputs": [],
@@ -470,6 +500,26 @@
             "name": "hookData",
             "type": "bytes",
             "internalType": "bytes"
+          },
+          {
+            "name": "commercialRevShare",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "disabled",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "expectMinimumGroupRewardShare",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "expectGroupRewardPool",
+            "type": "address",
+            "internalType": "address"
           }
         ]
       }
@@ -812,8 +862,163 @@
   },
   {
     "type": "error",
+    "name": "LicenseRegistry__LicenseTemplateCannotBeZeroAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LicenseRegistry__UnregisteredLicenseTemplate",
+    "inputs": [
+      {
+        "name": "licenseTemplate",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicensingModule__CurrentLicenseNotAllowOverrideRoyaltyPercent",
+    "inputs": [
+      {
+        "name": "licenseTemplate",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "licenseTermsId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "newRoyaltyPercent",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicensingModule__DerivativeAlreadyHasBeenMintedLicenseTokens",
+    "inputs": [
+      {
+        "name": "childIpId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "LicensingModule__DisputedIpId",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LicensingModule__ExceedMaxRevenueShare",
+    "inputs": [
+      {
+        "name": "ipId",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "licenseTemplate",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "licenseTermsId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "revenueShare",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "maxRevenueShare",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicensingModule__GroupIpCannotChangeHookData",
+    "inputs": [
+      {
+        "name": "groupId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicensingModule__GroupIpCannotChangeIsSet",
+    "inputs": [
+      {
+        "name": "groupId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicensingModule__GroupIpCannotChangeLicensingHook",
+    "inputs": [
+      {
+        "name": "groupId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicensingModule__GroupIpCannotChangeMintingFee",
+    "inputs": [
+      {
+        "name": "groupId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicensingModule__GroupIpCannotDecreaseRoyalty",
+    "inputs": [
+      {
+        "name": "groupId",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "newRoyaltyPercent",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "oldRoyaltyPercent",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicensingModule__GroupIpCannotSetExpectGroupRewardPool",
+    "inputs": [
+      {
+        "name": "groupId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
     "type": "error",
@@ -865,6 +1070,27 @@
   },
   {
     "type": "error",
+    "name": "LicensingModule__LicenseDisabled",
+    "inputs": [
+      {
+        "name": "ipId",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "licenseTemplate",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "licenseTermsId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "LicensingModule__LicenseNotCompatibleForDerivative",
     "inputs": [
       {
@@ -873,6 +1099,11 @@
         "internalType": "address"
       }
     ]
+  },
+  {
+    "type": "error",
+    "name": "LicensingModule__LicenseTemplateCannotBeZeroAddressToOverrideRoyaltyPercent",
+    "inputs": []
   },
   {
     "type": "error",
@@ -918,6 +1149,22 @@
   },
   {
     "type": "error",
+    "name": "LicensingModule__MintingFeeExceedMaxMintingFee",
+    "inputs": [
+      {
+        "name": "mintingFee",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxMintingFeeRemaining",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "LicensingModule__NoLicenseToken",
     "inputs": []
   },
@@ -930,6 +1177,22 @@
     "type": "error",
     "name": "LicensingModule__ReceiverZeroAddress",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LicensingModule__RoyaltyPolicyMismatch",
+    "inputs": [
+      {
+        "name": "royaltyPolicy",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "anotherRoyaltyPolicy",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
     "type": "error",

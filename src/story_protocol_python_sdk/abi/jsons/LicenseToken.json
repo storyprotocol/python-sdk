@@ -11,6 +11,11 @@
         "name": "disputeModule",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "licenseRegistry",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "nonpayable"
@@ -30,6 +35,19 @@
   },
   {
     "type": "function",
+    "name": "LICENSE_REGISTRY",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract ILicenseRegistry"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "LICENSING_MODULE",
     "inputs": [],
     "outputs": [
@@ -37,6 +55,19 @@
         "name": "",
         "type": "address",
         "internalType": "contract ILicensingModule"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_COMMERCIAL_REVENUE_SHARE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
       }
     ],
     "stateMutability": "view"
@@ -214,6 +245,11 @@
             "name": "transferable",
             "type": "bool",
             "internalType": "bool"
+          },
+          {
+            "name": "commercialRevShare",
+            "type": "uint32",
+            "internalType": "uint32"
           }
         ]
       }
@@ -365,6 +401,11 @@
         "name": "receiver",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "maxRevenueShare",
+        "type": "uint32",
+        "internalType": "uint32"
       }
     ],
     "outputs": [
@@ -712,6 +753,11 @@
         "name": "licenseTermsIds",
         "type": "uint256[]",
         "internalType": "uint256[]"
+      },
+      {
+        "name": "commercialRevShares",
+        "type": "uint32[]",
+        "internalType": "uint32[]"
       }
     ],
     "stateMutability": "view"
@@ -1119,6 +1165,74 @@
     "type": "error",
     "name": "LicenseToken__CallerNotLicensingModule",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LicenseToken__ChildIPAlreadyHasBeenMintedLicenseTokens",
+    "inputs": [
+      {
+        "name": "childIpId",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicenseToken__CommercialRevenueShareExceedMaxRevenueShare",
+    "inputs": [
+      {
+        "name": "commercialRevenueShare",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "maxRevenueShare",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "ipId",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "licenseTemplate",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "licenseTermsId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LicenseToken__InvalidRoyaltyPercent",
+    "inputs": [
+      {
+        "name": "invalidRoyaltyPercent",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "ipId",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "licenseTemplate",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "licenseTermsId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
     "type": "error",

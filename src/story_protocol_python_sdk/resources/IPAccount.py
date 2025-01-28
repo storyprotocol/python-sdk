@@ -1,6 +1,7 @@
 #src/story_protcol_python_sdk/resources/IPAccount.py
 
 from web3 import Web3
+from web3.exceptions import InvalidAddress 
 
 from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import IPAccountImplClient
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
@@ -25,6 +26,19 @@ class IPAccount:
         self.access_controller_client = AccessControllerClient(web3)
         self.ip_account_client = IPAccountImplClient(web3)
 
+    def getToken(self, ip_id: str) -> dict:
+        try:
+            checksum_address = Web3.to_checksum_address(ip_id)
+            ip_account_client = IPAccountImplClient(self.web3, contract_address=checksum_address)
+            chain_id, token_contract, token_id = ip_account_client.token()
+            return {
+                'chainId': chain_id,
+                'tokenContract': token_contract,
+                'tokenId': token_id
+            }
+        except ValueError:  # Catch ValueError from to_checksum_address
+            raise ValueError(f"Invalid IP id address: {ip_id}")
+
     def _execute_transaction(self, ip_id: str, to: str, build_transaction_method, *args, tx_options: dict = None) -> dict:
         """
         Internal helper to execute a transaction from the IP Account.
@@ -34,7 +48,7 @@ class IPAccount:
         :param build_transaction_method: Method to build the transaction
         :param args: Arguments to pass to the build method
         :param tx_options dict: [Optional] The transaction options
-        :return dict: A dictionary with the transaction hash
+        :return dict: A dictionary with the transaction hash or encoded data
         """
         try:
             if not self.web3.is_address(to):
@@ -53,9 +67,7 @@ class IPAccount:
                 tx_options=tx_options
             )
 
-            return {
-                'txHash': response['txHash']
-            }
+            return response
 
         except Exception as e:
             raise e
@@ -112,14 +124,12 @@ class IPAccount:
         )
         
     def getIpAccountNonce(self, ip_id: str) -> bytes:
-        """
-        Returns the IPAccount's internal nonce for transaction ordering.
-
-        :param ip_id str: The IP ID
-        :return bytes: The IPAccount's internal nonce for transaction ordering.
-        """
-        ip_account_client = IPAccountImplClient(self.web3, contract_address=ip_id)
-        return ip_account_client.state()
+        try:
+            checksum_address = Web3.to_checksum_address(ip_id)
+            ip_account_client = IPAccountImplClient(self.web3, contract_address=checksum_address)
+            return ip_account_client.state()
+        except ValueError:  # Catch ValueError from to_checksum_address
+            raise ValueError(f"Invalid IP id address: {ip_id}")
 
     def _is_registered(self, ip_id: str) -> bool:
         """

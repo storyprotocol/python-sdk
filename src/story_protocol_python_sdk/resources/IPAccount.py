@@ -1,4 +1,4 @@
-#src/story_protcol_python_sdk/resources/IPAccount.py
+"""Module for handling IP Account operations and transactions."""
 
 from web3 import Web3
 from web3.exceptions import InvalidAddress 
@@ -10,13 +10,16 @@ from story_protocol_python_sdk.abi.AccessController.AccessController_client impo
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
 class IPAccount:
-    """
-    A class to execute a transaction from the IP Account.
+    """A class to execute a transaction from the IP Account.
 
-    :param web3 Web3: An instance of Web3.
+    :param web3: An instance of Web3.
+    :type web3: Web3
     :param account: The Web3 account used to sign and send transactions.
-    :param chain_id int: The ID of the blockchain network.
+    :type account: Any
+    :param chain_id: The ID of the blockchain network.
+    :type chain_id: int
     """
+
     def __init__(self, web3: Web3, account, chain_id: int):
         self.web3 = web3
         self.account = account
@@ -27,6 +30,14 @@ class IPAccount:
         self.ip_account_client = IPAccountImplClient(web3)
 
     def getToken(self, ip_id: str) -> dict:
+        """Retrieve token information associated with an IP account.
+
+        :param ip_id: The IP ID to query.
+        :type ip_id: str
+        :returns: Dictionary containing chainId, tokenContract, and tokenId.
+        :rtype: dict
+        :raises ValueError: If the IP ID is invalid.
+        """
         try:
             checksum_address = Web3.to_checksum_address(ip_id)
             ip_account_client = IPAccountImplClient(self.web3, contract_address=checksum_address)
@@ -40,15 +51,24 @@ class IPAccount:
             raise ValueError(f"Invalid IP id address: {ip_id}")
 
     def _execute_transaction(self, ip_id: str, to: str, build_transaction_method, *args, tx_options: dict = None) -> dict:
-        """
-        Internal helper to execute a transaction from the IP Account.
+        """Execute a transaction from the IP Account.
 
-        :param ip_id str: The IP id to get IP account
-        :param to str: The recipient of the transaction
-        :param build_transaction_method: Method to build the transaction
-        :param args: Arguments to pass to the build method
-        :param tx_options dict: [Optional] The transaction options
-        :return dict: A dictionary with the transaction hash or encoded data
+        Internal helper method that handles transaction execution and validation.
+
+        :param ip_id: The IP ID to get IP account.
+        :type ip_id: str
+        :param to: The recipient of the transaction.
+        :type to: str
+        :param build_transaction_method: Method to build the transaction.
+        :type build_transaction_method: Callable
+        :param args: Arguments to pass to the build method.
+        :type args: tuple
+        :param tx_options: Optional transaction options.
+        :type tx_options: dict, optional
+        :returns: Dictionary containing transaction details.
+        :rtype: dict
+        :raises ValueError: If recipient address is invalid or IP is not registered.
+        :raises Exception: For other transaction-related errors.
         """
         try:
             if not self.web3.is_address(to):
@@ -73,15 +93,20 @@ class IPAccount:
             raise e
 
     def execute(self, to: str, value: int, ip_id: str, data: str, tx_options: dict = None) -> dict:
-        """
-        Executes a transaction from the IP Account.
+        """Execute a transaction from the IP Account.
 
-        :param to str: The recipient of the transaction.
-        :param value int: The amount of Ether to send.
-        :param ip_id str: The IP id to get IP account
-        :param data str: The data to send along with the transaction.
-        :param tx_options dict: [Optional] The transaction options.
-        :return dict: A dictionary with the transaction hash.
+        :param to: The recipient of the transaction.
+        :type to: str
+        :param value: The amount of Ether to send.
+        :type value: int
+        :param ip_id: The IP ID to get IP account.
+        :type ip_id: str
+        :param data: The data to send with the transaction.
+        :type data: str
+        :param tx_options: Optional transaction options.
+        :type tx_options: dict, optional
+        :returns: Dictionary containing the transaction hash.
+        :rtype: dict
         """
         ip_account_client = IPAccountImplClient(self.web3, contract_address=ip_id)
         return self._execute_transaction(
@@ -96,18 +121,26 @@ class IPAccount:
         )
 
     def executeWithSig(self, ip_id: str, to: str, data: str, signer: str, deadline: int, signature: str, value: int = 0, tx_options: dict = None) -> dict:
-        """
-        Executes a transaction from the IP Account.
+        """Execute a signed transaction from the IP Account.
 
-        :param ip_id str: The Ip Id to get ip account.
-        :param to str: The recipient of the transaction.
-        :param data str: The data to send along with the transaction.
-        :param signer str: The signer of the transaction.
-        :param deadline int: The deadline of the transaction signature.
-        :param signature str: The signature of the transaction, EIP-712 encoded.
-        :param value int: [Optional] The amount of Ether to send.
-        :param tx_options dict: [Optional] The transaction options.
-        :return dict: A dictionary with the transaction hash.
+        :param ip_id: The IP ID to get IP account.
+        :type ip_id: str
+        :param to: The recipient of the transaction.
+        :type to: str
+        :param data: The data to send with the transaction.
+        :type data: str
+        :param signer: The signer of the transaction.
+        :type signer: str
+        :param deadline: The deadline of the transaction signature.
+        :type deadline: int
+        :param signature: The EIP-712 encoded transaction signature.
+        :type signature: str
+        :param value: Optional amount of Ether to send.
+        :type value: int, optional
+        :param tx_options: Optional transaction options.
+        :type tx_options: dict, optional
+        :returns: Dictionary containing the transaction hash.
+        :rtype: dict
         """
         ip_account_client = IPAccountImplClient(self.web3, contract_address=ip_id)
         return self._execute_transaction(
@@ -124,6 +157,14 @@ class IPAccount:
         )
         
     def getIpAccountNonce(self, ip_id: str) -> bytes:
+        """Get the IP Account's internal nonce for transaction ordering.
+
+        :param ip_id: The IP ID to query.
+        :type ip_id: str
+        :returns: The IP Account's internal nonce for transaction ordering.
+        :rtype: bytes
+        :raises ValueError: If the IP ID is invalid.
+        """
         try:
             checksum_address = Web3.to_checksum_address(ip_id)
             ip_account_client = IPAccountImplClient(self.web3, contract_address=checksum_address)
@@ -132,10 +173,11 @@ class IPAccount:
             raise ValueError(f"Invalid IP id address: {ip_id}")
 
     def _is_registered(self, ip_id: str) -> bool:
-        """
-        Check if an IP is registered.
+        """Check if an IP is registered.
 
-        :param ip_id str: The IP ID to check.
-        :return bool: True if registered, False otherwise.
+        :param ip_id: The IP ID to check.
+        :type ip_id: str
+        :returns: True if registered, False otherwise.
+        :rtype: bool
         """        
         return self.ip_asset_registry_client.isRegistered(ip_id)

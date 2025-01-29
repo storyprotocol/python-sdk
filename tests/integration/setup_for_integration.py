@@ -31,6 +31,11 @@ load_dotenv(override=True)
 private_key = os.getenv('WALLET_PRIVATE_KEY')
 rpc_url = os.getenv('RPC_PROVIDER_URL')
 
+if not private_key:
+    raise ValueError("WALLET_PRIVATE_KEY environment variable is not set")
+if not rpc_url:
+    raise ValueError("RPC_PROVIDER_URL environment variable is not set")
+
 # Initialize Web3
 web3 = Web3(Web3.HTTPProvider(rpc_url))
 if not web3.is_connected():

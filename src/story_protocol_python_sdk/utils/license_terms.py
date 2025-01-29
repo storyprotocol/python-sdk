@@ -46,7 +46,7 @@ class LicenseTerms:
             if not term or 'defaultMintingFee' not in term or 'currency' not in term:
                 raise ValueError("DefaultMintingFee, currency are required for commercial use PIL.")
             
-            if term['royaltyPolicyAddress'] == None:
+            if term['royaltyPolicyAddress'] is None:
                 term['royaltyPolicyAddress'] = ROYALTY_POLICY
                 
             license_terms.update({

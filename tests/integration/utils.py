@@ -5,14 +5,15 @@ from src.story_protocol_python_sdk.story_client import StoryClient
 load_dotenv()
 
 # Mock ERC721 contract address
-MockERC721 = "0xA3999e5ef20874478f1DD7a0534D05F766034478"
+MockERC721 = "0xa1119092ea911202E0a65B743a13AE28C5CF2f21"
 
 # Mock ERC20 contract address (same as used in TypeScript tests)
-MockERC20 = "0x688abA77b2daA886c0aF029961Dc5fd219cEc3f6"
+MockERC20 = "0xF2104833d386a2734a4eB3B8ad6FC6812F29E38E"
 
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
-ROYALTY_POLICY="0xBe54FB168b3c982b7AaE60dB6CF75Bd8447b390E"
+ROYALTY_POLICY="0xBe54FB168b3c982b7AaE60dB6CF75Bd8447b390E" #Royalty Policy LAP
 ROYALTY_MODULE="0xD2f60c40fEbccf6311f8B47c4f2Ec6b040400086"
+PIL_LICENSE_TEMPLATE="0x2E896b0b2Fdb7457499B56AAaA4AE55BCB4Cd316"
 
 def get_story_client_in_sepolia(web3: Web3, account) -> StoryClient:
     chain_id = 11155111  # Sepolia chain ID

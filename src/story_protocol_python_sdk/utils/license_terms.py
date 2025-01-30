@@ -5,6 +5,7 @@ from web3 import Web3
 from story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client import RoyaltyModuleClient
 
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+ROYALTY_POLICY = "0xBe54FB168b3c982b7AaE60dB6CF75Bd8447b390E"
 
 class LicenseTerms:
     def __init__(self, web3: Web3):
@@ -45,8 +46,8 @@ class LicenseTerms:
             if not term or 'defaultMintingFee' not in term or 'currency' not in term:
                 raise ValueError("DefaultMintingFee, currency are required for commercial use PIL.")
             
-            if 'royaltyPolicyAddress' not in term:
-                raise ValueError("royaltyPolicyAddress is required")
+            if term['royaltyPolicyAddress'] is None:
+                term['royaltyPolicyAddress'] = ROYALTY_POLICY
                 
             license_terms.update({
                 'defaultMintingFee': int(term['defaultMintingFee']),

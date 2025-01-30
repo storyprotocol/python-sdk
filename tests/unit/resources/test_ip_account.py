@@ -3,9 +3,8 @@ import sys
 import pytest
 from unittest.mock import patch, MagicMock
 from web3 import Web3
-from dotenv import load_dotenv
 from web3.exceptions import InvalidAddress
-
+from eth_utils import is_address, to_checksum_address
 
 # Ensure the src directory is in the Python path
 current_dir = os.path.dirname(__file__)
@@ -15,29 +14,54 @@ if src_path not in sys.path:
 
 from src.story_protocol_python_sdk.resources.IPAccount import IPAccount
 
-# Load environment variables from .env file
-load_dotenv()
-private_key = os.getenv('WALLET_PRIVATE_KEY')
-rpc_url = os.getenv('RPC_PROVIDER_URL')
-
-# Initialize Web3
-web3 = Web3(Web3.HTTPProvider(rpc_url))
-
-# Check if connected
-if not web3.is_connected():
-    raise Exception("Failed to connect to Web3 provider")
-
-# Set up the account with the private key
-account = web3.eth.account.from_key(private_key)
+# Constants
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 VALID_IP_ID = "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"
 TX_HASH = "0xe87b172eee35872179ced53ea4f3f314b12cd0f5d0034e7f0ae3c4efce9ba6f1"
 
+# Web3 mock
+class MockWeb3:
+    def __init__(self):
+        self.eth = MagicMock()
+        
+    @staticmethod
+    def to_checksum_address(address):
+        if not is_address(address):
+            raise ValueError(f"The recipient of the transaction {address} is not a valid address")
+        return to_checksum_address(address)
+    
+    @staticmethod
+    def to_bytes(hexstr=None, **kwargs):
+        return Web3.to_bytes(hexstr=hexstr, **kwargs)
+    
+    @staticmethod
+    def to_wei(number, unit):
+        return Web3.to_wei(number, unit)
+    
+    @staticmethod
+    def is_address(address):
+        return is_address(address)
+        
+    def is_connected(self):
+        return True
+    
 @pytest.fixture
-def ip_account():
-    chain_id = 11155111  # Sepolia chain ID
-    return IPAccount(web3, account, chain_id)
+def mock_web3():
+    return MockWeb3()
 
+@pytest.fixture
+def mock_account():
+    account = MagicMock()
+    account.address = "0xF60cBF0Ea1A61567F1dDaf79A6219D20d189155c"
+    return account
+
+@pytest.fixture
+def ip_account(mock_web3, mock_account):
+    chain_id = 11155111  # Sepolia chain ID
+    return IPAccount(mock_web3, mock_account, chain_id)
+
+@pytest.mark.unit
+@pytest.mark.unit
 @pytest.mark.unit
 class TestExecute:
     def test_invalid_recipient_address(self, ip_account):
@@ -56,17 +80,24 @@ class TestExecute:
         data = "0x11111111111111111111111111111"
         value = 2
 
+        # Mock signed transaction
+        mock_signed_txn = MagicMock()
+        mock_signed_txn.raw_transaction = b'raw_transaction_bytes'
+
+        # Mock transaction hash with hex method that returns hash WITHOUT '0x' prefix
+        class MockTxHash:
+            def hex(self):
+                return TX_HASH[2:]  # Remove '0x' prefix when returning the hash
+
+        mock_tx_hash = MockTxHash()
+
+        
+        ip_account.account.sign_transaction = MagicMock(return_value=mock_signed_txn)
+
         with patch.object(ip_account, '_is_registered', return_value=True), \
-             patch('story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client.IPAccountImplClient.build_execute_transaction', return_value={
-                 'to': to_address,
-                 'value': value,
-                 'data': data,
-                 'gas': 2000000,
-                 'gasPrice': Web3.to_wei('50', 'gwei'),
-                 'nonce': 0
-             }), \
-             patch('web3.eth.Eth.send_raw_transaction', return_value=Web3.to_bytes(hexstr=TX_HASH)), \
-             patch('web3.eth.Eth.wait_for_transaction_receipt', return_value={'status': 1, 'logs': []}):
+            patch.object(ip_account.web3.eth, 'get_transaction_count', return_value=0), \
+            patch.object(ip_account.web3.eth, 'send_raw_transaction', return_value=mock_tx_hash), \
+            patch.object(ip_account.web3.eth, 'wait_for_transaction_receipt', return_value={'status': 1}):
 
             response = ip_account.execute(to_address, value, VALID_IP_ID, data)
             assert response['txHash'] == TX_HASH[2:]
@@ -77,34 +108,32 @@ class TestExecute:
         value = 2
         tx_options = {'waitForTransaction': True}
 
-        mock_transaction = {
-            'to': to_address,
-            'value': value,
-            'data': data,
-            'gas': 2000000,
-            'gasPrice': Web3.to_wei('50', 'gwei'),
-            'nonce': 0,
-            'chainId': 11155111  # Sepolia chain ID
-        }
+        mock_signed_txn = MagicMock()
+        mock_signed_txn.raw_transaction = b'raw_transaction_bytes'
+
+        class MockTxHash:
+            def hex(self):
+                return TX_HASH[2:]  # Remove '0x' prefix when returning the hash
+
+        mock_tx_hash = MockTxHash()
+
+        ip_account.account.sign_transaction = MagicMock(return_value=mock_signed_txn)
 
         with patch.object(ip_account, '_is_registered', return_value=True), \
-            patch('story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client.IPAccountImplClient.build_execute_transaction',
-                return_value=mock_transaction), \
-            patch('web3.eth.Eth.send_raw_transaction', return_value=Web3.to_bytes(hexstr=TX_HASH)), \
-            patch('web3.eth.Eth.wait_for_transaction_receipt', return_value={'status': 1}):
+             patch.object(ip_account.web3.eth, 'get_transaction_count', return_value=0), \
+             patch.object(ip_account.web3.eth, 'send_raw_transaction', return_value=mock_tx_hash), \
+             patch.object(ip_account.web3.eth, 'wait_for_transaction_receipt', return_value={'status': 1}):
 
             response = ip_account.execute(to_address, value, VALID_IP_ID, data, tx_options=tx_options)
             assert response['txHash'] == TX_HASH[2:]
 
     def test_encoded_tx_data_only(self, ip_account):
-        print("Starting test_encoded_tx_data_only")
         to_address = "0xF9936a224b3Deb6f9A4645ccAfa66f7ECe83CF0A"
         data = "0x11111111111111111111111111111"
         value = 2
         tx_options = {'encodedTxDataOnly': True}
         encoded_data = "0x123456789"
 
-        print("Setting up mock transaction")
         mock_tx = {
             'to': to_address,
             'value': value,
@@ -115,22 +144,15 @@ class TestExecute:
             'chainId': 11155111
         }
 
-        print("Setting up patches")
         with patch.object(ip_account, '_is_registered', return_value=True), \
             patch('story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client.IPAccountImplClient.build_execute_transaction',
                 return_value=mock_tx), \
             patch('web3.eth.Eth.get_transaction_count',
                 return_value=0):
 
-            print("Executing ip_account.execute")
             response = ip_account.execute(to_address, value, VALID_IP_ID, data, tx_options=tx_options)
-            print("Got response")
-            
-            # We expect just the encodedTxData in the response
             assert 'encodedTxData' in response
             assert response['encodedTxData'] == mock_tx
-
-        print("Test completed")
 
 class TestExecuteWithSig:
     def test_invalid_recipient_address(self, ip_account):
@@ -153,26 +175,21 @@ class TestExecuteWithSig:
         deadline = 20
         signature = "0x11111111111111111111111111111"
 
-        # Create a mock transaction dictionary
-        mock_tx = {
-            'to': to_address,
-            'value': value,
-            'data': data,
-            'gas': 2000000,
-            'gasPrice': Web3.to_wei('50', 'gwei'),
-            'nonce': 0,
-            'chainId': 11155111  # Sepolia chain ID
-        }
+        mock_signed_txn = MagicMock()
+        mock_signed_txn.raw_transaction = b'raw_transaction_bytes'
+
+        class MockTxHash:
+            def hex(self):
+                return TX_HASH[2:] 
+
+        mock_tx_hash = MockTxHash()
+        
+        ip_account.account.sign_transaction = MagicMock(return_value=mock_signed_txn)
 
         with patch.object(ip_account, '_is_registered', return_value=True), \
-            patch('story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client.IPAccountImplClient.build_executeWithSig_transaction',
-                return_value=mock_tx), \
-            patch('web3.eth.Eth.send_raw_transaction', 
-                return_value=Web3.to_bytes(hexstr=TX_HASH)), \
-            patch('web3.eth.Eth.wait_for_transaction_receipt', 
-                return_value={'status': 1}), \
-            patch('web3.eth.Eth.get_transaction_count',
-                return_value=0):
+             patch.object(ip_account.web3.eth, 'get_transaction_count', return_value=0), \
+             patch.object(ip_account.web3.eth, 'send_raw_transaction', return_value=mock_tx_hash), \
+             patch.object(ip_account.web3.eth, 'wait_for_transaction_receipt', return_value={'status': 1}):
 
             response = ip_account.executeWithSig(VALID_IP_ID, to_address, data, signer, deadline, signature, value)
             assert response['txHash'] == TX_HASH[2:]
@@ -185,25 +202,21 @@ class TestExecuteWithSig:
         signature = ZERO_ADDRESS
         tx_options = {'waitForTransaction': True}
 
-        mock_tx = {
-            'to': to_address,
-            'value': 0,
-            'data': data,
-            'gas': 2000000,
-            'gasPrice': Web3.to_wei('50', 'gwei'),
-            'nonce': 0,
-            'chainId': 11155111 
-        }
+        mock_signed_txn = MagicMock()
+        mock_signed_txn.raw_transaction = b'raw_transaction_bytes'
+        
+        class MockTxHash:
+            def hex(self):
+                return TX_HASH[2:]  # Remove '0x' prefix when returning the hash
+
+        mock_tx_hash = MockTxHash()
+        
+        ip_account.account.sign_transaction = MagicMock(return_value=mock_signed_txn)
 
         with patch.object(ip_account, '_is_registered', return_value=True), \
-            patch('story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client.IPAccountImplClient.build_executeWithSig_transaction',
-                return_value=mock_tx), \
-            patch('web3.eth.Eth.send_raw_transaction', 
-                return_value=Web3.to_bytes(hexstr=TX_HASH)), \
-            patch('web3.eth.Eth.wait_for_transaction_receipt', 
-                return_value={'status': 1}), \
-            patch('web3.eth.Eth.get_transaction_count',
-                return_value=0):
+             patch.object(ip_account.web3.eth, 'get_transaction_count', return_value=0), \
+             patch.object(ip_account.web3.eth, 'send_raw_transaction', return_value=mock_tx_hash), \
+             patch.object(ip_account.web3.eth, 'wait_for_transaction_receipt', return_value={'status': 1}):
 
             response = ip_account.executeWithSig(
                 VALID_IP_ID, to_address, data, signer, deadline, signature,

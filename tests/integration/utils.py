@@ -43,19 +43,68 @@ def get_token_id(nft_contract, web3, account):
     ]
 
     contract = web3.eth.contract(address=nft_contract, abi=contract_abi)
-    transaction = contract.functions.mint(account.address).build_transaction({
-        'from': account.address,
-        'nonce': web3.eth.get_transaction_count(account.address),
-        'gas': 2000000
-    })
+    
+    try:
+        transaction = contract.functions.mint(account.address).build_transaction({
+            'from': account.address,
+            'nonce': web3.eth.get_transaction_count(account.address),
+            'gas': 2000000
+        })
 
-    signed_txn = account.sign_transaction(transaction)
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
-    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+        signed_txn = account.sign_transaction(transaction)
+        tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
+        tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
 
-    logs = tx_receipt['logs']
-    if logs[0]['topics'][3]:
-        return int(logs[0]['topics'][3].hex(), 16)
+        logs = tx_receipt['logs']
+        if len(logs) > 0 and len(logs[0]['topics']) > 3:
+            return int(logs[0]['topics'][3].hex(), 16)
+        raise ValueError(f"No token ID in logs: {tx_receipt}")
+        
+    except Exception as e:
+        raise e
+
+def mint_by_spg(nft_contract, web3, account, metadata_uri=""):
+    contract_abi = [
+        {
+            "inputs": [
+                {"internalType": "address", "name": "to", "type": "address"},
+                {"internalType": "string", "name": "nftMetadataURI", "type": "string"},
+                {"internalType": "bytes32", "name": "nftMetadataHash", "type": "bytes32"},
+                {"internalType": "bool", "name": "allowDuplicates", "type": "bool"}
+            ],
+            "name": "mint",
+            "outputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        }
+    ]
+
+    contract = web3.eth.contract(address=nft_contract, abi=contract_abi)
+    
+    try:
+        zero_hash = '0x' + '0' * 64
+        transaction = contract.functions.mint(
+            account.address,
+            metadata_uri,
+            zero_hash,
+            True
+        ).build_transaction({
+            'from': account.address,
+            'nonce': web3.eth.get_transaction_count(account.address),
+            'gas': 2000000
+        })
+
+        signed_txn = account.sign_transaction(transaction)
+        tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
+        tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+
+        logs = tx_receipt['logs']
+        if len(logs) > 0 and len(logs[0]['topics']) > 3:
+            return int(logs[0]['topics'][3].hex(), 16)
+        raise ValueError(f"No token ID in logs: {tx_receipt}")
+        
+    except Exception as e:
+        raise e
 
 def mint_tokens(erc20_contract_address, web3, account, to_address, amount):
     contract_abi = [

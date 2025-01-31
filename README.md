@@ -58,6 +58,20 @@ odyssey_chain_id = 1516
 story_client = StoryClient(web3, account, odyssey_chain_id)
 ```
 
+## Running test cases
+
+- Integration Tests
+
+```
+pytest
+```
+
+- Unit Tests
+
+```
+pytest tests/unit/resources -v -ra -q
+```
+
 ## Release
 
 | Package                         | Description                                    |

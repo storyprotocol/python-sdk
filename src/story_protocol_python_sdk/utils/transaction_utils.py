@@ -2,6 +2,8 @@
 
 from web3 import Web3
 
+TRANSACTION_TIMEOUT = 300
+
 def build_and_send_transaction(web3: Web3, account, client_function, *client_args, tx_options: dict = None) -> dict:
     """
     Builds and sends a transaction using the provided client function and arguments.
@@ -11,7 +13,7 @@ def build_and_send_transaction(web3: Web3, account, client_function, *client_arg
     :param client_function: The client function to build the transaction.
     :param client_args: Arguments to pass to the client function.
     :param tx_options dict: Optional transaction options.
-    :return dict: A dictionary with the transaction hash and receipt.
+    :return dict: A dictionary with the transaction hash and receipt, or encoded data if encodedTxDataOnly is True.
     :raises Exception: If there is an error during the transaction process.
     """
     try:
@@ -29,11 +31,16 @@ def build_and_send_transaction(web3: Web3, account, client_function, *client_arg
 
         transaction = client_function(*client_args, transaction_options)
 
-        signed_txn = account.sign_transaction(transaction)
+        # If encodedTxDataOnly is True, return the transaction data without sending
+        if tx_options.get('encodedTxDataOnly'):
+            return {
+                'encodedTxData': transaction
+            }
 
+        signed_txn = account.sign_transaction(transaction)
         tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
 
-        tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)
+        tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash, timeout=TRANSACTION_TIMEOUT)
 
         return {
             'txHash': tx_hash.hex(),

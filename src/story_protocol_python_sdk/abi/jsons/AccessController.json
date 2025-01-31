@@ -239,7 +239,7 @@
   },
   {
     "type": "function",
-    "name": "setBatchPermissions",
+    "name": "setTransientBatchPermissions",
     "inputs": [
       {
         "name": "permissions",
@@ -279,7 +279,7 @@
   },
   {
     "type": "function",
-    "name": "setPermission",
+    "name": "setTransientPermission",
     "inputs": [
       {
         "name": "ipAccount",

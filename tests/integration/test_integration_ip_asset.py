@@ -28,6 +28,9 @@ web3 = Web3(Web3.HTTPProvider(rpc_url))
 if not web3.is_connected():
     raise Exception("Failed to connect to Web3 provider")
 
+print("web3 was successfully connected to story url")
+
+# Set up the account with the private key
 account = web3.eth.account.from_key(private_key)
 
 @pytest.fixture(scope="module")

@@ -7,7 +7,9 @@
                 "PermissionSet",
                 "setPermission", 
                 "setAllPermissions",
-                "setBatchPermissions"
+                "setBatchPermissions",
+                "setTransientPermission",
+                "setTransientBatchPermissions"
             ]
         },
         {
@@ -198,7 +200,8 @@
             "contract_address": "0x529a750E02d8E2f15649c13D69a465286a780e24",
             "functions": [
                 "exists",
-                "hasIpAttachedLicenseTerms"
+                "hasIpAttachedLicenseTerms",
+                "getRoyaltyPercent"
             ]
         },
         {

@@ -2,6 +2,8 @@
 
 from web3 import Web3
 
+TRANSACTION_TIMEOUT = 300
+
 def build_and_send_transaction(web3: Web3, account, client_function, *client_args, tx_options: dict = None) -> dict:
     """
     Builds and sends a transaction using the provided client function and arguments.
@@ -38,7 +40,7 @@ def build_and_send_transaction(web3: Web3, account, client_function, *client_arg
         signed_txn = account.sign_transaction(transaction)
         tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
 
-        tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)
+        tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash, timeout=TRANSACTION_TIMEOUT)
 
         return {
             'txHash': tx_hash.hex(),

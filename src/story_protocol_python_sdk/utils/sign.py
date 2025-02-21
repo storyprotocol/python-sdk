@@ -10,6 +10,7 @@ from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import IPA
 from story_protocol_python_sdk.abi.AccessController.AccessController_client import AccessControllerClient
 
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+ZERO_FUNC = "0x00000000"
 
 class Sign:
     def __init__(self, web3: Web3, chain_id: int, account):
@@ -104,28 +105,28 @@ class Sign:
         else:
             return current_timestamp + 1000
         
-    def get_permission_signature(self, ip_id: str, deadline: int, permissions: list, permission_func: str = "setPermission", state: str = None) -> dict:
+    def get_permission_signature(self, ip_id: str, deadline: int, permissions: list, permission_func: str = "setTransientPermission", state: str = None) -> dict:
         """
         Get the signature for setting permissions.
 
         :param ip_id str: The IP ID
         :param deadline int: The deadline
         :param permissions list: The permissions
-        :param permission_func str: The permission function (defaults to "setPermission")
+        :param permission_func str: The permission function (defaults to "setTransientPermission")
         :param state str: The state
         :return dict: The signature response
         """
         try:
             # Get permission function name
-            permission_function = permission_func if permission_func else "setPermission"
+            permission_function = permission_func if permission_func else "setTransientPermission"
 
             # Get access controller address for chain
             access_address = self.access_controller_client.contract.address
 
-            if permission_function == "setPermission":
+            if permission_function == "setTransientPermission":
                 # Encode single permission
                 encode_data = self.access_controller_client.contract.encode_abi(
-                    abi_element_identifier="setPermission",
+                    abi_element_identifier="setTransientPermission",
                     args=[
                         self.web3.to_checksum_address(permissions[0]['ipId']),
                         self.web3.to_checksum_address(permissions[0]['signer']),
@@ -140,7 +141,7 @@ class Sign:
                     'ipAccount': self.web3.to_checksum_address(p['ipId']),
                     'signer': self.web3.to_checksum_address(p['signer']),
                     'to': self.web3.to_checksum_address(p['to']),
-                    'func': Web3.keccak(text=p[0]['func'])[:4].hex() if p[0].get('func') else "0x00000000",
+                    'func': Web3.keccak(text=p['func'])[:4].hex() if p.get('func') else ZERO_FUNC,
                     'permission': p['permission']
                 } for p in permissions]
 

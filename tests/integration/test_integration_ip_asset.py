@@ -44,9 +44,10 @@ def test_register_ip_asset(story_client, child_ip_id):
 def test_register_ip_asset_with_metadata(story_client):
     token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
     metadata = {
-        'metadataURI': "test-uri",
-        'metadataHash': web3.to_hex(web3.keccak(text="test-metadata-hash")),
-        'nftMetadataHash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash"))
+        'ip_metadata_uri': "test-uri",
+        'ip_metadata_hash': web3.to_hex(web3.keccak(text="test-metadata-hash")),
+        'nft_metadata_uri': "test-nft-uri",
+        'nft_metadata_hash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash"))
     }
 
     response = story_client.IPAsset.register(
@@ -143,6 +144,14 @@ def nft_collection(story_client):
     return txData['nftContract']
 
 def test_mint_register_attach_terms(story_client, nft_collection):
+
+    metadata = {
+        'ip_metadata_uri': "test-uri",
+        'ip_metadata_hash': web3.to_hex(web3.keccak(text="test-metadata-hash")),
+        'nft_metadata_uri': "test-nft-uri",
+        'nft_metadata_hash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash"))
+    }
+
     response = story_client.IPAsset.mintAndRegisterIpAssetWithPilTerms(
         spg_nft_contract=nft_collection,
         terms=[{
@@ -176,6 +185,7 @@ def test_mint_register_attach_terms(story_client, nft_collection):
                 'expect_group_reward_pool': ZERO_ADDRESS
             }
         }],
+        ip_metadata=metadata
     )
 
     assert 'txHash' in response

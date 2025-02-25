@@ -1,8 +1,13 @@
 # Mock ERC721 contract address
-MockERC721 = "0x7ee32b8B515dEE0Ba2F25f612A04a731eEc24F49"
+MockERC721 = "0xa1119092ea911202E0a65B743a13AE28C5CF2f21"
 
 # Mock ERC20 contract address (same as used in TypeScript tests)
-MockERC20 = "0xB132A6B7AE652c974EE1557A3521D53d18F6739f"
+MockERC20 = "0xF2104833d386a2734a4eB3B8ad6FC6812F29E38E"
+
+ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+ROYALTY_POLICY="0xBe54FB168b3c982b7AaE60dB6CF75Bd8447b390E" #Royalty Policy LAP
+ROYALTY_MODULE="0xD2f60c40fEbccf6311f8B47c4f2Ec6b040400086"
+PIL_LICENSE_TEMPLATE="0x2E896b0b2Fdb7457499B56AAaA4AE55BCB4Cd316"
 
 def get_token_id(nft_contract, web3, account):
     contract_abi = [
@@ -15,23 +20,26 @@ def get_token_id(nft_contract, web3, account):
         }
     ]
 
-    # Fetch the current average gas price from the node plus 10%
-    current_gas_price = int(web3.eth.gas_price * 1.1)
-
     contract = web3.eth.contract(address=nft_contract, abi=contract_abi)
-    transaction = contract.functions.mint(account.address).build_transaction({
-        'from': account.address,
-        'nonce': web3.eth.get_transaction_count(account.address),
-        'gas': 2000000,
-        'gasPrice': current_gas_price
-    })
-    signed_txn = account.sign_transaction(transaction)
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
-    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    
+    try:
+        transaction = contract.functions.mint(account.address).build_transaction({
+            'from': account.address,
+            'nonce': web3.eth.get_transaction_count(account.address),
+            'gas': 2000000
+        })
 
-    logs = tx_receipt['logs']
-    if logs[0]['topics'][3]:
-        return int(logs[0]['topics'][3].hex(), 16)
+        signed_txn = account.sign_transaction(transaction)
+        tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
+        tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+
+        logs = tx_receipt['logs']
+        if len(logs) > 0 and len(logs[0]['topics']) > 3:
+            return int(logs[0]['topics'][3].hex(), 16)
+        raise ValueError(f"No token ID in logs: {tx_receipt}")
+        
+    except Exception as e:
+        raise e
 
 def mint_tokens(erc20_contract_address, web3, account, to_address, amount):
     contract_abi = [

@@ -62,9 +62,9 @@ class IPAsset:
         :param nft_contract str: The address of the NFT.
         :param token_id int: The token identifier of the NFT.
         :param ip_metadata dict: [Optional] Metadata for the IP.
-            :param ip_metadata_URI str: [Optional] Metadata URI for the IP.
+            :param ip_metadata_uri str: [Optional] Metadata URI for the IP.
             :param ip_metadata_hash str: [Optional] Metadata hash for the IP.
-            :param nft_metadata_URI str: [Optional] Metadata URI for the NFT.
+            :param nft_metadata_uri str: [Optional] Metadata URI for the NFT.
             :param nft_metadata_hash str: [Optional] Metadata hash for the NFT.
         :param deadline int: [Optional] Signature deadline in milliseconds.
         :param tx_options dict: [Optional] Transaction options.
@@ -96,10 +96,10 @@ class IPAsset:
 
             if ip_metadata:
                 req_object['ipMetadata'].update({
-                    'ipMetadataURI': ip_metadata.get('ipMetadataURI', ""),
-                    'ipMetadataHash': ip_metadata.get('ipMetadataHash', ZERO_HASH),
-                    'nftMetadataURI': ip_metadata.get('nftMetadataURI', ""),
-                    'nftMetadataHash': ip_metadata.get('nftMetadataHash', ZERO_HASH),
+                    'ipMetadataURI': ip_metadata.get('ip_metadata_uri', ""),
+                    'ipMetadataHash': ip_metadata.get('ip_metadata_hash', ZERO_HASH),
+                    'nftMetadataURI': ip_metadata.get('nft_metadata_uri', ""),
+                    'nftMetadataHash': ip_metadata.get('nft_metadata_hash', ZERO_HASH),
                 })
 
                 calculated_deadline = self.sign_util.get_deadline(deadline=deadline)

@@ -15,6 +15,7 @@ from story_protocol_python_sdk.resources.Royalty import Royalty
 from story_protocol_python_sdk.resources.IPAccount import IPAccount
 from story_protocol_python_sdk.resources.Permission import Permission
 from story_protocol_python_sdk.resources.NFTClient import NFTClient
+from story_protocol_python_sdk.resources.Dispute import Dispute
 
 class StoryClient:
     """
@@ -49,7 +50,7 @@ class StoryClient:
         self._ip_account = None
         self._permission = None
         self._nft_client = None
-
+        self._dispute = None
     @property
     def IPAsset(self) -> IPAsset:
         """
@@ -115,3 +116,14 @@ class StoryClient:
         if self._nft_client is None:
             self._nft_client = NFTClient(self.web3, self.account, self.chain_id)
         return self._nft_client
+
+    @property
+    def Dispute(self) -> Dispute:
+        """
+        Access the Dispute resource.
+
+        :return Dispute: An instance of Dispute.
+        """
+        if self._dispute is None:
+            self._dispute = Dispute(self.web3, self.account, self.chain_id)
+        return self._dispute

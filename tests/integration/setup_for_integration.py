@@ -23,7 +23,8 @@ from utils import (
     ZERO_ADDRESS,
     ROYALTY_POLICY,
     ROYALTY_MODULE,
-    PIL_LICENSE_TEMPLATE
+    PIL_LICENSE_TEMPLATE,
+    ARBITRATION_POLICY_UMA
 )
 
 # Load environment variables
@@ -63,5 +64,6 @@ __all__ = [
     'ZERO_ADDRESS',
     'ROYALTY_POLICY',
     'ROYALTY_MODULE',   
-    'PIL_LICENSE_TEMPLATE'
+    'PIL_LICENSE_TEMPLATE',
+    'ARBITRATION_POLICY_UMA'
 ]

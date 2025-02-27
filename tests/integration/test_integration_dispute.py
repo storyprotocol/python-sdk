@@ -1,12 +1,12 @@
-import os
-import sys
 import pytest
 from web3 import Web3
 
 from setup_for_integration import (
     web3,
     account,
+    account_2,
     story_client,
+    story_client_2,
     get_token_id,
     mint_tokens,
     approve,
@@ -15,31 +15,40 @@ from setup_for_integration import (
     MockERC721,
     MockERC20,
     ZERO_ADDRESS,
-    ARBITRATION_POLICY_UMA
+    ARBITRATION_POLICY_UMA,
+    generate_cid
 )
 
 @pytest.fixture(scope="module")
-def target_ip_id(story_client):
+def target_ip_id(story_client_2):
     """Create an IP to be disputed"""
-    token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+    token_id = get_token_id(MockERC721, story_client_2.web3, story_client_2.account)
     
-    response = story_client.IPAsset.register(
+    response = story_client_2.IPAsset.register(
         nft_contract=MockERC721,
         token_id=token_id
     )
-    
+
     return response['ipId']
 
 @pytest.fixture(scope="module")
 def dispute_id(story_client, target_ip_id):
     """Create a dispute and return its ID"""
 
-    # approve(story_client.account, ARBITRATION_POLICY_UMA, 1000000000000000000)
+    # receipt = approve(
+    #     erc20_contract_address="0x1514000000000000000000000000000000000000", 
+    #     web3=web3, 
+    #     account=account, 
+    #     spender_address=ARBITRATION_POLICY_UMA, 
+    #     amount=100000 * 10 ** 6)
+    
+    cid = generate_cid()
+    print("the cid is: ", cid)
 
     response = story_client.Dispute.raise_dispute(
         target_ip_id=target_ip_id,
         target_tag="IMPROPER_REGISTRATION",
-        cid="QmX4zdp8VpzqvtKuEqMo6gfZPdoUx9TeHXCgzKLcFfSUbk",
+        cid=cid,
         liveness=2592000,  # 30 days in seconds
         bond=0,
         tx_options={"wait_for_transaction": True}

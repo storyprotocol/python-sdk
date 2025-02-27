@@ -1,6 +1,9 @@
 from web3 import Web3
 from dotenv import load_dotenv
 from src.story_protocol_python_sdk.story_client import StoryClient
+import os
+import hashlib
+import base58
 
 load_dotenv()
 
@@ -180,3 +183,16 @@ def check_event_in_tx(web3, tx_hash: str, event_text: str) -> bool:
             return True
 
     return False
+
+def generate_cid() -> str:
+    """Generate a random CIDv0 for testing purposes"""
+    # Generate random bytes
+    random_bytes = os.urandom(32)
+    # Hash using SHA-256
+    sha256_hash = hashlib.sha256(random_bytes).digest()
+    # Construct CIDv0 (SHA-256 + multihash prefix)
+    multihash = bytes([0x12, 0x20]) + sha256_hash
+    # Base58 encode
+    return base58.b58encode(multihash).decode('utf-8')
+
+

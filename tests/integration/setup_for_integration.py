@@ -24,12 +24,14 @@ from utils import (
     ROYALTY_POLICY,
     ROYALTY_MODULE,
     PIL_LICENSE_TEMPLATE,
-    ARBITRATION_POLICY_UMA
+    ARBITRATION_POLICY_UMA,
+    generate_cid
 )
 
 # Load environment variables
 load_dotenv(override=True)
 private_key = os.getenv('WALLET_PRIVATE_KEY')
+private_key_2 = os.getenv('WALLET_PRIVATE_KEY_2')
 rpc_url = os.getenv('RPC_PROVIDER_URL')
 
 if not private_key:
@@ -44,10 +46,15 @@ if not web3.is_connected():
 
 # Set up the account with the private key
 account = web3.eth.account.from_key(private_key)
+account_2 = web3.eth.account.from_key(private_key_2)
 
 @pytest.fixture(scope="session")
 def story_client():
     return get_story_client_in_devnet(web3, account)
+
+@pytest.fixture(scope="session")
+def story_client_2():
+    return get_story_client_in_devnet(web3, account_2)
 
 # Export everything needed by test files
 __all__ = [
@@ -65,5 +72,8 @@ __all__ = [
     'ROYALTY_POLICY',
     'ROYALTY_MODULE',   
     'PIL_LICENSE_TEMPLATE',
-    'ARBITRATION_POLICY_UMA'
+    'ARBITRATION_POLICY_UMA',
+    'account_2',
+    'story_client_2',
+    'generate_cid'
 ]

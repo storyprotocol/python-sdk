@@ -75,6 +75,8 @@ class Dispute:
             # Convert CID to IPFS hash
             dispute_evidence_hash = convert_cid_to_hash_ipfs(cid)
 
+            print("the dispute evidence hash is: ", dispute_evidence_hash)
+
             # Encode the data for the arbitration policy
             data = encode(
                     ["uint64", "address", "uint256"],
@@ -83,7 +85,7 @@ class Dispute:
                         "0x1514000000000000000000000000000000000000",
                         bond
                     ]
-                )
+            )
             
 
             response = build_and_send_transaction(

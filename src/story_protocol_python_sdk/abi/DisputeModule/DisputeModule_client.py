@@ -46,3 +46,8 @@ class DisputeModuleClient:
         return self.contract.functions.resolveDispute(disputeId, data).build_transaction(tx_params)
     
     
+    def isWhitelistedDisputeTag(self, tag):
+        
+        return self.contract.functions.isWhitelistedDisputeTag(tag).call()
+        
+    

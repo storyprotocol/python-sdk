@@ -75,16 +75,14 @@ class Dispute:
             # Convert CID to IPFS hash
             dispute_evidence_hash = convert_cid_to_hash_ipfs(cid)
 
-            print("the dispute evidence hash is: ", dispute_evidence_hash)
-
             # Encode the data for the arbitration policy
             data = encode(
-                    ["uint64", "address", "uint256"],
-                    [
-                        liveness,
-                        "0x1514000000000000000000000000000000000000",
-                        bond
-                    ]
+                ["uint64", "address", "uint256"],
+                [
+                    liveness,
+                    "0x1514000000000000000000000000000000000000", 
+                    bond
+                ]
             )
             
 
@@ -99,11 +97,11 @@ class Dispute:
                 tx_options=tx_options
             )
 
-            dispute_raised = self._parse_tx_dispute_raised_event(response['txReceipt'])
+            dispute_id = self._parse_tx_dispute_raised_event(response['txReceipt'])
 
             return {
                 'txHash': response['txHash'],
-                'disputeId': dispute_raised['disputeId'] if dispute_raised else None
+                'disputeId': dispute_id if dispute_id else None
             }
 
         except Exception as e:
@@ -206,6 +204,7 @@ class Dispute:
 
         for log in tx_receipt['logs']:
             if log['topics'][0].hex() == event_signature:
-                dispute_id = int(log['topics'][1].hex(), 16)
-                return {'disputeId': dispute_id}
+                data = log['data']
+                dispute_id = int.from_bytes(data[:32], byteorder='big')
+                return dispute_id
         return None

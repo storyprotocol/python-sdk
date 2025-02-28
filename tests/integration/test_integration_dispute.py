@@ -35,15 +35,7 @@ def target_ip_id(story_client_2):
 def dispute_id(story_client, target_ip_id):
     """Create a dispute and return its ID"""
 
-    # receipt = approve(
-    #     erc20_contract_address="0x1514000000000000000000000000000000000000", 
-    #     web3=web3, 
-    #     account=account, 
-    #     spender_address=ARBITRATION_POLICY_UMA, 
-    #     amount=100000 * 10 ** 6)
-    
     cid = generate_cid()
-    print("the cid is: ", cid)
 
     response = story_client.Dispute.raise_dispute(
         target_ip_id=target_ip_id,

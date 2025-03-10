@@ -36,7 +36,7 @@ class StoryClient:
         if not web3 or not account:
             raise ValueError("web3 and account must be provided")
 
-        if chain_id != 1315:
+        if chain_id not in [1315, 1514]:
             raise ValueError("only support story devnet")
 
         self.web3 = web3

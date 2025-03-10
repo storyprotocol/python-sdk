@@ -1,6 +1,6 @@
-# Story Protocol SDK
+# Story SDK
 
-Welcome to the documents for Story Protocol Python SDK. The Python SDK provides the APIs for developers to build applications with Story Protocol. By using the SDK, developers can create the resources like IP assets and perform actions to interact with the resource.
+Welcome to the documents for Story Python SDK. The Python SDK provides the APIs for developers to build applications with Story. By using the SDK, developers can create the resources like IP assets and perform actions to interact with the resource.
 
 ## How to use Story Protocol SDK in Your Project
 
@@ -48,14 +48,14 @@ The preceding code created the `account` object for creating the SDK client.
 
 To set up the SDK client, import `StoryClient` from `story_protocol_python_sdk`. Write the following code, utilizing the `account` we created previously.
 
-> :information-source: Make sure to have RPC_PROVIDER_URL for your desired chain set up in your .env file. We recommend using the Sepolia network with `RPC_PROVIDER_URL=https://rpc.ankr.com/eth_sepolia`.
+> :information-source: Make sure to have RPC_PROVIDER_URL for your desired chain set up in your .env file. We recommend using the public default one with `RPC_PROVIDER_URL=https://aeneid.storyrpc.io`.
 
 ```Python main.py
 from story_protocol_python_sdk import StoryClient
 
 # Create StoryClient instance
-odyssey_chain_id = 1516
-story_client = StoryClient(web3, account, odyssey_chain_id)
+aeneid_chain_id = 1315
+story_client = StoryClient(web3, account, aeneid_chain_id)
 ```
 
 ## Running test cases

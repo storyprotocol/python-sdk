@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "story_protocol_python_sdk"
-version = "0.3.10"
+version = "0.3.11"
 description = "A Python SDK for interacting with Story Protocol."
 readme = "README.md"
 requires-python = ">=3.10"

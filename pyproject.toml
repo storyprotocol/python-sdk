@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "story_protocol_python_sdk"
+version = "0.3.10"
+description = "A Python SDK for interacting with Story Protocol."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Andrew Chung", email = "andrew@storyprotocol.xyz"}
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "web3>=7.0.0",
+    "pytest",
+    "python-dotenv"
+]
+
+[project.urls]
+"documentation" = "https://docs.story.foundation/docs/python-sdk"
+"download" = "https://pypi.org/project/story-protocol-python-sdk/#files"
+"homepage" = "https://www.story.foundation/"
+"release notes" = "https://github.com/storyprotocol/python-sdk/releases"
+"source" = "https://github.com/storyprotocol/python-sdk/tree/main"
+"tracker" = "https://github.com/storyprotocol/python-sdk/issues"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = {find = {where = ["src"], exclude = ["tests"]}}
+include-package-data = true

@@ -1,4 +1,12 @@
+<div align="center">
+  <img src="https://raw.githubusercontent.com/storyprotocol/python-sdk/andrew/update-release-and-pypi/story_logo.png" width="200" alt="Story Protocol Logo">
+</div>
+
 # Story SDK
+
+[![PyPI version](https://badge.fury.io/py/story-protocol-python-sdk.svg)](https://badge.fury.io/py/story-protocol-python-sdk)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.story.foundation/docs/sdk-overview)
+[![GitHub license](https://img.shields.io/github/license/storyprotocol/python-sdk.svg)](https://github.com/storyprotocol/python-sdk/blob/main/LICENSE)
 
 Welcome to the documents for Story Python SDK. The Python SDK provides the APIs for developers to build applications with Story. By using the SDK, developers can create the resources like IP assets and perform actions to interact with the resource.
 

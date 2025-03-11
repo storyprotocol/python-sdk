@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/storyprotocol/python-sdk/andrew/update-release-and-pypi/story_logo.png" width="200" alt="Story Protocol Logo">
+  <img src="https://raw.githubusercontent.com/storyprotocol/python-sdk/andrew/update-release-and-pypi/story_logo.png" width="100" alt="Story Protocol Logo">
 </div>
 
 # Story SDK

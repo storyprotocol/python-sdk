@@ -70,12 +70,6 @@ class TestRoyalty:
         setup_royalty_vault(story_client, parent_ip_id, account)
 
     def test_pay_royalty_on_behalf(self, story_client, parent_ip_id, child_ip_id, attach_and_register):
-        # print("balance before: ", story_client.web3.eth.get_balance(account.address))
-        print("parent ip id: ", parent_ip_id)
-        print("child ip id: ", child_ip_id)
-        print("parent ip royalty address: ", story_client.Royalty.getRoyaltyVaultAddress(parent_ip_id))
-        print("child ip royalty address: ", story_client.Royalty.getRoyaltyVaultAddress(child_ip_id))
-
         response = story_client.Royalty.payRoyaltyOnBehalf(
             receiver_ip_id=parent_ip_id,
             payer_ip_id=child_ip_id,
@@ -83,4 +77,4 @@ class TestRoyalty:
             amount=69
         )
 
-        # print("balance after: ", story_client.web3.eth.get_balance(account.address))
+    

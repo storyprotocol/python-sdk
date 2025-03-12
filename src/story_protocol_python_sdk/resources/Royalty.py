@@ -94,30 +94,28 @@ class Royalty:
 
     #     return None
     
-    # def claimableRevenue(self, child_ip_id: str, account_address: str, snapshot_id: int, token: str) -> int:
-    #     """
-    #     Calculates the amount of revenue token claimable by a token holder at certain snapshot.
+    def claimableRevenue(self, royalty_vault_ip_id: str, claimer: str, token: str) -> int:
+        """
+        Calculates the amount of revenue token claimable by a token holder.
 
-    #     :param child_ip_id str: The child IP ID.
-    #     :param account_address str: The address of the token holder.
-    #     :param snapshot_id int: The snapshot ID.
-    #     :param token str: The revenue token to claim.
-    #     :return int: The claimable revenue amount.
-    #     """
-    #     try:
-    #         proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
-    #         ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
+        :param royalty_vault_ip_id str: The id of the royalty vault.
+        :param claimer str: The address of the royalty token holder.
+        :param token str: The revenue token to claim.
+        :return int: The claimable revenue amount.
+        """
+        try:
+            proxy_address = self.getRoyaltyVaultAddress(royalty_vault_ip_id)
+            ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
 
-    #         claimable_revenue = ip_royalty_vault_client.claimableRevenue(
-    #             account=account_address,
-    #             snapshotId=snapshot_id,
-    #             token=token
-    #         )
+            claimable_revenue = ip_royalty_vault_client.claimableRevenue(
+                claimer=claimer,
+                token=token
+            )
 
-    #         return claimable_revenue
+            return claimable_revenue
 
-    #     except Exception as e:
-    #         raise e
+        except Exception as e:
+            raise e
         
     def payRoyaltyOnBehalf(self, receiver_ip_id: str, payer_ip_id: str, token: str, amount: int, tx_options: dict = None) -> dict:
         """

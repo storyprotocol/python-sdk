@@ -74,7 +74,19 @@ class TestRoyalty:
             receiver_ip_id=parent_ip_id,
             payer_ip_id=child_ip_id,
             token=MockERC20,
-            amount=69
+            amount=1000
         )
 
-    
+        assert response is not None
+        assert response['txHash'] is not None
+
+    def test_claimable_revenue(self, story_client, parent_ip_id, child_ip_id, attach_and_register):
+        response = story_client.Royalty.claimableRevenue(
+            royalty_vault_ip_id=parent_ip_id,
+            claimer=account.address,
+            token=MockERC20
+        )
+
+        assert response is not None
+        assert type(response) == int
+        assert response > 0

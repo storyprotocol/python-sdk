@@ -166,7 +166,8 @@
                 "transferToVaultAndSnapshotAndClaimByTokenBatch",
                 "transferToVaultAndSnapshotAndClaimBySnapshotBatch",
                 "snapshotAndClaimByTokenBatch",
-                "snapshotAndClaimBySnapshotBatch"
+                "snapshotAndClaimBySnapshotBatch",
+                "claimAllRevenue"
             ]
         },
         {

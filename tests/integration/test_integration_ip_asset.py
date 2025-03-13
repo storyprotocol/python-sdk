@@ -68,6 +68,23 @@ class TestIPAssetRegistration:
 
 class TestIPAssetDerivatives:
     @pytest.fixture(scope="module")
+    def child_ip_id(self, story_client):
+        token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+
+        response = story_client.IPAsset.register(
+            nft_contract=MockERC721,
+            token_id=token_id
+        )
+
+        assert 'txHash' in response
+        assert isinstance(response['txHash'], str)
+
+        assert response is not None
+        assert 'ipId' in response
+        assert response['ipId'] is not None
+        return response['ipId']
+    
+    @pytest.fixture(scope="module")
     def non_commercial_license(self, story_client):
         license_register_response = story_client.License.registerNonComSocialRemixingPIL()
         no_commercial_license_terms_id = license_register_response['licenseTermsId']

@@ -181,3 +181,21 @@ class IPAccount:
         :rtype: bool
         """        
         return self.ip_asset_registry_client.isRegistered(ip_id)
+    
+    def owner(self, ip_id: str) -> str:
+        """Get the owner of the IP Account.
+
+        :param ip_id: The IP ID to get IP account.
+        :type ip_id: str
+        :returns: The owner of the IP Account.
+        :rtype: str
+        :raises ValueError: If the IP ID is invalid.
+        """
+        try:
+            checksum_address = Web3.to_checksum_address(ip_id)
+            ip_account_client = IPAccountImplClient(self.web3, contract_address=checksum_address)
+            return ip_account_client.owner()
+        except ValueError:  # Catch ValueError from to_checksum_address
+            raise ValueError(f"Invalid IP id address: {ip_id}")
+        except Exception as e:
+            raise e

@@ -8,6 +8,8 @@ from story_protocol_python_sdk.abi.RoyaltyPolicyLAP.RoyaltyPolicyLAP_client impo
 from story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client import RoyaltyModuleClient
 from story_protocol_python_sdk.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client import IpRoyaltyVaultImplClient
 from story_protocol_python_sdk.abi.RoyaltyWorkflows.RoyaltyWorkflows_client import RoyaltyWorkflowsClient
+from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import IPAccountImplClient
+from story_protocol_python_sdk.abi.MockERC20.MockERC20_client import MockERC20Client
 
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
@@ -29,6 +31,8 @@ class Royalty:
         self.royalty_module_client = RoyaltyModuleClient(web3)
         self.ip_royalty_vault_client = IpRoyaltyVaultImplClient(web3)
         self.royalty_workflows_client = RoyaltyWorkflowsClient(web3)
+        self.ip_account_impl_client = IPAccountImplClient(web3)
+        self.mock_erc20_client = MockERC20Client(web3)
 
     def getRoyaltyVaultAddress(self, ip_id: str) -> str:
         """
@@ -156,17 +160,24 @@ class Royalty:
             
             claimed_tokens = self._parseTxRevenueTokenClaimedEvent(response['txReceipt'])
 
-
-            auto_transfer = claim_options['autoTransferAllClaimedTokensFromIp']
+            auto_transfer = claim_options.get('autoTransferAllClaimedTokensFromIp', False) if claim_options else False
             # auto_unwrap = claim_options['autoUnwrapIpTokens']
+
+            print("ip account: ", ip_account)
+            print("type of ip account: ", type(ip_account))
+            print("is_claimer_ip: ", is_claimer_ip)
+            print("owns_claimer: ", owns_claimer)
+            print("ip account owner: ", ip_account.owner())
+            print("claimer: ", claimer)
 
             # transfer claimed tokens from IP to wallet if wallet owns IP
             if auto_transfer and is_claimer_ip and owns_claimer:
                 hashes = self._transferClaimedTokensFromIpToWallet(
+                    ancestor_ip_id,
                     ip_account,
                     claimed_tokens
                 )
-            tx_hashes.extend(hashes)
+                tx_hashes.extend(hashes)
 
             return {
                 'receipt': response['txReceipt'],
@@ -187,25 +198,25 @@ class Royalty:
             - is_claimer_ip (bool): Whether the claimer is an IP
             - ip_account (IpAccountImplClient): IP account client if claimer is an IP
         """
+        print("the claimer is ", claimer    )
         is_claimer_ip = self.ip_asset_registry_client.isRegistered(claimer)
+        print("is_claimer_ip: ", is_claimer_ip)
         owns_claimer = claimer == self.account.address
+        print("owns_claimer: ", owns_claimer)
 
         ip_account = None
         if is_claimer_ip:
-            ip_account = self.ip_account_impl_client(claimer) 
+            ip_account = IPAccountImplClient(self.web3, contract_address=claimer)
             ip_owner = ip_account.owner()
             owns_claimer = ip_owner == self.account.address
 
-        return {
-            'owns_claimer': owns_claimer,
-            'is_claimer_ip': is_claimer_ip, 
-            'ip_account': ip_account
-        }
+        return owns_claimer, is_claimer_ip, ip_account
     
-    def _transferClaimedTokensFromIpToWallet(self, ip_account, claimed_tokens: list) -> list:
+    def _transferClaimedTokensFromIpToWallet(self, ancestor_ip_id: str, ip_account, claimed_tokens: list) -> list:
         """
         Transfer claimed tokens from an IP account to the wallet.
 
+        :param ancestor_ip_id str: The IP ID of the ancestor.
         :param ip_account IpAccountImplClient: The IP account to transfer from
         :param claimed_tokens list: List of claimed tokens, each containing token address and amount
         :return list: List of transaction hashes
@@ -220,47 +231,51 @@ class Royalty:
                 continue
 
             # Build ERC20 transfer function data
-            transfer_data = self.web3.eth.contract(
-                abi=[{
-                    "inputs": [
-                        {"name": "recipient", "type": "address"},
-                        {"name": "amount", "type": "uint256"}
-                    ],
-                    "name": "transfer",
-                    "outputs": [{"name": "", "type": "bool"}],
-                    "stateMutability": "nonpayable",
-                    "type": "function"
-                }]
-            ).encodeABI(
-                fn_name="transfer",
+            transfer_data = self.mock_erc20_client.contract.encode_abi(
+                abi_element_identifier="transfer", 
                 args=[self.account.address, amount]
             )
+            
+            print("transfer data: ", transfer_data)
+            print("token: ", token)
 
             # Execute transfer through IP account
             tx_hash = ip_account.execute(
-                token,
+                self.web3.to_checksum_address(token),
                 0,
-                0,  # CALL operation
-                transfer_data
+                transfer_data,
+                0
             )
             tx_hashes.append(tx_hash)
 
         return tx_hashes
 
-    def _parseTxRevenueTokenClaimedEvent(self, tx_receipt: dict) -> int:
+    def _parseTxRevenueTokenClaimedEvent(self, tx_receipt: dict) -> list:
         """
-        Parse the RevenueTokenClaimed event from a transaction receipt.
+        Parse the RevenueTokenClaimed events from a transaction receipt.
 
         :param tx_receipt dict: The transaction receipt.
-        :return int: The number of revenue tokens claimed.
+        :return list: List of claimed tokens with claimer address, token address and amount.
         """
         event_signature = self.web3.keccak(text="RevenueTokenClaimed(address,address,uint256)").hex()
+        claimed_tokens = []
         
-        for log in tx_receipt['logs']:
+        for log in tx_receipt.get('logs', []):
             if log['topics'][0].hex() == event_signature:
                 data = log['data']
+                
+                # Convert HexBytes to hex string without '0x' prefix
+                data_hex = data.hex() if hasattr(data, 'hex') else data[2:] if isinstance(data, str) and data.startswith('0x') else data
+                
+                # Each parameter is 32 bytes (64 hex chars)
+                claimer = "0x" + data_hex[24:64]  # First 20 bytes of the first parameter
+                token = "0x" + data_hex[88:128]   # First 20 bytes of the second parameter
+                amount = int(data_hex[128:], 16)  # Third parameter
+                
+                claimed_tokens.append({
+                    'claimer': claimer,
+                    'token': token,
+                    'amount': amount
+                })
 
-                revenue_tokens_claimed = int.from_bytes(data[-32:], byteorder='big')
-                return revenue_tokens_claimed
-
-        return None
+        return claimed_tokens

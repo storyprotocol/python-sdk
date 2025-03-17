@@ -19,12 +19,12 @@ class IPAccountImplClient:
         return self.contract.functions.execute(to, value, data, operation).build_transaction(tx_params)
     
     
-    def execute(self, to, value, data):
+    # def execute(self, to, value, data):
         
-        return self.contract.functions.execute(to, value, data).transact()
+    #     return self.contract.functions.execute(to, value, data).transact()
         
-    def build_execute_transaction(self, to, value, data, tx_params):
-        return self.contract.functions.execute(to, value, data).build_transaction(tx_params)
+    # def build_execute_transaction(self, to, value, data, tx_params):
+    #     return self.contract.functions.execute(to, value, data).build_transaction(tx_params)
     
     
     def executeWithSig(self, to, value, data, signer, deadline, signature):

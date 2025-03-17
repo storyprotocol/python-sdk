@@ -31,7 +31,8 @@
                 "execute",
                 "executeWithSig",
                 "state",
-                "token"
+                "token",
+                "owner"
             ]
         },
         {
@@ -209,6 +210,14 @@
             "contract_name": "RoyaltyPolicyLRP",
             "contract_address": "0x9156e603C949481883B1d3355c6f1132D191fC41",
             "functions": []
+        },
+        {
+            "contract_name": "MockERC20",
+            "contract_address": "0xF2104833d386a2734a4eB3B8ad6FC6812F29E38E",
+            "functions": [
+                "transfer",
+                "balanceOf"
+            ]
         }
     ]
 }

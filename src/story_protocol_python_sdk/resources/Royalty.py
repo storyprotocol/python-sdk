@@ -6,6 +6,10 @@ from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import
 from story_protocol_python_sdk.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client import IpRoyaltyVaultImplClient
 from story_protocol_python_sdk.abi.RoyaltyPolicyLAP.RoyaltyPolicyLAP_client import RoyaltyPolicyLAPClient
 from story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client import RoyaltyModuleClient
+from story_protocol_python_sdk.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client import IpRoyaltyVaultImplClient
+from story_protocol_python_sdk.abi.RoyaltyWorkflows.RoyaltyWorkflows_client import RoyaltyWorkflowsClient
+from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import IPAccountImplClient
+from story_protocol_python_sdk.abi.MockERC20.MockERC20_client import MockERC20Client
 
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
@@ -25,233 +29,253 @@ class Royalty:
         self.ip_asset_registry_client = IPAssetRegistryClient(web3)
         self.royalty_policy_lap_client = RoyaltyPolicyLAPClient(web3)
         self.royalty_module_client = RoyaltyModuleClient(web3)
+        self.ip_royalty_vault_client = IpRoyaltyVaultImplClient(web3)
+        self.royalty_workflows_client = RoyaltyWorkflowsClient(web3)
+        self.ip_account_impl_client = IPAccountImplClient(web3)
+        self.mock_erc20_client = MockERC20Client(web3)
 
-    # def collectRoyaltyTokens(self, parent_ip_id: str, child_ip_id: str, tx_options: dict = None) -> dict:
-    #     """
-    #     Allows ancestors to claim the royalty tokens and any accrued revenue tokens.
+    def getRoyaltyVaultAddress(self, ip_id: str) -> str:
+        """
+        Get the royalty vault address for a given IP ID.
 
-    #     :param parent_ip_id str: The IP ID of the ancestor to whom the royalty tokens belong.
-    #     :param child_ip_id str: The derivative IP ID.
-    #     :param tx_options dict: [Optional] The transaction options.
-    #     :return dict: A dictionary with the transaction hash and the number of royalty tokens collected.
-    #     """
-    #     try:
-    #         is_registered = self.ip_asset_registry_client.isRegistered(parent_ip_id)
-    #         if not is_registered:
-    #             raise ValueError(f"The parent IP with id {parent_ip_id} is not registered.")
+        :param ip_id str: The IP ID.
+        :return str: The respective royalty vault address.
+        """
+        is_registered = self.ip_asset_registry_client.isRegistered(ip_id)
+        if not is_registered:
+            raise ValueError(f"The IP with id {ip_id} is not registered.")
 
-    #         proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
-    #         ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
+        return self.royalty_module_client.ipRoyaltyVaults(ip_id)
 
-    #         response = build_and_send_transaction(
-    #             self.web3,
-    #             self.account,
-    #             ip_royalty_vault_client.build_collectRoyaltyTokens_transaction,
-    #             parent_ip_id,
-    #             tx_options=tx_options
-    #         )
-    
-    #         royaltyTokensCollected = self._parseTxRoyaltyTokensCollectedEvent(response['txReceipt'])
+    def claimableRevenue(self, royalty_vault_ip_id: str, claimer: str, token: str) -> int:
+        """
+        Calculates the amount of revenue token claimable by a token holder.
 
-    #         return {
-    #             'txHash': response['txHash'],
-    #             'royaltyTokensCollected': royaltyTokensCollected
-    #         }
+        :param royalty_vault_ip_id str: The id of the royalty vault.
+        :param claimer str: The address of the royalty token holder.
+        :param token str: The revenue token to claim.
+        :return int: The claimable revenue amount.
+        """
+        try:
+            proxy_address = self.getRoyaltyVaultAddress(royalty_vault_ip_id)
+            ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
+
+            claimable_revenue = ip_royalty_vault_client.claimableRevenue(
+                claimer=claimer,
+                token=token
+            )
+
+            return claimable_revenue
+
+        except Exception as e:
+            raise e
         
-    #     except Exception as e:
-    #         raise e
+    def payRoyaltyOnBehalf(self, receiver_ip_id: str, payer_ip_id: str, token: str, amount: int, tx_options: dict = None) -> dict:
+        """
+        Allows the function caller to pay royalties to the receiver IP asset on behalf of the payer IP asset.
 
-    # def _getRoyaltyVaultAddress(self, ip_id: str) -> str:
-    #     """
-    #     Get the royalty vault address for a given IP ID.
+        :param receiver_ip_id str: The IP ID that receives the royalties.
+        :param payer_ip_id str: The ID of the IP asset that pays the royalties.
+        :param token str: The token to use to pay the royalties.
+        :param amount int: The amount to pay.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash.
+        """
+        try:
+            is_receiver_registered = self.ip_asset_registry_client.isRegistered(receiver_ip_id)
+            if not is_receiver_registered:
+                raise ValueError(f"The receiver IP with id {receiver_ip_id} is not registered.")
 
-    #     :param ip_id str: The IP ID.
-    #     :return str: The respective royalty vault address.
-    #     """
-    #     is_registered = self.ip_asset_registry_client.isRegistered(ip_id)
-    #     if not is_registered:
-    #         raise ValueError(f"The IP with id {ip_id} is not registered.")
-
-    #     data = self.royalty_policy_lap_client.getRoyaltyData(ip_id)
-
-    #     if not data or not data[1] or data[1] == "0x":
-    #         raise ValueError(f"The royalty vault IP with id {ip_id} address is not set.")
-        
-    #     return data[1]
-
-    # def _parseTxRoyaltyTokensCollectedEvent(self, tx_receipt: dict) -> int:
-    #     """
-    #     Parse the RoyaltyTokensCollected event from a transaction receipt.
-
-    #     :param tx_receipt dict: The transaction receipt.
-    #     :return int: The number of royalty tokens collected.
-    #     """
-    #     event_signature = self.web3.keccak(text="RoyaltyTokensCollected(address,uint256)").hex()
-        
-    #     for log in tx_receipt['logs']:
-    #         if log['topics'][0].hex() == event_signature:
-    #             data = log['data']
-
-    #             royalty_tokens_collected = int.from_bytes(data[-32:], byteorder='big')
-    #             return royalty_tokens_collected
-
-    #     return None
-    
-    # def snapshot(self, child_ip_id: str, tx_options: dict = None) -> dict:
-    #     """
-    #     Snapshots the claimable revenue and royalty token amounts.
-
-    #     :param child_ip_id str: The child IP ID.
-    #     :param tx_options dict: [Optional] The transaction options.
-    #     :return dict: A dictionary with the transaction hash and the snapshot ID.
-    #     """
-    #     try:
-    #         proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
-    #         ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
-
-    #         response = build_and_send_transaction(
-    #             self.web3,
-    #             self.account,
-    #             ip_royalty_vault_client.build_snapshot_transaction,
-    #             tx_options=tx_options
-    #         )
-
-    #         snapshotId =  self._parseTxSnapshotCompletedEvent(response['txReceipt'])
-
-    #         return {
-    #             'txHash': response['txHash'],
-    #             'snapshotId': snapshotId
-    #         }
-    #     except Exception as e:
-    #         raise e
-
-    # def _parseTxSnapshotCompletedEvent(self, tx_receipt: dict) -> int:
-    #     """
-    #     Parse the SnapshotCompleted event from a transaction receipt.
-
-    #     :param tx_receipt dict: The transaction receipt.
-    #     :return int: The snapshot ID.
-    #     """
-    #     event_signature = self.web3.keccak(text="SnapshotCompleted(uint256,uint256,uint32)").hex()
-        
-    #     for log in tx_receipt['logs']:
-    #         if log['topics'][0].hex() == event_signature:
-    #             data = log['data']
+            is_payer_registered = self.ip_asset_registry_client.isRegistered(payer_ip_id)
+            if not is_payer_registered:
+                raise ValueError(f"The payer IP with id {payer_ip_id} is not registered.")
                 
-    #             snapshotId = int.from_bytes(data[:32], byteorder='big')
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.royalty_module_client.build_payRoyaltyOnBehalf_transaction,
+                receiver_ip_id,
+                payer_ip_id,
+                token,
+                amount,
+                tx_options=tx_options
+            )
 
-    #             return snapshotId
-
-    #     return None
-
-    # def claimableRevenue(self, child_ip_id: str, account_address: str, snapshot_id: int, token: str) -> int:
-    #     """
-    #     Calculates the amount of revenue token claimable by a token holder at certain snapshot.
-
-    #     :param child_ip_id str: The child IP ID.
-    #     :param account_address str: The address of the token holder.
-    #     :param snapshot_id int: The snapshot ID.
-    #     :param token str: The revenue token to claim.
-    #     :return int: The claimable revenue amount.
-    #     """
-    #     try:
-    #         proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
-    #         ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
-
-    #         claimable_revenue = ip_royalty_vault_client.claimableRevenue(
-    #             account=account_address,
-    #             snapshotId=snapshot_id,
-    #             token=token
-    #         )
-
-    #         return claimable_revenue
-
-    #     except Exception as e:
-    #         raise e
+            return {'txHash': response['txHash']}
         
-    # def payRoyaltyOnBehalf(self, receiver_ip_id: str, payer_ip_id: str, token: str, amount: int, tx_options: dict = None) -> dict:
-    #     """
-    #     Allows the function caller to pay royalties to the receiver IP asset on behalf of the payer IP asset.
+        except Exception as e:
+            raise e
+    
+    def claimAllRevenue(self, ancestor_ip_id: str, claimer: str, child_ip_ids: list, royalty_policies: list, currency_tokens: list, claim_options: dict = None, tx_options: dict = None) -> dict:
+        """
+        Claims all revenue from the child IPs of an ancestor IP, then optionally transfers and unwraps tokens.
 
-    #     :param receiver_ip_id str: The IP ID that receives the royalties.
-    #     :param payer_ip_id str: The ID of the IP asset that pays the royalties.
-    #     :param token str: The token to use to pay the royalties.
-    #     :param amount int: The amount to pay.
-    #     :param tx_options dict: [Optional] The transaction options.
-    #     :return dict: A dictionary with the transaction hash.
-    #     """
-    #     try:
-    #         is_receiver_registered = self.ip_asset_registry_client.isRegistered(receiver_ip_id)
-    #         if not is_receiver_registered:
-    #             raise ValueError(f"The receiver IP with id {receiver_ip_id} is not registered.")
+        :param ancestor_ip_id str: The IP ID of the ancestor.
+        :param claimer str: The address of the claimer.
+        :param child_ip_ids list: List of child IP IDs.
+        :param royalty_policies list: List of royalty policy addresses.
+        :param currency_tokens list: List of currency token addresses.
+        :param claim_options dict: [Optional] Options for auto-transfer and unwrapping.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with transaction details and claimed tokens.
+        """
+        try:
+            # Validate addresses
+            if not self.web3.is_address(ancestor_ip_id):
+                raise ValueError("Invalid ancestor IP ID address")
+            if not self.web3.is_address(claimer):
+                raise ValueError("Invalid claimer address") 
+            if not all(self.web3.is_address(addr) for addr in child_ip_ids):
+                raise ValueError("Invalid child IP ID address")
+            if not all(self.web3.is_address(addr) for addr in royalty_policies):
+                raise ValueError("Invalid royalty policy address")
+            if not all(self.web3.is_address(addr) for addr in currency_tokens):
+                raise ValueError("Invalid currency token address")
 
-    #         is_payer_registered = self.ip_asset_registry_client.isRegistered(payer_ip_id)
-    #         if not is_payer_registered:
-    #             raise ValueError(f"The payer IP with id {payer_ip_id} is not registered.")
+            # Claim revenue
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.royalty_workflows_client.build_claimAllRevenue_transaction,
+                ancestor_ip_id,
+                claimer, 
+                child_ip_ids,
+                royalty_policies,
+                currency_tokens,
+                tx_options=tx_options
+            )
+
+            tx_hashes = [response['txHash']]
+            
+            # Determine if the claimer is an IP owned by the wallet.
+            owns_claimer, is_claimer_ip, ip_account = self._get_claimer_info(claimer)
+
+            # If wallet does not own the claimer then we cannot auto claim.
+            # If ownsClaimer is false, it means the claimer is neither an IP owned by the wallet nor the wallet address itself.
+            if not owns_claimer:
+                return {
+                    'receipt': response['txReceipt'],
+                    'txHashes': tx_hashes
+                }
+            
+            claimed_tokens = self._parseTxRevenueTokenClaimedEvent(response['txReceipt'])
+
+            auto_transfer = claim_options.get('autoTransferAllClaimedTokensFromIp', False) if claim_options else False
+            # auto_unwrap = claim_options['autoUnwrapIpTokens']
+
+            print("ip account: ", ip_account)
+            print("type of ip account: ", type(ip_account))
+            print("is_claimer_ip: ", is_claimer_ip)
+            print("owns_claimer: ", owns_claimer)
+            print("ip account owner: ", ip_account.owner())
+            print("claimer: ", claimer)
+
+            # transfer claimed tokens from IP to wallet if wallet owns IP
+            if auto_transfer and is_claimer_ip and owns_claimer:
+                hashes = self._transferClaimedTokensFromIpToWallet(
+                    ancestor_ip_id,
+                    ip_account,
+                    claimed_tokens
+                )
+                tx_hashes.extend(hashes)
+
+            return {
+                'receipt': response['txReceipt'],
+                'claimedTokens': claimed_tokens,
+                'txHashes': tx_hashes
+            }
+
+        except Exception as e:
+            raise ValueError(f"Failed to claim all revenue: {str(e)}")
+    
+    def _get_claimer_info(self, claimer):
+        """
+        Get information about the claimer address.
+        
+        :param claimer str: The claimer address to check
+        :return dict: Dictionary containing:
+            - owns_claimer (bool): Whether the wallet owns the claimer
+            - is_claimer_ip (bool): Whether the claimer is an IP
+            - ip_account (IpAccountImplClient): IP account client if claimer is an IP
+        """
+        print("the claimer is ", claimer    )
+        is_claimer_ip = self.ip_asset_registry_client.isRegistered(claimer)
+        print("is_claimer_ip: ", is_claimer_ip)
+        owns_claimer = claimer == self.account.address
+        print("owns_claimer: ", owns_claimer)
+
+        ip_account = None
+        if is_claimer_ip:
+            ip_account = IPAccountImplClient(self.web3, contract_address=claimer)
+            ip_owner = ip_account.owner()
+            owns_claimer = ip_owner == self.account.address
+
+        return owns_claimer, is_claimer_ip, ip_account
+    
+    def _transferClaimedTokensFromIpToWallet(self, ancestor_ip_id: str, ip_account, claimed_tokens: list) -> list:
+        """
+        Transfer claimed tokens from an IP account to the wallet.
+
+        :param ancestor_ip_id str: The IP ID of the ancestor.
+        :param ip_account IpAccountImplClient: The IP account to transfer from
+        :param claimed_tokens list: List of claimed tokens, each containing token address and amount
+        :return list: List of transaction hashes
+        """
+        tx_hashes = []
+
+        for claimed_token in claimed_tokens:
+            token = claimed_token['token'] 
+            amount = claimed_token['amount']
+
+            if amount <= 0:
+                continue
+
+            # Build ERC20 transfer function data
+            transfer_data = self.mock_erc20_client.contract.encode_abi(
+                abi_element_identifier="transfer", 
+                args=[self.account.address, amount]
+            )
+            
+            print("transfer data: ", transfer_data)
+            print("token: ", token)
+
+            # Execute transfer through IP account
+            tx_hash = ip_account.execute(
+                self.web3.to_checksum_address(token),
+                0,
+                transfer_data,
+                0
+            )
+            tx_hashes.append(tx_hash)
+
+        return tx_hashes
+
+    def _parseTxRevenueTokenClaimedEvent(self, tx_receipt: dict) -> list:
+        """
+        Parse the RevenueTokenClaimed events from a transaction receipt.
+
+        :param tx_receipt dict: The transaction receipt.
+        :return list: List of claimed tokens with claimer address, token address and amount.
+        """
+        event_signature = self.web3.keccak(text="RevenueTokenClaimed(address,address,uint256)").hex()
+        claimed_tokens = []
+        
+        for log in tx_receipt.get('logs', []):
+            if log['topics'][0].hex() == event_signature:
+                data = log['data']
                 
-    #         response = build_and_send_transaction(
-    #             self.web3,
-    #             self.account,
-    #             self.royalty_module_client.build_payRoyaltyOnBehalf_transaction,
-    #             receiver_ip_id,
-    #             payer_ip_id,
-    #             token,
-    #             amount,
-    #             tx_options=tx_options
-    #         )
+                # Convert HexBytes to hex string without '0x' prefix
+                data_hex = data.hex() if hasattr(data, 'hex') else data[2:] if isinstance(data, str) and data.startswith('0x') else data
+                
+                # Each parameter is 32 bytes (64 hex chars)
+                claimer = "0x" + data_hex[24:64]  # First 20 bytes of the first parameter
+                token = "0x" + data_hex[88:128]   # First 20 bytes of the second parameter
+                amount = int(data_hex[128:], 16)  # Third parameter
+                
+                claimed_tokens.append({
+                    'claimer': claimer,
+                    'token': token,
+                    'amount': amount
+                })
 
-    #         return {'txHash': response['txHash']}
-        
-    #     except Exception as e:
-    #         raise e
-    
-    # def claimRevenue(self, snapshot_ids: list, child_ip_id: str, token: str, tx_options: dict = None) -> dict:
-    #     """
-    #     Allows token holders to claim by a list of snapshot IDs based on the token balance at certain snapshot.
-
-    #     :param snapshot_ids list: The list of snapshot IDs.
-    #     :param child_ip_id str: The child IP ID.
-    #     :param token str: The revenue token to claim.
-    #     :param tx_options dict: [Optional] The transaction options.
-    #     :return dict: A dictionary with the transaction hash and the number of claimable tokens.
-    #     """
-    #     try:
-    #         proxy_address = self._getRoyaltyVaultAddress(child_ip_id)
-    #         ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
-
-    #         response = build_and_send_transaction(
-    #             self.web3,
-    #             self.account,
-    #             ip_royalty_vault_client.build_claimRevenueBySnapshotBatch_transaction,
-    #             snapshot_ids,
-    #             token,
-    #             tx_options=tx_options
-    #         )
-
-    #         revenue_tokens_claimed = self._parseTxRevenueTokenClaimedEvent(response['txReceipt'])
-
-    #         return {
-    #             'txHash': response['txHash'],
-    #             'claimableToken': revenue_tokens_claimed
-    #         }
-    
-    #     except Exception as e:
-    #         raise e
-        
-    # def _parseTxRevenueTokenClaimedEvent(self, tx_receipt: dict) -> int:
-    #     """
-    #     Parse the RevenueTokenClaimed event from a transaction receipt.
-
-    #     :param tx_receipt dict: The transaction receipt.
-    #     :return int: The number of revenue tokens claimed.
-    #     """
-    #     event_signature = self.web3.keccak(text="RevenueTokenClaimed(address,address,uint256)").hex()
-        
-    #     for log in tx_receipt['logs']:
-    #         if log['topics'][0].hex() == event_signature:
-    #             data = log['data']
-
-    #             revenue_tokens_claimed = int.from_bytes(data[-32:], byteorder='big')
-    #             return revenue_tokens_claimed
-
-    #     return None
+        return claimed_tokens

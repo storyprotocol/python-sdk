@@ -179,3 +179,20 @@ def check_event_in_tx(web3, tx_hash: str, event_text: str) -> bool:
             return True
 
     return False
+
+def setup_royalty_vault(story_client, parent_ip_id, account):
+    parent_ip_royalty_address = story_client.Royalty.getRoyaltyVaultAddress(parent_ip_id)
+
+    transfer_data = story_client.Royalty.ip_royalty_vault_client.contract.encode_abi(
+        abi_element_identifier="transfer",
+        args=[account.address, 10 * 10 ** 6]
+    )
+
+    response = story_client.IPAccount.execute(
+        to=parent_ip_royalty_address,
+        value=0,
+        ip_id=parent_ip_id,
+        data=transfer_data
+    )
+
+    return response

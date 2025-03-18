@@ -65,8 +65,6 @@ class TestRoyalty:
             max_revenue_share=0,
         )
         
-        setup_royalty_vault(story_client, parent_ip_id, account)
-        
         mint_tokens(
             erc20_contract_address=MockERC20, 
             web3=web3, 
@@ -249,24 +247,10 @@ class TestClaimAllRevenue:
         )
         ip_c = ret_c["ipId"]
 
-        ret_d = story_client.ipAsset.mintAndRegisterIpAndMakeDerivative(
-            spgNftContract=spg_nft_contract,
-            derivData={
-                "parentIpIds": [ip_c],
-                "licenseTermsIds": [license_terms_id],
-                "maxMintingFee": 0,
-                "maxRts": 100000000,
-                "maxRevenueShare": 100,
-            },
-            txOptions={"waitForTransaction": True},
-        )
-        ip_d = ret_d["ipId"]
-
         return {
             "ip_a": ip_a,
             "ip_b": ip_b,
             "ip_c": ip_c,
-            "ip_d": ip_d,
             "spg_nft_contract": spg_nft_contract,
             "license_terms_id": license_terms_id,
         }

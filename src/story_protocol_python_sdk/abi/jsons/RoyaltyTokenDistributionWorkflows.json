@@ -143,7 +143,7 @@
   },
   {
     "type": "function",
-    "name": "ROYALTY_POLICY",
+    "name": "ROYALTY_POLICY_LAP",
     "inputs": [],
     "outputs": [
       {

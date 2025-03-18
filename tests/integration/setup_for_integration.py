@@ -24,6 +24,7 @@ from utils import (
     ROYALTY_POLICY,
     ROYALTY_MODULE,
     PIL_LICENSE_TEMPLATE,
+    WIP_TOKEN_ADDRESS,
     setup_royalty_vault
 )
 
@@ -62,8 +63,10 @@ __all__ = [
     'MockERC721',
     'MockERC20',
     'ZERO_ADDRESS',
-    'ROYALTY_POLICY',
+
+    'ROYALTY_POLICY'
     'ROYALTY_MODULE',   
     'PIL_LICENSE_TEMPLATE',
-    'setup_royalty_vault'
+    'setup_royalty_vault',
+    'WIP_TOKEN_ADDRESS'
 ]

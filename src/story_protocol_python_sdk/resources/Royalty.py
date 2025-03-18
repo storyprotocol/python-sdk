@@ -160,7 +160,7 @@ class Royalty:
             
             claimed_tokens = self._parseTxRevenueTokenClaimedEvent(response['txReceipt'])
 
-            auto_transfer = claim_options.get('autoTransferAllClaimedTokensFromIp', False) if claim_options else False
+            auto_transfer = claim_options.get('autoTransferAllClaimedTokensFromIp', True) if claim_options else True
             # auto_unwrap = claim_options['autoUnwrapIpTokens']
 
             # transfer claimed tokens from IP to wallet if wallet owns IP
@@ -200,12 +200,6 @@ class Royalty:
             ip_owner = ip_account.owner()
             owns_claimer = ip_owner == self.account.address
 
-
-        print("the claimer is ", claimer)
-        print("is_claimer_ip: ", is_claimer_ip)
-        print("ip account owner: ", ip_owner)
-        print("owns_claimer: ", owns_claimer)
-
         return owns_claimer, is_claimer_ip, ip_account
     
     def _transferClaimedTokensFromIpToWallet(self, ancestor_ip_id: str, ip_account, claimed_tokens: list) -> list:
@@ -222,8 +216,6 @@ class Royalty:
         for claimed_token in claimed_tokens:
             token = claimed_token['token'] 
             amount = claimed_token['amount']
-            print("token: ", token)
-            print("amount: ", amount)
 
             if amount <= 0:
                 continue
@@ -233,18 +225,18 @@ class Royalty:
                 abi_element_identifier="transfer", 
                 args=[self.account.address, amount]
             )
-            
-            print("transfer data: ", transfer_data)
 
-
-            # Execute transfer through IP account
-            tx_hash = ip_account.execute(
-                self.web3.to_checksum_address(token),
-                0,
-                transfer_data,
-                0
-            )
-            tx_hashes.append(tx_hash)
+        # Execute transfer through IP account - use build_and_send_transaction to properly sign with account
+        response = build_and_send_transaction(
+            self.web3,
+            self.account,
+            ip_account.build_execute_transaction,
+            self.web3.to_checksum_address(token),
+            0,
+            transfer_data,
+            0
+        )
+        tx_hashes.append(response['txHash'])
 
         return tx_hashes
 

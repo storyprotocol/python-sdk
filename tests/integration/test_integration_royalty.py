@@ -93,7 +93,7 @@ from setup_for_integration import (
 #         assert response > 0
 
 class TestClaimAllRevenue:
-    @pytest.fixture(scope="module")
+    # @pytest.fixture(scope="module")
     # def setup_claim_all_revenue(self, story_client):
     #     # Create NFT collection
     #     collection_response = story_client.NFTClient.createNFTCollection(
@@ -236,6 +236,7 @@ class TestClaimAllRevenue:
     #     assert len(response['txHashes']) > 0
     #     assert response['claimedTokens'][0]['amount'] == 120
 
+    @pytest.fixture(scope="module")
     def setup_claim_all_revenue_claim_options(self, story_client):
         # Create NFT collection
         collection_response = story_client.NFTClient.createNFTCollection(
@@ -355,7 +356,12 @@ class TestClaimAllRevenue:
             parent_ip_ids=[ip_c],
             license_terms_ids=[license_terms_id]
         )
-    
+
+        print("ip a: ", ip_a)
+        print("ip b: ", ip_b)
+        print("ip c: ", ip_c)
+        print("ip d: ", ip_d)
+
         return {
             'ip_a': ip_a,
             'ip_b': ip_b,

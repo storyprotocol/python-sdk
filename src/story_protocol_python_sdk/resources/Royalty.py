@@ -163,13 +163,6 @@ class Royalty:
             auto_transfer = claim_options.get('autoTransferAllClaimedTokensFromIp', False) if claim_options else False
             # auto_unwrap = claim_options['autoUnwrapIpTokens']
 
-            print("ip account: ", ip_account)
-            print("type of ip account: ", type(ip_account))
-            print("is_claimer_ip: ", is_claimer_ip)
-            print("owns_claimer: ", owns_claimer)
-            print("ip account owner: ", ip_account.owner())
-            print("claimer: ", claimer)
-
             # transfer claimed tokens from IP to wallet if wallet owns IP
             if auto_transfer and is_claimer_ip and owns_claimer:
                 hashes = self._transferClaimedTokensFromIpToWallet(
@@ -198,17 +191,20 @@ class Royalty:
             - is_claimer_ip (bool): Whether the claimer is an IP
             - ip_account (IpAccountImplClient): IP account client if claimer is an IP
         """
-        print("the claimer is ", claimer    )
         is_claimer_ip = self.ip_asset_registry_client.isRegistered(claimer)
-        print("is_claimer_ip: ", is_claimer_ip)
         owns_claimer = claimer == self.account.address
-        print("owns_claimer: ", owns_claimer)
 
         ip_account = None
         if is_claimer_ip:
             ip_account = IPAccountImplClient(self.web3, contract_address=claimer)
             ip_owner = ip_account.owner()
             owns_claimer = ip_owner == self.account.address
+
+
+        print("the claimer is ", claimer)
+        print("is_claimer_ip: ", is_claimer_ip)
+        print("ip account owner: ", ip_owner)
+        print("owns_claimer: ", owns_claimer)
 
         return owns_claimer, is_claimer_ip, ip_account
     
@@ -226,6 +222,8 @@ class Royalty:
         for claimed_token in claimed_tokens:
             token = claimed_token['token'] 
             amount = claimed_token['amount']
+            print("token: ", token)
+            print("amount: ", amount)
 
             if amount <= 0:
                 continue
@@ -237,7 +235,7 @@ class Royalty:
             )
             
             print("transfer data: ", transfer_data)
-            print("token: ", token)
+
 
             # Execute transfer through IP account
             tx_hash = ip_account.execute(

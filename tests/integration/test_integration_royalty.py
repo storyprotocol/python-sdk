@@ -16,63 +16,9 @@ from setup_for_integration import (
     ROYALTY_POLICY,
     ROYALTY_MODULE,
     PIL_LICENSE_TEMPLATE,
-    setup_royalty_vault
 )
 
 class TestRoyalty:
-    """
-    Tests for Royalty functionality, mirroring the TypeScript implementation tests.
-    """
-    @pytest.fixture(scope="module")
-    def parent_ip_id(self, story_client):
-        token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
-
-        parent_ip_response = story_client.IPAsset.register(
-            nft_contract=MockERC721,
-            token_id=token_id
-        )
-        spg_nft_contract = collection_response['nftContract']
-
-        parent_ip_id = parent_ip_response['ipId']
-
-        return parent_ip_id
-
-    @pytest.fixture(scope="module")
-    def child_ip_id(self, story_client):
-        token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
-
-        response = story_client.IPAsset.register(
-            nft_contract=MockERC721,
-            token_id=token_id
-        )
-
-        return response['ipId']
-
-    @pytest.fixture(scope="module")
-    def attach_and_register(self, story_client, parent_ip_id, child_ip_id):
-        license_terms_response = story_client.License.registerCommercialRemixPIL(
-            default_minting_fee=1,
-            currency=MockERC20,
-            commercial_rev_share=10,
-            royalty_policy=ROYALTY_POLICY
-        )
-
-        attach_license_response = story_client.License.attachLicenseTerms(
-            ip_id=parent_ip_id,
-            license_template=PIL_LICENSE_TEMPLATE,
-            license_terms_id=license_terms_response['licenseTermsId']
-        )
-
-        derivative_response = story_client.IPAsset.registerDerivative(
-            child_ip_id=child_ip_id,
-            parent_ip_ids=[parent_ip_id],
-            license_terms_ids=[license_terms_response['licenseTermsId']],
-            max_minting_fee=0,
-            max_rts=0,
-            max_revenue_share=0,
-        )
-
-        setup_royalty_vault(story_client, parent_ip_id, account)
 
     @pytest.fixture(scope="module")
     def setup_ips_and_licenses(self, story_client):
@@ -437,7 +383,7 @@ class TestClaimAllRevenue:
             ip_metadata=metadata_c
         )
         ip_c = ip_c_response['ipId']
-        ip_c_derivative_response = story_client.IPAsset.registerDerivative( 
+        story_client.IPAsset.registerDerivative( 
             child_ip_id=ip_c,
             parent_ip_ids=[ip_b],
             license_terms_ids=[license_terms_id]
@@ -463,37 +409,7 @@ class TestClaimAllRevenue:
         }
 
     def test_claim_all_revenue_claim_options(self, setup_claim_all_revenue_claim_options, story_client):
-        story_client.Royalty.claimAllRevenue(
-            ancestor_ip_id=setup_claim_all_revenue_claim_options['ip_a'],
-            claimer=setup_claim_all_revenue_claim_options['ip_a'],
-            child_ip_ids=[setup_claim_all_revenue_claim_options['ip_b'], setup_claim_all_revenue_claim_options['ip_c']],
-            royalty_policies=[ROYALTY_POLICY, ROYALTY_POLICY],
-            currency_tokens=[MockERC20, MockERC20],
-            claim_options={
-                'autoTransferAllClaimedTokensFromIp': False
-            }
-        )
-
-        # Register IP D as derivative of C
-        ip_d_response = story_client.IPAsset.mintAndRegisterIp(
-            spg_nft_contract=spg_nft_contract,
-            ip_metadata=metadata_d
-        )
-        ip_d = ip_d_response['ipId']
-        story_client.IPAsset.registerDerivative(
-            child_ip_id=ip_d,
-            parent_ip_ids=[ip_c],
-            license_terms_ids=[license_terms_id]
-        )
-    
-        return {
-            'ip_a': ip_a,
-            'ip_b': ip_b,
-            'ip_c': ip_c,
-            'ip_d': ip_d
-        }
-
-    def test_claim_all_revenue_claim_options(self, setup_claim_all_revenue_claim_options, story_client):
+        """Test claiming all revenue with specific claim options"""
         response = story_client.Royalty.claimAllRevenue(
             ancestor_ip_id=setup_claim_all_revenue_claim_options['ip_a'],
             claimer=setup_claim_all_revenue_claim_options['ip_a'],
@@ -504,8 +420,6 @@ class TestClaimAllRevenue:
                 'autoTransferAllClaimedTokensFromIp': True
             }
         )
-
-        print('the response is', response)
 
         assert response is not None
         assert 'txHashes' in response

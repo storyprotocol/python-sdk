@@ -28,6 +28,7 @@ class TestRoyalty:
             nft_contract=MockERC721,
             token_id=token_id
         )
+        spg_nft_contract = collection_response['nftContract']
 
         parent_ip_id = parent_ip_response['ipId']
 
@@ -375,6 +376,39 @@ class TestClaimAllRevenue:
                 'autoTransferAllClaimedTokensFromIp': False
             }
         )
+
+        # Register IP D as derivative of C
+        ip_d_response = story_client.IPAsset.mintAndRegisterIp(
+            spg_nft_contract=spg_nft_contract,
+            ip_metadata=metadata_d
+        )
+        ip_d = ip_d_response['ipId']
+        ip_d_derivative_response = story_client.IPAsset.registerDerivative(
+            child_ip_id=ip_d,
+            parent_ip_ids=[ip_c],
+            license_terms_ids=[license_terms_id]
+        )
+    
+        return {
+            'ip_a': ip_a,
+            'ip_b': ip_b,
+            'ip_c': ip_c,
+            'ip_d': ip_d
+        }
+
+    def test_claim_all_revenue_claim_options(self, setup_claim_all_revenue_claim_options, story_client):
+        response = story_client.Royalty.claimAllRevenue(
+            ancestor_ip_id=setup_claim_all_revenue_claim_options['ip_a'],
+            claimer=setup_claim_all_revenue_claim_options['ip_a'],
+            child_ip_ids=[setup_claim_all_revenue_claim_options['ip_b'], setup_claim_all_revenue_claim_options['ip_c']],
+            royalty_policies=[ROYALTY_POLICY, ROYALTY_POLICY],
+            currency_tokens=[MockERC20, MockERC20],
+            claim_options={
+                'autoTransferAllClaimedTokensFromIp': True
+            }
+        )
+
+        print('the response is', response)
 
         assert response is not None
         assert 'txHashes' in response

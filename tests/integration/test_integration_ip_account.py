@@ -43,7 +43,7 @@ class TestBasicIPAccountOperations:
         )
 
         data = story_client.IPAccount.access_controller_client.contract.encode_abi(
-            abi_element_identifier="setPermission", 
+            abi_element_identifier="setTransientPermission", 
             args=[response['ipId'], 
                   account.address, 
                   "0x89630Ccf23277417FBdfd3076C702F5248267e78", 
@@ -88,7 +88,7 @@ class TestBasicIPAccountOperations:
         ip_id = register_response['ipId']
 
         data = story_client.IPAccount.access_controller_client.contract.encode_abi(
-            abi_element_identifier="setPermission", 
+            abi_element_identifier="setTransientPermission", 
             args=[
                 ip_id,
                 account.address, 
@@ -125,7 +125,7 @@ class TestSignatureOperations:
         state = story_client.IPAccount.getIpAccountNonce(ipId)
 
         core_data = story_client.IPAccount.access_controller_client.contract.encode_abi(
-            abi_element_identifier="setPermission",
+            abi_element_identifier="setTransientPermission",
             args=[
                 ipId,
                 account.address,
@@ -217,7 +217,7 @@ class TestSignatureOperations:
         calls_data = []
         for func_sig in function_signatures:
             data = story_client.IPAccount.access_controller_client.contract.encode_abi(
-                abi_element_identifier="setPermission",
+                abi_element_identifier="setTransientPermission",
                 args=[
                     ip_id,
                     account.address,

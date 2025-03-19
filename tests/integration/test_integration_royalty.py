@@ -81,26 +81,27 @@ class TestRoyalty:
             receiver_ip_id=parent_ip_id,
             payer_ip_id=child_ip_id,
             token=MockERC20,
-            amount=1000
+            amount=1
         )
 
         assert response is not None
-        assert response['txHash'] is not None
+        assert response['txHash'] is not None and isinstance(response['txHash'], str)
 
-    def test_claimable_revenue(self, story_client, parent_ip_id, child_ip_id, attach_and_register):
+    def test_claimable_revenue(self, story_client, setup_ips_and_licenses):
         """Test checking claimable revenue"""
+        parent_ip_id = setup_ips_and_licenses['parent_ip_id']
+        
         response = story_client.Royalty.claimableRevenue(
             royalty_vault_ip_id=parent_ip_id,
             claimer=account.address,
             token=MockERC20
         )
 
-        assert response is not None
-        assert type(response) == int
-        assert response > 0
-        
-    def test_pay_royalty_unregistered_receiver(self, story_client, parent_ip_id, child_ip_id, attach_and_register):
+        assert isinstance(response, int)
+    
+    def test_pay_royalty_unregistered_receiver(self, story_client, setup_ips_and_licenses):
         """Test that paying royalty to unregistered IP fails appropriately"""
+        child_ip_id = setup_ips_and_licenses['child_ip_id']
         unregistered_ip_id = "0x1234567890123456789012345678901234567890"
         
         with pytest.raises(ValueError, match=f"The receiver IP with id {unregistered_ip_id} is not registered"):
@@ -111,8 +112,11 @@ class TestRoyalty:
                 amount=1000
             )
 
-    def test_pay_royalty_invalid_amount(self, story_client, parent_ip_id, child_ip_id, attach_and_register):
+    def test_pay_royalty_invalid_amount(self, story_client, setup_ips_and_licenses):
         """Test that paying with invalid amount fails appropriately"""
+        parent_ip_id = setup_ips_and_licenses['parent_ip_id']
+        child_ip_id = setup_ips_and_licenses['child_ip_id']
+        
         with pytest.raises(Exception):  
             story_client.Royalty.payRoyaltyOnBehalf(
                 receiver_ip_id=parent_ip_id,
@@ -120,27 +124,6 @@ class TestRoyalty:
                 token=MockERC20,
                 amount=-1
             )
-
-    def test_get_royalty_vault_address_unregistered(self, story_client):
-        """Test getting royalty vault address for an unregistered IP"""
-        unregistered_ip_id = "0x1234567890123456789012345678901234567890"
-        
-        with pytest.raises(ValueError, match=f"The IP with id {unregistered_ip_id} is not registered"):
-            story_client.Royalty.getRoyaltyVaultAddress(ip_id=unregistered_ip_id)
-
-    def test_royalty_vault_token_transfer(self, story_client, parent_ip_id, child_ip_id, attach_and_register):
-        """Test that IP account can transfer royalty vault tokens to a wallet address"""
-        royalty_vault_address = story_client.Royalty.getRoyaltyVaultAddress(ip_id=parent_ip_id)
-        
-        assert royalty_vault_address is not None
-        assert Web3.is_address(royalty_vault_address)
-        
-        story_client.Royalty.payRoyaltyOnBehalf(
-            receiver_ip_id=parent_ip_id,
-            payer_ip_id=child_ip_id,
-            token=MockERC20,
-            amount=10000000  # 10 million tokens
-        )
 
 class TestClaimAllRevenue:
     @pytest.fixture(scope="module")

@@ -160,15 +160,8 @@ class Royalty:
             
             claimed_tokens = self._parseTxRevenueTokenClaimedEvent(response['txReceipt'])
 
-            auto_transfer = claim_options.get('autoTransferAllClaimedTokensFromIp', False) if claim_options else False
+            auto_transfer = claim_options.get('autoTransferAllClaimedTokensFromIp', True) if claim_options else True
             # auto_unwrap = claim_options['autoUnwrapIpTokens']
-
-            print("ip account: ", ip_account)
-            print("type of ip account: ", type(ip_account))
-            print("is_claimer_ip: ", is_claimer_ip)
-            print("owns_claimer: ", owns_claimer)
-            print("ip account owner: ", ip_account.owner())
-            print("claimer: ", claimer)
 
             # transfer claimed tokens from IP to wallet if wallet owns IP
             if auto_transfer and is_claimer_ip and owns_claimer:
@@ -198,11 +191,8 @@ class Royalty:
             - is_claimer_ip (bool): Whether the claimer is an IP
             - ip_account (IpAccountImplClient): IP account client if claimer is an IP
         """
-        print("the claimer is ", claimer    )
         is_claimer_ip = self.ip_asset_registry_client.isRegistered(claimer)
-        print("is_claimer_ip: ", is_claimer_ip)
         owns_claimer = claimer == self.account.address
-        print("owns_claimer: ", owns_claimer)
 
         ip_account = None
         if is_claimer_ip:
@@ -235,18 +225,18 @@ class Royalty:
                 abi_element_identifier="transfer", 
                 args=[self.account.address, amount]
             )
-            
-            print("transfer data: ", transfer_data)
-            print("token: ", token)
 
-            # Execute transfer through IP account
-            tx_hash = ip_account.execute(
-                self.web3.to_checksum_address(token),
-                0,
-                transfer_data,
-                0
-            )
-            tx_hashes.append(tx_hash)
+        # Execute transfer through IP account - use build_and_send_transaction to properly sign with account
+        response = build_and_send_transaction(
+            self.web3,
+            self.account,
+            ip_account.build_execute_transaction,
+            self.web3.to_checksum_address(token),
+            0,
+            transfer_data,
+            0
+        )
+        tx_hashes.append(response['txHash'])
 
         return tx_hashes
 

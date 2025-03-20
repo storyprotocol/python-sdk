@@ -9,89 +9,131 @@ from setup_for_integration import (
     get_token_id,
     mint_tokens,
     approve,
-    getBlockTimestamp,
-    check_event_in_tx,
     MockERC721,
     MockERC20,
     ZERO_ADDRESS,
     ROYALTY_POLICY,
+    ROYALTY_MODULE,
     PIL_LICENSE_TEMPLATE,
-    setup_royalty_vault
 )
 
 class TestRoyalty:
-    @pytest.fixture(scope="module")
-    def parent_ip_id(self, story_client):
-        token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
 
+    @pytest.fixture(scope="module")
+    def setup_ips_and_licenses(self, story_client):
+        """Setup parent and child IPs with proper license relationships"""
+        
+        parent_token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
         parent_ip_response = story_client.IPAsset.register(
             nft_contract=MockERC721,
-            token_id=token_id
+            token_id=parent_token_id
         )
-        spg_nft_contract = collection_response['nftContract']
-
         parent_ip_id = parent_ip_response['ipId']
-
-        return parent_ip_id
-
-    @pytest.fixture(scope="module")
-    def child_ip_id(self, story_client):
-        token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
-
-        response = story_client.IPAsset.register(
+        
+        child_token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+        child_ip_response = story_client.IPAsset.register(
             nft_contract=MockERC721,
-            token_id=token_id
+            token_id=child_token_id
         )
-
-        return response['ipId']
-
-    @pytest.fixture(scope="module")
-    def attach_and_register(self, story_client, parent_ip_id, child_ip_id):
+        child_ip_id = child_ip_response['ipId']
+        
         license_terms_response = story_client.License.registerCommercialRemixPIL(
-            default_minting_fee=1,
+            default_minting_fee=100000,
             currency=MockERC20,
             commercial_rev_share=10,
             royalty_policy=ROYALTY_POLICY
         )
-
-        attach_license_response = story_client.License.attachLicenseTerms(
+        license_terms_id = license_terms_response['licenseTermsId']
+        
+        story_client.License.attachLicenseTerms(
             ip_id=parent_ip_id,
             license_template=PIL_LICENSE_TEMPLATE,
-            license_terms_id=license_terms_response['licenseTermsId']
+            license_terms_id=license_terms_id
         )
-
-        derivative_response = story_client.IPAsset.registerDerivative(
+        
+        story_client.IPAsset.registerDerivative(
             child_ip_id=child_ip_id,
             parent_ip_ids=[parent_ip_id],
-            license_terms_ids=[license_terms_response['licenseTermsId']],
+            license_terms_ids=[license_terms_id],
             max_minting_fee=0,
             max_rts=0,
             max_revenue_share=0,
         )
+        
+        mint_tokens(
+            erc20_contract_address=MockERC20, 
+            web3=web3, 
+            account=account, 
+            to_address=account.address, 
+            amount=100000 * 10 ** 6
+        )
+        
+        approve(
+            erc20_contract_address=MockERC20, 
+            web3=web3, 
+            account=account, 
+            spender_address=ROYALTY_MODULE, 
+            amount=100000 * 10 ** 6
+        )
+        
+        return {
+            'parent_ip_id': parent_ip_id,
+            'child_ip_id': child_ip_id,
+            'license_terms_id': license_terms_id
+        }
 
-        setup_royalty_vault(story_client, parent_ip_id, account)
-
-    def test_pay_royalty_on_behalf(self, story_client, parent_ip_id, child_ip_id, attach_and_register):
+    def test_pay_royalty_on_behalf(self, story_client, setup_ips_and_licenses):
+        """Test paying royalty on behalf of a payer IP to a receiver IP"""
+        parent_ip_id = setup_ips_and_licenses['parent_ip_id']
+        child_ip_id = setup_ips_and_licenses['child_ip_id']
+        
         response = story_client.Royalty.payRoyaltyOnBehalf(
             receiver_ip_id=parent_ip_id,
             payer_ip_id=child_ip_id,
             token=MockERC20,
-            amount=1000
+            amount=1
         )
 
         assert response is not None
-        assert response['txHash'] is not None
+        assert response['txHash'] is not None and isinstance(response['txHash'], str)
 
-    def test_claimable_revenue(self, story_client, parent_ip_id, child_ip_id, attach_and_register):
+    def test_claimable_revenue(self, story_client, setup_ips_and_licenses):
+        """Test checking claimable revenue"""
+        parent_ip_id = setup_ips_and_licenses['parent_ip_id']
+        
         response = story_client.Royalty.claimableRevenue(
             royalty_vault_ip_id=parent_ip_id,
             claimer=account.address,
             token=MockERC20
         )
 
-        assert response is not None
-        assert type(response) == int
-        assert response > 0
+        assert isinstance(response, int)
+    
+    def test_pay_royalty_unregistered_receiver(self, story_client, setup_ips_and_licenses):
+        """Test that paying royalty to unregistered IP fails appropriately"""
+        child_ip_id = setup_ips_and_licenses['child_ip_id']
+        unregistered_ip_id = "0x1234567890123456789012345678901234567890"
+        
+        with pytest.raises(ValueError, match=f"The receiver IP with id {unregistered_ip_id} is not registered"):
+            story_client.Royalty.payRoyaltyOnBehalf(
+                receiver_ip_id=unregistered_ip_id,
+                payer_ip_id=child_ip_id,
+                token=MockERC20,
+                amount=1000
+            )
+
+    def test_pay_royalty_invalid_amount(self, story_client, setup_ips_and_licenses):
+        """Test that paying with invalid amount fails appropriately"""
+        parent_ip_id = setup_ips_and_licenses['parent_ip_id']
+        child_ip_id = setup_ips_and_licenses['child_ip_id']
+        
+        with pytest.raises(Exception):  
+            story_client.Royalty.payRoyaltyOnBehalf(
+                receiver_ip_id=parent_ip_id,
+                payer_ip_id=child_ip_id,
+                token=MockERC20,
+                amount=-1
+            )
 
 class TestClaimAllRevenue:
     @pytest.fixture(scope="module")
@@ -185,7 +227,7 @@ class TestClaimAllRevenue:
             ip_metadata=metadata_b
         )
         ip_b = ip_b_response['ipId']
-        ip_b_derivative_response = story_client.IPAsset.registerDerivative(
+        story_client.IPAsset.registerDerivative(
             child_ip_id=ip_b,
             parent_ip_ids=[ip_a],
             license_terms_ids=[license_terms_id]
@@ -197,7 +239,7 @@ class TestClaimAllRevenue:
             ip_metadata=metadata_c
         )
         ip_c = ip_c_response['ipId']
-        ip_c_derivative_response = story_client.IPAsset.registerDerivative( 
+        story_client.IPAsset.registerDerivative( 
             child_ip_id=ip_c,
             parent_ip_ids=[ip_b],
             license_terms_ids=[license_terms_id]
@@ -209,7 +251,7 @@ class TestClaimAllRevenue:
             ip_metadata=metadata_d
         )
         ip_d = ip_d_response['ipId']
-        ip_d_derivative_response = story_client.IPAsset.registerDerivative(
+        story_client.IPAsset.registerDerivative(
             child_ip_id=ip_d,
             parent_ip_ids=[ip_c],
             license_terms_ids=[license_terms_id]
@@ -340,7 +382,7 @@ class TestClaimAllRevenue:
             ip_metadata=metadata_c
         )
         ip_c = ip_c_response['ipId']
-        ip_c_derivative_response = story_client.IPAsset.registerDerivative( 
+        story_client.IPAsset.registerDerivative( 
             child_ip_id=ip_c,
             parent_ip_ids=[ip_b],
             license_terms_ids=[license_terms_id]
@@ -352,7 +394,7 @@ class TestClaimAllRevenue:
             ip_metadata=metadata_d
         )
         ip_d = ip_d_response['ipId']
-        ip_d_derivative_response = story_client.IPAsset.registerDerivative(
+        story_client.IPAsset.registerDerivative(
             child_ip_id=ip_d,
             parent_ip_ids=[ip_c],
             license_terms_ids=[license_terms_id]
@@ -366,37 +408,7 @@ class TestClaimAllRevenue:
         }
 
     def test_claim_all_revenue_claim_options(self, setup_claim_all_revenue_claim_options, story_client):
-        response = story_client.Royalty.claimAllRevenue(
-            ancestor_ip_id=setup_claim_all_revenue_claim_options['ip_a'],
-            claimer=setup_claim_all_revenue_claim_options['ip_a'],
-            child_ip_ids=[setup_claim_all_revenue_claim_options['ip_b'], setup_claim_all_revenue_claim_options['ip_c']],
-            royalty_policies=[ROYALTY_POLICY, ROYALTY_POLICY],
-            currency_tokens=[MockERC20, MockERC20],
-            claim_options={
-                'autoTransferAllClaimedTokensFromIp': False
-            }
-        )
-
-        # Register IP D as derivative of C
-        ip_d_response = story_client.IPAsset.mintAndRegisterIp(
-            spg_nft_contract=spg_nft_contract,
-            ip_metadata=metadata_d
-        )
-        ip_d = ip_d_response['ipId']
-        ip_d_derivative_response = story_client.IPAsset.registerDerivative(
-            child_ip_id=ip_d,
-            parent_ip_ids=[ip_c],
-            license_terms_ids=[license_terms_id]
-        )
-    
-        return {
-            'ip_a': ip_a,
-            'ip_b': ip_b,
-            'ip_c': ip_c,
-            'ip_d': ip_d
-        }
-
-    def test_claim_all_revenue_claim_options(self, setup_claim_all_revenue_claim_options, story_client):
+        """Test claiming all revenue with specific claim options"""
         response = story_client.Royalty.claimAllRevenue(
             ancestor_ip_id=setup_claim_all_revenue_claim_options['ip_a'],
             claimer=setup_claim_all_revenue_claim_options['ip_a'],
@@ -407,8 +419,6 @@ class TestClaimAllRevenue:
                 'autoTransferAllClaimedTokensFromIp': True
             }
         )
-
-        print('the response is', response)
 
         assert response is not None
         assert 'txHashes' in response

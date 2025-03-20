@@ -139,7 +139,7 @@ class LicenseTerms:
         default_params = {
             'is_set': False,
             'minting_fee': 0,
-            'hook_data': "",
+            'hook_data': ZERO_ADDRESS,
             'licensing_hook': ZERO_ADDRESS,
             'commercial_rev_share': 0,
             'disabled': False,

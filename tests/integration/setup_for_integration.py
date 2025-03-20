@@ -63,7 +63,6 @@ __all__ = [
     'MockERC721',
     'MockERC20',
     'ZERO_ADDRESS',
-
     'ROYALTY_POLICY'
     'ROYALTY_MODULE',   
     'PIL_LICENSE_TEMPLATE',

@@ -21,7 +21,8 @@
                 "DisputeResolved",
                 "cancelDispute",
                 "raiseDispute",
-                "resolveDispute" 
+                "resolveDispute",
+                "isWhitelistedDisputeTag"
             ]
         },
         {
@@ -210,6 +211,15 @@
             "contract_name": "RoyaltyPolicyLRP",
             "contract_address": "0x9156e603C949481883B1d3355c6f1132D191fC41",
             "functions": []
+        },
+        {
+            "contract_name": "ArbitrationPolicyUMA", 
+            "contract_address": "0xfFD98c3877B8789124f02C7E8239A4b0Ef11E936",
+            "functions": [
+                "minLiveness",
+                "maxLiveness",
+                "maxBonds"
+            ]
         },
         {
             "contract_name": "MockERC20",

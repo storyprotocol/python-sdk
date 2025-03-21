@@ -26,7 +26,6 @@ class TestDispute:
     @pytest.fixture(scope="module")
     def target_ip_id(self, story_client, story_client_2):
         """Create an IP to be disputed"""
-        # Create a new NFT collection
         txData = story_client.NFTClient.createNFTCollection(
             name="test-collection",
             symbol="TEST",
@@ -78,7 +77,6 @@ class TestDispute:
     def parent_ip_with_license(self, story_client):
         """Create a parent IP with license terms using mintAndRegisterIpAssetWithPilTerms"""
         
-        # Create a new NFT collection
         txData = story_client.NFTClient.createNFTCollection(
             name="parent-collection",
             symbol="PRNT",
@@ -90,7 +88,6 @@ class TestDispute:
         )
         nft_collection = txData['nftContract']
         
-        # Create IP asset with license terms in one call
         response = story_client.IPAsset.mintAndRegisterIpAssetWithPilTerms(
             spg_nft_contract=nft_collection,
             terms=[{
@@ -135,7 +132,6 @@ class TestDispute:
     @pytest.fixture(scope="module")
     def child_ip_id(self, story_client, parent_ip_with_license):
         """Create a derivative IP (child IP) from the parent IP"""
-        # Create child IP and register as derivative in one step
         derivative_response = story_client.IPAsset.mintAndRegisterIpAndMakeDerivative(
             spg_nft_contract=parent_ip_with_license['nft_contract'],
             deriv_data={
@@ -150,7 +146,6 @@ class TestDispute:
         
         return derivative_response['ipId']
 
-    # Basic dispute tests
     def test_raise_dispute(self, story_client, target_ip_id):
         """Test raising a dispute"""
         cid = generate_cid()
@@ -173,7 +168,6 @@ class TestDispute:
 
     def test_cancel_dispute_unauthorized(self, story_client_2, dispute_id):
         """Test attempting to cancel a dispute by an unauthorized account"""
-        # Non-dispute initiator should fail to cancel
         with pytest.raises(ValueError) as excinfo:
             story_client_2.Dispute.cancel_dispute(
                 dispute_id=dispute_id,
@@ -193,7 +187,6 @@ class TestDispute:
         
         assert "Failed to resolve dispute" in str(excinfo.value)
 
-    # Input validation tests
     def test_raise_dispute_invalid_tag(self, story_client, target_ip_id):
         """Test raising a dispute with an invalid tag"""
         cid = generate_cid()
@@ -212,12 +205,10 @@ class TestDispute:
 
     def test_raise_dispute_invalid_liveness(self, story_client, target_ip_id):
         """Test raising a dispute with invalid liveness period"""
-        # Get min liveness
         min_liveness = story_client.Dispute.arbitration_policy_uma_client.minLiveness()
         
         cid = generate_cid()
         
-        # Try with liveness below minimum
         with pytest.raises(ValueError) as excinfo:
             story_client.Dispute.raise_dispute(
                 target_ip_id=target_ip_id,
@@ -230,10 +221,8 @@ class TestDispute:
         
         assert "Liveness must be between" in str(excinfo.value)
         
-        # Get max liveness
         max_liveness = story_client.Dispute.arbitration_policy_uma_client.maxLiveness()
         
-        # Try with liveness above maximum
         with pytest.raises(ValueError) as excinfo:
             story_client.Dispute.raise_dispute(
                 target_ip_id=target_ip_id,
@@ -250,12 +239,10 @@ class TestDispute:
         """Test raising a dispute with an excessive bond amount"""
         cid = generate_cid()
         
-        # Get max bond amount
         max_bonds = story_client.Dispute.arbitration_policy_uma_client.maxBonds(
             token=web3.to_checksum_address("0x1514000000000000000000000000000000000000")
         )
         
-        # Try with bond above maximum
         with pytest.raises(ValueError) as excinfo:
             story_client.Dispute.raise_dispute(
                 target_ip_id=target_ip_id,

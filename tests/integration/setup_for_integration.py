@@ -62,6 +62,7 @@ def story_client_2():
 __all__ = [
     'web3',
     'account',
+    'account_2',
     'story_client',
     'get_token_id',
     'mint_tokens',

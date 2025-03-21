@@ -32,7 +32,8 @@
                 "execute",
                 "executeWithSig",
                 "state",
-                "token"
+                "token",
+                "owner"
             ]
         },
         {
@@ -167,7 +168,8 @@
                 "transferToVaultAndSnapshotAndClaimByTokenBatch",
                 "transferToVaultAndSnapshotAndClaimBySnapshotBatch",
                 "snapshotAndClaimByTokenBatch",
-                "snapshotAndClaimBySnapshotBatch"
+                "snapshotAndClaimBySnapshotBatch",
+                "claimAllRevenue"
             ]
         },
         {
@@ -217,6 +219,14 @@
                 "minLiveness",
                 "maxLiveness",
                 "maxBonds"
+            ]
+        },
+        {
+            "contract_name": "MockERC20",
+            "contract_address": "0xF2104833d386a2734a4eB3B8ad6FC6812F29E38E",
+            "functions": [
+                "transfer",
+                "balanceOf"
             ]
         }
     ]

@@ -35,6 +35,11 @@ class IPAccountImplClient:
         return self.contract.functions.executeWithSig(to, value, data, signer, deadline, signature).build_transaction(tx_params)
     
     
+    def owner(self, ):
+        
+        return self.contract.functions.owner().call()
+        
+    
     def state(self, ):
         
         return self.contract.functions.state().call()

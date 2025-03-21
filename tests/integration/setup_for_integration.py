@@ -25,7 +25,9 @@ from utils import (
     ROYALTY_MODULE,
     PIL_LICENSE_TEMPLATE,
     ARBITRATION_POLICY_UMA,
-    generate_cid
+    generate_cid,
+    WIP_TOKEN_ADDRESS,
+    setup_royalty_vault
 )
 
 # Load environment variables
@@ -69,11 +71,13 @@ __all__ = [
     'MockERC721',
     'MockERC20',
     'ZERO_ADDRESS',
-    'ROYALTY_POLICY',
+    'ROYALTY_POLICY'
     'ROYALTY_MODULE',   
     'PIL_LICENSE_TEMPLATE',
     'ARBITRATION_POLICY_UMA',
     'account_2',
     'story_client_2',
     'generate_cid'
+    'setup_royalty_vault',
+    'WIP_TOKEN_ADDRESS'
 ]

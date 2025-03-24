@@ -31,6 +31,8 @@ def build_and_send_transaction(web3: Web3, account, client_function, *client_arg
 
         transaction = client_function(*client_args, transaction_options)
 
+        print("client args:", *client_args)
+
         # If encodedTxDataOnly is True, return the transaction data without sending
         if tx_options.get('encodedTxDataOnly'):
             return {

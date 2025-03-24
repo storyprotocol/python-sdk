@@ -76,16 +76,23 @@ class Dispute:
             dispute_evidence_hash = convert_cid_to_hash_ipfs(cid)
 
             # Encode the data for the arbitration policy
-            data = encode(
-                ["uint64", "address", "uint256"],
-                [
-                    liveness,
-                    "0x1514000000000000000000000000000000000000", 
-                    bond
-                ]
+            raw_bytes = encode(
+                types=['uint64', 'address', 'uint256'],
+                args=[liveness, "0x1514000000000000000000000000000000000000", bond]
             )
-            
 
+            print("module - check")
+            print("target_ip_id:", target_ip_id)
+            print("dispute_evidence_hash", dispute_evidence_hash)
+            print("tag_bytes", tag_bytes)
+            
+            data = "0x" + raw_bytes.hex()
+            
+            print("data", data)
+            
+            #Python: 000000000000000000000000000000000000000000000000000000000000278d00000000000000000000000015140000000000000000000000000000000000000000000000000000000000000000000000000000000000000de0b6b3a7640000
+            #ts    : 0x0000000000000000000000000000000000000000000000000000000000278d0000000000000000000000000015140000000000000000000000000000000000000000000000000000000000000000000000000000000000000de0b6b3a7640000
+            print("About to call build_and_send_transaction")
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -96,6 +103,7 @@ class Dispute:
                 data,
                 tx_options=tx_options
             )
+            print("After build_and_send_transaction call")
 
             dispute_id = self._parse_tx_dispute_raised_event(response['txReceipt'])
 

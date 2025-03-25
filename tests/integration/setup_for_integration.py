@@ -35,6 +35,8 @@ load_dotenv(override=True)
 private_key = os.getenv('WALLET_PRIVATE_KEY')
 private_key_2 = os.getenv('WALLET_PRIVATE_KEY_2')
 rpc_url = os.getenv('RPC_PROVIDER_URL')
+wallet_address = os.getenv('WALLET_ADDRESS')
+wallet_address_2 = os.getenv('WALLET_ADDRESS_2')
 
 if not private_key:
     raise ValueError("WALLET_PRIVATE_KEY environment variable is not set")
@@ -78,7 +80,9 @@ __all__ = [
     'ARBITRATION_POLICY_UMA',
     'account_2',
     'story_client_2',
-    'generate_cid'
+    'generate_cid',
     'setup_royalty_vault',
-    'WIP_TOKEN_ADDRESS'
+    'WIP_TOKEN_ADDRESS',
+    'wallet_address',
+    'wallet_address_2'
 ]

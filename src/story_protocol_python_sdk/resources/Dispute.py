@@ -4,7 +4,7 @@ from story_protocol_python_sdk.abi.ArbitrationPolicyUMA.ArbitrationPolicyUMA_cli
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 from story_protocol_python_sdk.utils.ipfs import convert_cid_to_hash_ipfs
 from eth_abi.abi import encode
-
+from story_protocol_python_sdk.resources.WIP import WIP
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 class Dispute:
@@ -22,7 +22,8 @@ class Dispute:
 
         self.dispute_module_client = DisputeModuleClient(web3)
         self.arbitration_policy_uma_client = ArbitrationPolicyUMAClient(web3)
-
+        self.WIP = WIP(web3, account, chain_id)
+        
     def _validate_address(self, address: str) -> str:
         """
         Validates if a string is a valid Ethereum address.
@@ -35,7 +36,7 @@ class Dispute:
             raise ValueError(f"Invalid address: {address}.")
         return address
 
-    def raise_dispute(self, target_ip_id: str, target_tag: str, cid: str, liveness: int, bond: int, tx_options: dict = None) -> dict:
+    def raiseDispute(self, target_ip_id: str, target_tag: str, cid: str, liveness: int, bond: int, tx_options: dict = None) -> dict:
         """
         Raises a dispute on a given IP ID.
 
@@ -72,6 +73,10 @@ class Dispute:
             if bond > max_bonds:
                 raise ValueError(f"Bond must be less than {max_bonds}.")
 
+            deposit_response = self.WIP.deposit(
+                amount=bond
+            )
+
             # Convert CID to IPFS hash
             dispute_evidence_hash = convert_cid_to_hash_ipfs(cid)
 
@@ -85,7 +90,6 @@ class Dispute:
                 ]
             )
             
-
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -107,7 +111,7 @@ class Dispute:
         except Exception as e:
             raise ValueError(f"Failed to raise dispute: {str(e)}")
 
-    def cancel_dispute(self, dispute_id: int, data: str = "0x", tx_options: dict = None) -> dict:
+    def cancelDispute(self, dispute_id: int, data: str = "0x", tx_options: dict = None) -> dict:
         """
         Cancels an ongoing dispute.
 
@@ -133,7 +137,7 @@ class Dispute:
         except Exception as e:
             raise ValueError(f"Failed to cancel dispute: {str(e)}")
 
-    def resolve_dispute(self, dispute_id: int, data: str, tx_options: dict = None) -> dict:
+    def resolveDispute(self, dispute_id: int, data: str, tx_options: dict = None) -> dict:
         """
         Resolves a dispute after it has been judged.
 
@@ -159,7 +163,7 @@ class Dispute:
         except Exception as e:
             raise ValueError(f"Failed to resolve dispute: {str(e)}")
 
-    def tag_if_related_ip_infringed(self, infringement_tags: list, tx_options: dict = None) -> list:
+    def tagIfRelatedIpInfringed(self, infringement_tags: list, tx_options: dict = None) -> list:
         """
         Tags a derivative if a parent has been tagged with an infringement tag.
 

@@ -5,8 +5,8 @@ from setuptools import setup, find_packages
 
 setup(
     name='story_protocol_python_sdk',
-    version='0.3.7',
-    packages=find_packages(where='src', exclude=["tests"]),
+    version='0.3.12b1',
+    packages=find_packages(where='src', include=['story_protocol_python_sdk*']),
     package_dir={'': 'src'},
     install_requires=[
         'web3>=7.0.0',

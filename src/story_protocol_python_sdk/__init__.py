@@ -1,6 +1,15 @@
+__version__ = "0.3.12b1"
+
 from .story_client import StoryClient
 from .resources.IPAsset import IPAsset
 from .resources.License import License
 from .resources.Royalty import Royalty
+from .resources.IPAccount import IPAccount
+from .resources.Dispute import Dispute
+from .resources.NFTClient import NFTClient
+from .resources.Permission import Permission
+from .resources.WIP import WIP
 
-__all__ = ['StoryClient', 'IPAsset', 'License', 'Royalty']
+
+__all__ = ['StoryClient', 'IPAsset', 'License', 'Royalty', 'IPAccount', 'Dispute', 'NFTClient', 'Permission', 'WIP']
+

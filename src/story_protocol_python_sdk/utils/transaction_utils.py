@@ -24,6 +24,10 @@ def build_and_send_transaction(web3: Web3, account, client_function, *client_arg
             'nonce': web3.eth.get_transaction_count(account.address),
         }
 
+        # Add value if it exists in tx_options
+        if 'value' in tx_options:
+            transaction_options['value'] = tx_options['value']
+
         if 'gasPrice' in tx_options:
             transaction_options['gasPrice'] = web3.to_wei(tx_options['gasPrice'], 'gwei')
         if 'maxFeePerGas' in tx_options:

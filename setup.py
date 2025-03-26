@@ -11,7 +11,8 @@ setup(
     install_requires=[
         'web3>=7.0.0',
         'pytest',
-        'python-dotenv'
+        'python-dotenv',
+        'base58'
     ],
     include_package_data=True,  # Ensure package data is included
     url='https://github.com/storyprotocol/python-sdk',

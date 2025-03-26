@@ -1,6 +1,9 @@
 from web3 import Web3
 from dotenv import load_dotenv
 from src.story_protocol_python_sdk.story_client import StoryClient
+import os
+import hashlib
+import base58
 
 load_dotenv()
 
@@ -10,10 +13,12 @@ MockERC721 = "0xa1119092ea911202E0a65B743a13AE28C5CF2f21"
 # Mock ERC20 contract address (same as used in TypeScript tests)
 MockERC20 = "0xF2104833d386a2734a4eB3B8ad6FC6812F29E38E"
 
+WIP_TOKEN_ADDRESS = "0x1514000000000000000000000000000000000000";
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 ROYALTY_POLICY="0xBe54FB168b3c982b7AaE60dB6CF75Bd8447b390E" #Royalty Policy LAP
 ROYALTY_MODULE="0xD2f60c40fEbccf6311f8B47c4f2Ec6b040400086"
 PIL_LICENSE_TEMPLATE="0x2E896b0b2Fdb7457499B56AAaA4AE55BCB4Cd316"
+ARBITRATION_POLICY_UMA="0xfFD98c3877B8789124f02C7E8239A4b0Ef11E936"
 
 def get_story_client_in_sepolia(web3: Web3, account) -> StoryClient:
     chain_id = 11155111  # Sepolia chain ID
@@ -179,3 +184,32 @@ def check_event_in_tx(web3, tx_hash: str, event_text: str) -> bool:
             return True
 
     return False
+
+def generate_cid() -> str:
+    """Generate a random CIDv0 for testing purposes"""
+    # Generate random bytes
+    random_bytes = os.urandom(32)
+    # Hash using SHA-256
+    sha256_hash = hashlib.sha256(random_bytes).digest()
+    # Construct CIDv0 (SHA-256 + multihash prefix)
+    multihash = bytes([0x12, 0x20]) + sha256_hash
+    # Base58 encode
+    return base58.b58encode(multihash).decode('utf-8')
+
+
+def setup_royalty_vault(story_client, parent_ip_id, account):
+    parent_ip_royalty_address = story_client.Royalty.getRoyaltyVaultAddress(parent_ip_id)
+
+    transfer_data = story_client.Royalty.ip_royalty_vault_client.contract.encode_abi(
+        abi_element_identifier="transfer",
+        args=[account.address, 10 * 10 ** 6]
+    )
+
+    response = story_client.IPAccount.execute(
+        to=parent_ip_royalty_address,
+        value=0,
+        ip_id=parent_ip_id,
+        data=transfer_data
+    )
+
+    return response

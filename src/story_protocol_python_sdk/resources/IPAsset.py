@@ -485,7 +485,70 @@ class IPAsset:
 
         except Exception as e:
             raise e
-        
+
+    def mintAndRegisterIp(
+        self,
+        spg_nft_contract: str,
+        recipient: str = None,
+        ip_metadata: dict = None,
+        allow_duplicates: bool = True,
+        tx_options: dict = None
+    ) -> dict:
+        """
+        Mint an NFT from a SPGNFT collection and register it with metadata as an IP.
+
+        :param spg_nft_contract str: The address of the SPGNFT collection.
+        :param recipient str: [Optional] The address of the recipient of the minted NFT,
+            default value is your wallet address.
+        :param ip_metadata dict: [Optional] The desired metadata for the newly minted NFT
+            and newly registered IP.
+            :param ip_metadata_uri str: [Optional] The URI of the metadata for the IP.
+            :param ip_metadata_hash str: [Optional] The hash of the metadata for the IP.
+            :param nft_metadata_uri str: [Optional] The URI of the metadata for the NFT.
+            :param nft_metadata_hash str: [Optional] The hash of the metadata for the IP NFT.
+        :param allow_duplicates bool: Set to true to allow minting an NFT with a duplicate
+            metadata hash.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash, IP ID and token ID.
+        """
+        try:
+            metadata = {
+                'ipMetadataURI': "",
+                'ipMetadataHash': ZERO_HASH,
+                'nftMetadataURI': "",
+                'nftMetadataHash': ZERO_HASH,
+            }
+
+            if ip_metadata:
+                metadata.update({
+                    'ipMetadataURI': ip_metadata.get('ip_metadata_uri', ""),
+                    'ipMetadataHash': ip_metadata.get('ip_metadata_hash', ZERO_HASH),
+                    'nftMetadataURI': ip_metadata.get('nft_metadata_uri', ""),
+                    'nftMetadataHash': ip_metadata.get('nft_metadata_hash', ZERO_HASH),
+                })
+
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.registration_workflows_client.build_mintAndRegisterIp_transaction,
+                spg_nft_contract,
+                recipient if recipient else self.account.address,
+                metadata,
+                allow_duplicates,
+                tx_options=tx_options
+            )
+
+            ip_registered = self._parse_tx_ip_registered_event(response['txReceipt'])
+
+            return {
+                'txHash': response['txHash'],
+                'ipId': ip_registered['ipId'],
+                'tokenId': ip_registered['tokenId']
+            }
+
+        except Exception as e:
+            raise ValueError(f"Failed to mint and register IP: {str(e)}")
+
     # def registerIpAndAttachPilTerms(self, nft_contract: str, token_id: int, license_terms_data: dict, ip_metadata: dict = None, deadline: int = None, tx_options: dict = None) -> dict:
     #     """
     #     Register a given NFT as an IP and attach Programmable IP License Terms.

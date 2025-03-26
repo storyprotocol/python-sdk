@@ -1,136 +1,66 @@
-# tests/integration/test_integration_royalty.py
-
-import os
-import sys
 import pytest
-from dotenv import load_dotenv
 from web3 import Web3
+import copy
 
-# Ensure the src directory is in the Python path
-current_dir = os.path.dirname(__file__)
-src_path = os.path.abspath(os.path.join(current_dir, '..', '..'))
-if src_path not in sys.path:
-    sys.path.append(src_path)
-    
-from utils import get_story_client_in_devnet, mint_tokens, approve, MockERC721, get_token_id, MockERC20
+from setup_for_integration import (
+    web3,
+    account,
+    story_client,
+    get_token_id,
+    mint_tokens,
+    approve,
+    MockERC721,
+    MockERC20,
+    ZERO_ADDRESS,
+    ROYALTY_POLICY,
+    ROYALTY_MODULE,
+    PIL_LICENSE_TEMPLATE,
+)
 
-load_dotenv()
-private_key = os.getenv('WALLET_PRIVATE_KEY')
-rpc_url = os.getenv('RPC_PROVIDER_URL')
-
-# Initialize Web3
-web3 = Web3(Web3.HTTPProvider(rpc_url))
-if not web3.is_connected():
-    raise Exception("Failed to connect to Web3 provider")
-
-# Set up the account with the private key
-account = web3.eth.account.from_key(private_key)
-
-@pytest.fixture(scope="module")
-def story_client():
-    return get_story_client_in_devnet(web3, account)
-
-@pytest.mark.skip(reason="Permission Tests not implemented yet")
 class TestRoyalty:
-    @pytest.fixture(scope="module")
-    def parent_ip_id(story_client):
-        token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
 
+    @pytest.fixture(scope="module")
+    def setup_ips_and_licenses(self, story_client):
+        """Setup parent and child IPs with proper license relationships"""
+        
+        parent_token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
         parent_ip_response = story_client.IPAsset.register(
-            token_contract=MockERC721,
-            token_id=token_id
+            nft_contract=MockERC721,
+            token_id=parent_token_id
         )
-
         parent_ip_id = parent_ip_response['ipId']
-
-        return parent_ip_id
-
-    @pytest.fixture(scope="module")
-    def child_ip_id(story_client):
-        token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
-
-        response = story_client.IPAsset.register(
-            token_contract=MockERC721,
-            token_id=token_id
+        
+        child_token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+        child_ip_response = story_client.IPAsset.register(
+            nft_contract=MockERC721,
+            token_id=child_token_id
         )
-
-        return response['ipId']
-
-    @pytest.fixture(scope="module")
-    def attach_and_register(story_client, parent_ip_id, child_ip_id):
+        child_ip_id = child_ip_response['ipId']
+        
         license_terms_response = story_client.License.registerCommercialRemixPIL(
-            minting_fee=1,
+            default_minting_fee=100000,
             currency=MockERC20,
-            commercial_rev_share=100,
-            royalty_policy="0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86"
+            commercial_rev_share=10,
+            royalty_policy=ROYALTY_POLICY
         )
-
-        attach_license_response = story_client.License.attachLicenseTerms(
+        license_terms_id = license_terms_response['licenseTermsId']
+        
+        story_client.License.attachLicenseTerms(
             ip_id=parent_ip_id,
-            license_template="0x260B6CB6284c89dbE660c0004233f7bB99B5edE7",
-            license_terms_id=license_terms_response['licenseTermsId']
-        )
-
-        derivative_response = story_client.IPAsset.registerDerivative(
-            child_ip_id=child_ip_id,
-            parent_ip_ids=[parent_ip_id],
-            license_terms_ids=[license_terms_response['licenseTermsId']],
-            license_template="0x260B6CB6284c89dbE660c0004233f7bB99B5edE7"
-        )
-
-    def test_collectRoyaltyTokens(story_client, parent_ip_id, child_ip_id, attach_and_register):
-        response = story_client.Royalty.collectRoyaltyTokens(
-            parent_ip_id=parent_ip_id,
-            child_ip_id=child_ip_id
+            license_template=PIL_LICENSE_TEMPLATE,
+            license_terms_id=license_terms_id
         )
         
-        assert response is not None
-
-        assert 'txHash' in response
-        assert response['txHash'] is not None
-        assert isinstance(response['txHash'], str)
-        assert len(response['txHash']) > 0
-
-        assert 'royaltyTokensCollected' in response
-        assert response['royaltyTokensCollected'] is not None
-        assert isinstance(response['royaltyTokensCollected'], int)
-
-    @pytest.fixture(scope="module")
-    def snapshot_id(story_client, child_ip_id):
-        response = story_client.Royalty.snapshot(
-            child_ip_id=child_ip_id
-        )
-
-        assert response is not None
-        assert 'txHash' in response
-        assert response['txHash'] is not None
-        assert isinstance(response['txHash'], str)
-        assert len(response['txHash']) > 0
-
-        assert 'snapshotId' in response
-        assert response['snapshotId'] is not None
-        assert isinstance(response['snapshotId'], int)
-        assert response['snapshotId'] >= 0
-
-        return response['snapshotId']
-
-    def test_snapshot(story_client, snapshot_id):
-        assert snapshot_id is not None
-
-    def test_claimableRevenue(story_client, child_ip_id, snapshot_id):
-        response = story_client.Royalty.claimableRevenue(
+        story_client.IPAsset.registerDerivative(
             child_ip_id=child_ip_id,
-            account_address=account.address,
-            snapshot_id=snapshot_id,
-            token=MockERC20
+            parent_ip_ids=[parent_ip_id],
+            license_terms_ids=[license_terms_id],
+            max_minting_fee=0,
+            max_rts=0,
+            max_revenue_share=0,
         )
-
-        assert response is not None
-        assert isinstance(response, int)
-        assert response >= 0
-
-    def test_payRoyaltyOnBehalf(story_client, parent_ip_id, child_ip_id):
-        token_ids = mint_tokens(
+        
+        mint_tokens(
             erc20_contract_address=MockERC20, 
             web3=web3, 
             account=account, 
@@ -138,165 +68,360 @@ class TestRoyalty:
             amount=100000 * 10 ** 6
         )
         
-        receipt = approve(
+        approve(
             erc20_contract_address=MockERC20, 
             web3=web3, 
             account=account, 
-            spender_address="0xaabaf349c7a2a84564f9cc4ac130b3f19a718e86", 
-            amount=100000 * 10 ** 6)
+            spender_address=ROYALTY_MODULE, 
+            amount=100000 * 10 ** 6
+        )
+        
+        return {
+            'parent_ip_id': parent_ip_id,
+            'child_ip_id': child_ip_id,
+            'license_terms_id': license_terms_id
+        }
 
+    def test_pay_royalty_on_behalf(self, story_client, setup_ips_and_licenses):
+        """Test paying royalty on behalf of a payer IP to a receiver IP"""
+        parent_ip_id = setup_ips_and_licenses['parent_ip_id']
+        child_ip_id = setup_ips_and_licenses['child_ip_id']
+        
         response = story_client.Royalty.payRoyaltyOnBehalf(
             receiver_ip_id=parent_ip_id,
             payer_ip_id=child_ip_id,
             token=MockERC20,
-            amount=10
+            amount=1
         )
 
         assert response is not None
-        assert 'txHash' in response
-        assert response['txHash'] is not None
-        assert isinstance(response['txHash'], str)
-        assert len(response['txHash']) > 0
+        assert response['txHash'] is not None and isinstance(response['txHash'], str)
 
-    def test_claimRevenue(story_client, child_ip_id, snapshot_id):
-        response = story_client.Royalty.claimRevenue(
-            snapshot_ids=[snapshot_id],
-            child_ip_id=child_ip_id,
-            token=MockERC20,
-        )
-
-        assert response is not None
-        assert 'txHash' in response
-        assert response['txHash'] is not None
-        assert isinstance(response['txHash'], str)
-        assert len(response['txHash']) > 0
-
-        assert 'claimableToken' in response
-        assert response['claimableToken'] is not None
-        assert isinstance(response['claimableToken'], int)
-        assert response['claimableToken'] >= 0
-
-    def test_snapshot_and_claim_by_token_batch(story_client, child_ip_id):
-        """Test taking a snapshot and claiming revenue by token batch."""
-        # First approve tokens for royalty payments
-        token_amount = 100000 * 10 ** 6
-        mint_tokens(
-            erc20_contract_address=MockERC20,
-            web3=web3,
-            account=account,
-            to_address=account.address,
-            amount=token_amount
-        )
-        approve(
-            erc20_contract_address=MockERC20,
-            web3=web3,
-            account=account,
-            spender_address="0xaabaf349c7a2a84564f9cc4ac130b3f19a718e86",
-            amount=token_amount
-        )
-
-        currency_tokens = [MockERC20]
+    def test_claimable_revenue(self, story_client, setup_ips_and_licenses):
+        """Test checking claimable revenue"""
+        parent_ip_id = setup_ips_and_licenses['parent_ip_id']
         
-        response = story_client.Royalty.snapshotAndClaimByTokenBatch(
-            royalty_vault_ip_id=child_ip_id,
-            currency_tokens=currency_tokens
+        response = story_client.Royalty.claimableRevenue(
+            royalty_vault_ip_id=parent_ip_id,
+            claimer=account.address,
+            token=MockERC20
         )
 
-        assert response is not None
-        assert 'txHash' in response
-        assert isinstance(response['txHash'], str)
-        assert len(response['txHash']) > 0
-        assert 'snapshotId' in response
-        assert isinstance(response['snapshotId'], int)
-        assert response['snapshotId'] >= 0
-        assert 'amountsClaimed' in response
-        assert isinstance(response['amountsClaimed'], int)
+        assert isinstance(response, int)
+    
+    def test_pay_royalty_unregistered_receiver(self, story_client, setup_ips_and_licenses):
+        """Test that paying royalty to unregistered IP fails appropriately"""
+        child_ip_id = setup_ips_and_licenses['child_ip_id']
+        unregistered_ip_id = "0x1234567890123456789012345678901234567890"
+        
+        with pytest.raises(ValueError, match=f"The receiver IP with id {unregistered_ip_id} is not registered"):
+            story_client.Royalty.payRoyaltyOnBehalf(
+                receiver_ip_id=unregistered_ip_id,
+                payer_ip_id=child_ip_id,
+                token=MockERC20,
+                amount=1000
+            )
 
-    def test_snapshot_and_claim_by_snapshot_batch(story_client, child_ip_id, snapshot_id):
-        """Test taking a snapshot and claiming revenue by snapshot batch."""
-        currency_tokens = [MockERC20]
-        unclaimed_snapshot_ids = [snapshot_id]
+    def test_pay_royalty_invalid_amount(self, story_client, setup_ips_and_licenses):
+        """Test that paying with invalid amount fails appropriately"""
+        parent_ip_id = setup_ips_and_licenses['parent_ip_id']
+        child_ip_id = setup_ips_and_licenses['child_ip_id']
+        
+        with pytest.raises(Exception):  
+            story_client.Royalty.payRoyaltyOnBehalf(
+                receiver_ip_id=parent_ip_id,
+                payer_ip_id=child_ip_id,
+                token=MockERC20,
+                amount=-1
+            )
 
-        response = story_client.Royalty.snapshotAndClaimBySnapshotBatch(
-            royalty_vault_ip_id=child_ip_id,
-            currency_tokens=currency_tokens,
-            unclaimed_snapshot_ids=unclaimed_snapshot_ids
+class TestClaimAllRevenue:
+    @pytest.fixture(scope="module")
+    def setup_claim_all_revenue(self, story_client):
+        # Create NFT collection
+        collection_response = story_client.NFTClient.createNFTCollection(
+            name="free-collection",
+            symbol="FREE", 
+            max_supply=100,
+            is_public_minting=True,
+            mint_open=True,
+            contract_uri="test-uri",
+            mint_fee_recipient=ZERO_ADDRESS
         )
+        spg_nft_contract = collection_response['nftContract']
 
-        assert response is not None
-        assert 'txHash' in response
-        assert isinstance(response['txHash'], str)
-        assert len(response['txHash']) > 0
-        assert 'snapshotId' in response
-        assert isinstance(response['snapshotId'], int)
-        assert response['snapshotId'] >= 0
-        assert 'amountsClaimed' in response
-        assert isinstance(response['amountsClaimed'], int)
-
-    def test_transfer_to_vault_and_snapshot_and_claim_by_token_batch(story_client, parent_ip_id, child_ip_id):
-        """Test transferring to vault, taking snapshot, and claiming by token batch."""
-        royalty_claim_details = [{
-            'child_ip_id': child_ip_id,
-            'royalty_policy': "0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86",
-            'currency_token': MockERC20,
-            'amount': 100
+        # Define license terms data template
+        license_terms_template = [{
+            'terms': {
+                'transferable': True,
+                'royalty_policy': ROYALTY_POLICY,
+                'default_minting_fee': 100,
+                'expiration': 0,
+                'commercial_use': True,
+                'commercial_attribution': False,
+                'commercializer_checker': ZERO_ADDRESS,
+                'commercializer_checker_data': ZERO_ADDRESS,
+                'commercial_rev_share': 10,
+                'commercial_rev_ceiling': 0,
+                'derivatives_allowed': True,
+                'derivatives_attribution': True,
+                'derivatives_approval': False,
+                'derivatives_reciprocal': True,
+                'derivative_rev_ceiling': 0,
+                'currency': MockERC20,
+                'uri': ''
+            },
+            'licensing_config': {
+                'is_set': True,
+                'minting_fee': 100,
+                'hook_data': ZERO_ADDRESS,
+                'licensing_hook': ZERO_ADDRESS,
+                'commercial_rev_share': 0,
+                'disabled': False,
+                'expect_minimum_group_reward_share': 0,
+                'expect_group_reward_pool': ZERO_ADDRESS
+            }
         }]
 
-        response = story_client.Royalty.transferToVaultAndSnapshotAndClaimByTokenBatch(
-            ancestor_ip_id=parent_ip_id,
-            royalty_claim_details=royalty_claim_details
+        # Create unique metadata for each IP
+        metadata_a = {
+            'ip_metadata_uri': "test-uri-a",
+            'ip_metadata_hash': web3.to_hex(web3.keccak(text="test-metadata-hash-a")),
+            'nft_metadata_uri': "test-nft-uri-a",
+            'nft_metadata_hash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash-a"))
+        }
+        
+        metadata_b = {
+            'ip_metadata_uri': "test-uri-b",
+            'ip_metadata_hash': web3.to_hex(web3.keccak(text="test-metadata-hash-b")),
+            'nft_metadata_uri': "test-nft-uri-b",
+            'nft_metadata_hash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash-b"))
+        }
+        
+        metadata_c = {
+            'ip_metadata_uri': "test-uri-c",
+            'ip_metadata_hash': web3.to_hex(web3.keccak(text="test-metadata-hash-c")),
+            'nft_metadata_uri': "test-nft-uri-c",
+            'nft_metadata_hash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash-c"))
+        }
+        
+        metadata_d = {
+            'ip_metadata_uri': "test-uri-d",
+            'ip_metadata_hash': web3.to_hex(web3.keccak(text="test-metadata-hash-d")),
+            'nft_metadata_uri': "test-nft-uri-d",
+            'nft_metadata_hash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash-d"))
+        }
+
+        # Register IP A with PIL terms
+        ip_a_response = story_client.IPAsset.mintAndRegisterIpAssetWithPilTerms(
+            spg_nft_contract=spg_nft_contract,
+            terms=copy.deepcopy(license_terms_template),
+            ip_metadata=metadata_a
+        )
+        ip_a = ip_a_response['ipId']
+        license_terms_id = ip_a_response['licenseTermsIds'][0]
+
+        # Register IP B as derivative of A
+        ip_b_response = story_client.IPAsset.mintAndRegisterIp(
+            spg_nft_contract=spg_nft_contract,
+            ip_metadata=metadata_b
+        )
+        ip_b = ip_b_response['ipId']
+        story_client.IPAsset.registerDerivative(
+            child_ip_id=ip_b,
+            parent_ip_ids=[ip_a],
+            license_terms_ids=[license_terms_id]
         )
 
-        assert response is not None
-        assert 'txHash' in response
-        assert isinstance(response['txHash'], str)
-        assert len(response['txHash']) > 0
-        assert 'snapshotId' in response
-        assert isinstance(response['snapshotId'], int)
-        assert response['snapshotId'] >= 0
-        assert 'amountsClaimed' in response
-        assert isinstance(response['amountsClaimed'], int)
+        # Register IP C as derivative of B
+        ip_c_response = story_client.IPAsset.mintAndRegisterIp(
+            spg_nft_contract=spg_nft_contract,
+            ip_metadata=metadata_c
+        )
+        ip_c = ip_c_response['ipId']
+        story_client.IPAsset.registerDerivative( 
+            child_ip_id=ip_c,
+            parent_ip_ids=[ip_b],
+            license_terms_ids=[license_terms_id]
+        )
 
-    def test_transfer_to_vault_and_snapshot_and_claim_by_snapshot_batch(story_client, parent_ip_id, child_ip_id, snapshot_id):
-        """Test transferring to vault, taking snapshot, and claiming by snapshot batch."""
-        royalty_claim_details = [{
-            'child_ip_id': child_ip_id,
-            'royalty_policy': "0xAAbaf349C7a2A84564F9CC4Ac130B3f19A718E86",
-            'currency_token': MockERC20,
-            'amount': 100
+        # Register IP D as derivative of C
+        ip_d_response = story_client.IPAsset.mintAndRegisterIp(
+            spg_nft_contract=spg_nft_contract,
+            ip_metadata=metadata_d
+        )
+        ip_d = ip_d_response['ipId']
+        story_client.IPAsset.registerDerivative(
+            child_ip_id=ip_d,
+            parent_ip_ids=[ip_c],
+            license_terms_ids=[license_terms_id]
+        )
+    
+        return {
+            'ip_a': ip_a,
+            'ip_b': ip_b,
+            'ip_c': ip_c,
+            'ip_d': ip_d
+        }
+
+    def test_claim_all_revenue(self, setup_claim_all_revenue, story_client):
+        response = story_client.Royalty.claimAllRevenue(
+            ancestor_ip_id=setup_claim_all_revenue['ip_a'],
+            claimer=setup_claim_all_revenue['ip_a'],
+            child_ip_ids=[setup_claim_all_revenue['ip_b'], setup_claim_all_revenue['ip_c']],
+            royalty_policies=[ROYALTY_POLICY, ROYALTY_POLICY],
+            currency_tokens=[MockERC20, MockERC20]
+        ) 
+
+        assert response is not None
+        assert 'txHashes' in response
+        assert isinstance(response['txHashes'], list)
+        assert len(response['txHashes']) > 0
+        assert response['claimedTokens'][0]['amount'] == 120
+
+    @pytest.fixture(scope="module")
+    def setup_claim_all_revenue_claim_options(self, story_client):
+        # Create NFT collection
+        collection_response = story_client.NFTClient.createNFTCollection(
+            name="free-collection",
+            symbol="FREE", 
+            max_supply=100,
+            is_public_minting=True,
+            mint_open=True,
+            contract_uri="test-uri",
+            mint_fee_recipient=ZERO_ADDRESS
+        )
+        spg_nft_contract = collection_response['nftContract']
+
+        # Define license terms data template
+        license_terms_template = [{
+            'terms': {
+                'transferable': True,
+                'royalty_policy': ROYALTY_POLICY,
+                'default_minting_fee': 100,
+                'expiration': 0,
+                'commercial_use': True,
+                'commercial_attribution': False,
+                'commercializer_checker': ZERO_ADDRESS,
+                'commercializer_checker_data': ZERO_ADDRESS,
+                'commercial_rev_share': 10,
+                'commercial_rev_ceiling': 0,
+                'derivatives_allowed': True,
+                'derivatives_attribution': True,
+                'derivatives_approval': False,
+                'derivatives_reciprocal': True,
+                'derivative_rev_ceiling': 0,
+                'currency': MockERC20,
+                'uri': ''
+            },
+            'licensing_config': {
+                'is_set': True,
+                'minting_fee': 100,
+                'hook_data': ZERO_ADDRESS,
+                'licensing_hook': ZERO_ADDRESS,
+                'commercial_rev_share': 0,
+                'disabled': False,
+                'expect_minimum_group_reward_share': 0,
+                'expect_group_reward_pool': ZERO_ADDRESS
+            }
         }]
-        unclaimed_snapshot_ids = [snapshot_id]
 
-        response = story_client.Royalty.transferToVaultAndSnapshotAndClaimBySnapshotBatch(
-            ancestor_ip_id=parent_ip_id,
-            royalty_claim_details=royalty_claim_details,
-            unclaimed_snapshot_ids=unclaimed_snapshot_ids
+        # Create unique metadata for each IP
+        metadata_a = {
+            'ip_metadata_uri': "test-uri-a",
+            'ip_metadata_hash': web3.to_hex(web3.keccak(text="test-metadata-hash-a")),
+            'nft_metadata_uri': "test-nft-uri-a",
+            'nft_metadata_hash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash-a"))
+        }
+        
+        metadata_b = {
+            'ip_metadata_uri': "test-uri-b",
+            'ip_metadata_hash': web3.to_hex(web3.keccak(text="test-metadata-hash-b")),
+            'nft_metadata_uri': "test-nft-uri-b",
+            'nft_metadata_hash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash-b"))
+        }
+        
+        metadata_c = {
+            'ip_metadata_uri': "test-uri-c",
+            'ip_metadata_hash': web3.to_hex(web3.keccak(text="test-metadata-hash-c")),
+            'nft_metadata_uri': "test-nft-uri-c",
+            'nft_metadata_hash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash-c"))
+        }
+        
+        metadata_d = {
+            'ip_metadata_uri': "test-uri-d",
+            'ip_metadata_hash': web3.to_hex(web3.keccak(text="test-metadata-hash-d")),
+            'nft_metadata_uri': "test-nft-uri-d",
+            'nft_metadata_hash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash-d"))
+        }
+
+        # Register IP A with PIL terms
+        ip_a_response = story_client.IPAsset.mintAndRegisterIpAssetWithPilTerms(
+            spg_nft_contract=spg_nft_contract,
+            terms=copy.deepcopy(license_terms_template),
+            ip_metadata=metadata_a
+        )
+        ip_a = ip_a_response['ipId']
+        license_terms_id = ip_a_response['licenseTermsIds'][0]
+
+        # Register IP B as derivative of A
+        ip_b_response = story_client.IPAsset.mintAndRegisterIp(
+            spg_nft_contract=spg_nft_contract,
+            ip_metadata=metadata_b
+        )
+        ip_b = ip_b_response['ipId']
+        ip_b_derivative_response = story_client.IPAsset.registerDerivative(
+            child_ip_id=ip_b,
+            parent_ip_ids=[ip_a],
+            license_terms_ids=[license_terms_id]
+        )
+
+        # Register IP C as derivative of B
+        ip_c_response = story_client.IPAsset.mintAndRegisterIp(
+            spg_nft_contract=spg_nft_contract,
+            ip_metadata=metadata_c
+        )
+        ip_c = ip_c_response['ipId']
+        story_client.IPAsset.registerDerivative( 
+            child_ip_id=ip_c,
+            parent_ip_ids=[ip_b],
+            license_terms_ids=[license_terms_id]
+        )
+
+        # Register IP D as derivative of C
+        ip_d_response = story_client.IPAsset.mintAndRegisterIp(
+            spg_nft_contract=spg_nft_contract,
+            ip_metadata=metadata_d
+        )
+        ip_d = ip_d_response['ipId']
+        story_client.IPAsset.registerDerivative(
+            child_ip_id=ip_d,
+            parent_ip_ids=[ip_c],
+            license_terms_ids=[license_terms_id]
+        )
+
+        return {
+            'ip_a': ip_a,
+            'ip_b': ip_b,
+            'ip_c': ip_c,
+            'ip_d': ip_d
+        }
+
+    def test_claim_all_revenue_claim_options(self, setup_claim_all_revenue_claim_options, story_client):
+        """Test claiming all revenue with specific claim options"""
+        response = story_client.Royalty.claimAllRevenue(
+            ancestor_ip_id=setup_claim_all_revenue_claim_options['ip_a'],
+            claimer=setup_claim_all_revenue_claim_options['ip_a'],
+            child_ip_ids=[setup_claim_all_revenue_claim_options['ip_b'], setup_claim_all_revenue_claim_options['ip_c']],
+            royalty_policies=[ROYALTY_POLICY, ROYALTY_POLICY],
+            currency_tokens=[MockERC20, MockERC20],
+            claim_options={
+                'autoTransferAllClaimedTokensFromIp': True
+            }
         )
 
         assert response is not None
-        assert 'txHash' in response
-        assert isinstance(response['txHash'], str)
-        assert len(response['txHash']) > 0
-        assert 'snapshotId' in response
-        assert isinstance(response['snapshotId'], int)
-        assert response['snapshotId'] >= 0
-        assert 'amountsClaimed' in response
-        assert isinstance(response['amountsClaimed'], int)
-
-    def test_royalty_vault_address(story_client, child_ip_id):
-        """Test getting royalty vault address for an IP."""
-        vault_address = story_client.Royalty.getRoyaltyVaultAddress(child_ip_id)
-        
-        assert vault_address is not None
-        assert isinstance(vault_address, str)
-        assert vault_address.startswith('0x')
-        assert len(vault_address) == 42  # Valid Ethereum address length
-
-    def test_get_royalty_vault_address_unregistered_ip(story_client):
-        """Test getting royalty vault address for unregistered IP."""
-        unregistered_ip = "0x1234567890123456789012345678901234567890"
-        
-        with pytest.raises(ValueError) as exc_info:
-            story_client.Royalty.getRoyaltyVaultAddress(unregistered_ip)
-        
-        assert "is not registered" in str(exc_info.value)
+        assert 'txHashes' in response
+        assert isinstance(response['txHashes'], list)
+        assert len(response['txHashes']) > 0
+        assert response['claimedTokens'][0]['amount'] == 120

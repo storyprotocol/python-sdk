@@ -36,7 +36,7 @@ class Dispute:
             raise ValueError(f"Invalid address: {address}.")
         return address
 
-    def raise_dispute(self, target_ip_id: str, target_tag: str, cid: str, liveness: int, bond: int, tx_options: dict = None) -> dict:
+    def raiseDispute(self, target_ip_id: str, target_tag: str, cid: str, liveness: int, bond: int, tx_options: dict = None) -> dict:
         """
         Raises a dispute on a given IP ID.
 
@@ -111,7 +111,7 @@ class Dispute:
         except Exception as e:
             raise ValueError(f"Failed to raise dispute: {str(e)}")
 
-    def cancel_dispute(self, dispute_id: int, data: str = "0x", tx_options: dict = None) -> dict:
+    def cancelDispute(self, dispute_id: int, data: str = "0x", tx_options: dict = None) -> dict:
         """
         Cancels an ongoing dispute.
 
@@ -137,7 +137,7 @@ class Dispute:
         except Exception as e:
             raise ValueError(f"Failed to cancel dispute: {str(e)}")
 
-    def resolve_dispute(self, dispute_id: int, data: str, tx_options: dict = None) -> dict:
+    def resolveDispute(self, dispute_id: int, data: str, tx_options: dict = None) -> dict:
         """
         Resolves a dispute after it has been judged.
 
@@ -163,7 +163,7 @@ class Dispute:
         except Exception as e:
             raise ValueError(f"Failed to resolve dispute: {str(e)}")
 
-    def tag_if_related_ip_infringed(self, infringement_tags: list, tx_options: dict = None) -> list:
+    def tagIfRelatedIpInfringed(self, infringement_tags: list, tx_options: dict = None) -> list:
         """
         Tags a derivative if a parent has been tagged with an infringement tag.
 

@@ -228,6 +228,18 @@
                 "transfer",
                 "balanceOf"
             ]
+        },
+        {
+            "contract_name": "WIP",
+            "contract_address": "0x1514000000000000000000000000000000000000",
+            "functions": [
+                "deposit",
+                "withdraw",
+                "approve",
+                "balanceOf",
+                "transfer",
+                "transferFrom"
+            ]
         }
     ]
 }

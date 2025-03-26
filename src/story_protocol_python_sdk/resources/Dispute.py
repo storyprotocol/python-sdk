@@ -4,7 +4,7 @@ from story_protocol_python_sdk.abi.ArbitrationPolicyUMA.ArbitrationPolicyUMA_cli
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 from story_protocol_python_sdk.utils.ipfs import convert_cid_to_hash_ipfs
 from eth_abi.abi import encode
-
+from story_protocol_python_sdk.resources.WIP import WIP
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 class Dispute:
@@ -22,7 +22,8 @@ class Dispute:
 
         self.dispute_module_client = DisputeModuleClient(web3)
         self.arbitration_policy_uma_client = ArbitrationPolicyUMAClient(web3)
-
+        self.WIP = WIP(web3, account, chain_id)
+        
     def _validate_address(self, address: str) -> str:
         """
         Validates if a string is a valid Ethereum address.
@@ -72,6 +73,10 @@ class Dispute:
             if bond > max_bonds:
                 raise ValueError(f"Bond must be less than {max_bonds}.")
 
+            deposit_response = self.WIP.deposit(
+                amount=bond
+            )
+
             # Convert CID to IPFS hash
             dispute_evidence_hash = convert_cid_to_hash_ipfs(cid)
 
@@ -85,7 +90,6 @@ class Dispute:
                 ]
             )
             
-
             response = build_and_send_transaction(
                 self.web3,
                 self.account,

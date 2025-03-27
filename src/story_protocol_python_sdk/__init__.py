@@ -1,4 +1,4 @@
-__version__ = "0.3.12rc1"
+__version__ = "0.3.12"
 
 from .story_client import StoryClient
 from .resources.IPAsset import IPAsset

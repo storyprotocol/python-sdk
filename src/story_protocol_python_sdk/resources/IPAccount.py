@@ -1,11 +1,11 @@
 """Module for handling IP Account operations and transactions."""
 
 from web3 import Web3
-from web3.exceptions import InvalidAddress 
 
 from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import IPAccountImplClient
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
 from story_protocol_python_sdk.abi.AccessController.AccessController_client import AccessControllerClient
+from story_protocol_python_sdk.abi.CoreMetadataModule.CoreMetadataModule_client import CoreMetadataModuleClient
 
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
@@ -25,6 +25,7 @@ class IPAccount:
         self.ip_asset_registry_client = IPAssetRegistryClient(web3)
         self.access_controller_client = AccessControllerClient(web3)
         self.ip_account_client = IPAccountImplClient(web3)
+        self.core_metadata_module_client = CoreMetadataModuleClient(web3)
 
     def getToken(self, ip_id: str) -> dict:
         """Retrieve token information associated with an IP account.
@@ -152,5 +153,36 @@ class IPAccount:
             return ip_account_client.owner()
         except ValueError:  # Catch ValueError from to_checksum_address
             raise ValueError(f"Invalid IP id address: {ip_id}")
+        except Exception as e:
+            raise e
+
+    def setIpMetadata(self, ip_id: str, metadata_uri: str, metadata_hash: str, tx_options: dict = None) -> dict:
+        """Sets the metadataURI for an IP asset.
+
+        :param ip_id str: The IP ID to set metadata for.
+        :param metadata_uri str: The metadata URI to set.
+        :param metadata_hash str: The metadata hash.
+        :param tx_options dict: [Optional] The transaction options.
+        :returns dict: A dictionary with the transaction hash.
+        :raises ValueError: If the IP ID is invalid or not registered.
+        """
+        try:
+            if not self._is_registered(ip_id):
+                raise ValueError(f"IP id {ip_id} is not registered")
+
+            data = self.core_metadata_module_client.contract.encode_abi(
+                abi_element_identifier="setMetadataURI",
+                args=[Web3.to_checksum_address(ip_id), metadata_uri, metadata_hash]
+            )
+
+            response = self.execute(
+                to=self.core_metadata_module_client.contract.address,
+                value=0,
+                ip_id=ip_id,
+                data=data,
+                tx_options=tx_options
+            )
+
+            return response
         except Exception as e:
             raise e

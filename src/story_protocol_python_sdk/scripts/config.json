@@ -240,6 +240,14 @@
                 "transfer",
                 "transferFrom"
             ]
+        },
+        {
+            "contract_name": "SPGNFTImpl",
+            "contract_address": "0xc09e3788Fdfbd3dd8CDaa2aa481B52CcFAb74a42",
+            "functions": [
+                "mintFeeToken",
+                "mintFee"
+            ]
         }
     ]
 }

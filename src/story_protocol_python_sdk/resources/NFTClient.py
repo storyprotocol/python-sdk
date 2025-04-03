@@ -3,6 +3,7 @@
 from web3 import Web3
 
 from story_protocol_python_sdk.abi.RegistrationWorkflows.RegistrationWorkflows_client import RegistrationWorkflowsClient
+from story_protocol_python_sdk.abi.SPGNFTImpl.SPGNFTImpl_client import SPGNFTImplClient
 
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
@@ -95,3 +96,33 @@ class NFTClient:
                 return self.web3.to_checksum_address('0x' + log['topics'][1].hex()[-40:])
 
         return None
+    
+    def getMintFeeToken(self, nft_contract: str) -> str:
+        """
+        Returns the current mint fee token of the collection.
+        
+        :param nft_contract str: The address of the NFT contract.
+        :return str: The address of the mint fee token.
+        """
+        try:
+            nft_contract = self.web3.to_checksum_address(nft_contract)
+            spg_nft_client = SPGNFTImplClient(self.web3, contract_address=nft_contract)
+            
+            return spg_nft_client.mintFeeToken()
+        except Exception as e:
+            raise ValueError(f"Failed to get mint fee token: {str(e)}")
+    
+    def getMintFee(self, nft_contract: str) -> int:
+        """
+        Returns the current mint fee of the collection.
+        
+        :param nft_contract str: The address of the NFT contract.
+        :return int: The mint fee amount.
+        """
+        try:
+            nft_contract = self.web3.to_checksum_address(nft_contract)
+            spg_nft_client = SPGNFTImplClient(self.web3, contract_address=nft_contract)
+            
+            return spg_nft_client.mintFee()
+        except Exception as e:
+            raise ValueError(f"Failed to get mint fee: {str(e)}")

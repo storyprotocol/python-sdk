@@ -186,3 +186,55 @@ class IPAccount:
             return response
         except Exception as e:
             raise e
+
+    def transferERC20(self, ip_id: str, tokens: list, tx_options: dict = None) -> dict:
+        """Transfers ERC20 tokens from the IP Account to the target address.
+
+        :param ip_id str: The IP ID to transfer tokens from.
+        :param tokens list: A list of dictionaries containing token transfer details.
+                           Each dictionary should have 'address' (token contract address),
+                           'target' (recipient address), and 'amount' (token amount).
+        :param tx_options dict: [Optional] The transaction options.
+        :returns dict: A dictionary with the transaction hash.
+        :raises ValueError: If the IP ID is invalid or not registered, or if token parameters are invalid.
+        """
+        try:
+            if not self._is_registered(ip_id):
+                raise ValueError(f"IP id {ip_id} is not registered")
+
+            ip_account = IPAccountImplClient(self.web3, contract_address=ip_id)
+
+            # Since we don't have executeBatch, we'll execute transfers one by one
+            results = []
+            for token in tokens:
+                # Validate token parameters
+                if not all(key in token for key in ['address', 'target', 'amount']):
+                    raise ValueError("Each token transfer must include 'address', 'target', and 'amount'")
+                
+                token_address = self.web3.to_checksum_address(token['address'])
+                target_address = self.web3.to_checksum_address(token['target'])
+                amount = int(token['amount'])
+                
+                # Build ERC20 transfer function data
+                data = self.mock_erc20_client.contract.encode_abi(
+                    abi_element_identifier="transfer", 
+                    args=[target_address, amount]
+                )
+                
+                response = build_and_send_transaction(
+                    self.web3,
+                    self.account,
+                    ip_account.build_execute_transaction,
+                    self.web3.to_checksum_address(token_address),
+                    0,
+                    data,
+                    0
+                )
+                results.append(response)
+            
+            # Return the hash of the last transaction
+            # In a real implementation with executeBatch, we would return a single transaction hash
+            return results[-1] if results else {"txHash": None}
+            
+        except Exception as e:
+            raise ValueError(f"Failed to transfer ERC20: {str(e)}")

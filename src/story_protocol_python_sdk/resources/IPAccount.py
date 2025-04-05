@@ -6,6 +6,7 @@ from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import IPA
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
 from story_protocol_python_sdk.abi.AccessController.AccessController_client import AccessControllerClient
 from story_protocol_python_sdk.abi.CoreMetadataModule.CoreMetadataModule_client import CoreMetadataModuleClient
+from story_protocol_python_sdk.abi.MockERC20.MockERC20_client import MockERC20Client
 
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
@@ -26,6 +27,7 @@ class IPAccount:
         self.access_controller_client = AccessControllerClient(web3)
         self.ip_account_client = IPAccountImplClient(web3)
         self.core_metadata_module_client = CoreMetadataModuleClient(web3)
+        self.mock_erc20_client = MockERC20Client(web3)
 
     def getToken(self, ip_id: str) -> dict:
         """Retrieve token information associated with an IP account.
@@ -207,7 +209,6 @@ class IPAccount:
             # Since we don't have executeBatch, we'll execute transfers one by one
             results = []
             for token in tokens:
-                # Validate token parameters
                 if not all(key in token for key in ['address', 'target', 'amount']):
                     raise ValueError("Each token transfer must include 'address', 'target', and 'amount'")
                 
@@ -215,7 +216,6 @@ class IPAccount:
                 target_address = self.web3.to_checksum_address(token['target'])
                 amount = int(token['amount'])
                 
-                # Build ERC20 transfer function data
                 data = self.mock_erc20_client.contract.encode_abi(
                     abi_element_identifier="transfer", 
                     args=[target_address, amount]

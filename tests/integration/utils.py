@@ -196,7 +196,6 @@ def generate_cid() -> str:
     # Base58 encode
     return base58.b58encode(multihash).decode('utf-8')
 
-
 def setup_royalty_vault(story_client, parent_ip_id, account):
     parent_ip_royalty_address = story_client.Royalty.getRoyaltyVaultAddress(parent_ip_id)
 

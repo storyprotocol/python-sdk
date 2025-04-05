@@ -1,36 +1,22 @@
 # tests/integration/test_integration_ip_account.py
 
-import os, json, sys
 import pytest
-from dotenv import load_dotenv
 from web3 import Web3
 from eth_account import Account
 from eth_account.messages import encode_typed_data
 from eth_abi.abi import encode
 
-# Ensure the src directory is in the Python path
-current_dir = os.path.dirname(__file__)
-src_path = os.path.abspath(os.path.join(current_dir, '..', '..'))
-if src_path not in sys.path:
-    sys.path.append(src_path)
-
-from utils import get_token_id, get_story_client_in_devnet, MockERC721, getBlockTimestamp
-
-load_dotenv(override=True)
-private_key = os.getenv('WALLET_PRIVATE_KEY')
-rpc_url = os.getenv('RPC_PROVIDER_URL')
-
-# Initialize Web3
-web3 = Web3(Web3.HTTPProvider(rpc_url))
-if not web3.is_connected():
-    raise Exception("Failed to connect to Web3 provider")
-
-# Set up the account with the private key
-account = web3.eth.account.from_key(private_key)
-
-@pytest.fixture
-def story_client():
-    return get_story_client_in_devnet(web3, account)
+from setup_for_integration import (
+    web3,
+    account, 
+    story_client,
+    get_token_id,
+    mint_tokens,
+    getBlockTimestamp,
+    MockERC721,
+    MockERC20,
+    private_key
+)
 
 class TestBasicIPAccountOperations:
     """Basic IP Account operations like execute and nonce retrieval"""
@@ -334,3 +320,115 @@ class TestErrorCases:
             )
         
         assert "is not registered" in str(exc_info.value)
+
+class TestSetIpMetadata:
+    """Tests for setting IP metadata"""
+    
+    def test_set_ip_metadata(self, story_client):
+        token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+        response = story_client.IPAsset.register(
+            nft_contract=MockERC721,
+            token_id=token_id
+        )
+
+        response = story_client.IPAccount.setIpMetadata(
+            ip_id=response['ipId'],
+            metadata_uri="https://example.com",
+            metadata_hash=web3.to_hex(web3.keccak(text="test-metadata-hash"))
+        )
+
+        assert response is not None, "Response is None, indicating the contract interaction failed."
+        assert 'txHash' in response, "Response does not contain 'txHash'."
+        assert response['txHash'] is not None, "'txHash' is None."
+        assert isinstance(response['txHash'], str), "'txHash' is not a string."
+        assert len(response['txHash']) > 0, "'txHash' is empty."
+
+class TestTransferERC20:
+    """Tests for transferring ERC20 tokens"""
+
+    def test_transfer_erc20(self, story_client):
+        """Test transferring ERC20 tokens"""
+        token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+        response = story_client.IPAsset.register(
+            nft_contract=MockERC721,
+            token_id=token_id
+        )
+        ip_id = response['ipId']
+
+        # 1. Query token balance of ipId and wallet before
+        initial_erc20_balance_of_ip_id = story_client.Royalty.mock_erc20_client.balanceOf(
+            account=ip_id
+        )
+        initial_erc20_balance_of_wallet = story_client.Royalty.mock_erc20_client.balanceOf(
+            account=story_client.account.address
+        )
+        initial_wip_balance_of_ip_id = story_client.WIP.balanceOf(
+            address=ip_id
+        )
+        initial_wip_balance_of_wallet = story_client.WIP.balanceOf(
+            address=story_client.account.address
+        )
+
+        # 2. Transfer ERC20 tokens to the IP account
+        amount_to_mint = 2000000  # Equivalent to 0.002 ether in wei
+        mint_receipt = mint_tokens(
+            erc20_contract_address=MockERC20,
+            web3=story_client.web3,
+            account=story_client.account,
+            to_address=ip_id,
+            amount=amount_to_mint
+        )
+        
+        # 3. Transfer WIP to the IP account
+        # First deposit (wrap) IP to WIP
+        deposit_response = story_client.WIP.deposit(
+            amount=1
+        )
+        
+        # Then transfer WIP to the IP account
+        response = story_client.WIP.transfer(
+            to=ip_id,
+            amount=1
+        )
+
+        # 4. Transfer tokens from IP account to wallet address
+        response = story_client.IPAccount.transferERC20(
+            ip_id=ip_id,
+            tokens=[
+                {
+                    "address": story_client.WIP.wip_client.contract.address,
+                    "target": story_client.account.address,
+                    "amount": 1
+                },
+                {
+                    "address": MockERC20,
+                    "target": story_client.account.address,
+                    "amount": 1000000  # Equivalent to 0.001 ether
+                },
+                {
+                    "address": MockERC20,
+                    "target": story_client.account.address,
+                    "amount": 1000000  # Equivalent to 0.001 ether
+                }
+            ]
+        )
+        
+        # 5. Query token balance of ipId and wallet address after transfer
+        final_erc20_balance_of_ip_id = story_client.Royalty.mock_erc20_client.balanceOf(
+            account=ip_id
+        )
+        final_wip_balance_of_ip_id = story_client.WIP.balanceOf(
+            address=ip_id
+        )
+        final_erc20_balance_of_wallet = story_client.Royalty.mock_erc20_client.balanceOf(
+            account=story_client.account.address
+        )
+        final_wip_balance_of_wallet = story_client.WIP.balanceOf(
+            address=story_client.account.address
+        )
+
+        assert isinstance(response['txHash'], str) and response['txHash'] != ""
+        assert final_erc20_balance_of_ip_id == initial_erc20_balance_of_ip_id
+        assert final_wip_balance_of_ip_id == initial_wip_balance_of_ip_id
+        assert final_erc20_balance_of_wallet == initial_erc20_balance_of_wallet + 2000000
+        assert final_wip_balance_of_wallet == initial_wip_balance_of_wallet + 1

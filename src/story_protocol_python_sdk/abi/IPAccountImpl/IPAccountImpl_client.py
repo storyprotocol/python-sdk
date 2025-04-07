@@ -27,6 +27,14 @@ class IPAccountImplClient:
     #     return self.contract.functions.execute(to, value, data).build_transaction(tx_params)
     
     
+    def executeBatch(self, calls, operation):
+        
+        return self.contract.functions.executeBatch(calls, operation).transact()
+        
+    def build_executeBatch_transaction(self, calls, operation, tx_params):
+        return self.contract.functions.executeBatch(calls, operation).build_transaction(tx_params)
+    
+    
     def executeWithSig(self, to, value, data, signer, deadline, signature):
         
         return self.contract.functions.executeWithSig(to, value, data, signer, deadline, signature).transact()

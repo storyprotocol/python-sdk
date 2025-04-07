@@ -206,12 +206,12 @@ class IPAccount:
 
             ip_account = IPAccountImplClient(self.web3, contract_address=ip_id)
 
-            # Since we don't have executeBatch, we'll execute transfers one by one
-            results = []
             for token in tokens:
                 if not all(key in token for key in ['address', 'target', 'amount']):
                     raise ValueError("Each token transfer must include 'address', 'target', and 'amount'")
-                
+            
+            calls = []
+            for token in tokens:
                 token_address = self.web3.to_checksum_address(token['address'])
                 target_address = self.web3.to_checksum_address(token['target'])
                 amount = int(token['amount'])
@@ -221,20 +221,21 @@ class IPAccount:
                     args=[target_address, amount]
                 )
                 
-                response = build_and_send_transaction(
-                    self.web3,
-                    self.account,
-                    ip_account.build_execute_transaction,
-                    self.web3.to_checksum_address(token_address),
-                    0,
-                    data,
-                    0
-                )
-                results.append(response)
+                calls.append({
+                    'target': token_address,
+                    'data': data,
+                    'value': 0
+                })
             
-            # Return the hash of the last transaction
-            # In a real implementation with executeBatch, we would return a single transaction hash
-            return results[-1] if results else {"txHash": None}
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                ip_account.build_executeBatch_transaction,
+                calls,
+                0,
+                tx_options=tx_options
+            )
             
+            return response
         except Exception as e:
             raise ValueError(f"Failed to transfer ERC20: {str(e)}")

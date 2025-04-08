@@ -30,6 +30,7 @@
             "contract_address": "0xc93d49fEdED1A2fbE3B54223Df65f4edB3845eb0",
             "functions": [
                 "execute",
+                "executeBatch",
                 "executeWithSig",
                 "state",
                 "token",

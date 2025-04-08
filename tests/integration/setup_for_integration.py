@@ -84,5 +84,7 @@ __all__ = [
     'setup_royalty_vault',
     'WIP_TOKEN_ADDRESS',
     'wallet_address',
-    'wallet_address_2'
+    'wallet_address_2',
+    'private_key',
+    'private_key_2'
 ]

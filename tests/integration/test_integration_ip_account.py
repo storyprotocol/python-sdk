@@ -229,7 +229,6 @@ class TestSignatureOperations:
             ]
         )
 
-        # Calculate the expected state
         expected_state = Web3.keccak(
             encode(
                 ["bytes32", "bytes"],
@@ -237,7 +236,6 @@ class TestSignatureOperations:
             )
         )
 
-        # Prepare signature data
         domain_data = {
             "name": "Story Protocol IP Account",
             "version": "1",
@@ -345,24 +343,17 @@ class TestSetIpMetadata:
 
     def test_execute_with_sig_wrong_signer(self, story_client):
         """Test executeWithSig with a valid signature but wrong signer address."""
-        # Register a new IP
         token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
         register_response = story_client.IPAsset.register(
             nft_contract=MockERC721,
             token_id=token_id
         )
         ip_id = register_response['ipId']
-        
-        # Set a valid deadline
+
         deadline = getBlockTimestamp(web3) + 100
-        
-        # Get the current state/nonce
-        state = story_client.IPAccount.getIpAccountNonce(ip_id)
-        
-        # Prepare data for a simple operation
+        state = story_client.IPAccount.getIpAccountNonce(ip_id)        
         data = "0x"
         
-        # Prepare the expected state for signing
         execute_data = story_client.IPAccount.ip_account_client.contract.encode_abi(
             abi_element_identifier="execute",
             args=[
@@ -379,7 +370,6 @@ class TestSetIpMetadata:
             )
         )
         
-        # Prepare the signature data
         domain_data = {
             "name": "Story Protocol IP Account",
             "version": "1",
@@ -405,14 +395,10 @@ class TestSetIpMetadata:
             "deadline": deadline,
         }
         
-        # Sign the message
         signable_message = encode_typed_data(domain_data, message_types, message_data)
         signed_message = Account.sign_message(signable_message, private_key)
-        
-        # Use a wrong signer address
         wrong_signer = "0x1234567890123456789012345678901234567890"
         
-        # Execute with wrong signer
         with pytest.raises(Exception) as exc_info:
             story_client.IPAccount.executeWithSig(
                 ip_id=ip_id,
@@ -434,7 +420,6 @@ class TestSetIpMetadata:
     @pytest.mark.skip(reason="contract allows empty calls")
     def test_transfer_erc20_empty_tokens(self, story_client):
         """Test transferERC20 with empty tokens list."""
-        # Register a new IP
         token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
         register_response = story_client.IPAsset.register(
             nft_contract=MockERC721,
@@ -451,7 +436,6 @@ class TestSetIpMetadata:
     
     def test_transfer_erc20_invalid_token_params(self, story_client):
         """Test transferERC20 with invalid token parameters."""
-        # Register a new IP
         token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
         register_response = story_client.IPAsset.register(
             nft_contract=MockERC721,
@@ -459,7 +443,6 @@ class TestSetIpMetadata:
         )
         ip_id = register_response['ipId']
         
-        # Test with missing address
         with pytest.raises(ValueError) as exc_info:
             story_client.IPAccount.transferERC20(
                 ip_id=ip_id,
@@ -472,10 +455,6 @@ class TestSetIpMetadata:
                 ]
             )
         assert "must include" in str(exc_info.value), "Error should mention missing parameter"
-        
-        # Test with missing target
-        # with pytest.raises(ValueError) as exc_info:
-        #     story_client.IPAccount
     
 
 class TestTransferERC20:

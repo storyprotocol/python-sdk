@@ -23,39 +23,30 @@ class RoyaltyTokenDistributionWorkflowsClient:
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
     def distributeRoyaltyTokens(self, ipId, royaltyShares, sigApproveRoyaltyTokens):
-        
         return self.contract.functions.distributeRoyaltyTokens(ipId, royaltyShares, sigApproveRoyaltyTokens).transact()
         
     def build_distributeRoyaltyTokens_transaction(self, ipId, royaltyShares, sigApproveRoyaltyTokens, tx_params):
         return self.contract.functions.distributeRoyaltyTokens(ipId, royaltyShares, sigApproveRoyaltyTokens).build_transaction(tx_params)
     
-    
     def mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens(self, spgNftContract, recipient, ipMetadata, licenseTermsData, royaltyShares, allowDuplicates):
-        
         return self.contract.functions.mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens(spgNftContract, recipient, ipMetadata, licenseTermsData, royaltyShares, allowDuplicates).transact()
         
     def build_mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens_transaction(self, spgNftContract, recipient, ipMetadata, licenseTermsData, royaltyShares, allowDuplicates, tx_params):
         return self.contract.functions.mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens(spgNftContract, recipient, ipMetadata, licenseTermsData, royaltyShares, allowDuplicates).build_transaction(tx_params)
     
-    
     def mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens(self, spgNftContract, recipient, ipMetadata, derivData, royaltyShares, allowDuplicates):
-        
         return self.contract.functions.mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens(spgNftContract, recipient, ipMetadata, derivData, royaltyShares, allowDuplicates).transact()
         
     def build_mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens_transaction(self, spgNftContract, recipient, ipMetadata, derivData, royaltyShares, allowDuplicates, tx_params):
         return self.contract.functions.mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens(spgNftContract, recipient, ipMetadata, derivData, royaltyShares, allowDuplicates).build_transaction(tx_params)
     
-    
     def registerIpAndAttachPILTermsAndDeployRoyaltyVault(self, nftContract, tokenId, ipMetadata, licenseTermsData, sigMetadataAndAttachAndConfig):
-        
         return self.contract.functions.registerIpAndAttachPILTermsAndDeployRoyaltyVault(nftContract, tokenId, ipMetadata, licenseTermsData, sigMetadataAndAttachAndConfig).transact()
         
     def build_registerIpAndAttachPILTermsAndDeployRoyaltyVault_transaction(self, nftContract, tokenId, ipMetadata, licenseTermsData, sigMetadataAndAttachAndConfig, tx_params):
         return self.contract.functions.registerIpAndAttachPILTermsAndDeployRoyaltyVault(nftContract, tokenId, ipMetadata, licenseTermsData, sigMetadataAndAttachAndConfig).build_transaction(tx_params)
     
-    
     def registerIpAndMakeDerivativeAndDeployRoyaltyVault(self, nftContract, tokenId, ipMetadata, derivData, sigMetadataAndRegister):
-        
         return self.contract.functions.registerIpAndMakeDerivativeAndDeployRoyaltyVault(nftContract, tokenId, ipMetadata, derivData, sigMetadataAndRegister).transact()
         
     def build_registerIpAndMakeDerivativeAndDeployRoyaltyVault_transaction(self, nftContract, tokenId, ipMetadata, derivData, sigMetadataAndRegister, tx_params):

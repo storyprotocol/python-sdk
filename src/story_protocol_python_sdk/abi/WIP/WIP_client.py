@@ -23,47 +23,36 @@ class WIPClient:
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
     def approve(self, spender, amount):
-        
         return self.contract.functions.approve(spender, amount).transact()
         
     def build_approve_transaction(self, spender, amount, tx_params):
         return self.contract.functions.approve(spender, amount).build_transaction(tx_params)
     
-    
-    def deposit(self, ):
-        
+    def deposit(self):
         return self.contract.functions.deposit().transact()
         
     def build_deposit_transaction(self, tx_params):
         return self.contract.functions.deposit().build_transaction(tx_params)
     
-    
     def transfer(self, to, amount):
-        
         return self.contract.functions.transfer(to, amount).transact()
         
     def build_transfer_transaction(self, to, amount, tx_params):
         return self.contract.functions.transfer(to, amount).build_transaction(tx_params)
     
-    
     def transferFrom(self, from_address, to, amount):
-        
         return self.contract.functions.transferFrom(from_address, to, amount).transact()
         
     def build_transferFrom_transaction(self, from_address, to, amount, tx_params):
         return self.contract.functions.transferFrom(from_address, to, amount).build_transaction(tx_params)
     
-    
     def withdraw(self, value):
-        
         return self.contract.functions.withdraw(value).transact()
         
     def build_withdraw_transaction(self, value, tx_params):
         return self.contract.functions.withdraw(value).build_transaction(tx_params)
     
-    
     def balanceOf(self, owner):
-        
         return self.contract.functions.balanceOf(owner).call()
         
     

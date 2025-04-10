@@ -12,17 +12,12 @@ class IpRoyaltyVaultImplClient:
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
     def balanceOf(self, account):
-        
         return self.contract.functions.balanceOf(account).call()
-        
     
     def claimableRevenue(self, claimer, token):
-        
         return self.contract.functions.claimableRevenue(claimer, token).call()
-        
     
-    def ipId(self, ):
-        
+    def ipId(self):
         return self.contract.functions.ipId().call()
         
     

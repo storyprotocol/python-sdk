@@ -23,17 +23,12 @@ class ArbitrationPolicyUMAClient:
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
     def maxBonds(self, token):
-        
         return self.contract.functions.maxBonds(token).call()
-        
     
-    def maxLiveness(self, ):
-        
+    def maxLiveness(self):
         return self.contract.functions.maxLiveness().call()
-        
     
-    def minLiveness(self, ):
-        
+    def minLiveness(self):
         return self.contract.functions.minLiveness().call()
         
     

@@ -11,13 +11,10 @@ class SPGNFTImplClient:
             abi = json.load(abi_file)
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
-    def mintFee(self, ):
-        
+    def mintFee(self):
         return self.contract.functions.mintFee().call()
-        
     
-    def mintFeeToken(self, ):
-        
+    def mintFeeToken(self):
         return self.contract.functions.mintFeeToken().call()
         
     

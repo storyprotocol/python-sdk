@@ -23,7 +23,6 @@ class ModuleRegistryClient:
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
     def isRegistered(self, moduleAddress):
-        
         return self.contract.functions.isRegistered(moduleAddress).call()
         
     

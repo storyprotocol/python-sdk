@@ -23,31 +23,24 @@ class RegistrationWorkflowsClient:
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
     def createCollection(self, spgNftInitParams):
-        
         return self.contract.functions.createCollection(spgNftInitParams).transact()
         
     def build_createCollection_transaction(self, spgNftInitParams, tx_params):
         return self.contract.functions.createCollection(spgNftInitParams).build_transaction(tx_params)
     
-    
     def mintAndRegisterIp(self, spgNftContract, recipient, ipMetadata, allowDuplicates):
-        
         return self.contract.functions.mintAndRegisterIp(spgNftContract, recipient, ipMetadata, allowDuplicates).transact()
         
     def build_mintAndRegisterIp_transaction(self, spgNftContract, recipient, ipMetadata, allowDuplicates, tx_params):
         return self.contract.functions.mintAndRegisterIp(spgNftContract, recipient, ipMetadata, allowDuplicates).build_transaction(tx_params)
     
-    
     def multicall(self, data):
-        
         return self.contract.functions.multicall(data).transact()
         
     def build_multicall_transaction(self, data, tx_params):
         return self.contract.functions.multicall(data).build_transaction(tx_params)
     
-    
     def registerIp(self, nftContract, tokenId, ipMetadata, sigMetadata):
-        
         return self.contract.functions.registerIp(nftContract, tokenId, ipMetadata, sigMetadata).transact()
         
     def build_registerIp_transaction(self, nftContract, tokenId, ipMetadata, sigMetadata, tx_params):

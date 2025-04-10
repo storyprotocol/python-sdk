@@ -23,31 +23,24 @@ class DisputeModuleClient:
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
     def cancelDispute(self, disputeId, data):
-        
         return self.contract.functions.cancelDispute(disputeId, data).transact()
         
     def build_cancelDispute_transaction(self, disputeId, data, tx_params):
         return self.contract.functions.cancelDispute(disputeId, data).build_transaction(tx_params)
     
-    
     def raiseDispute(self, targetIpId, disputeEvidenceHash, targetTag, data):
-        
         return self.contract.functions.raiseDispute(targetIpId, disputeEvidenceHash, targetTag, data).transact()
         
     def build_raiseDispute_transaction(self, targetIpId, disputeEvidenceHash, targetTag, data, tx_params):
         return self.contract.functions.raiseDispute(targetIpId, disputeEvidenceHash, targetTag, data).build_transaction(tx_params)
     
-    
     def resolveDispute(self, disputeId, data):
-        
         return self.contract.functions.resolveDispute(disputeId, data).transact()
         
     def build_resolveDispute_transaction(self, disputeId, data, tx_params):
         return self.contract.functions.resolveDispute(disputeId, data).build_transaction(tx_params)
     
-    
     def isWhitelistedDisputeTag(self, tag):
-        
         return self.contract.functions.isWhitelistedDisputeTag(tag).call()
         
     

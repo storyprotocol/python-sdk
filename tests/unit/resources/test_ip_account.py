@@ -16,6 +16,7 @@ from src.story_protocol_python_sdk.resources.IPAccount import IPAccount
 
 # Constants
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000"
 VALID_IP_ID = "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"
 TX_HASH = "0xe87b172eee35872179ced53ea4f3f314b12cd0f5d0034e7f0ae3c4efce9ba6f1"
 
@@ -27,7 +28,7 @@ class MockWeb3:
     @staticmethod
     def to_checksum_address(address):
         if not is_address(address):
-            raise ValueError(f"The recipient of the transaction {address} is not a valid address")
+            raise ValueError(f"Invalid address: {address}")
         return to_checksum_address(address)
     
     @staticmethod
@@ -61,8 +62,6 @@ def ip_account(mock_web3, mock_account):
     return IPAccount(mock_web3, mock_account, chain_id)
 
 @pytest.mark.unit
-@pytest.mark.unit
-@pytest.mark.unit
 class TestExecute:
     def test_invalid_recipient_address(self, ip_account):
         with pytest.raises(ValueError) as exc_info:
@@ -84,10 +83,10 @@ class TestExecute:
         mock_signed_txn = MagicMock()
         mock_signed_txn.raw_transaction = b'raw_transaction_bytes'
 
-        # Mock transaction hash with hex method that returns hash WITHOUT '0x' prefix
+        # Mock transaction hash with hex method that returns hash
         class MockTxHash:
             def hex(self):
-                return TX_HASH[2:]  # Remove '0x' prefix when returning the hash
+                return TX_HASH
 
         mock_tx_hash = MockTxHash()
 
@@ -100,7 +99,7 @@ class TestExecute:
             patch.object(ip_account.web3.eth, 'wait_for_transaction_receipt', return_value={'status': 1}):
 
             response = ip_account.execute(to_address, value, VALID_IP_ID, data)
-            assert response['txHash'] == TX_HASH[2:]
+            assert response['tx_hash'] == TX_HASH
 
     def test_wait_for_transaction(self, ip_account):
         to_address = "0xF9936a224b3Deb6f9A4645ccAfa66f7ECe83CF0A"
@@ -113,7 +112,7 @@ class TestExecute:
 
         class MockTxHash:
             def hex(self):
-                return TX_HASH[2:]  # Remove '0x' prefix when returning the hash
+                return TX_HASH
 
         mock_tx_hash = MockTxHash()
 
@@ -125,7 +124,7 @@ class TestExecute:
              patch.object(ip_account.web3.eth, 'wait_for_transaction_receipt', return_value={'status': 1}):
 
             response = ip_account.execute(to_address, value, VALID_IP_ID, data, tx_options=tx_options)
-            assert response['txHash'] == TX_HASH[2:]
+            assert response['tx_hash'] == TX_HASH
 
     def test_encoded_tx_data_only(self, ip_account):
         to_address = "0xF9936a224b3Deb6f9A4645ccAfa66f7ECe83CF0A"
@@ -157,7 +156,7 @@ class TestExecute:
 class TestExecuteWithSig:
     def test_invalid_recipient_address(self, ip_account):
         with pytest.raises(ValueError) as exc_info:
-            ip_account.executeWithSig(
+            ip_account.execute_with_sig(
                 VALID_IP_ID, 
                 "0xInvalidAddress", 
                 "0x11111111111111111111111111111",
@@ -180,7 +179,7 @@ class TestExecuteWithSig:
 
         class MockTxHash:
             def hex(self):
-                return TX_HASH[2:] 
+                return TX_HASH
 
         mock_tx_hash = MockTxHash()
         
@@ -191,8 +190,8 @@ class TestExecuteWithSig:
              patch.object(ip_account.web3.eth, 'send_raw_transaction', return_value=mock_tx_hash), \
              patch.object(ip_account.web3.eth, 'wait_for_transaction_receipt', return_value={'status': 1}):
 
-            response = ip_account.executeWithSig(VALID_IP_ID, to_address, data, signer, deadline, signature, value)
-            assert response['txHash'] == TX_HASH[2:]
+            response = ip_account.execute_with_sig(VALID_IP_ID, to_address, data, signer, deadline, signature, value)
+            assert response['tx_hash'] == TX_HASH
 
     def test_wait_for_transaction_with_sig(self, ip_account):
         to_address = "0xF9936a224b3Deb6f9A4645ccAfa66f7ECe83CF0A"
@@ -207,7 +206,7 @@ class TestExecuteWithSig:
         
         class MockTxHash:
             def hex(self):
-                return TX_HASH[2:]  # Remove '0x' prefix when returning the hash
+                return TX_HASH
 
         mock_tx_hash = MockTxHash()
         
@@ -218,16 +217,16 @@ class TestExecuteWithSig:
              patch.object(ip_account.web3.eth, 'send_raw_transaction', return_value=mock_tx_hash), \
              patch.object(ip_account.web3.eth, 'wait_for_transaction_receipt', return_value={'status': 1}):
 
-            response = ip_account.executeWithSig(
+            response = ip_account.execute_with_sig(
                 VALID_IP_ID, to_address, data, signer, deadline, signature,
                 tx_options=tx_options
             )
-            assert response['txHash'] == TX_HASH[2:]
+            assert response['tx_hash'] == TX_HASH
 
 class TestGetIpAccountNonce:
     def test_invalid_ip_id(self, ip_account):
         with pytest.raises(ValueError) as exc_info:
-            ip_account.getIpAccountNonce("0x123")  # invalid address
+            ip_account.get_ip_account_nonce("0x123")  # invalid address
         assert "Invalid IP id address" in str(exc_info.value)
 
     def test_successful_nonce_retrieval(self, ip_account):
@@ -237,25 +236,141 @@ class TestGetIpAccountNonce:
         with patch('story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client.IPAccountImplClient.state', 
                 return_value=expected_nonce), \
             patch('web3.eth.Eth.contract', return_value=MagicMock()):
-            nonce = ip_account.getIpAccountNonce(ip_id)
+            nonce = ip_account.get_ip_account_nonce(ip_id)
             assert nonce == expected_nonce
 
 class TestGetToken:
     def test_invalid_ip_id(self, ip_account):
         with pytest.raises(ValueError) as exc_info:
-            ip_account.getToken("0x123")  # invalid address
+            ip_account.get_token("0x123")  # invalid address
         assert "Invalid IP id address" in str(exc_info.value)
 
     def test_successful_token_retrieval(self, ip_account):
         ip_id = Web3.to_checksum_address("0x73fcb515cee99e4991465ef586cfe2b072ebb512")
         expected_token = {
-            'chainId': 1513,
-            'tokenContract': ZERO_ADDRESS,
-            'tokenId': 1
+            'chain_id': 1513,
+            'token_contract': ZERO_ADDRESS,
+            'token_id': 1
         }
 
         with patch('story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client.IPAccountImplClient.token',
                   return_value=[1513, ZERO_ADDRESS, 1]), \
              patch('web3.eth.Eth.contract', return_value=MagicMock()):
-            token = ip_account.getToken(ip_id)
+            token = ip_account.get_token(ip_id)
             assert token == expected_token
+
+class TestTransferERC20:
+    def test_unregistered_ip_id(self, ip_account):
+        with patch.object(ip_account, '_is_registered', return_value=False):
+            with pytest.raises(ValueError) as exc_info:
+                ip_account.transfer_erc20(
+                    ip_id=VALID_IP_ID,
+                    tokens=[{
+                        'address': ZERO_ADDRESS,
+                        'target': ZERO_ADDRESS,
+                        'amount': 1000
+                    }]
+                )
+            assert f"IP id {VALID_IP_ID} is not registered" in str(exc_info.value)
+    
+    def test_invalid_token_params(self, ip_account):
+        with patch.object(ip_account, '_is_registered', return_value=True):
+            with pytest.raises(ValueError) as exc_info:
+                ip_account.transfer_erc20(
+                    ip_id=VALID_IP_ID,
+                    tokens=[{
+                        # Missing 'address'
+                        'target': ZERO_ADDRESS,
+                        'amount': 1000
+                    }]
+                )
+            assert "Each token transfer must include 'address', 'target', and 'amount'" in str(exc_info.value)
+    
+    def test_successful_transfer(self, ip_account):
+        tokens = [
+            {
+                'address': "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c",
+                'target': "0xF60cBF0Ea1A61567F1dDaf79A6219D20d189155c",
+                'amount': 1000000
+            },
+            {
+                'address': "0x2daAE3197Bc469Cb97B917aa460a12dD95c6627c",
+                'target': "0xF60cBF0Ea1A61567F1dDaf79A6219D20d189155c",
+                'amount': 2000000
+            }
+        ]
+        
+        mock_signed_txn = MagicMock()
+        mock_signed_txn.raw_transaction = b'raw_transaction_bytes'
+        
+        class MockTxHash:
+            def hex(self):
+                return TX_HASH
+                
+        mock_tx_hash = MockTxHash()
+        
+        ip_account.account.sign_transaction = MagicMock(return_value=mock_signed_txn)
+        
+        with patch.object(ip_account, '_is_registered', return_value=True), \
+             patch.object(ip_account.web3.eth, 'get_transaction_count', return_value=0), \
+             patch.object(ip_account.web3.eth, 'send_raw_transaction', return_value=mock_tx_hash), \
+             patch.object(ip_account.web3.eth, 'wait_for_transaction_receipt', return_value={'status': 1}):
+            
+            response = ip_account.transfer_erc20(VALID_IP_ID, tokens)
+            assert response['tx_hash'] == TX_HASH
+
+class TestSetIPMetadata:
+    def test_unregistered_ip_id(self, ip_account):
+        with patch.object(ip_account, '_is_registered', return_value=False):
+            with pytest.raises(ValueError) as exc_info:
+                ip_account.set_ip_metadata(
+                    ip_id=VALID_IP_ID,
+                    metadata_uri="ipfs://example",
+                    metadata_hash=ZERO_HASH
+                )
+            assert f"IP id {VALID_IP_ID} is not registered" in str(exc_info.value)
+    
+    def test_successful_metadata_update(self, ip_account):
+        metadata_uri = "ipfs://example"
+        metadata_hash = ZERO_HASH
+        
+        mock_signed_txn = MagicMock()
+        mock_signed_txn.raw_transaction = b'raw_transaction_bytes'
+        
+        class MockTxHash:
+            def hex(self):
+                return TX_HASH
+                
+        mock_tx_hash = MockTxHash()
+        
+        # Create a mock contract with a valid address
+        mock_contract = MagicMock()
+        mock_contract.address = "0xF9936a224b3Deb6f9A4645ccAfa66f7ECe83CF0A"  # Use a valid address
+        
+        ip_account.account.sign_transaction = MagicMock(return_value=mock_signed_txn)
+        
+        with patch.object(ip_account, '_is_registered', return_value=True), \
+             patch.object(ip_account.web3.eth, 'get_transaction_count', return_value=0), \
+             patch.object(ip_account.web3.eth, 'send_raw_transaction', return_value=mock_tx_hash), \
+             patch.object(ip_account.web3.eth, 'wait_for_transaction_receipt', return_value={'status': 1}), \
+             patch.object(ip_account.web3.eth, 'contract', return_value=mock_contract), \
+             patch.object(ip_account.web3, 'is_address', return_value=True):
+            
+            response = ip_account.set_ip_metadata(VALID_IP_ID, metadata_uri, metadata_hash)
+            assert response['tx_hash'] == TX_HASH
+
+class TestOwner:
+    def test_invalid_ip_id(self, ip_account):
+        with pytest.raises(ValueError) as exc_info:
+            ip_account.owner("0x123")  # invalid address
+        assert "Invalid IP id address" in str(exc_info.value)
+    
+    def test_successful_owner_retrieval(self, ip_account):
+        ip_id = Web3.to_checksum_address("0x73fcb515cee99e4991465ef586cfe2b072ebb512")
+        expected_owner = "0xF60cBF0Ea1A61567F1dDaf79A6219D20d189155c"
+        
+        with patch('story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client.IPAccountImplClient.owner', 
+                  return_value=expected_owner), \
+             patch('web3.eth.Eth.contract', return_value=MagicMock()):
+            owner = ip_account.owner(ip_id)
+            assert owner == expected_owner

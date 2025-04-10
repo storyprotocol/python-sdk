@@ -99,7 +99,7 @@ class TestBasicIPAccountOperations:
 class TestSignatureOperations:
     """Tests for operations involving signatures"""
     
-    def test_executeWithSig(self, story_client):
+    def test_execute_with_sig(self, story_client):
         token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
         response = story_client.IPAsset.register(
             nft_contract=MockERC721,
@@ -321,6 +321,78 @@ class TestErrorCases:
         
         assert "is not registered" in str(exc_info.value)
 
+    def test_execute_with_sig_wrong_signer(self, story_client):
+        """Test executeWithSig with a valid signature but wrong signer address."""
+        token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+        register_response = story_client.IPAsset.register(
+            nft_contract=MockERC721,
+            token_id=token_id
+        )
+        ip_id = register_response['ip_id']
+
+        deadline = get_block_timestamp(web3) + 100
+        state = story_client.IPAccount.get_ip_account_nonce(ip_id)        
+        data = "0x"
+        
+        execute_data = story_client.IPAccount.ip_account_client.contract.encode_abi(
+            abi_element_identifier="execute",
+            args=[
+                story_client.IPAccount.access_controller_client.contract.address,
+                0,
+                data
+            ]
+        )
+        
+        expected_state = Web3.keccak(
+            encode(
+                ["bytes32", "bytes"],
+                [state, Web3.to_bytes(hexstr=execute_data)]
+            )
+        )
+        
+        domain_data = {
+            "name": "Story Protocol IP Account",
+            "version": "1",
+            "chainId": 1315,
+            "verifyingContract": ip_id,
+        }
+        
+        message_types = {
+            "Execute": [
+                {"name": "to", "type": "address"},
+                {"name": "value", "type": "uint256"},
+                {"name": "data", "type": "bytes"},
+                {"name": "nonce", "type": "bytes32"},
+                {"name": "deadline", "type": "uint256"},
+            ],
+        }
+        
+        message_data = {
+            "to": story_client.IPAccount.access_controller_client.contract.address,
+            "value": 0,
+            "data": data,
+            "nonce": expected_state,
+            "deadline": deadline,
+        }
+        
+        signable_message = encode_typed_data(domain_data, message_types, message_data)
+        signed_message = Account.sign_message(signable_message, private_key)
+        wrong_signer = "0x1234567890123456789012345678901234567890"
+        
+        with pytest.raises(Exception) as exc_info:
+            story_client.IPAccount.execute_with_sig(
+                ip_id=ip_id,
+                to=story_client.IPAccount.access_controller_client.contract.address,
+                value=0,
+                data=data,
+                signer=wrong_signer,  # Wrong signer address
+                deadline=deadline,
+                signature=signed_message.signature
+            )
+
+        error_hex = '0x3fd60002'
+        assert error_hex in str(exc_info.value), f"Expected error code {error_hex} for wrong signer"
+
 class TestSetIpMetadata:
     """Tests for setting IP metadata"""
     
@@ -432,3 +504,43 @@ class TestTransferERC20:
         assert final_wip_balance_of_ip_id == initial_wip_balance_of_ip_id
         assert final_erc20_balance_of_wallet == initial_erc20_balance_of_wallet + 2000000
         assert final_wip_balance_of_wallet == initial_wip_balance_of_wallet + 1
+
+    @pytest.mark.skip(reason="contract allows empty calls")
+    def test_transfer_erc20_empty_tokens(self, story_client):
+        """Test transferERC20 with empty tokens list."""
+        token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+        register_response = story_client.IPAsset.register(
+            nft_contract=MockERC721,
+            token_id=token_id
+        )
+        ip_id = register_response['ip_id']
+        
+        # Try to transfer with empty tokens list
+        with pytest.raises(Exception) as exc_info:
+            story_client.IPAccount.transfer_erc20(
+                ip_id=ip_id,
+                tokens=[]  # Empty tokens list
+       )
+    
+    def test_transfer_erc20_invalid_token_params(self, story_client):
+        """Test transferERC20 with invalid token parameters."""
+        token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+        register_response = story_client.IPAsset.register(
+            nft_contract=MockERC721,
+            token_id=token_id
+        )
+        ip_id = register_response['ip_id']
+        
+        with pytest.raises(ValueError) as exc_info:
+            story_client.IPAccount.transfer_erc20(
+                ip_id=ip_id,
+                tokens=[
+                    {
+                        # Missing 'address'
+                        "target": story_client.account.address,
+                        "amount": 1000000
+                    }
+                ]
+            )
+        assert "must include" in str(exc_info.value), "Error should mention missing parameter"
+    

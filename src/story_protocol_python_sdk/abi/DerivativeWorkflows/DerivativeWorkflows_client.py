@@ -23,39 +23,30 @@ class DerivativeWorkflowsClient:
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
     def mintAndRegisterIpAndMakeDerivative(self, spgNftContract, derivData, ipMetadata, recipient, allowDuplicates):
-        
         return self.contract.functions.mintAndRegisterIpAndMakeDerivative(spgNftContract, derivData, ipMetadata, recipient, allowDuplicates).transact()
         
     def build_mintAndRegisterIpAndMakeDerivative_transaction(self, spgNftContract, derivData, ipMetadata, recipient, allowDuplicates, tx_params):
         return self.contract.functions.mintAndRegisterIpAndMakeDerivative(spgNftContract, derivData, ipMetadata, recipient, allowDuplicates).build_transaction(tx_params)
     
-    
     def mintAndRegisterIpAndMakeDerivativeWithLicenseTokens(self, spgNftContract, licenseTokenIds, royaltyContext, maxRts, ipMetadata, recipient, allowDuplicates):
-        
         return self.contract.functions.mintAndRegisterIpAndMakeDerivativeWithLicenseTokens(spgNftContract, licenseTokenIds, royaltyContext, maxRts, ipMetadata, recipient, allowDuplicates).transact()
         
     def build_mintAndRegisterIpAndMakeDerivativeWithLicenseTokens_transaction(self, spgNftContract, licenseTokenIds, royaltyContext, maxRts, ipMetadata, recipient, allowDuplicates, tx_params):
         return self.contract.functions.mintAndRegisterIpAndMakeDerivativeWithLicenseTokens(spgNftContract, licenseTokenIds, royaltyContext, maxRts, ipMetadata, recipient, allowDuplicates).build_transaction(tx_params)
     
-    
     def multicall(self, data):
-        
         return self.contract.functions.multicall(data).transact()
         
     def build_multicall_transaction(self, data, tx_params):
         return self.contract.functions.multicall(data).build_transaction(tx_params)
     
-    
     def registerIpAndMakeDerivative(self, nftContract, tokenId, derivData, ipMetadata, sigMetadataAndRegister):
-        
         return self.contract.functions.registerIpAndMakeDerivative(nftContract, tokenId, derivData, ipMetadata, sigMetadataAndRegister).transact()
         
     def build_registerIpAndMakeDerivative_transaction(self, nftContract, tokenId, derivData, ipMetadata, sigMetadataAndRegister, tx_params):
         return self.contract.functions.registerIpAndMakeDerivative(nftContract, tokenId, derivData, ipMetadata, sigMetadataAndRegister).build_transaction(tx_params)
     
-    
     def registerIpAndMakeDerivativeWithLicenseTokens(self, nftContract, tokenId, licenseTokenIds, royaltyContext, maxRts, ipMetadata, sigMetadataAndRegister):
-        
         return self.contract.functions.registerIpAndMakeDerivativeWithLicenseTokens(nftContract, tokenId, licenseTokenIds, royaltyContext, maxRts, ipMetadata, sigMetadataAndRegister).transact()
         
     def build_registerIpAndMakeDerivativeWithLicenseTokens_transaction(self, nftContract, tokenId, licenseTokenIds, royaltyContext, maxRts, ipMetadata, sigMetadataAndRegister, tx_params):

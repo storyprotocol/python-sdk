@@ -142,7 +142,7 @@ class StoryClient:
             self._wip = WIP(self.web3, self.account, self.chain_id)
         return self._wip
     
-    def getWalletBalance(self) -> int:
+    def get_wallet_balance(self) -> int:
         """
         Get the WIP token balance of the current wallet.
 

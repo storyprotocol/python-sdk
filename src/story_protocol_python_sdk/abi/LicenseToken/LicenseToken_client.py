@@ -23,7 +23,6 @@ class LicenseTokenClient:
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
     def ownerOf(self, tokenId):
-        
         return self.contract.functions.ownerOf(tokenId).call()
         
     

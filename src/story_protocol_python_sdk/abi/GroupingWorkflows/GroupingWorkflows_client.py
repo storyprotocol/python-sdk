@@ -23,31 +23,24 @@ class GroupingWorkflowsClient:
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
     def mintAndRegisterIpAndAttachLicenseAndAddToGroup(self, spgNftContract, groupId, recipient, licensesData, ipMetadata, sigAddToGroup, allowDuplicates):
-        
         return self.contract.functions.mintAndRegisterIpAndAttachLicenseAndAddToGroup(spgNftContract, groupId, recipient, licensesData, ipMetadata, sigAddToGroup, allowDuplicates).transact()
         
     def build_mintAndRegisterIpAndAttachLicenseAndAddToGroup_transaction(self, spgNftContract, groupId, recipient, licensesData, ipMetadata, sigAddToGroup, allowDuplicates, tx_params):
         return self.contract.functions.mintAndRegisterIpAndAttachLicenseAndAddToGroup(spgNftContract, groupId, recipient, licensesData, ipMetadata, sigAddToGroup, allowDuplicates).build_transaction(tx_params)
     
-    
     def registerGroupAndAttachLicense(self, groupPool, licenseData):
-        
         return self.contract.functions.registerGroupAndAttachLicense(groupPool, licenseData).transact()
         
     def build_registerGroupAndAttachLicense_transaction(self, groupPool, licenseData, tx_params):
         return self.contract.functions.registerGroupAndAttachLicense(groupPool, licenseData).build_transaction(tx_params)
     
-    
     def registerGroupAndAttachLicenseAndAddIps(self, groupPool, ipIds, licenseData):
-        
         return self.contract.functions.registerGroupAndAttachLicenseAndAddIps(groupPool, ipIds, licenseData).transact()
         
     def build_registerGroupAndAttachLicenseAndAddIps_transaction(self, groupPool, ipIds, licenseData, tx_params):
         return self.contract.functions.registerGroupAndAttachLicenseAndAddIps(groupPool, ipIds, licenseData).build_transaction(tx_params)
     
-    
     def registerIpAndAttachLicenseAndAddToGroup(self, nftContract, tokenId, groupId, licensesData, ipMetadata, sigMetadataAndAttachAndConfig, sigAddToGroup):
-        
         return self.contract.functions.registerIpAndAttachLicenseAndAddToGroup(nftContract, tokenId, groupId, licensesData, ipMetadata, sigMetadataAndAttachAndConfig, sigAddToGroup).transact()
         
     def build_registerIpAndAttachLicenseAndAddToGroup_transaction(self, nftContract, tokenId, groupId, licensesData, ipMetadata, sigMetadataAndAttachAndConfig, sigAddToGroup, tx_params):

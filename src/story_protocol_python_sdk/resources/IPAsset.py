@@ -16,10 +16,7 @@ from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client im
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 from story_protocol_python_sdk.utils.sign import Sign
-
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
-ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000"
-
+from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
 
 class IPAsset:
     """
@@ -74,8 +71,8 @@ class IPAsset:
             ip_id = self._get_ip_id(nft_contract, token_id)
             if self._is_registered(ip_id):
                 return {
-                    'txHash': None,
-                    'ipId': ip_id
+                    'tx_hash': None,
+                    'ip_id': ip_id
                 }
 
             req_object = {
@@ -145,17 +142,27 @@ class IPAsset:
                     tx_options=tx_options
                 )
 
-            ip_registered = self._parse_tx_ip_registered_event(response['txReceipt'])
+            ip_registered = self._parse_tx_ip_registered_event(response['tx_receipt'])
 
             return {
-                'txHash': response['txHash'],
-                'ipId': ip_registered['ipId']
+                'tx_hash': response['tx_hash'],
+                'ip_id': ip_registered['ip_id']
             }
 
         except Exception as e:
             raise e
     
-    def registerDerivative(self, child_ip_id: str, parent_ip_ids: list, license_terms_ids: list, max_minting_fee: int = 0, max_rts: int = 0, max_revenue_share: int = 0, license_template: str = None, tx_options: dict = None) -> dict:
+    def register_derivative(
+        self,
+        child_ip_id: str,
+        parent_ip_ids: list,
+        license_terms_ids: list,
+        max_minting_fee: int = 0,
+        max_rts: int = 0,
+        max_revenue_share: int = 0,
+        license_template: str = None,
+        tx_options: dict = None
+    ) -> dict:
         """
         Registers a derivative directly with parent IP's license terms, without needing license tokens,
         and attaches the license terms of the parent IPs to the derivative IP.
@@ -166,8 +173,10 @@ class IPAsset:
         :param child_ip_id str: The derivative IP ID
         :param parent_ip_ids list: The parent IP IDs
         :param license_terms_ids list: The IDs of the license terms that the parent IP supports
-        :param max_minting_fee int: The maximum minting fee that the caller is willing to pay. if set to 0 then no limit
-        :param max_rts int: The maximum number of royalty tokens that can be distributed (max: 100,000,000)
+        :param max_minting_fee int: The maximum minting fee that the caller is willing to pay.
+            if set to 0 then no limit
+        :param max_rts int: The maximum number of royalty tokens that can be distributed
+            (max: 100,000,000)
         :param max_revenue_share int: The maximum revenue share percentage allowed (0-100,000,000)
         :param license_template str: [Optional] The license template address
         :param tx_options dict: [Optional] Transaction options
@@ -203,7 +212,7 @@ class IPAsset:
             )
 
             return {
-                'txHash': response['txHash']
+                'tx_hash': response['tx_hash']
             }
 
         except Exception as e:
@@ -229,12 +238,13 @@ class IPAsset:
         :return dict: The processed internal derivative data
         :raises ValueError: If validation fails
         """
-
         internal_data = {
             'childIpId': derivative_data['childIpId'],
             'parentIpIds': derivative_data['parentIpIds'],
             'licenseTermsIds': [int(id) for id in derivative_data['licenseTermsIds']],
-            'licenseTemplate': derivative_data.get('licenseTemplate') if derivative_data.get('licenseTemplate') is not None else self.pi_license_template_client.contract.address,
+            'licenseTemplate': (derivative_data.get('licenseTemplate')
+                               if derivative_data.get('licenseTemplate') is not None
+                               else self.pi_license_template_client.contract.address),
             'royaltyContext': ZERO_ADDRESS,
             'maxMintingFee': int(derivative_data.get('maxMintingFee', 0)),
             'maxRts': int(derivative_data.get('maxRts', 0)),
@@ -259,24 +269,42 @@ class IPAsset:
             if not self._is_registered(parent_id):
                 raise ValueError(f"The parent IP with id {parent_id} is not registered.")
                 
-            if not self.license_registry_client.hasIpAttachedLicenseTerms(parent_id, internal_data['licenseTemplate'], terms_id):
-                raise ValueError(f"License terms id {terms_id} must be attached to the parent ipId {parent_id} before registering derivative.")
+            if not self.license_registry_client.hasIpAttachedLicenseTerms(
+                parent_id, internal_data['licenseTemplate'], terms_id
+            ):
+                raise ValueError(
+                    f"License terms id {terms_id} must be attached to the parent ipId "
+                    f"{parent_id} before registering derivative."
+                )
                 
-            royalty_percent = self.license_registry_client.getRoyaltyPercent(parent_id, internal_data['licenseTemplate'], terms_id)
+            royalty_percent = self.license_registry_client.getRoyaltyPercent(
+                parent_id, internal_data['licenseTemplate'], terms_id
+            )
             if internal_data['maxRevenueShare'] != 0 and royalty_percent > internal_data['maxRevenueShare']:
-                raise ValueError(f"The royalty percent for the parent IP with id {parent_id} is greater than the maximum revenue share {internal_data['maxRevenueShare']}.")
+                raise ValueError(
+                    f"The royalty percent for the parent IP with id {parent_id} is greater "
+                    f"than the maximum revenue share {internal_data['maxRevenueShare']}."
+                )
                 
         return internal_data
         
-    def registerDerivativeWithLicenseTokens(self, child_ip_id: str, license_token_ids: list, max_rts: int = 0, tx_options: dict = None) -> dict:
+    def register_derivative_with_license_tokens(
+        self,
+        child_ip_id: str,
+        license_token_ids: list,
+        max_rts: int = 0,
+        tx_options: dict = None
+    ) -> dict:
         """
-        Registers a derivative with license tokens. The derivative IP is registered with license tokens minted from the parent IP's license terms.
+        Registers a derivative with license tokens. The derivative IP is registered with license tokens
+        minted from the parent IP's license terms.
         The license terms of the parent IPs issued with license tokens are attached to the derivative IP.
         The caller must be the derivative IP owner or an authorized operator.
 
         :param child_ip_id str: The derivative IP ID.
         :param license_token_ids list: The IDs of the license tokens.
-        :param max_rts int: The maximum number of royalty tokens that can be distributed to the external royalty policies (max: 100,000,000).
+        :param max_rts int: The maximum number of royalty tokens that can be distributed to the
+            external royalty policies (max: 100,000,000).
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash.
         """
@@ -304,7 +332,7 @@ class IPAsset:
             )
 
             return {
-                'txHash': response['txHash']
+                'tx_hash': response['tx_hash']
             }
 
         except Exception as e:
@@ -332,7 +360,7 @@ class IPAsset:
                 
         return license_token_ids
         
-    def mintAndRegisterIpAssetWithPilTerms(
+    def mint_and_register_ip_asset_with_pil_terms(
         self,
         spg_nft_contract: str,
         terms: list,
@@ -416,7 +444,7 @@ class IPAsset:
                     'commercialUse': term['terms']['commercial_use'],
                     'commercialAttribution': term['terms']['commercial_attribution'],
                     'commercializerChecker': term['terms']['commercializer_checker'],
-                    'commercializerCheckerData': term['terms']['commercializer_checker_data'],  # noqa: E501
+                    'commercializerCheckerData': term['terms']['commercializer_checker_data'],
                     'commercialRevShare': term['terms']['commercial_rev_share'],
                     'commercialRevCeiling': term['terms']['commercial_rev_ceiling'],
                     'derivativesAllowed': term['terms']['derivatives_allowed'],
@@ -433,10 +461,10 @@ class IPAsset:
                     'mintingFee': validated_licensing_config['minting_fee'],
                     'hookData': validated_licensing_config['hook_data'],
                     'licensingHook': validated_licensing_config['licensing_hook'],
-                    'commercialRevShare': validated_licensing_config['commercial_rev_share'],  # noqa: E501
+                    'commercialRevShare': validated_licensing_config['commercial_rev_share'],
                     'disabled': validated_licensing_config['disabled'],
-                    'expectMinimumGroupRewardShare': validated_licensing_config['expect_minimum_group_reward_share'],  # noqa: E501
-                    'expectGroupRewardPool': validated_licensing_config['expect_group_reward_pool']  # noqa: E501
+                    'expectMinimumGroupRewardShare': validated_licensing_config['expect_minimum_group_reward_share'],
+                    'expectGroupRewardPool': validated_licensing_config['expect_group_reward_pool']
                 }
 
                 license_terms.append({
@@ -462,7 +490,7 @@ class IPAsset:
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
-                self.license_attachment_workflows_client.build_mintAndRegisterIpAndAttachPILTerms_transaction,  # noqa: E501
+                self.license_attachment_workflows_client.build_mintAndRegisterIpAndAttachPILTerms_transaction,
                 spg_nft_contract,
                 recipient if recipient else self.account.address,
                 metadata,
@@ -471,22 +499,22 @@ class IPAsset:
                 tx_options=tx_options
             )
 
-            ip_registered = self._parse_tx_ip_registered_event(response['txReceipt'])
+            ip_registered = self._parse_tx_ip_registered_event(response['tx_receipt'])
             license_terms_ids = self._parse_tx_license_terms_attached_event(
-                response['txReceipt']
+                response['tx_receipt']
             )
 
             return {
-                'txHash': response['txHash'],
-                'ipId': ip_registered['ipId'],
-                'licenseTermsIds': license_terms_ids,
-                'tokenId': ip_registered['tokenId']
+                'tx_hash': response['tx_hash'],
+                'ip_id': ip_registered['ip_id'],
+                'license_terms_ids': license_terms_ids,
+                'token_id': ip_registered['token_id']
             }
 
         except Exception as e:
             raise e
 
-    def mintAndRegisterIp(
+    def mint_and_register_ip(
         self,
         spg_nft_contract: str,
         recipient: str = None,
@@ -538,12 +566,12 @@ class IPAsset:
                 tx_options=tx_options
             )
 
-            ip_registered = self._parse_tx_ip_registered_event(response['txReceipt'])
+            ip_registered = self._parse_tx_ip_registered_event(response['tx_receipt'])
 
             return {
-                'txHash': response['txHash'],
-                'ipId': ip_registered['ipId'],
-                'tokenId': ip_registered['tokenId']
+                'tx_hash': response['tx_hash'],
+                'ip_id': ip_registered['ip_id'],
+                'token_id': ip_registered['token_id']
             }
 
         except Exception as e:
@@ -658,8 +686,8 @@ class IPAsset:
     #             tx_options=tx_options
     #         )
 
-    #         ip_registered = self._parse_tx_ip_registered_event(response['txReceipt'])
-    #         license_terms_id = self._parse_tx_license_terms_attached_event(response['txReceipt'])
+    #         ip_registered = self._parse_tx_ip_registered_event(response['tx_receipt'])
+    #         license_terms_id = self._parse_tx_license_terms_attached_event(response['tx_receipt'])
 
     #         return {
     #             'txHash': response['txHash'],
@@ -799,7 +827,7 @@ class IPAsset:
     #             tx_options=tx_options
     #         )
     #
-    #         ip_registered = self._parse_tx_ip_registered_event(response['txReceipt'])
+    #         ip_registered = self._parse_tx_ip_registered_event(response['tx_receipt'])
     #
     #         return {
     #             'txHash': response['txHash'],
@@ -848,8 +876,8 @@ class IPAsset:
                 token_id = int(log['topics'][3].hex(), 16)
 
                 return {
-                    'ipId': self.web3.to_checksum_address(ip_id),
-                    'tokenId': token_id
+                    'ip_id': self.web3.to_checksum_address(ip_id),
+                    'token_id': token_id
                 }
         return None
 

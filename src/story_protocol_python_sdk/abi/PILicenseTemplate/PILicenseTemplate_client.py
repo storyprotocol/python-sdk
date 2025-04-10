@@ -23,25 +23,18 @@ class PILicenseTemplateClient:
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
     def registerLicenseTerms(self, terms):
-        
         return self.contract.functions.registerLicenseTerms(terms).transact()
         
     def build_registerLicenseTerms_transaction(self, terms, tx_params):
         return self.contract.functions.registerLicenseTerms(terms).build_transaction(tx_params)
     
-    
     def exists(self, licenseTermsId):
-        
         return self.contract.functions.exists(licenseTermsId).call()
-        
     
     def getLicenseTerms(self, selectedLicenseTermsId):
-        
         return self.contract.functions.getLicenseTerms(selectedLicenseTermsId).call()
-        
     
     def getLicenseTermsId(self, terms):
-        
         return self.contract.functions.getLicenseTermsId(terms).call()
         
     

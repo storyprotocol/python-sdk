@@ -9,8 +9,7 @@ from datetime import datetime
 from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import IPAccountImplClient
 from story_protocol_python_sdk.abi.AccessController.AccessController_client import AccessControllerClient
 
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
-ZERO_FUNC = "0x00000000"
+from story_protocol_python_sdk.utils.constants import ZERO_FUNC
 
 class Sign:
     def __init__(self, web3: Web3, chain_id: int, account):

@@ -23,25 +23,18 @@ class RoyaltyModuleClient:
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
     def payRoyaltyOnBehalf(self, receiverIpId, payerIpId, token, amount):
-        
         return self.contract.functions.payRoyaltyOnBehalf(receiverIpId, payerIpId, token, amount).transact()
         
     def build_payRoyaltyOnBehalf_transaction(self, receiverIpId, payerIpId, token, amount, tx_params):
         return self.contract.functions.payRoyaltyOnBehalf(receiverIpId, payerIpId, token, amount).build_transaction(tx_params)
     
-    
     def ipRoyaltyVaults(self, ipId):
-        
         return self.contract.functions.ipRoyaltyVaults(ipId).call()
-        
     
     def isWhitelistedRoyaltyPolicy(self, royaltyPolicy):
-        
         return self.contract.functions.isWhitelistedRoyaltyPolicy(royaltyPolicy).call()
-        
     
     def isWhitelistedRoyaltyToken(self, token):
-        
         return self.contract.functions.isWhitelistedRoyaltyToken(token).call()
         
     

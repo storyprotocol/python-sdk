@@ -48,7 +48,7 @@ class WIP:
                 tx_options=transaction_options
             )
 
-            return {'txHash': response['txHash']}
+            return {'tx_hash': response['tx_hash']}
 
         except Exception as e:
             raise ValueError(f"Failed to deposit IP for WIP: {str(e)}")
@@ -73,7 +73,7 @@ class WIP:
                 tx_options=tx_options
             )
 
-            return {'txHash': response['txHash']}
+            return {'tx_hash': response['tx_hash']}
 
         except Exception as e:
             raise ValueError(f"Failed to withdraw WIP: {str(e)}")
@@ -105,12 +105,12 @@ class WIP:
                 tx_options=tx_options
             )
 
-            return {'txHash': response['txHash']}
+            return {'tx_hash': response['tx_hash']}
 
         except Exception as e:
             raise ValueError(f"Failed to approve WIP: {str(e)}")
 
-    def balanceOf(self, address: str) -> int:
+    def balance_of(self, address: str) -> int:
         """
         Returns the balance of WIP for an address.
 
@@ -154,12 +154,12 @@ class WIP:
                 tx_options=tx_options
             )
 
-            return {'txHash': response['txHash']}
+            return {'tx_hash': response['tx_hash']}
 
         except Exception as e:
             raise ValueError(f"Failed to transfer WIP: {str(e)}")
 
-    def transferFrom(self, from_address: str, to: str, amount: int, tx_options: dict = None) -> dict:
+    def transfer_from(self, from_address: str, to: str, amount: int, tx_options: dict = None) -> dict:
         """
         Transfers `amount` of WIP from `from_address` to a recipient `to`.
 
@@ -192,7 +192,7 @@ class WIP:
                 tx_options=tx_options
             )
 
-            return {'txHash': response['txHash']}
+            return {'tx_hash': response['tx_hash']}
 
         except Exception as e:
             raise ValueError(f"Failed to transfer WIP from another address: {str(e)}")

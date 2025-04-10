@@ -172,7 +172,7 @@ def approve(erc20_contract_address, web3, account, spender_address, amount):
     
     return tx_receipt
 
-def getBlockTimestamp(web3):
+def get_block_timestamp(web3):
     return (web3.eth.get_block('latest'))['timestamp']
 
 def check_event_in_tx(web3, tx_hash: str, event_text: str) -> bool:

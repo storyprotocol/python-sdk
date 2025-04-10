@@ -23,17 +23,12 @@ class LicenseRegistryClient:
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
     def exists(self, licenseTemplate, licenseTermsId):
-        
         return self.contract.functions.exists(licenseTemplate, licenseTermsId).call()
-        
     
     def getRoyaltyPercent(self, ipId, licenseTemplate, licenseTermsId):
-        
         return self.contract.functions.getRoyaltyPercent(ipId, licenseTemplate, licenseTermsId).call()
-        
     
     def hasIpAttachedLicenseTerms(self, ipId, licenseTemplate, licenseTermsId):
-        
         return self.contract.functions.hasIpAttachedLicenseTerms(ipId, licenseTemplate, licenseTermsId).call()
         
     

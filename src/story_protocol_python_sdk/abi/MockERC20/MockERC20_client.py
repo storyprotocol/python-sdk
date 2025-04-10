@@ -23,15 +23,12 @@ class MockERC20Client:
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
     def transfer(self, to, value):
-        
         return self.contract.functions.transfer(to, value).transact()
         
     def build_transfer_transaction(self, to, value, tx_params):
         return self.contract.functions.transfer(to, value).build_transaction(tx_params)
     
-    
     def balanceOf(self, account):
-        
         return self.contract.functions.balanceOf(account).call()
         
     

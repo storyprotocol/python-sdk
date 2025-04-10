@@ -1,5 +1,6 @@
+# tests/integration/test_integration_dispute.py
+
 import pytest
-import time
 from web3 import Web3
 
 from setup_for_integration import (
@@ -17,18 +18,17 @@ class TestDispute:
     @pytest.fixture(scope="module")
     def target_ip_id(self, story_client, story_client_2):
         """Create an IP to be disputed"""
-        txData = story_client.NFTClient.createNFTCollection(
+        txData = story_client.NFTClient.create_nft_collection(
             name="test-collection",
             symbol="TEST",
             max_supply=100,
             is_public_minting=True,
             mint_open=True,
             contract_uri="test-uri",
-            mint_fee_recipient=account.address,
-            tx_options={ "wait_for_transaction": True}
+            mint_fee_recipient=account.address
         )
         
-        nft_contract = txData['nftContract']
+        nft_contract = txData['nft_contract']
 
         metadata_a = {
             'ip_metadata_uri': "test-uri-a",
@@ -37,13 +37,13 @@ class TestDispute:
             'nft_metadata_hash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash-a"))
         }
         
-        response = story_client_2.IPAsset.mintAndRegisterIp(
+        response = story_client_2.IPAsset.mint_and_register_ip(
             spg_nft_contract=nft_contract,
             ip_metadata=metadata_a,
             tx_options={ "wait_for_transaction": True}
         )
 
-        return response['ipId']
+        return response['ip_id']
 
     def test_raise_dispute(self, story_client, target_ip_id):
         """Test raising a dispute"""
@@ -59,7 +59,7 @@ class TestDispute:
         #     amount=2**256 - 1  # maximum uint256 value
         # )
         
-        response = story_client.Dispute.raiseDispute(
+        response = story_client.Dispute.raise_dispute(
             target_ip_id=target_ip_id,
             target_tag="IMPROPER_REGISTRATION",
             cid=cid,
@@ -67,9 +67,9 @@ class TestDispute:
             bond=bond_amount
         )
         
-        assert 'txHash' in response
-        assert isinstance(response['txHash'], str)
-        assert len(response['txHash']) > 0
-        assert 'disputeId' in response
-        assert isinstance(response['disputeId'], int)
-        assert response['disputeId'] > 0
+        assert 'tx_hash' in response
+        assert isinstance(response['tx_hash'], str)
+        assert len(response['tx_hash']) > 0
+        assert 'dispute_id' in response
+        assert isinstance(response['dispute_id'], int)
+        assert response['dispute_id'] > 0

@@ -23,20 +23,15 @@ class IPAssetRegistryClient:
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
     def register(self, chainid, tokenContract, tokenId):
-        
         return self.contract.functions.register(chainid, tokenContract, tokenId).transact()
         
     def build_register_transaction(self, chainid, tokenContract, tokenId, tx_params):
         return self.contract.functions.register(chainid, tokenContract, tokenId).build_transaction(tx_params)
     
-    
     def ipId(self, chainId, tokenContract, tokenId):
-        
         return self.contract.functions.ipId(chainId, tokenContract, tokenId).call()
-        
     
     def isRegistered(self, id):
-        
         return self.contract.functions.isRegistered(id).call()
         
     

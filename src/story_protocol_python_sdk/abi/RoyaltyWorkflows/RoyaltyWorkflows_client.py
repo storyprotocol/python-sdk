@@ -23,7 +23,6 @@ class RoyaltyWorkflowsClient:
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
     def claimAllRevenue(self, ancestorIpId, claimer, childIpIds, royaltyPolicies, currencyTokens):
-        
         return self.contract.functions.claimAllRevenue(ancestorIpId, claimer, childIpIds, royaltyPolicies, currencyTokens).transact()
         
     def build_claimAllRevenue_transaction(self, ancestorIpId, claimer, childIpIds, royaltyPolicies, currencyTokens, tx_params):

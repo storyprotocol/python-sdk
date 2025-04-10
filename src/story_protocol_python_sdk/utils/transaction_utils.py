@@ -47,8 +47,8 @@ def build_and_send_transaction(web3: Web3, account, client_function, *client_arg
         tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash, timeout=TRANSACTION_TIMEOUT)
 
         return {
-            'txHash': tx_hash.hex(),
-            'txReceipt': tx_receipt
+            'tx_hash': tx_hash.hex(),
+            'tx_receipt': tx_receipt
         }
 
     except Exception as e:

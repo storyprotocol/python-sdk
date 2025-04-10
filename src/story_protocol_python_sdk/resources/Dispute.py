@@ -1,11 +1,13 @@
 from web3 import Web3
+from eth_abi.abi import encode
+
+from story_protocol_python_sdk.resources.WIP import WIP
 from story_protocol_python_sdk.abi.DisputeModule.DisputeModule_client import DisputeModuleClient
 from story_protocol_python_sdk.abi.ArbitrationPolicyUMA.ArbitrationPolicyUMA_client import ArbitrationPolicyUMAClient
+
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 from story_protocol_python_sdk.utils.ipfs import convert_cid_to_hash_ipfs
-from eth_abi.abi import encode
-from story_protocol_python_sdk.resources.WIP import WIP
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
 
 class Dispute:
     """
@@ -22,7 +24,7 @@ class Dispute:
 
         self.dispute_module_client = DisputeModuleClient(web3)
         self.arbitration_policy_uma_client = ArbitrationPolicyUMAClient(web3)
-        self.WIP = WIP(web3, account, chain_id)
+        self.wip = WIP(web3, account, chain_id)
         
     def _validate_address(self, address: str) -> str:
         """
@@ -36,7 +38,7 @@ class Dispute:
             raise ValueError(f"Invalid address: {address}.")
         return address
 
-    def raiseDispute(self, target_ip_id: str, target_tag: str, cid: str, liveness: int, bond: int, tx_options: dict = None) -> dict:
+    def raise_dispute(self, target_ip_id: str, target_tag: str, cid: str, liveness: int, bond: int, tx_options: dict = None) -> dict:
         """
         Raises a dispute on a given IP ID.
 
@@ -73,7 +75,7 @@ class Dispute:
             if bond > max_bonds:
                 raise ValueError(f"Bond must be less than {max_bonds}.")
 
-            deposit_response = self.WIP.deposit(
+            deposit_response = self.wip.deposit(
                 amount=bond
             )
 
@@ -101,17 +103,17 @@ class Dispute:
                 tx_options=tx_options
             )
 
-            dispute_id = self._parse_tx_dispute_raised_event(response['txReceipt'])
+            dispute_id = self._parse_tx_dispute_raised_event(response['tx_receipt'])
 
             return {
-                'txHash': response['txHash'],
-                'disputeId': dispute_id if dispute_id else None
+                'tx_hash': response['tx_hash'],
+                'dispute_id': dispute_id if dispute_id else None
             }
 
         except Exception as e:
             raise ValueError(f"Failed to raise dispute: {str(e)}")
 
-    def cancelDispute(self, dispute_id: int, data: str = "0x", tx_options: dict = None) -> dict:
+    def cancel_dispute(self, dispute_id: int, data: str = "0x", tx_options: dict = None) -> dict:
         """
         Cancels an ongoing dispute.
 
@@ -131,13 +133,13 @@ class Dispute:
             )
 
             return {
-                'txHash': response['txHash']
+                'tx_hash': response['tx_hash']
             }
 
         except Exception as e:
             raise ValueError(f"Failed to cancel dispute: {str(e)}")
 
-    def resolveDispute(self, dispute_id: int, data: str, tx_options: dict = None) -> dict:
+    def resolve_dispute(self, dispute_id: int, data: str, tx_options: dict = None) -> dict:
         """
         Resolves a dispute after it has been judged.
 
@@ -157,13 +159,13 @@ class Dispute:
             )
 
             return {
-                'txHash': response['txHash']
+                'tx_hash': response['tx_hash']
             }
 
         except Exception as e:
             raise ValueError(f"Failed to resolve dispute: {str(e)}")
 
-    def tagIfRelatedIpInfringed(self, infringement_tags: list, tx_options: dict = None) -> list:
+    def tag_if_related_ip_infringed(self, infringement_tags: list, tx_options: dict = None) -> list:
         """
         Tags a derivative if a parent has been tagged with an infringement tag.
 
@@ -188,19 +190,19 @@ class Dispute:
                     tx_options=tx_options
                 )
                 
-                tx_hashes.append(response['txHash'])
+                tx_hashes.append(response['tx_hash'])
 
             return tx_hashes
 
         except Exception as e:
             raise ValueError(f"Failed to tag related IP infringed: {str(e)}")
 
-    def _parse_tx_dispute_raised_event(self, tx_receipt: dict) -> dict:
+    def _parse_tx_dispute_raised_event(self, tx_receipt: dict) -> int:
         """
         Parse the DisputeRaised event from a transaction receipt.
 
         :param tx_receipt dict: The transaction receipt.
-        :return dict: The dispute ID from the event.
+        :return int: The dispute ID from the event.
         """
         event_signature = self.web3.keccak(
             text="DisputeRaised(uint256,address,address,uint256,address,bytes32,bytes32,bytes)"

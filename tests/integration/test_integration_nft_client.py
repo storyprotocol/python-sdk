@@ -14,7 +14,7 @@ class TestNFTCollectionOperations:
 
     def test_create_basic_collection(self, story_client):
         """Test creating a basic NFT collection with minimum parameters"""
-        response = story_client.NFTClient.createNFTCollection(
+        response = story_client.NFTClient.create_nft_collection(
             name="test-collection",
             symbol="TEST",
             is_public_minting=True,
@@ -24,15 +24,15 @@ class TestNFTCollectionOperations:
         )
 
         assert response is not None
-        assert 'txHash' in response
-        assert isinstance(response['txHash'], str)
-        assert len(response['txHash']) > 0
-        assert 'nftContract' in response
-        assert Web3.is_address(response['nftContract'])
+        assert 'tx_hash' in response
+        assert isinstance(response['tx_hash'], str)
+        assert len(response['tx_hash']) > 0
+        assert 'nft_contract' in response
+        assert Web3.is_address(response['nft_contract'])
 
     def test_create_collection_with_supply(self, story_client):
         """Test creating collection with max supply"""
-        response = story_client.NFTClient.createNFTCollection(
+        response = story_client.NFTClient.create_nft_collection(
             name="test-collection",
             symbol="TEST",
             max_supply=100,
@@ -43,12 +43,12 @@ class TestNFTCollectionOperations:
         )
 
         assert response is not None
-        assert 'nftContract' in response
-        assert Web3.is_address(response['nftContract'])
+        assert 'nft_contract' in response
+        assert Web3.is_address(response['nft_contract'])
 
     def test_create_collection_with_mint_fee(self, story_client):
         """Test creating collection with mint fee configuration"""
-        response = story_client.NFTClient.createNFTCollection(
+        response = story_client.NFTClient.create_nft_collection(
             name="test-collection",
             symbol="TEST",
             is_public_minting=True,
@@ -60,12 +60,12 @@ class TestNFTCollectionOperations:
         )
 
         assert response is not None
-        assert 'nftContract' in response
-        assert Web3.is_address(response['nftContract'])
+        assert 'nft_contract' in response
+        assert Web3.is_address(response['nft_contract'])
 
     def test_create_collection_with_base_uri(self, story_client):
         """Test creating collection with base URI"""
-        response = story_client.NFTClient.createNFTCollection(
+        response = story_client.NFTClient.create_nft_collection(
             name="test-collection",
             symbol="TEST",
             is_public_minting=True,
@@ -76,8 +76,8 @@ class TestNFTCollectionOperations:
         )
 
         assert response is not None
-        assert 'nftContract' in response
-        assert Web3.is_address(response['nftContract'])
+        assert 'nft_contract' in response
+        assert Web3.is_address(response['nft_contract'])
 
 class TestErrorCases:
     """Tests for error handling in NFT collection creation"""
@@ -85,7 +85,7 @@ class TestErrorCases:
     def test_invalid_mint_fee_configuration(self, story_client):
         """Test error when mint fee is set but token address is invalid"""
         with pytest.raises(ValueError) as exc_info:
-            story_client.NFTClient.createNFTCollection(
+            story_client.NFTClient.create_nft_collection(
                 name="test-collection",
                 symbol="TEST",
                 is_public_minting=True,
@@ -100,7 +100,7 @@ class TestErrorCases:
     def test_invalid_recipient_address(self, story_client):
         """Test error when mint fee recipient address is invalid"""
         with pytest.raises(ValueError) as exc_info:
-            story_client.NFTClient.createNFTCollection(
+            story_client.NFTClient.create_nft_collection(
                 name="test-collection",
                 symbol="TEST",
                 is_public_minting=True,
@@ -115,7 +115,7 @@ class TestMintFee:
 
     @pytest.fixture(scope="module")
     def nft_contract(self, story_client):
-        response = story_client.NFTClient.createNFTCollection(
+        response = story_client.NFTClient.create_nft_collection(
             name="paid-collection",
             symbol="PAID",
             is_public_minting=True,
@@ -127,14 +127,14 @@ class TestMintFee:
             mint_fee_token=MockERC20,
         )        
 
-        return response['nftContract']
+        return response['nft_contract']
 
     def test_get_mint_fee_token(self, story_client, nft_contract):
         """Test successfully getting mint fee token"""
-        mint_fee_token = story_client.NFTClient.getMintFeeToken(nft_contract)
+        mint_fee_token = story_client.NFTClient.get_mint_fee_token(nft_contract)
         assert mint_fee_token == MockERC20
 
     def test_get_mint_fee(self, story_client, nft_contract):
         """Test successfully getting mint fee"""
-        mint_fee = story_client.NFTClient.getMintFee(nft_contract)
+        mint_fee = story_client.NFTClient.get_mint_fee(nft_contract)
         assert mint_fee == 1000

@@ -3,9 +3,7 @@
 from web3 import Web3
 
 from story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client import RoyaltyModuleClient
-
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
-ROYALTY_POLICY = "0xBe54FB168b3c982b7AaE60dB6CF75Bd8447b390E"
+from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ROYALTY_POLICY
 
 class LicenseTerms:
     def __init__(self, web3: Web3):

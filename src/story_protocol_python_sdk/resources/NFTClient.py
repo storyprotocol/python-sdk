@@ -6,9 +6,7 @@ from story_protocol_python_sdk.abi.RegistrationWorkflows.RegistrationWorkflows_c
 from story_protocol_python_sdk.abi.SPGNFTImpl.SPGNFTImpl_client import SPGNFTImplClient
 
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
-
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
-ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000"
+from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
 
 class NFTClient:
     """
@@ -25,7 +23,7 @@ class NFTClient:
 
         self.registration_workflows_client = RegistrationWorkflowsClient(web3)
 
-    def createNFTCollection(self, name: str, symbol: str, is_public_minting: bool, mint_open: bool, 
+    def create_nft_collection(self, name: str, symbol: str, is_public_minting: bool, mint_open: bool, 
                           mint_fee_recipient: str, contract_uri: str, base_uri: str = "", max_supply: int = None, 
                           mint_fee: int = None, mint_fee_token: str = None, owner: str = None, 
                           tx_options: dict = None) -> dict:
@@ -72,11 +70,11 @@ class NFTClient:
                 tx_options=tx_options
             )
 
-            collection_address = self._parse_tx_collection_created_event(response['txReceipt'])
+            collection_address = self._parse_tx_collection_created_event(response['tx_receipt'])
 
             return {
-                'txHash': response['txHash'],
-                'nftContract': collection_address
+                'tx_hash': response['tx_hash'],
+                'nft_contract': collection_address
             }
 
         except Exception as e:
@@ -97,7 +95,7 @@ class NFTClient:
 
         return None
     
-    def getMintFeeToken(self, nft_contract: str) -> str:
+    def get_mint_fee_token(self, nft_contract: str) -> str:
         """
         Returns the current mint fee token of the collection.
         
@@ -112,7 +110,7 @@ class NFTClient:
         except Exception as e:
             raise ValueError(f"Failed to get mint fee token: {str(e)}")
     
-    def getMintFee(self, nft_contract: str) -> int:
+    def get_mint_fee(self, nft_contract: str) -> int:
         """
         Returns the current mint fee of the collection.
         

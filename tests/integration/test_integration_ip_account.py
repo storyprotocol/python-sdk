@@ -12,7 +12,7 @@ from setup_for_integration import (
     story_client,
     get_token_id,
     mint_tokens,
-    getBlockTimestamp,
+    get_block_timestamp,
     MockERC721,
     MockERC20,
     private_key
@@ -30,7 +30,7 @@ class TestBasicIPAccountOperations:
 
         data = story_client.IPAccount.access_controller_client.contract.encode_abi(
             abi_element_identifier="setTransientPermission", 
-            args=[response['ipId'], 
+            args=[response['ip_id'], 
                   account.address, 
                   "0x89630Ccf23277417FBdfd3076C702F5248267e78", 
                   Web3.keccak(text="function setAll(address,string,bytes32,bytes32)")[:4], 
@@ -40,15 +40,15 @@ class TestBasicIPAccountOperations:
         response = story_client.IPAccount.execute(
             to=story_client.IPAccount.access_controller_client.contract.address,
             value=0,
-            ip_id=response['ipId'],
+            ip_id=response['ip_id'],
             data=data
         )
 
         assert response is not None, "Response is None, indicating the contract interaction failed."
-        assert 'txHash' in response, "Response does not contain 'txHash'."
-        assert response['txHash'] is not None, "'txHash' is None."
-        assert isinstance(response['txHash'], str), "'txHash' is not a string."
-        assert len(response['txHash']) > 0, "'txHash' is empty."
+        assert 'tx_hash' in response, "Response does not contain 'tx_hash'."
+        assert response['tx_hash'] is not None, "'tx_hash' is None."
+        assert isinstance(response['tx_hash'], str), "'tx_hash' is not a string."
+        assert len(response['tx_hash']) > 0, "'tx_hash' is empty."
 
     def test_get_ip_account_nonce(self, story_client):
         """Test getting IP Account nonce."""
@@ -57,9 +57,9 @@ class TestBasicIPAccountOperations:
             nft_contract=MockERC721,
             token_id=token_id
         )
-        ip_id = register_response['ipId']
+        ip_id = register_response['ip_id']
         
-        state = story_client.IPAccount.getIpAccountNonce(ip_id)
+        state = story_client.IPAccount.get_ip_account_nonce(ip_id)
         
         assert state is not None
         assert isinstance(state, bytes)
@@ -71,7 +71,7 @@ class TestBasicIPAccountOperations:
             nft_contract=MockERC721,
             token_id=token_id
         )
-        ip_id = register_response['ipId']
+        ip_id = register_response['ip_id']
 
         data = story_client.IPAccount.access_controller_client.contract.encode_abi(
             abi_element_identifier="setTransientPermission", 
@@ -92,9 +92,9 @@ class TestBasicIPAccountOperations:
         )
 
         assert response is not None
-        assert 'txHash' in response
-        assert isinstance(response['txHash'], str)
-        assert len(response['txHash']) > 0
+        assert 'tx_hash' in response
+        assert isinstance(response['tx_hash'], str)
+        assert len(response['tx_hash']) > 0
 
 class TestSignatureOperations:
     """Tests for operations involving signatures"""
@@ -106,14 +106,14 @@ class TestSignatureOperations:
             token_id=token_id
         )
 
-        ipId = response['ipId']
-        deadline = getBlockTimestamp(web3) + 100
-        state = story_client.IPAccount.getIpAccountNonce(ipId)
+        ip_id = response['ip_id']
+        deadline = get_block_timestamp(web3) + 100
+        state = story_client.IPAccount.get_ip_account_nonce(ip_id)
 
         core_data = story_client.IPAccount.access_controller_client.contract.encode_abi(
             abi_element_identifier="setTransientPermission",
             args=[
-                ipId,
+                ip_id,
                 account.address,
                 "0x6E81a25C99C6e8430aeC7353325EB138aFE5DC16",
                 Web3.keccak(text="function setAll(address,string,bytes32,bytes32)")[:4],
@@ -141,7 +141,7 @@ class TestSignatureOperations:
             "name": "Story Protocol IP Account",
             "version": "1",
             "chainId": 1315,
-            "verifyingContract": ipId,
+            "verifyingContract": ip_id,
         }
 
         message_types = {
@@ -165,10 +165,10 @@ class TestSignatureOperations:
         signable_message = encode_typed_data(domain_data, message_types, message_data)
         signed_message = Account.sign_message(signable_message, private_key)
 
-        response = story_client.IPAccount.executeWithSig(
+        response = story_client.IPAccount.execute_with_sig(
             to=story_client.IPAccount.access_controller_client.contract.address,
             value=0,
-            ip_id=ipId,
+            ip_id=ip_id,
             data=core_data,
             signer=account.address,
             deadline=deadline,
@@ -176,9 +176,9 @@ class TestSignatureOperations:
         )
 
         assert response is not None
-        assert 'txHash' in response
-        assert isinstance(response['txHash'], str)
-        assert len(response['txHash']) > 0
+        assert 'tx_hash' in response
+        assert isinstance(response['tx_hash'], str)
+        assert len(response['tx_hash']) > 0
 
     def test_execute_with_sig_multiple_permissions(self, story_client):
         """Test executeWithSig setting multiple permissions."""
@@ -187,10 +187,10 @@ class TestSignatureOperations:
             nft_contract=MockERC721,
             token_id=token_id
         )
-        ip_id = register_response['ipId']
+        ip_id = register_response['ip_id']
 
-        deadline = getBlockTimestamp(web3) + 100
-        state = story_client.IPAccount.getIpAccountNonce(ip_id)
+        deadline = get_block_timestamp(web3) + 100
+        state = story_client.IPAccount.get_ip_account_nonce(ip_id)
 
         # Prepare all function signatures for permissions
         function_signatures = [
@@ -266,7 +266,7 @@ class TestSignatureOperations:
         signable_message = encode_typed_data(domain_data, message_types, message_data)
         signed_message = Account.sign_message(signable_message, private_key)
 
-        response = story_client.IPAccount.executeWithSig(
+        response = story_client.IPAccount.execute_with_sig(
             ip_id=ip_id,
             to=story_client.IPAccount.access_controller_client.contract.address,
             value=0,
@@ -277,9 +277,9 @@ class TestSignatureOperations:
         )
 
         assert response is not None
-        assert 'txHash' in response
-        assert isinstance(response['txHash'], str)
-        assert len(response['txHash']) > 0
+        assert 'tx_hash' in response
+        assert isinstance(response['tx_hash'], str)
+        assert len(response['tx_hash']) > 0
 
 class TestErrorCases:
     """Tests for error cases and validation"""
@@ -291,7 +291,7 @@ class TestErrorCases:
             nft_contract=MockERC721,
             token_id=token_id
         )
-        ip_id = register_response['ipId']
+        ip_id = register_response['ip_id']
 
         data = "0x"
         invalid_address = "0xinvalid"
@@ -331,17 +331,17 @@ class TestSetIpMetadata:
             token_id=token_id
         )
 
-        response = story_client.IPAccount.setIpMetadata(
-            ip_id=response['ipId'],
+        response = story_client.IPAccount.set_ip_metadata(
+            ip_id=response['ip_id'],
             metadata_uri="https://example.com",
             metadata_hash=web3.to_hex(web3.keccak(text="test-metadata-hash"))
         )
 
         assert response is not None, "Response is None, indicating the contract interaction failed."
-        assert 'txHash' in response, "Response does not contain 'txHash'."
-        assert response['txHash'] is not None, "'txHash' is None."
-        assert isinstance(response['txHash'], str), "'txHash' is not a string."
-        assert len(response['txHash']) > 0, "'txHash' is empty."
+        assert 'tx_hash' in response, "Response does not contain 'tx_hash'."
+        assert response['tx_hash'] is not None, "'tx_hash' is None."
+        assert isinstance(response['tx_hash'], str), "'tx_hash' is not a string."
+        assert len(response['tx_hash']) > 0, "'tx_hash' is empty."
 
 class TestTransferERC20:
     """Tests for transferring ERC20 tokens"""
@@ -353,19 +353,19 @@ class TestTransferERC20:
             nft_contract=MockERC721,
             token_id=token_id
         )
-        ip_id = response['ipId']
+        ip_id = response['ip_id']
 
-        # 1. Query token balance of ipId and wallet before
+        # 1. Query token balance of ip_id and wallet before
         initial_erc20_balance_of_ip_id = story_client.Royalty.mock_erc20_client.balanceOf(
             account=ip_id
         )
         initial_erc20_balance_of_wallet = story_client.Royalty.mock_erc20_client.balanceOf(
             account=story_client.account.address
         )
-        initial_wip_balance_of_ip_id = story_client.WIP.balanceOf(
+        initial_wip_balance_of_ip_id = story_client.WIP.balance_of(
             address=ip_id
         )
-        initial_wip_balance_of_wallet = story_client.WIP.balanceOf(
+        initial_wip_balance_of_wallet = story_client.WIP.balance_of(
             address=story_client.account.address
         )
 
@@ -392,7 +392,7 @@ class TestTransferERC20:
         )
 
         # 4. Transfer tokens from IP account to wallet address
-        response = story_client.IPAccount.transferERC20(
+        response = story_client.IPAccount.transfer_erc20(
             ip_id=ip_id,
             tokens=[
                 {
@@ -413,21 +413,21 @@ class TestTransferERC20:
             ]
         )
         
-        # 5. Query token balance of ipId and wallet address after transfer
+        # 5. Query token balance of ip_id and wallet address after transfer
         final_erc20_balance_of_ip_id = story_client.Royalty.mock_erc20_client.balanceOf(
             account=ip_id
         )
-        final_wip_balance_of_ip_id = story_client.WIP.balanceOf(
+        final_wip_balance_of_ip_id = story_client.WIP.balance_of(
             address=ip_id
         )
         final_erc20_balance_of_wallet = story_client.Royalty.mock_erc20_client.balanceOf(
             account=story_client.account.address
         )
-        final_wip_balance_of_wallet = story_client.WIP.balanceOf(
+        final_wip_balance_of_wallet = story_client.WIP.balance_of(
             address=story_client.account.address
         )
 
-        assert isinstance(response['txHash'], str) and response['txHash'] != ""
+        assert isinstance(response['tx_hash'], str) and response['tx_hash'] != ""
         assert final_erc20_balance_of_ip_id == initial_erc20_balance_of_ip_id
         assert final_wip_balance_of_ip_id == initial_wip_balance_of_ip_id
         assert final_erc20_balance_of_wallet == initial_erc20_balance_of_wallet + 2000000

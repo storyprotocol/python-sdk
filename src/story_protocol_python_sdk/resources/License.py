@@ -1,4 +1,4 @@
-#src/story_protcol_python_sdk/resources/License.py
+# src/story_protcol_python_sdk/resources/License.py
 
 from web3 import Web3
 
@@ -7,10 +7,10 @@ from story_protocol_python_sdk.abi.LicenseRegistry.LicenseRegistry_client import
 from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import LicensingModuleClient
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import IPAssetRegistryClient
 from story_protocol_python_sdk.abi.ModuleRegistry.ModuleRegistry_client import ModuleRegistryClient
+
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
-
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
 
 class License:
     """
@@ -27,7 +27,7 @@ class License:
 
         self.license_template_client = PILicenseTemplateClient(web3)
         self.license_registry_client = LicenseRegistryClient(web3)
-        self.licensing_module_client  = LicensingModuleClient(web3)
+        self.licensing_module_client = LicensingModuleClient(web3)
         self.ip_asset_registry_client = IPAssetRegistryClient(web3)
         self.module_registry_client = ModuleRegistryClient(web3)
 
@@ -42,25 +42,27 @@ class License:
         """
         return self.license_template_client.getLicenseTermsId(license_terms)
 
-    def registerPILTerms(self, 
-                        transferable: bool,
-                        royalty_policy: str,
-                        default_minting_fee: int,
-                        expiration: int,
-                        commercial_use: bool,
-                        commercial_attribution: bool,
-                        commercializer_checker: str,
-                        commercializer_checker_data: str,
-                        commercial_rev_share: int,
-                        commercial_rev_ceiling: int,
-                        derivatives_allowed: bool,
-                        derivatives_attribution: bool,
-                        derivatives_approval: bool,
-                        derivatives_reciprocal: bool,
-                        derivative_rev_ceiling: int,
-                        currency: str,
-                        uri: str,
-                        tx_options: dict = None) -> dict:
+    def register_pil_terms(
+        self,
+        transferable: bool,
+        royalty_policy: str,
+        default_minting_fee: int,
+        expiration: int,
+        commercial_use: bool,
+        commercial_attribution: bool,
+        commercializer_checker: str,
+        commercializer_checker_data: str,
+        commercial_rev_share: int,
+        commercial_rev_ceiling: int,
+        derivatives_allowed: bool,
+        derivatives_attribution: bool,
+        derivatives_approval: bool,
+        derivatives_reciprocal: bool,
+        derivative_rev_ceiling: int,
+        currency: str,
+        uri: str,
+        tx_options: dict = None
+    ) -> dict:
         """
         Registers new license terms and returns the ID of the newly registered license terms.
 
@@ -130,7 +132,7 @@ class License:
 
             license_terms_id = self._get_license_terms_id(license_terms)
             if (license_terms_id is not None) and (license_terms_id != 0):
-                return {'licenseTermsId': license_terms_id}
+                return {'license_terms_id': license_terms_id}
 
             response = build_and_send_transaction(
                 self.web3,
@@ -140,16 +142,16 @@ class License:
                 tx_options=tx_options
             )
 
-            target_logs = self._parse_tx_license_terms_registered_event(response['txReceipt'])
+            target_logs = self._parse_tx_license_terms_registered_event(response['tx_receipt'])
             return {
-                'txHash': response['txHash'],
-                'licenseTermsId': target_logs
+                'tx_hash': response['tx_hash'],
+                'license_terms_id': target_logs
             }
 
         except Exception as e:
             raise e
 
-    def registerNonComSocialRemixingPIL(self, tx_options: dict = None) -> dict:
+    def register_non_com_social_remixing_pil(self, tx_options: dict = None) -> dict:
         """
         Convenient function to register a PIL non-commercial social remix license to the registry.
 
@@ -157,11 +159,12 @@ class License:
         :return dict: A dictionary with the transaction hash and the license terms ID.
         """
         try:
-            license_terms = self.license_terms_util.get_license_term_by_type(self.license_terms_util.PIL_TYPE['NON_COMMERCIAL_REMIX'])
+            license_terms = self.license_terms_util.get_license_term_by_type(
+                self.license_terms_util.PIL_TYPE['NON_COMMERCIAL_REMIX'])
 
             license_terms_id = self._get_license_terms_id(license_terms)
             if (license_terms_id is not None) and (license_terms_id != 0):
-                return {'licenseTermsId': license_terms_id}
+                return {'license_terms_id': license_terms_id}
 
             response = build_and_send_transaction(
                 self.web3,
@@ -171,16 +174,22 @@ class License:
                 tx_options=tx_options
             )
 
-            target_logs = self._parse_tx_license_terms_registered_event(response['txReceipt'])
+            target_logs = self._parse_tx_license_terms_registered_event(response['tx_receipt'])
             return {
-                'txHash': response['txHash'],
-                'licenseTermsId': target_logs
+                'tx_hash': response['tx_hash'],
+                'license_terms_id': target_logs
             }
 
         except Exception as e:
             raise e
         
-    def registerCommercialUsePIL(self, default_minting_fee: int, currency: str, royalty_policy: str = None, tx_options: dict = None) -> dict:
+    def register_commercial_use_pil(
+        self, 
+        default_minting_fee: int, 
+        currency: str,
+        royalty_policy: str = None, 
+        tx_options: dict = None
+    ) -> dict:
         """
         Convenient function to register a PIL commercial use license to the registry.
 
@@ -191,15 +200,16 @@ class License:
         :return dict: A dictionary with the transaction hash and the license terms ID.
         """
         try:
-            complete_license_terms = self.license_terms_util.get_license_term_by_type(self.license_terms_util.PIL_TYPE['COMMERCIAL_USE'], {
-                'defaultMintingFee': default_minting_fee,
-                'currency': currency,
-                'royaltyPolicyAddress': royalty_policy,
-            })
+            complete_license_terms = self.license_terms_util.get_license_term_by_type(
+                self.license_terms_util.PIL_TYPE['COMMERCIAL_USE'], {
+                    'defaultMintingFee': default_minting_fee,
+                    'currency': currency,
+                    'royaltyPolicyAddress': royalty_policy,
+                })
 
             license_terms_id = self._get_license_terms_id(complete_license_terms)
             if (license_terms_id is not None) and (license_terms_id != 0):
-                return {'licenseTermsId': license_terms_id}
+                return {'license_terms_id': license_terms_id}
 
             response = build_and_send_transaction(
                 self.web3,
@@ -209,19 +219,26 @@ class License:
                 tx_options=tx_options
             )
 
-            if not response['txReceipt'].logs:
+            if not response['tx_receipt'].logs:
                 return None
 
-            target_logs = self._parse_tx_license_terms_registered_event(response['txReceipt'])
+            target_logs = self._parse_tx_license_terms_registered_event(response['tx_receipt'])
             return {
-                'txHash': response['txHash'],
-                'licenseTermsId': target_logs
+                'tx_hash': response['tx_hash'],
+                'license_terms_id': target_logs
             }
 
         except Exception as e:
             raise e
 
-    def registerCommercialRemixPIL(self, default_minting_fee: int, currency: str, commercial_rev_share: int, royalty_policy: str, tx_options: dict = None) -> dict:
+    def register_commercial_remix_pil(
+        self,
+        default_minting_fee: int,
+        currency: str,
+        commercial_rev_share: int,
+        royalty_policy: str,
+        tx_options: dict = None
+    ) -> dict:
         """
         Convenient function to register a PIL commercial remix license to the registry.
 
@@ -233,16 +250,17 @@ class License:
         :return dict: A dictionary with the transaction hash and the license terms ID.
         """
         try:
-            complete_license_terms = self.license_terms_util.get_license_term_by_type(self.license_terms_util.PIL_TYPE['COMMERCIAL_REMIX'], {
-                'defaultMintingFee': default_minting_fee,
-                'currency': currency,
-                'commercialRevShare': commercial_rev_share,
-                'royaltyPolicyAddress': royalty_policy,
-            })
+            complete_license_terms = self.license_terms_util.get_license_term_by_type(
+                self.license_terms_util.PIL_TYPE['COMMERCIAL_REMIX'], {
+                    'defaultMintingFee': default_minting_fee,
+                    'currency': currency,
+                    'commercialRevShare': commercial_rev_share,
+                    'royaltyPolicyAddress': royalty_policy,
+                })
 
             license_terms_id = self._get_license_terms_id(complete_license_terms)
             if license_terms_id and license_terms_id != 0:
-                return {'licenseTermsId': license_terms_id}
+                return {'license_terms_id': license_terms_id}
 
             response = build_and_send_transaction(
                 self.web3,
@@ -252,13 +270,13 @@ class License:
                 tx_options=tx_options
             )
 
-            if not response['txReceipt'].logs:
+            if not response['tx_receipt'].logs:
                 return None
 
-            target_logs = self._parse_tx_license_terms_registered_event(response['txReceipt'])
+            target_logs = self._parse_tx_license_terms_registered_event(response['tx_receipt'])
             return {
-                'txHash': response['txHash'],
-                'licenseTermsId': target_logs
+                'tx_hash': response['tx_hash'],
+                'license_terms_id': target_logs
             }
 
         except Exception as e:
@@ -279,7 +297,13 @@ class License:
 
         return None
     
-    def attachLicenseTerms(self, ip_id: str, license_template: str, license_terms_id: int, tx_options: dict = None) -> dict:
+    def attach_license_terms(
+        self,
+        ip_id: str,
+        license_template: str,
+        license_terms_id: int,
+        tx_options: dict = None
+    ) -> dict:
         """
         Attaches license terms to an IP.
 
@@ -301,9 +325,11 @@ class License:
             if not is_existed:
                 raise ValueError(f"License terms id {license_terms_id} do not exist.")
 
-            is_attached_license_terms = self.license_registry_client.hasIpAttachedLicenseTerms(ip_id, license_template, license_terms_id)
+            is_attached_license_terms = self.license_registry_client.hasIpAttachedLicenseTerms(
+                ip_id, license_template, license_terms_id)
             if is_attached_license_terms:
-                raise ValueError(f"License terms id {license_terms_id} is already attached to the IP with id {ip_id}.")
+                raise ValueError(
+                    f"License terms id {license_terms_id} is already attached to the IP with id {ip_id}.")
 
             response = build_and_send_transaction(
                 self.web3,
@@ -315,12 +341,22 @@ class License:
                 tx_options=tx_options
             )
 
-            return {'txHash': response['txHash']}
+            return {'tx_hash': response['tx_hash']}
         
         except Exception as e:
             raise e
     
-    def mintLicenseTokens(self, licensor_ip_id: str, license_template: str, license_terms_id: int, amount: int, receiver: str, max_minting_fee: int = 0, max_revenue_share: int = 0, tx_options: dict = None) -> dict:
+    def mint_license_tokens(
+        self,
+        licensor_ip_id: str,
+        license_template: str,
+        license_terms_id: int,
+        amount: int,
+        receiver: str,
+        max_minting_fee: int = 0,
+        max_revenue_share: int = 0,
+        tx_options: dict = None
+    ) -> dict:
         """
         Mints license tokens for the license terms attached to an IP.
 
@@ -335,10 +371,10 @@ class License:
         :return dict: A dictionary with the transaction hash and the license token IDs.
         """
         try:
-            if not Web3.is_address(license_template):
+            if not self.web3.is_address(license_template):
                 raise ValueError(f'Address "{license_template}" is invalid.')
             
-            if not Web3.is_address(receiver):
+            if not self.web3.is_address(receiver):
                 raise ValueError(f'Address "{receiver}" is invalid.')
 
             is_registered = self.ip_asset_registry_client.isRegistered(licensor_ip_id)
@@ -349,9 +385,11 @@ class License:
             if not is_existed:
                 raise ValueError(f"License terms id {license_terms_id} do not exist.")
 
-            is_attached_license_terms = self.license_registry_client.hasIpAttachedLicenseTerms(licensor_ip_id, license_template, license_terms_id)
+            is_attached_license_terms = self.license_registry_client.hasIpAttachedLicenseTerms(
+                licensor_ip_id, license_template, license_terms_id)
             if not is_attached_license_terms:
-                raise ValueError(f"License terms id {license_terms_id} is not attached to the IP with id {licensor_ip_id}.")
+                raise ValueError(
+                    f"License terms id {license_terms_id} is not attached to the IP with id {licensor_ip_id}.")
 
             response = build_and_send_transaction(
                 self.web3,
@@ -368,11 +406,11 @@ class License:
                 tx_options=tx_options
             )
 
-            target_logs = self._parse_tx_license_tokens_minted_event(response['txReceipt'])
+            target_logs = self._parse_tx_license_tokens_minted_event(response['tx_receipt'])
 
             return {
-                'txHash': response['txHash'],
-                'licenseTokenIds': target_logs
+                'tx_hash': response['tx_hash'],
+                'license_token_ids': target_logs
             }
 
         except Exception as e:
@@ -395,19 +433,27 @@ class License:
 
         return token_ids if token_ids else None
     
-    def getLicenseTerms(self, selectedLicenseTermsId: int) -> dict:
+    def get_license_terms(self, selected_license_terms_id: int) -> dict:
         """
         Gets License Terms of the given ID.
 
-        :param selectedLicenseTermsId int: The ID of the license terms to retrieve.
+        :param selected_license_terms_id int: The ID of the license terms to retrieve.
         :return dict: An object containing all of the selected license terms.
         """
         try:
-            return self.license_template_client.getLicenseTerms(selectedLicenseTermsId)
+            return self.license_template_client.getLicenseTerms(selected_license_terms_id)
         except Exception as e:
             raise ValueError(f"Failed to get license terms: {str(e)}")
 
-    def predictMintingLicenseFee(self, licensor_ip_id: str, license_terms_id: int, amount: int, license_template: str = None, receiver: str = None, tx_options: dict = None) -> dict:
+    def predict_minting_license_fee(
+        self,
+        licensor_ip_id: str,
+        license_terms_id: int,
+        amount: int,
+        license_template: str = None,
+        receiver: str = None,
+        tx_options: dict = None
+    ) -> dict:
         """
         Pre-compute the minting license fee for the given IP and license terms.
 
@@ -456,7 +502,14 @@ class License:
         except Exception as e:
             raise ValueError(f"Failed to predict minting license fee: {str(e)}")
 
-    def setLicensingConfig(self, ip_id: str, license_terms_id: int, licensing_config: dict, license_template: str = None, tx_options: dict = None) -> dict:
+    def set_licensing_config(
+        self,
+        ip_id: str,
+        license_terms_id: int,
+        licensing_config: dict,
+        license_template: str = None,
+        tx_options: dict = None
+    ) -> dict:
         """
         Sets the licensing configuration for a specific license terms of an IP. If both licenseTemplate and licenseTermsId are not specified then the licensing config apply to all licenses of given IP.
 
@@ -491,9 +544,12 @@ class License:
             # Check for missing parameters
             missing_params = required_params - set(licensing_config.keys())
             if missing_params:
-                raise ValueError(f"Missing required licensing_config parameters: {', '.join(missing_params)}. All parameters must be explicitly provided.")
+                raise ValueError(
+                    f"Missing required licensing_config parameters: {', '.join(missing_params)}. "
+                    f"All parameters must be explicitly provided.")
             
-            licensing_config['commercialRevShare'] = self.license_terms_util.get_revenue_share(licensing_config['commercialRevShare'])
+            licensing_config['commercialRevShare'] = self.license_terms_util.get_revenue_share(
+                licensing_config['commercialRevShare'])
 
             if licensing_config['mintingFee'] < 0:
                 raise ValueError("The minting fee must be greater than 0.")
@@ -502,14 +558,17 @@ class License:
                 license_template = ZERO_ADDRESS
             
             if license_template == ZERO_ADDRESS and licensing_config['commercialRevShare'] != 0:
-                raise ValueError("The license template cannot be zero address if commercial revenue share is not zero.")
+                raise ValueError(
+                    "The license template cannot be zero address if commercial revenue share is not zero.")
 
             # Convert addresses to checksum format
             ip_id = self.web3.to_checksum_address(ip_id)
             if license_template:
                 license_template = self.web3.to_checksum_address(license_template)
-            licensing_config['licensingHook'] = self.web3.to_checksum_address(licensing_config['licensingHook'])
-            licensing_config['expectGroupRewardPool'] = self.web3.to_checksum_address(licensing_config['expectGroupRewardPool'])
+            licensing_config['licensingHook'] = self.web3.to_checksum_address(
+                licensing_config['licensingHook'])
+            licensing_config['expectGroupRewardPool'] = self.web3.to_checksum_address(
+                licensing_config['expectGroupRewardPool'])
 
             # Check if IP is registered
             if not self.ip_asset_registry_client.isRegistered(ip_id):
@@ -539,10 +598,10 @@ class License:
             )
 
             return {
-                'txHash': response['txHash'],
-                'success': True if response.get('txReceipt') else None
+                'tx_hash': response['tx_hash'],
+                'success': True if response.get('tx_receipt') else None
             }
 
         except Exception as e:
             raise ValueError(f"Failed to set licensing config: {str(e)}")
-        
+            raise ValueError(f"Failed to set licensing config: {str(e)}")

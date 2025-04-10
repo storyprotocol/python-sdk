@@ -33,7 +33,7 @@ class Royalty:
         self.ip_account_impl_client = IPAccountImplClient(web3)
         self.mock_erc20_client = MockERC20Client(web3)
 
-    def getRoyaltyVaultAddress(self, ip_id: str) -> str:
+    def get_royalty_vault_address(self, ip_id: str) -> str:
         """
         Get the royalty vault address for a given IP ID.
 
@@ -46,7 +46,7 @@ class Royalty:
 
         return self.royalty_module_client.ipRoyaltyVaults(ip_id)
 
-    def claimableRevenue(self, royalty_vault_ip_id: str, claimer: str, token: str) -> int:
+    def claimable_revenue(self, royalty_vault_ip_id: str, claimer: str, token: str) -> int:
         """
         Calculates the amount of revenue token claimable by a token holder.
 
@@ -56,7 +56,7 @@ class Royalty:
         :return int: The claimable revenue amount.
         """
         try:
-            proxy_address = self.getRoyaltyVaultAddress(royalty_vault_ip_id)
+            proxy_address = self.get_royalty_vault_address(royalty_vault_ip_id)
             ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, contract_address=proxy_address)
 
             claimable_revenue = ip_royalty_vault_client.claimableRevenue(
@@ -69,7 +69,7 @@ class Royalty:
         except Exception as e:
             raise e
         
-    def payRoyaltyOnBehalf(self, receiver_ip_id: str, payer_ip_id: str, token: str, amount: int, tx_options: dict = None) -> dict:
+    def pay_royalty_on_behalf(self, receiver_ip_id: str, payer_ip_id: str, token: str, amount: int, tx_options: dict = None) -> dict:
         """
         Allows the function caller to pay royalties to the receiver IP asset on behalf of the payer IP asset.
 
@@ -100,12 +100,12 @@ class Royalty:
                 tx_options=tx_options
             )
 
-            return {'txHash': response['txHash']}
+            return {'tx_hash': response['tx_hash']}
         
         except Exception as e:
             raise e
     
-    def claimAllRevenue(self, ancestor_ip_id: str, claimer: str, child_ip_ids: list, royalty_policies: list, currency_tokens: list, claim_options: dict = None, tx_options: dict = None) -> dict:
+    def claim_all_revenue(self, ancestor_ip_id: str, claimer: str, child_ip_ids: list, royalty_policies: list, currency_tokens: list, claim_options: dict = None, tx_options: dict = None) -> dict:
         """
         Claims all revenue from the child IPs of an ancestor IP, then optionally transfers and unwraps tokens.
 
@@ -144,27 +144,27 @@ class Royalty:
                 tx_options=tx_options
             )
 
-            tx_hashes = [response['txHash']]
+            tx_hashes = [response['tx_hash']]
             
             # Determine if the claimer is an IP owned by the wallet.
             owns_claimer, is_claimer_ip, ip_account = self._get_claimer_info(claimer)
 
             # If wallet does not own the claimer then we cannot auto claim.
-            # If ownsClaimer is false, it means the claimer is neither an IP owned by the wallet nor the wallet address itself.
+            # If owns_claimer is false, it means the claimer is neither an IP owned by the wallet nor the wallet address itself.
             if not owns_claimer:
                 return {
-                    'receipt': response['txReceipt'],
-                    'txHashes': tx_hashes
+                    'receipt': response['tx_receipt'],
+                    'tx_hashes': tx_hashes
                 }
             
-            claimed_tokens = self._parseTxRevenueTokenClaimedEvent(response['txReceipt'])
+            claimed_tokens = self._parse_tx_revenue_token_claimed_event(response['tx_receipt'])
 
-            auto_transfer = claim_options.get('autoTransferAllClaimedTokensFromIp', True) if claim_options else True
-            # auto_unwrap = claim_options['autoUnwrapIpTokens']
+            auto_transfer = claim_options.get('auto_transfer_all_claimed_tokens_from_ip', True) if claim_options else True
+            # auto_unwrap = claim_options['auto_unwrap_ip_tokens']
 
             # transfer claimed tokens from IP to wallet if wallet owns IP
             if auto_transfer and is_claimer_ip and owns_claimer:
-                hashes = self._transferClaimedTokensFromIpToWallet(
+                hashes = self._transfer_claimed_tokens_from_ip_to_wallet(
                     ancestor_ip_id,
                     ip_account,
                     claimed_tokens
@@ -172,9 +172,9 @@ class Royalty:
                 tx_hashes.extend(hashes)
 
             return {
-                'receipt': response['txReceipt'],
-                'claimedTokens': claimed_tokens,
-                'txHashes': tx_hashes
+                'receipt': response['tx_receipt'],
+                'claimed_tokens': claimed_tokens,
+                'tx_hashes': tx_hashes
             }
 
         except Exception as e:
@@ -201,7 +201,7 @@ class Royalty:
 
         return owns_claimer, is_claimer_ip, ip_account
     
-    def _transferClaimedTokensFromIpToWallet(self, ancestor_ip_id: str, ip_account, claimed_tokens: list) -> list:
+    def _transfer_claimed_tokens_from_ip_to_wallet(self, ancestor_ip_id: str, ip_account, claimed_tokens: list) -> list:
         """
         Transfer claimed tokens from an IP account to the wallet.
 
@@ -235,11 +235,11 @@ class Royalty:
             transfer_data,
             0
         )
-        tx_hashes.append(response['txHash'])
+        tx_hashes.append(response['tx_hash'])
 
         return tx_hashes
 
-    def _parseTxRevenueTokenClaimedEvent(self, tx_receipt: dict) -> list:
+    def _parse_tx_revenue_token_claimed_event(self, tx_receipt: dict) -> list:
         """
         Parse the RevenueTokenClaimed events from a transaction receipt.
 

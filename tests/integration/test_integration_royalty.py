@@ -1,3 +1,5 @@
+# tests/integration/test_integration_royalty.py
+
 import pytest
 from web3 import Web3
 import copy
@@ -28,30 +30,30 @@ class TestRoyalty:
             nft_contract=MockERC721,
             token_id=parent_token_id
         )
-        parent_ip_id = parent_ip_response['ipId']
+        parent_ip_id = parent_ip_response['ip_id']
         
         child_token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
         child_ip_response = story_client.IPAsset.register(
             nft_contract=MockERC721,
             token_id=child_token_id
         )
-        child_ip_id = child_ip_response['ipId']
+        child_ip_id = child_ip_response['ip_id']
         
-        license_terms_response = story_client.License.registerCommercialRemixPIL(
+        license_terms_response = story_client.License.register_commercial_remix_pil(
             default_minting_fee=100000,
             currency=MockERC20,
             commercial_rev_share=10,
             royalty_policy=ROYALTY_POLICY
         )
-        license_terms_id = license_terms_response['licenseTermsId']
+        license_terms_id = license_terms_response['license_terms_id']
         
-        story_client.License.attachLicenseTerms(
+        story_client.License.attach_license_terms(
             ip_id=parent_ip_id,
             license_template=PIL_LICENSE_TEMPLATE,
             license_terms_id=license_terms_id
         )
         
-        story_client.IPAsset.registerDerivative(
+        story_client.IPAsset.register_derivative(
             child_ip_id=child_ip_id,
             parent_ip_ids=[parent_ip_id],
             license_terms_ids=[license_terms_id],
@@ -87,7 +89,7 @@ class TestRoyalty:
         parent_ip_id = setup_ips_and_licenses['parent_ip_id']
         child_ip_id = setup_ips_and_licenses['child_ip_id']
         
-        response = story_client.Royalty.payRoyaltyOnBehalf(
+        response = story_client.Royalty.pay_royalty_on_behalf(
             receiver_ip_id=parent_ip_id,
             payer_ip_id=child_ip_id,
             token=MockERC20,
@@ -95,13 +97,13 @@ class TestRoyalty:
         )
 
         assert response is not None
-        assert response['txHash'] is not None and isinstance(response['txHash'], str)
+        assert response['tx_hash'] is not None and isinstance(response['tx_hash'], str)
 
     def test_claimable_revenue(self, story_client, setup_ips_and_licenses):
         """Test checking claimable revenue"""
         parent_ip_id = setup_ips_and_licenses['parent_ip_id']
         
-        response = story_client.Royalty.claimableRevenue(
+        response = story_client.Royalty.claimable_revenue(
             royalty_vault_ip_id=parent_ip_id,
             claimer=account.address,
             token=MockERC20
@@ -115,7 +117,7 @@ class TestRoyalty:
         unregistered_ip_id = "0x1234567890123456789012345678901234567890"
         
         with pytest.raises(ValueError, match=f"The receiver IP with id {unregistered_ip_id} is not registered"):
-            story_client.Royalty.payRoyaltyOnBehalf(
+            story_client.Royalty.pay_royalty_on_behalf(
                 receiver_ip_id=unregistered_ip_id,
                 payer_ip_id=child_ip_id,
                 token=MockERC20,
@@ -128,7 +130,7 @@ class TestRoyalty:
         child_ip_id = setup_ips_and_licenses['child_ip_id']
         
         with pytest.raises(Exception):  
-            story_client.Royalty.payRoyaltyOnBehalf(
+            story_client.Royalty.pay_royalty_on_behalf(
                 receiver_ip_id=parent_ip_id,
                 payer_ip_id=child_ip_id,
                 token=MockERC20,
@@ -139,7 +141,7 @@ class TestClaimAllRevenue:
     @pytest.fixture(scope="module")
     def setup_claim_all_revenue(self, story_client):
         # Create NFT collection
-        collection_response = story_client.NFTClient.createNFTCollection(
+        collection_response = story_client.NFTClient.create_nft_collection(
             name="free-collection",
             symbol="FREE", 
             max_supply=100,
@@ -148,7 +150,7 @@ class TestClaimAllRevenue:
             contract_uri="test-uri",
             mint_fee_recipient=ZERO_ADDRESS
         )
-        spg_nft_contract = collection_response['nftContract']
+        spg_nft_contract = collection_response['nft_contract']
 
         # Define license terms data template
         license_terms_template = [{
@@ -213,45 +215,45 @@ class TestClaimAllRevenue:
         }
 
         # Register IP A with PIL terms
-        ip_a_response = story_client.IPAsset.mintAndRegisterIpAssetWithPilTerms(
+        ip_a_response = story_client.IPAsset.mint_and_register_ip_asset_with_pil_terms(
             spg_nft_contract=spg_nft_contract,
             terms=copy.deepcopy(license_terms_template),
             ip_metadata=metadata_a
         )
-        ip_a = ip_a_response['ipId']
-        license_terms_id = ip_a_response['licenseTermsIds'][0]
+        ip_a = ip_a_response['ip_id']
+        license_terms_id = ip_a_response['license_terms_ids'][0]
 
         # Register IP B as derivative of A
-        ip_b_response = story_client.IPAsset.mintAndRegisterIp(
+        ip_b_response = story_client.IPAsset.mint_and_register_ip(
             spg_nft_contract=spg_nft_contract,
             ip_metadata=metadata_b
         )
-        ip_b = ip_b_response['ipId']
-        story_client.IPAsset.registerDerivative(
+        ip_b = ip_b_response['ip_id']
+        story_client.IPAsset.register_derivative(
             child_ip_id=ip_b,
             parent_ip_ids=[ip_a],
             license_terms_ids=[license_terms_id]
         )
 
         # Register IP C as derivative of B
-        ip_c_response = story_client.IPAsset.mintAndRegisterIp(
+        ip_c_response = story_client.IPAsset.mint_and_register_ip(
             spg_nft_contract=spg_nft_contract,
             ip_metadata=metadata_c
         )
-        ip_c = ip_c_response['ipId']
-        story_client.IPAsset.registerDerivative( 
+        ip_c = ip_c_response['ip_id']
+        story_client.IPAsset.register_derivative( 
             child_ip_id=ip_c,
             parent_ip_ids=[ip_b],
             license_terms_ids=[license_terms_id]
         )
 
         # Register IP D as derivative of C
-        ip_d_response = story_client.IPAsset.mintAndRegisterIp(
+        ip_d_response = story_client.IPAsset.mint_and_register_ip(
             spg_nft_contract=spg_nft_contract,
             ip_metadata=metadata_d
         )
-        ip_d = ip_d_response['ipId']
-        story_client.IPAsset.registerDerivative(
+        ip_d = ip_d_response['ip_id']
+        story_client.IPAsset.register_derivative(
             child_ip_id=ip_d,
             parent_ip_ids=[ip_c],
             license_terms_ids=[license_terms_id]
@@ -265,7 +267,7 @@ class TestClaimAllRevenue:
         }
 
     def test_claim_all_revenue(self, setup_claim_all_revenue, story_client):
-        response = story_client.Royalty.claimAllRevenue(
+        response = story_client.Royalty.claim_all_revenue(
             ancestor_ip_id=setup_claim_all_revenue['ip_a'],
             claimer=setup_claim_all_revenue['ip_a'],
             child_ip_ids=[setup_claim_all_revenue['ip_b'], setup_claim_all_revenue['ip_c']],
@@ -274,15 +276,15 @@ class TestClaimAllRevenue:
         ) 
 
         assert response is not None
-        assert 'txHashes' in response
-        assert isinstance(response['txHashes'], list)
-        assert len(response['txHashes']) > 0
-        assert response['claimedTokens'][0]['amount'] == 120
+        assert 'tx_hashes' in response
+        assert isinstance(response['tx_hashes'], list)
+        assert len(response['tx_hashes']) > 0
+        assert response['claimed_tokens'][0]['amount'] == 120
 
     @pytest.fixture(scope="module")
     def setup_claim_all_revenue_claim_options(self, story_client):
         # Create NFT collection
-        collection_response = story_client.NFTClient.createNFTCollection(
+        collection_response = story_client.NFTClient.create_nft_collection(
             name="free-collection",
             symbol="FREE", 
             max_supply=100,
@@ -291,7 +293,7 @@ class TestClaimAllRevenue:
             contract_uri="test-uri",
             mint_fee_recipient=ZERO_ADDRESS
         )
-        spg_nft_contract = collection_response['nftContract']
+        spg_nft_contract = collection_response['nft_contract']
 
         # Define license terms data template
         license_terms_template = [{
@@ -356,45 +358,45 @@ class TestClaimAllRevenue:
         }
 
         # Register IP A with PIL terms
-        ip_a_response = story_client.IPAsset.mintAndRegisterIpAssetWithPilTerms(
+        ip_a_response = story_client.IPAsset.mint_and_register_ip_asset_with_pil_terms(
             spg_nft_contract=spg_nft_contract,
             terms=copy.deepcopy(license_terms_template),
             ip_metadata=metadata_a
         )
-        ip_a = ip_a_response['ipId']
-        license_terms_id = ip_a_response['licenseTermsIds'][0]
+        ip_a = ip_a_response['ip_id']
+        license_terms_id = ip_a_response['license_terms_ids'][0]
 
         # Register IP B as derivative of A
-        ip_b_response = story_client.IPAsset.mintAndRegisterIp(
+        ip_b_response = story_client.IPAsset.mint_and_register_ip(
             spg_nft_contract=spg_nft_contract,
             ip_metadata=metadata_b
         )
-        ip_b = ip_b_response['ipId']
-        ip_b_derivative_response = story_client.IPAsset.registerDerivative(
+        ip_b = ip_b_response['ip_id']
+        ip_b_derivative_response = story_client.IPAsset.register_derivative(
             child_ip_id=ip_b,
             parent_ip_ids=[ip_a],
             license_terms_ids=[license_terms_id]
         )
 
         # Register IP C as derivative of B
-        ip_c_response = story_client.IPAsset.mintAndRegisterIp(
+        ip_c_response = story_client.IPAsset.mint_and_register_ip(
             spg_nft_contract=spg_nft_contract,
             ip_metadata=metadata_c
         )
-        ip_c = ip_c_response['ipId']
-        story_client.IPAsset.registerDerivative( 
+        ip_c = ip_c_response['ip_id']
+        story_client.IPAsset.register_derivative( 
             child_ip_id=ip_c,
             parent_ip_ids=[ip_b],
             license_terms_ids=[license_terms_id]
         )
 
         # Register IP D as derivative of C
-        ip_d_response = story_client.IPAsset.mintAndRegisterIp(
+        ip_d_response = story_client.IPAsset.mint_and_register_ip(
             spg_nft_contract=spg_nft_contract,
             ip_metadata=metadata_d
         )
-        ip_d = ip_d_response['ipId']
-        story_client.IPAsset.registerDerivative(
+        ip_d = ip_d_response['ip_id']
+        story_client.IPAsset.register_derivative(
             child_ip_id=ip_d,
             parent_ip_ids=[ip_c],
             license_terms_ids=[license_terms_id]
@@ -409,19 +411,19 @@ class TestClaimAllRevenue:
 
     def test_claim_all_revenue_claim_options(self, setup_claim_all_revenue_claim_options, story_client):
         """Test claiming all revenue with specific claim options"""
-        response = story_client.Royalty.claimAllRevenue(
+        response = story_client.Royalty.claim_all_revenue(
             ancestor_ip_id=setup_claim_all_revenue_claim_options['ip_a'],
             claimer=setup_claim_all_revenue_claim_options['ip_a'],
             child_ip_ids=[setup_claim_all_revenue_claim_options['ip_b'], setup_claim_all_revenue_claim_options['ip_c']],
             royalty_policies=[ROYALTY_POLICY, ROYALTY_POLICY],
             currency_tokens=[MockERC20, MockERC20],
             claim_options={
-                'autoTransferAllClaimedTokensFromIp': True
+                'auto_transfer_all_claimed_tokens_from_ip': True
             }
         )
 
         assert response is not None
-        assert 'txHashes' in response
-        assert isinstance(response['txHashes'], list)
-        assert len(response['txHashes']) > 0
-        assert response['claimedTokens'][0]['amount'] == 120
+        assert 'tx_hashes' in response
+        assert isinstance(response['tx_hashes'], list)
+        assert len(response['tx_hashes']) > 0
+        assert response['claimed_tokens'][0]['amount'] == 120

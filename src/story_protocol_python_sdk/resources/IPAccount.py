@@ -29,11 +29,11 @@ class IPAccount:
         self.core_metadata_module_client = CoreMetadataModuleClient(web3)
         self.mock_erc20_client = MockERC20Client(web3)
 
-    def getToken(self, ip_id: str) -> dict:
+    def get_token(self, ip_id: str) -> dict:
         """Retrieve token information associated with an IP account.
 
         :param ip_id str: The IP ID to query.
-        :returns dict: Dictionary containing chainId, tokenContract, and tokenId.
+        :returns dict: Dictionary containing chain_id, token_contract, and token_id.
         :raises ValueError: If the IP ID is invalid.
         """
         try:
@@ -41,9 +41,9 @@ class IPAccount:
             ip_account_client = IPAccountImplClient(self.web3, contract_address=checksum_address)
             chain_id, token_contract, token_id = ip_account_client.token()
             return {
-                'chainId': chain_id,
-                'tokenContract': token_contract,
-                'tokenId': token_id
+                'chain_id': chain_id,
+                'token_contract': token_contract,
+                'token_id': token_id
             }
         except ValueError:  # Catch ValueError from to_checksum_address
             raise ValueError(f"Invalid IP id address: {ip_id}")
@@ -88,7 +88,7 @@ class IPAccount:
 
         return response
 
-    def executeWithSig(self, ip_id: str, to: str, data: str, signer: str, deadline: int, signature: str, value: int = 0, tx_options: dict = None) -> dict:
+    def execute_with_sig(self, ip_id: str, to: str, data: str, signer: str, deadline: int, signature: str, value: int = 0, tx_options: dict = None) -> dict:
         """Execute a signed transaction from the IP Account.
 
         :param ip_id str: The IP ID to get IP account.
@@ -120,7 +120,7 @@ class IPAccount:
 
         return response
         
-    def getIpAccountNonce(self, ip_id: str) -> bytes:
+    def get_ip_account_nonce(self, ip_id: str) -> bytes:
         """Get the IP Account's internal nonce for transaction ordering.
 
         :param ip_id str: The IP ID to query.
@@ -158,7 +158,7 @@ class IPAccount:
         except Exception as e:
             raise e
 
-    def setIpMetadata(self, ip_id: str, metadata_uri: str, metadata_hash: str, tx_options: dict = None) -> dict:
+    def set_ip_metadata(self, ip_id: str, metadata_uri: str, metadata_hash: str, tx_options: dict = None) -> dict:
         """Sets the metadataURI for an IP asset.
 
         :param ip_id str: The IP ID to set metadata for.
@@ -189,7 +189,7 @@ class IPAccount:
         except Exception as e:
             raise e
 
-    def transferERC20(self, ip_id: str, tokens: list, tx_options: dict = None) -> dict:
+    def transfer_erc20(self, ip_id: str, tokens: list, tx_options: dict = None) -> dict:
         """Transfers ERC20 tokens from the IP Account to the target address.
 
         :param ip_id str: The IP ID to transfer tokens from.

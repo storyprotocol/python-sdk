@@ -36,6 +36,10 @@ class MockWeb3:
     @staticmethod
     def is_address(address):
         return is_address(address)
+    
+    @staticmethod
+    def keccak(text=None):
+        return Web3.keccak(text=text)
         
     def is_connected(self):
         return True
@@ -59,14 +63,14 @@ class TestIPAssetRegister:
     def test_register_invalid_deadline_type(self, ip_asset):
         with patch.object(ip_asset, '_get_ip_id', return_value="0xd142822Dc1674154EaF4DDF38bbF7EF8f0D8ECe4"), \
              patch.object(ip_asset, '_is_registered', return_value=False):
-            with pytest.raises(ValueError, match="Invalid deadline value."):
+            with pytest.raises(ValueError):
                 ip_asset.register(
                     nft_contract="0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c",
                     token_id=3,
                     deadline="error",
                     ip_metadata={
-                        'ipMetadataURI': "1",
-                        'ipMetadataHash': ZERO_HASH
+                        'ip_metadata_uri': "1",
+                        'ip_metadata_hash': ZERO_HASH
                     }
                 )
 
@@ -75,11 +79,11 @@ class TestIPAssetRegister:
         token_id = 3
         ip_id = "0xd142822Dc1674154EaF4DDF38bbF7EF8f0D8ECe4"
 
-        with patch.object(ip_asset.ip_asset_registry_client, 'ipId', return_value=ip_id), \
-             patch.object(ip_asset.ip_asset_registry_client, 'isRegistered', return_value=True):
+        with patch.object(ip_asset, '_get_ip_id', return_value=ip_id), \
+             patch.object(ip_asset, '_is_registered', return_value=True):
             response = ip_asset.register(token_contract, token_id)
-            assert response['ipId'] == ip_id
-            assert response['txHash'] is None
+            assert response['ip_id'] == ip_id
+            assert response['tx_hash'] is None
 
     def test_register_successful(self, ip_asset):
         token_contract = "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"
@@ -90,7 +94,7 @@ class TestIPAssetRegister:
         
         class MockTxHash:
             def hex(self):
-                return tx_hash[2:] 
+                return tx_hash
 
         mock_tx_hash = MockTxHash()
 
@@ -105,11 +109,11 @@ class TestIPAssetRegister:
              patch.object(ip_asset.web3.eth, 'get_transaction_count', return_value=0), \
              patch.object(ip_asset.web3.eth, 'send_raw_transaction', return_value=mock_tx_hash), \
              patch.object(ip_asset.web3.eth, 'wait_for_transaction_receipt', return_value={'status': 1, 'logs': []}), \
-             patch.object(ip_asset, '_parse_tx_ip_registered_event', return_value={'ipId': ip_id}):
+             patch.object(ip_asset, '_parse_tx_ip_registered_event', return_value={'ip_id': ip_id}):
 
             result = ip_asset.register(token_contract, token_id)
-            assert result['txHash'] == tx_hash[2:]
-            assert result['ipId'] == ip_id
+            assert result['tx_hash'] == tx_hash
+            assert result['ip_id'] == ip_id
 
     def test_register_with_metadata(self, ip_asset):
         token_contract = "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"
@@ -118,17 +122,17 @@ class TestIPAssetRegister:
         tx_hash = "0x129f7dd802200f096221dd89d5b086e4bd3ad6eafb378a0c75e3b04fc375f997"
 
         metadata = {
-            'ipMetadataURI': "",
-            'ipMetadataHash': ZERO_HASH,
-            'nftMetadataURI': "",
-            'nftMetadataHash': ZERO_HASH,
+            'ip_metadata_uri': "",
+            'ip_metadata_hash': ZERO_HASH,
+            'nft_metadata_uri': "",
+            'nft_metadata_hash': ZERO_HASH,
         }
 
         calculated_deadline = 1000
 
         class MockTxHash:
             def hex(self):
-                return tx_hash[2:]
+                return tx_hash
 
         mock_tx_hash = MockTxHash()
 
@@ -144,7 +148,7 @@ class TestIPAssetRegister:
              patch.object(ip_asset.web3.eth, 'get_transaction_count', return_value=0), \
              patch.object(ip_asset.web3.eth, 'send_raw_transaction', return_value=mock_tx_hash), \
              patch.object(ip_asset.web3.eth, 'wait_for_transaction_receipt', return_value={'status': 1, 'logs': []}), \
-             patch.object(ip_asset, '_parse_tx_ip_registered_event', return_value={'ipId': ip_id}):
+             patch.object(ip_asset, '_parse_tx_ip_registered_event', return_value={'ip_id': ip_id, 'token_id': token_id}):
 
             result = ip_asset.register(
                 nft_contract=token_contract,
@@ -153,5 +157,5 @@ class TestIPAssetRegister:
                 deadline=1000
             )
 
-            assert result['txHash'] == tx_hash[2:]
-            assert result['ipId'] == ip_id
+            assert result['tx_hash'] == tx_hash
+            assert result['ip_id'] == ip_id

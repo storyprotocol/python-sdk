@@ -22,6 +22,12 @@ class GroupingWorkflowsClient:
             abi = json.load(abi_file)
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
+    def collectRoyaltiesAndClaimReward(self, groupIpId, currencyTokens, memberIpIds):
+        return self.contract.functions.collectRoyaltiesAndClaimReward(groupIpId, currencyTokens, memberIpIds).transact()
+        
+    def build_collectRoyaltiesAndClaimReward_transaction(self, groupIpId, currencyTokens, memberIpIds, tx_params):
+        return self.contract.functions.collectRoyaltiesAndClaimReward(groupIpId, currencyTokens, memberIpIds).build_transaction(tx_params)
+    
     def mintAndRegisterIpAndAttachLicenseAndAddToGroup(self, spgNftContract, groupId, recipient, licensesData, ipMetadata, sigAddToGroup, allowDuplicates):
         return self.contract.functions.mintAndRegisterIpAndAttachLicenseAndAddToGroup(spgNftContract, groupId, recipient, licensesData, ipMetadata, sigAddToGroup, allowDuplicates).transact()
         

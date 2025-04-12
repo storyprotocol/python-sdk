@@ -39,7 +39,7 @@ class Group:
         self.pi_license_template_client = PILicenseTemplateClient(web3)
 
         self.license_terms_util = LicenseTerms(web3)
-        self.sign = Sign(web3, account, chain_id)
+        self.sign_util = Sign(web3, self.chain_id, self.account)
 
     def register_group(self, group_pool: str, tx_options: dict = None) -> dict:
         """
@@ -70,7 +70,6 @@ class Group:
         
         except Exception as e:
             raise ValueError(f"Failed to register group: {str(e)}")
-
 
     def register_group_and_attach_license(
         self,
@@ -112,104 +111,118 @@ class Group:
         except Exception as e:
             raise ValueError(f"Failed to register group and attach license: {str(e)}")
 
-    # def mint_and_register_ip_and_attach_license_and_add_to_group(
-    #     self,
-    #     group_id: str,
-    #     spg_nft_contract: str,
-    #     license_data: list,
-    #     max_allowed_reward_share: int,
-    #     ip_metadata: dict = None,
-    #     recipient: str = None,
-    #     allow_duplicates: bool = True,
-    #     deadline: int = None,
-    #     tx_options: dict = None
-    # ) -> dict:
-    #     """
-    #     Mint an NFT from a SPGNFT collection, register it with metadata as an IP, 
-    #     attach license terms to the registered IP, and add it to a group IP.
+    def mint_and_register_ip_and_attach_license_and_add_to_group(
+        self,
+        group_id: str,
+        spg_nft_contract: str,
+        license_data: list,
+        max_allowed_reward_share: int,
+        ip_metadata: dict = None,
+        recipient: str = None,
+        allow_duplicates: bool = True,
+        deadline: int = None,
+        tx_options: dict = None
+    ) -> dict:
+        """
+        Mint an NFT from a SPGNFT collection, register it with metadata as an IP, 
+        attach license terms to the registered IP, and add it to a group IP.
 
-    #     :param group_id str: The ID of the group to add the IP to.
-    #     :param spg_nft_contract str: The address of the SPG NFT contract.
-    #     :param license_data list: List of license data objects with terms and config.
-    #     :param max_allowed_reward_share int: Maximum allowed reward share percentage.
-    #     :param ip_metadata dict: [Optional] The metadata for the IP.
-    #     :param recipient str: [Optional] The recipient of the NFT (defaults to caller).
-    #     :param allow_duplicates bool: [Optional] Whether to allow duplicate IPs.
-    #     :param deadline int: [Optional] The deadline for the signature in milliseconds.
-    #     :param tx_options dict: [Optional] The transaction options.
-    #     :return dict: A dictionary with the transaction hash, IP ID, and token ID.
-    #     """
-    #     try:
-    #         if not Web3.is_address(group_id):
-    #             raise ValueError(f'Group ID "{group_id}" is invalid.')
+        :param group_id str: The ID of the group to add the IP to.
+        :param spg_nft_contract str: The address of the SPG NFT contract.
+        :param license_data list: List of license data objects with terms and config.
+        :param max_allowed_reward_share int: Maximum allowed reward share percentage.
+        :param ip_metadata dict: [Optional] The metadata for the IP.
+        :param recipient str: [Optional] The recipient of the NFT (defaults to caller).
+        :param allow_duplicates bool: [Optional] Whether to allow duplicate IPs.
+        :param deadline int: [Optional] The deadline for the signature in milliseconds.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash, IP ID, and token ID.
+        """
+        try:
+            if not Web3.is_address(group_id):
+                raise ValueError(f'Group ID "{group_id}" is invalid.')
             
-    #         if not Web3.is_address(spg_nft_contract):
-    #             raise ValueError(f'SPG NFT contract address "{spg_nft_contract}" is invalid.')
+            if not Web3.is_address(spg_nft_contract):
+                raise ValueError(f'SPG NFT contract address "{spg_nft_contract}" is invalid.')
             
-    #         is_registered = self.ip_asset_registry_client.isRegistered(group_id)
-    #         if not is_registered:
-    #             raise ValueError(f"Group IP {group_id} is not registered.")
+            is_registered = self.ip_asset_registry_client.isRegistered(group_id)
+            if not is_registered:
+                raise ValueError(f"Group IP {group_id} is not registered.")
             
-    #         # Get IP account state
-    #         ip_account = IPAccountImplClient(self.web3, group_id)
-    #         state = ip_account.state()
+            # Get IP account state
+            ip_account = IPAccountImplClient(self.web3, contract_address=group_id)
+            state = ip_account.state()
             
-    #         # Calculate deadline
-    #         calculated_deadline = self.sign._get_deadline(deadline=deadline)
+            print("State:", state)
+
+            # Calculate deadline
+            calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
             
-    #         # Get permission signature for adding to group
-    #         sig_add_to_group = self.sign.get_permission_signature(
-    #             ip_id=group_id,
-    #             deadline=calculated_deadline,
-    #             state=state,
-    #             permissions=[{
-    #                 'signer': self.grouping_workflows_client.contract.address,
-    #                 'to': self.grouping_module_client.contract.address,
-    #                 'permission': 1,  # ALLOW
-    #                 'func': "addIp(address,address,uint256)"
-    #             }]
-    #         )
+            # Get permission signature for adding to group
+            sig_add_to_group = self.sign_util.get_permission_signature(
+                ip_id=group_id,
+                deadline=calculated_deadline,
+                state=state,
+                permissions=[{
+                    'ipId': group_id,
+                    'signer': self.grouping_workflows_client.contract.address,
+                    'to': self.grouping_module_client.contract.address,
+                    'permission': 1,  # ALLOW
+                    'func': "addIp(address,address[])"
+                }]
+            )
+
+            # Process license data
+            licenses_data = self._get_license_data(license_data)
             
-    #         # Process license data
-    #         licenses_data = self._get_license_data(license_data)
+            # Process IP metadata
+            metadata = self._get_ip_metadata(ip_metadata)
             
-    #         # Process IP metadata
-    #         metadata = self._get_ip_metadata(ip_metadata)
+            # Set recipient to caller if not provided
+            if not recipient:
+                recipient = self.account.address
             
-    #         # Set recipient to caller if not provided
-    #         if not recipient:
-    #             recipient = self.account.address
+            print("SPG NFT Contract:", spg_nft_contract)
+            print("Group ID:", group_id)
+            print("Recipient:", recipient)
+            print("Licenses Data:", licenses_data)
+            print("Metadata:", metadata)
+            print("Signature Info:", {
+                'signer': self.account.address,
+                'deadline': calculated_deadline,
+                'signature': self.web3.to_bytes(hexstr=sig_add_to_group["signature"])
+            })
+            print("Allow Duplicates:", allow_duplicates)
+
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.grouping_workflows_client.build_mintAndRegisterIpAndAttachLicenseAndAddToGroup_transaction,
+                spg_nft_contract,
+                group_id,
+                recipient,
+                licenses_data,
+                metadata,
+                {
+                    'signer': self.account.address,
+                    'deadline': calculated_deadline,
+                    'signature': self.web3.to_bytes(hexstr=sig_add_to_group["signature"])
+                },
+                allow_duplicates,
+                tx_options=tx_options
+            )
             
-    #         response = build_and_send_transaction(
-    #             self.web3,
-    #             self.account,
-    #             self.grouping_workflows_client.build_mintAndRegisterIpAndAttachLicenseAndAddToGroup_transaction,
-    #             spg_nft_contract,
-    #             recipient,
-    #             metadata,
-    #             licenses_data,
-    #             group_id,
-    #             self.license_terms_util.get_revenue_share(max_allowed_reward_share),
-    #             allow_duplicates,
-    #             {
-    #                 'signer': self.account.address,
-    #                 'deadline': calculated_deadline,
-    #                 'signature': sig_add_to_group
-    #             },
-    #             tx_options=tx_options
-    #         )
+            # Parse events to get IP ID and token ID
+            registration_data = self._parse_tx_ip_registered_event(response['tx_receipt'])
             
-    #         # Parse events to get IP ID and token ID
-    #         registration_data = self._parse_tx_ip_registered_event(response['tx_receipt'])
+            return {
+                'tx_hash': response['tx_hash'],
+                'ip_id': registration_data['ip_id'],
+                'token_id': registration_data['token_id']
+            }
             
-    #         return {
-    #             'tx_hash': response['tx_hash'],
-    #             'ip_id': registration_data['ip_id'],
-    #             'token_id': registration_data['token_id']
-    #         }
-            
-    #     except Exception as e:
-    #         raise ValueError(f"Failed to mint and register IP and attach license and add to group: {str(e)}")
+        except Exception as e:
+            raise ValueError(f"Failed to mint and register IP and attach license and add to group: {str(e)}")
 
     # def register_ip_and_attach_license_and_add_to_group(
     #     self,
@@ -511,8 +524,6 @@ class Group:
             except Exception as e:
                 raise ValueError(f"Licensing config validation failed: {str(e)}")
             
-            print(f"Original licensing_config: {licensing_config}")
-
             # Convert to camelCase for contract interaction
             camelcase_config = {
                 'isSet': licensing_config.get('is_set', True),
@@ -533,8 +544,6 @@ class Group:
             
             result.append(processed_item)
         
-        print(f"\n=== DEBUG: Final result from _get_license_data: {result} ===")
-
         return result
 
     def _get_ip_metadata(self, ip_metadata: dict = None) -> dict:

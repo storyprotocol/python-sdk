@@ -28,7 +28,8 @@ from utils import (
     generate_cid,
     WIP_TOKEN_ADDRESS,
     setup_royalty_vault,
-    EVEN_SPLIT_GROUP_POOL
+    EVEN_SPLIT_GROUP_POOL,
+    ROYALTY_POLICY_LRP
 )
 
 # Load environment variables
@@ -88,5 +89,6 @@ __all__ = [
     'wallet_address_2',
     'private_key',
     'private_key_2',
-    'EVEN_SPLIT_GROUP_POOL'
+    'EVEN_SPLIT_GROUP_POOL',
+    'ROYALTY_POLICY_LRP'
 ]

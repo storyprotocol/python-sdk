@@ -422,7 +422,7 @@ class TestSetIpMetadata:
         )
         ip_id = register_response['ipId']
 
-        deadline = getBlockTimestamp(web3) + 100
+        deadline = get_block_timestamp(web3) + 100
         state = story_client.IPAccount.getIpAccountNonce(ip_id)        
         data = "0x"
         

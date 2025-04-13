@@ -153,8 +153,6 @@ class Group:
             ip_account = IPAccountImplClient(self.web3, contract_address=group_id)
             state = ip_account.state()
             
-            print("State:", state)
-
             # Calculate deadline
             calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
             
@@ -172,27 +170,26 @@ class Group:
                 }]
             )
 
-            # Process license data
             licenses_data = self._get_license_data(license_data)
             
-            # Process IP metadata
             metadata = self._get_ip_metadata(ip_metadata)
             
+            max_allowed_reward_share = self.license_terms_util.get_revenue_share(max_allowed_reward_share)
+
             # Set recipient to caller if not provided
             if not recipient:
                 recipient = self.account.address
-            
-            print("SPG NFT Contract:", spg_nft_contract)
-            print("Group ID:", group_id)
-            print("Recipient:", recipient)
-            print("Licenses Data:", licenses_data)
-            print("Metadata:", metadata)
-            print("Signature Info:", {
-                'signer': self.account.address,
-                'deadline': calculated_deadline,
-                'signature': self.web3.to_bytes(hexstr=sig_add_to_group["signature"])
-            })
-            print("Allow Duplicates:", allow_duplicates)
+            # Print relevant information before transaction
+            print("=== Mint and Register IP and Attach License and Add to Group ===")
+            print(f"Group ID: {group_id}")
+            print(f"SPG NFT Contract: {spg_nft_contract}")
+            print(f"Recipient: {recipient}")
+            print(f"Max Allowed Reward Share: {max_allowed_reward_share}")
+            print(f"License Data: {licenses_data}")
+            print(f"Metadata: {metadata}")
+            print(f"Signature Details: {{'signer': '{self.account.address}', 'deadline': {calculated_deadline}, 'signature': {self.web3.to_bytes(hexstr=sig_add_to_group['signature'])}}}")
+            print(f"Allow Duplicates: {allow_duplicates}")
+            print(f"Transaction Options: {tx_options}")
 
             response = build_and_send_transaction(
                 self.web3,
@@ -201,6 +198,7 @@ class Group:
                 spg_nft_contract,
                 group_id,
                 recipient,
+                max_allowed_reward_share,
                 licenses_data,
                 metadata,
                 {

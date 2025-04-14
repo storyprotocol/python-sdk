@@ -166,7 +166,7 @@ class Group:
                     'signer': self.grouping_workflows_client.contract.address,
                     'to': self.grouping_module_client.contract.address,
                     'permission': 1,  # ALLOW
-                    'func': "addIp(address,address[])"
+                    'func': "addIp(address,address[])",
                 }]
             )
 
@@ -222,205 +222,209 @@ class Group:
         except Exception as e:
             raise ValueError(f"Failed to mint and register IP and attach license and add to group: {str(e)}")
 
-    # def register_ip_and_attach_license_and_add_to_group(
-    #     self,
-    #     group_id: str,
-    #     nft_contract: str,
-    #     token_id: int,
-    #     license_data: list,
-    #     max_allowed_reward_share: int,
-    #     ip_metadata: dict = None,
-    #     deadline: int = None,
-    #     tx_options: dict = None
-    # ) -> dict:
-    #     """
-    #     Register an NFT as IP with metadata, attach license terms to the registered IP, 
-    #     and add it to a group IP.
+    def register_ip_and_attach_license_and_add_to_group(
+        self,
+        group_id: str,
+        nft_contract: str,
+        token_id: int,
+        license_data: list,
+        max_allowed_reward_share: int,
+        ip_metadata: dict = None,
+        deadline: int = None,
+        tx_options: dict = None
+    ) -> dict:
+        """
+        Register an NFT as IP with metadata, attach license terms to the registered IP, 
+        and add it to a group IP.
 
-    #     :param group_id str: The ID of the group to add the IP to.
-    #     :param nft_contract str: The address of the NFT contract.
-    #     :param token_id int: The token ID of the NFT.
-    #     :param license_data list: List of license data objects with terms and config.
-    #     :param max_allowed_reward_share int: Maximum allowed reward share percentage.
-    #     :param ip_metadata dict: [Optional] The metadata for the IP.
-    #     :param deadline int: [Optional] The deadline for the signature in milliseconds.
-    #     :param tx_options dict: [Optional] The transaction options.
-    #     :return dict: A dictionary with the transaction hash, IP ID, and token ID.
-    #     """
-    #     try:
-    #         if not Web3.is_address(group_id):
-    #             raise ValueError(f'Group ID "{group_id}" is invalid.')
+        :param group_id str: The ID of the group to add the IP to.
+        :param nft_contract str: The address of the NFT contract.
+        :param token_id int: The token ID of the NFT.
+        :param license_data list: List of license data objects with terms and config.
+        :param max_allowed_reward_share int: Maximum allowed reward share percentage.
+        :param ip_metadata dict: [Optional] The metadata for the IP.
+        :param deadline int: [Optional] The deadline for the signature in milliseconds.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash, IP ID, and token ID.
+        """
+        try:
+            if not self.web3.is_address(group_id):
+                raise ValueError(f'Group ID "{group_id}" is invalid.')
             
-    #         if not Web3.is_address(nft_contract):
-    #             raise ValueError(f'NFT contract address "{nft_contract}" is invalid.')
+            if not self.web3.is_address(nft_contract):
+                raise ValueError(f'NFT contract address "{nft_contract}" is invalid.')
             
-    #         # Check if group is registered
-    #         is_registered = self.ip_asset_registry_client.isRegistered(group_id)
-    #         if not is_registered:
-    #             raise ValueError(f"Group IP {group_id} is not registered.")
+            # Check if group is registered
+            is_registered = self.ip_asset_registry_client.isRegistered(group_id)
+            if not is_registered:
+                raise ValueError(f"Group IP {group_id} is not registered.")
             
-    #         # Get IP ID for the NFT
-    #         ip_id = self.ip_asset_registry_client.ipId(
-    #             self.chain_id,
-    #             nft_contract,
-    #             token_id
-    #         )
+            # Get IP ID for the NFT
+            ip_id = self.ip_asset_registry_client.ipId(
+                self.chain_id,
+                nft_contract,
+                token_id
+            )
             
-    #         # Get IP account state
-    #         ip_account = IPAccountImplClient(self.web3, group_id)
-    #         state = ip_account.state()
+            # Get IP account state
+            ip_account = IPAccountImplClient(self.web3, group_id)
+            state = ip_account.state()
             
-    #         # Calculate deadline
-    #         calculated_deadline = self.sign._get_deadline(deadline=deadline)
+            # Calculate deadline
+            calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
             
-    #         # Get permission signature for adding to group
-    #         sig_add_to_group = self.sign.get_permission_signature(
-    #             ip_id=group_id,
-    #             deadline=calculated_deadline,
-    #             state=state,
-    #             permissions=[{
-    #                 'signer': self.grouping_workflows_client.contract.address,
-    #                 'to': self.grouping_module_client.contract.address,
-    #                 'permission': 1,  # ALLOW
-    #                 'func': "addIp(address,address,uint256)"
-    #             }]
-    #         )
+            # Get permission signature for adding to group
+            sig_add_to_group = self.sign_util.get_permission_signature(
+                ip_id=group_id,
+                deadline=calculated_deadline,
+                state=state,
+                permissions=[{
+                    'ipId': group_id,
+                    'signer': self.grouping_workflows_client.contract.address,
+                    'to': self.grouping_module_client.contract.address,
+                    'permission': 1,  # ALLOW
+                    'func': "addIp(address,address[])"
+                }]
+            )
             
-    #         # Get permission signature for metadata and license
-    #         sig_metadata_and_attach = self.sign.get_permission_signature(
-    #             ip_id=ip_id,
-    #             deadline=calculated_deadline,
-    #             state="0x0000000000000000000000000000000000000000000000000000000000000000",
-    #             permissions=[
-    #                 {
-    #                     'signer': self.grouping_workflows_client.contract.address,
-    #                     'to': self.core_metadata_module_client.contract.address,
-    #                     'permission': 1,  # ALLOW
-    #                     'func': "setAll(address,string,bytes32,bytes32)"
-    #                 },
-    #                 {
-    #                     'signer': self.grouping_workflows_client.contract.address,
-    #                     'to': self.licensing_module_client.contract.address,
-    #                     'permission': 1,  # ALLOW
-    #                     'func': "attachLicenseTerms(address,address,uint256)"
-    #                 },
-    #                 {
-    #                     'signer': self.grouping_workflows_client.contract.address,
-    #                     'to': self.licensing_module_client.contract.address,
-    #                     'permission': 1,  # ALLOW
-    #                     'func': "setLicensingConfig(address,uint256,tuple)"
-    #                 }
-    #             ]
-    #         )
+            # Get permission signature for metadata and license
+            sig_metadata_and_attach = self.sign_util.get_permission_signature(
+                ip_id=ip_id,
+                deadline=calculated_deadline,
+                state=self.web3.to_bytes(hexstr=ZERO_HASH),
+                permissions=[
+                    {
+                        'ipId': ip_id,
+                        'signer': self.grouping_workflows_client.contract.address,
+                        'to': self.core_metadata_module_client.contract.address,
+                        'permission': 1,  # ALLOW
+                        'func': "setAll(address,string,bytes32,bytes32)"
+                    },
+                    {
+                        'ipId': ip_id,
+                        'signer': self.grouping_workflows_client.contract.address,
+                        'to': self.licensing_module_client.contract.address,
+                        'permission': 1,  # ALLOW
+                        'func': "attachLicenseTerms(address,address,uint256)"
+                    },
+                    {
+                        'ipId': ip_id,
+                        'signer': self.grouping_workflows_client.contract.address,
+                        'to': self.licensing_module_client.contract.address,
+                        'permission': 1,  # ALLOW
+                        'func': "setLicensingConfig(address,uint256,tuple)"
+                    }
+                ]
+            )
             
-    #         # Process license data
-    #         licenses_data = self._get_license_data(license_data)
+            # Process license data
+            licenses_data = self._get_license_data(license_data)
             
-    #         # Process IP metadata
-    #         metadata = self._get_ip_metadata(ip_metadata)
+            # Process IP metadata
+            metadata = self._get_ip_metadata(ip_metadata)
             
-    #         response = build_and_send_transaction(
-    #             self.web3,
-    #             self.account,
-    #             self.grouping_workflows_client.build_registerIpAndAttachLicenseAndAddToGroup_transaction,
-    #             nft_contract,
-    #             token_id,
-    #             group_id,
-    #             metadata,
-    #             licenses_data,
-    #             self.license_terms_util.get_revenue_share(max_allowed_reward_share),
-    #             {
-    #                 'signer': self.account.address,
-    #                 'deadline': calculated_deadline,
-    #                 'signature': sig_add_to_group
-    #             },
-    #             {
-    #                 'signer': self.account.address,
-    #                 'deadline': calculated_deadline,
-    #                 'signature': sig_metadata_and_attach
-    #             },
-    #             tx_options=tx_options
-    #         )
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.grouping_workflows_client.build_registerIpAndAttachLicenseAndAddToGroup_transaction,
+                nft_contract,
+                token_id,
+                group_id,
+                self.license_terms_util.get_revenue_share(max_allowed_reward_share),
+                licenses_data,
+                metadata,
+                {
+                    'signer': self.account.address,
+                    'deadline': calculated_deadline,
+                    'signature': self.web3.to_bytes(hexstr=sig_metadata_and_attach['signature'])
+                },
+                {
+                    'signer': self.account.address,
+                    'deadline': calculated_deadline,
+                    'signature': self.web3.to_bytes(hexstr=sig_add_to_group['signature'])
+                },
+                tx_options=tx_options
+            )
             
-    #         # Parse events to get IP ID and token ID
-    #         registration_data = self._parse_tx_ip_registered_event(response['tx_receipt'])
+            # Parse events to get IP ID and token ID
+            registration_data = self._parse_tx_ip_registered_event(response['tx_receipt'])
             
-    #         return {
-    #             'tx_hash': response['tx_hash'],
-    #             'ip_id': registration_data['ip_id'],
-    #             'token_id': registration_data['token_id']
-    #         }
+            return {
+                'tx_hash': response['tx_hash'],
+                'ip_id': registration_data['ip_id'],
+                'token_id': registration_data['token_id']
+            }
             
-    #     except Exception as e:
-    #         raise ValueError(f"Failed to register IP and attach license and add to group: {str(e)}")
+        except Exception as e:
+            raise ValueError(f"Failed to register IP and attach license and add to group: {str(e)}")
 
-    # def register_group_and_attach_license_and_add_ips(
-    #     self,
-    #     group_pool: str,
-    #     ip_ids: list,
-    #     license_data: dict,
-    #     max_allowed_reward_share: int,
-    #     tx_options: dict = None
-    # ) -> dict:
-    #     """
-    #     Register a group IP with a group reward pool, attach license terms to the group IP, 
-    #     and add individual IPs to the group IP.
+    def register_group_and_attach_license_and_add_ips(
+        self,
+        group_pool: str,
+        ip_ids: list,
+        license_data: dict,
+        max_allowed_reward_share: int,
+        tx_options: dict = None
+    ) -> dict:
+        """
+        Register a group IP with a group reward pool, attach license terms to the group IP, 
+        and add individual IPs to the group IP.
 
-    #     :param group_pool str: The address of the group pool.
-    #     :param ip_ids list: List of IP IDs to add to the group.
-    #     :param license_data dict: License data object with terms and config.
-    #     :param max_allowed_reward_share int: Maximum allowed reward share percentage.
-    #     :param tx_options dict: [Optional] The transaction options.
-    #     :return dict: A dictionary with the transaction hash and group ID.
-    #     """
-    #     try:
-    #         if not Web3.is_address(group_pool):
-    #             raise ValueError(f'Group pool address "{group_pool}" is invalid.')
+        :param group_pool str: The address of the group pool.
+        :param ip_ids list: List of IP IDs to add to the group.
+        :param license_data dict: License data object with terms and config.
+        :param max_allowed_reward_share int: Maximum allowed reward share percentage.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash and group ID.
+        """
+        try:
+            if not self.web3.is_address(group_pool):
+                raise ValueError(f'Group pool address "{group_pool}" is invalid.')
             
-    #         # Validate IP IDs
-    #         for ip_id in ip_ids:
-    #             if not Web3.is_address(ip_id):
-    #                 raise ValueError(f'IP ID "{ip_id}" is invalid.')
+            # Validate IP IDs
+            for ip_id in ip_ids:
+                if not self.web3.is_address(ip_id):
+                    raise ValueError(f'IP ID "{ip_id}" is invalid.')
                 
-    #             is_registered = self.ip_asset_registry_client.isRegistered(ip_id)
-    #             if not is_registered:
-    #                 raise ValueError(f"IP {ip_id} is not registered.")
+                is_registered = self.ip_asset_registry_client.isRegistered(ip_id)
+                if not is_registered:
+                    raise ValueError(f"IP {ip_id} is not registered.")
             
-    #         # Process license data
-    #         license_data_processed = self._get_license_data([license_data])[0]
+            # Process license data
+            license_data_processed = self._get_license_data([license_data])[0]
             
-    #         # Check if license terms are attached to all IPs
-    #         for ip_id in ip_ids:
-    #             is_attached = self.license_registry_client.hasIpAttachedLicenseTerms(
-    #                 ip_id,
-    #                 license_data_processed['licenseTemplate'],
-    #                 license_data_processed['licenseTermsId']
-    #             )
-    #             if not is_attached:
-    #                 raise ValueError(
-    #                     f"License terms must be attached to IP {ip_id} before adding to group."
-    #                 )
+            # Check if license terms are attached to all IPs
+            for ip_id in ip_ids:
+                is_attached = self.license_registry_client.hasIpAttachedLicenseTerms(
+                    ip_id,
+                    license_data_processed['licenseTemplate'],
+                    license_data_processed['licenseTermsId']
+                )
+                if not is_attached:
+                    raise ValueError(
+                        f"License terms must be attached to IP {ip_id} before adding to group."
+                    )
             
-    #         response = build_and_send_transaction(
-    #             self.web3,
-    #             self.account,
-    #             self.grouping_workflows_client.build_registerGroupAndAttachLicenseAndAddIps_transaction,
-    #             group_pool,
-    #             ip_ids,
-    #             license_data_processed,
-    #             self.license_terms_util.get_revenue_share(max_allowed_reward_share),
-    #             tx_options=tx_options
-    #         )
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.grouping_workflows_client.build_registerGroupAndAttachLicenseAndAddIps_transaction,
+                group_pool,
+                ip_ids,
+                self.license_terms_util.get_revenue_share(max_allowed_reward_share),
+                license_data_processed,
+                tx_options=tx_options
+            )
             
-    #         group_id = self._parse_tx_ip_group_registered_event(response['tx_receipt'])
+            group_id = self._parse_tx_ip_group_registered_event(response['tx_receipt'])
             
-    #         return {
-    #             'tx_hash': response['tx_hash'],
-    #             'group_id': group_id
-    #         }
+            return {
+                'tx_hash': response['tx_hash'],
+                'group_id': group_id
+            }
             
-    #     except Exception as e:
-    #         raise ValueError(f"Failed to register group and attach license and add IPs: {str(e)}")
+        except Exception as e:
+            raise ValueError(f"Failed to register group and attach license and add IPs: {str(e)}")
 
     # def collect_and_distribute_group_royalties(
     #     self,

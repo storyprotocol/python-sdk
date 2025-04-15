@@ -471,6 +471,12 @@ class TestCollectRoyaltyAndClaimReward:
             amount=100
         )
         
+        print("claimable revenue is ", story_client.Royalty.claimable_revenue(
+            royalty_vault_ip_id=child_ip_id1,
+            claimer=account.address,
+            token=MockERC20
+        ))
+
         # Transfer to vault
         story_client.Royalty.transfer_to_vault(
             royalty_policy="LRP",

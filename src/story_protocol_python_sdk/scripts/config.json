@@ -109,7 +109,8 @@
             "contract_address": "0xBe54FB168b3c982b7AaE60dB6CF75Bd8447b390E",
             "functions": [
                 "onRoyaltyPayment",
-                "getRoyaltyData"
+                "getRoyaltyData",
+                "transferToVault"
             ]
         },
         {

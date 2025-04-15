@@ -180,6 +180,60 @@ class Royalty:
         except Exception as e:
             raise ValueError(f"Failed to claim all revenue: {str(e)}")
     
+    def transfer_to_vault(
+        self,
+        ip_id: str,
+        ancestor_ip_id: str,
+        token: str,
+        royalty_policy: str = "LAP",
+        tx_options: dict = None
+    ) -> dict:
+        """
+        Transfers to vault an amount of revenue tokens claimable via a royalty policy.
+
+        :param ip_id str: The IP ID.
+        :param ancestor_ip_id str: The ancestor IP ID.
+        :param token str: The token address.
+        :param royalty_policy str: The royalty policy to use ("LAP" or "LRP").
+        :param tx_options dict: [Optional] Transaction options.
+        :return dict: A dictionary with the transaction hash and receipt.
+        """
+        try:
+            if not self.web3.is_address(token):
+                raise ValueError(f'Token address "{token}" is invalid.')
+            
+            # Determine which royalty policy to use
+            if royalty_policy == "LAP":
+                royalty_policy_client = self.royalty_policy_lap_client
+            elif royalty_policy == "LRP":
+                royalty_policy_client = self.royalty_policy_lap_client  # Same ABI for all royalty policies
+                # Override the contract address for LRP
+                royalty_policy_client.contract.address = "0x9156e603C949481883B1d3355c6f1132D191fC41"
+            else:
+                # If it's a custom address
+                if not self.web3.is_address(royalty_policy):
+                    raise ValueError(f'Royalty policy address "{royalty_policy}" is invalid.')
+                royalty_policy_client = self.royalty_policy_lap_client  # Same ABI for all royalty policies
+                royalty_policy_client.contract.address = self.web3.to_checksum_address(royalty_policy)
+
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                royalty_policy_client.build_transferToVault_transaction,
+                ip_id,
+                ancestor_ip_id,
+                token,
+                tx_options=tx_options
+            )
+
+            return {
+                'tx_hash': response['tx_hash'],
+                'receipt': response['tx_receipt']
+            }
+
+        except Exception as e:
+            raise ValueError(f"Failed to transfer to vault: {str(e)}")
+
     def _get_claimer_info(self, claimer):
         """
         Get information about the claimer address.

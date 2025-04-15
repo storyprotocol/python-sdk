@@ -166,7 +166,7 @@ class Group:
                     'signer': self.grouping_workflows_client.contract.address,
                     'to': self.grouping_module_client.contract.address,
                     'permission': 1,  # ALLOW
-                    'func': "addIp(address,address[])",
+                    'func': "addIp(address,address[],uint256)",
                 }]
             )
 
@@ -179,17 +179,6 @@ class Group:
             # Set recipient to caller if not provided
             if not recipient:
                 recipient = self.account.address
-            # Print relevant information before transaction
-            print("=== Mint and Register IP and Attach License and Add to Group ===")
-            print(f"Group ID: {group_id}")
-            print(f"SPG NFT Contract: {spg_nft_contract}")
-            print(f"Recipient: {recipient}")
-            print(f"Max Allowed Reward Share: {max_allowed_reward_share}")
-            print(f"License Data: {licenses_data}")
-            print(f"Metadata: {metadata}")
-            print(f"Signature Details: {{'signer': '{self.account.address}', 'deadline': {calculated_deadline}, 'signature': {self.web3.to_bytes(hexstr=sig_add_to_group['signature'])}}}")
-            print(f"Allow Duplicates: {allow_duplicates}")
-            print(f"Transaction Options: {tx_options}")
 
             response = build_and_send_transaction(
                 self.web3,
@@ -283,7 +272,7 @@ class Group:
                     'signer': self.grouping_workflows_client.contract.address,
                     'to': self.grouping_module_client.contract.address,
                     'permission': 1,  # ALLOW
-                    'func': "addIp(address,address[])"
+                    'func': "addIp(address,address[],uint256)",
                 }]
             )
             
@@ -322,6 +311,24 @@ class Group:
             
             # Process IP metadata
             metadata = self._get_ip_metadata(ip_metadata)
+            # Print all parameters before sending the transaction
+            print("=== Transaction Parameters ===")
+            print(f"NFT Contract: {nft_contract}")
+            print(f"Token ID: {token_id}")
+            print(f"Group ID: {group_id}")
+            print(f"Max Allowed Reward Share: {max_allowed_reward_share}")
+            print(f"Licenses Data: {licenses_data}")
+            print(f"Metadata: {metadata}")
+            print("Signature Metadata and Attach:")
+            print(f"  Signer: {self.account.address}")
+            print(f"  Deadline: {calculated_deadline}")
+            print(f"  Signature: {self.web3.to_bytes(hexstr=sig_metadata_and_attach['signature'])}")
+            print("Signature Add to Group:")
+            print(f"  Signer: {self.account.address}")
+            print(f"  Deadline: {calculated_deadline}")
+            print(f"  Signature: {self.web3.to_bytes(hexstr=sig_add_to_group['signature'])}")
+            print(f"Transaction Options: {tx_options}")
+            print("============================")
             
             response = build_and_send_transaction(
                 self.web3,
@@ -426,76 +433,76 @@ class Group:
         except Exception as e:
             raise ValueError(f"Failed to register group and attach license and add IPs: {str(e)}")
 
-    # def collect_and_distribute_group_royalties(
-    #     self,
-    #     group_ip_id: str,
-    #     currency_tokens: list,
-    #     member_ip_ids: list,
-    #     tx_options: dict = None
-    # ) -> dict:
-    #     """
-    #     Collect royalties for the entire group and distribute the rewards to each member IP's royalty vault.
+    def collect_and_distribute_group_royalties(
+        self,
+        group_ip_id: str,
+        currency_tokens: list,
+        member_ip_ids: list,
+        tx_options: dict = None
+    ) -> dict:
+        """
+        Collect royalties for the entire group and distribute the rewards to each member IP's royalty vault.
 
-    #     :param group_ip_id str: The ID of the group IP.
-    #     :param currency_tokens list: List of currency token addresses.
-    #     :param member_ip_ids list: List of member IP IDs.
-    #     :param tx_options dict: [Optional] The transaction options.
-    #     :return dict: A dictionary with the transaction hash and collected royalties.
-    #     """
-    #     try:
-    #         if not Web3.is_address(group_ip_id):
-    #             raise ValueError(f'Group IP ID "{group_ip_id}" is invalid.')
+        :param group_ip_id str: The ID of the group IP.
+        :param currency_tokens list: List of currency token addresses.
+        :param member_ip_ids list: List of member IP IDs.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash and collected royalties.
+        """
+        try:
+            if not self.web3.is_address(group_ip_id):
+                raise ValueError(f'Group IP ID "{group_ip_id}" is invalid.')
             
-    #         if not currency_tokens:
-    #             raise ValueError("At least one currency token is required.")
+            if not currency_tokens:
+                raise ValueError("At least one currency token is required.")
             
-    #         if not member_ip_ids:
-    #             raise ValueError("At least one member IP ID is required.")
+            if not member_ip_ids:
+                raise ValueError("At least one member IP ID is required.")
             
-    #         # Validate currency tokens
-    #         for token in currency_tokens:
-    #             if not Web3.is_address(token):
-    #                 raise ValueError(f'Currency token address "{token}" is invalid.')
+            # Validate currency tokens
+            for token in currency_tokens:
+                if not self.web3.is_address(token):
+                    raise ValueError(f'Currency token address "{token}" is invalid.')
                 
-    #             if token == ZERO_ADDRESS:
-    #                 raise ValueError("Currency token cannot be the zero address.")
+                if token == ZERO_ADDRESS:
+                    raise ValueError("Currency token cannot be the zero address.")
             
-    #         # Validate group IP
-    #         is_group_registered = self.ip_asset_registry_client.isRegistered(group_ip_id)
-    #         if not is_group_registered:
-    #             raise ValueError(f"The group IP with ID {group_ip_id} is not registered.")
+            # Validate group IP
+            is_group_registered = self.ip_asset_registry_client.isRegistered(group_ip_id)
+            if not is_group_registered:
+                raise ValueError(f"The group IP with ID {group_ip_id} is not registered.")
             
-    #         # Validate member IPs
-    #         for ip_id in member_ip_ids:
-    #             if not Web3.is_address(ip_id):
-    #                 raise ValueError(f'Member IP ID "{ip_id}" is invalid.')
+            # Validate member IPs
+            for ip_id in member_ip_ids:
+                if not self.web3.is_address(ip_id):
+                    raise ValueError(f'Member IP ID "{ip_id}" is invalid.')
                 
-    #             is_member_registered = self.ip_asset_registry_client.isRegistered(ip_id)
-    #             if not is_member_registered:
-    #                 raise ValueError(f"Member IP with ID {ip_id} is not registered.")
+                is_member_registered = self.ip_asset_registry_client.isRegistered(ip_id)
+                if not is_member_registered:
+                    raise ValueError(f"Member IP with ID {ip_id} is not registered.")
             
-    #         response = build_and_send_transaction(
-    #             self.web3,
-    #             self.account,
-    #             self.grouping_workflows_client.build_collectRoyaltiesAndClaimReward_transaction,
-    #             group_ip_id,
-    #             currency_tokens,
-    #             member_ip_ids,
-    #             tx_options=tx_options
-    #         )
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.grouping_workflows_client.build_collectRoyaltiesAndClaimReward_transaction,
+                group_ip_id,
+                currency_tokens,
+                member_ip_ids,
+                tx_options=tx_options
+            )
             
-    #         # Parse events to get collected royalties
-    #         collected_royalties = self._parse_tx_collected_royalties_to_group_pool_event(response['tx_receipt'])
-    #         royalties_distributed = self._parse_tx_royalty_paid_event(response['tx_receipt'])
+            # Parse events to get collected royalties
+            collected_royalties = self._parse_tx_collected_royalties_to_group_pool_event(response['tx_receipt'])
+            royalties_distributed = self._parse_tx_royalty_paid_event(response['tx_receipt'])
             
-    #         return {
-    #             'tx_hash': response['tx_hash'],
-    #             'collected_royalties': collected_royalties,
-    #             'royalties_distributed': royalties_distributed
-    #         }
+            return {
+                'tx_hash': response['tx_hash'],
+                'collected_royalties': collected_royalties,
+                'royalties_distributed': royalties_distributed
+            }
             
-    #     except Exception as e:
-    #         raise ValueError(f"Failed to collect and distribute group royalties: {str(e)}")
+        except Exception as e:
+            raise ValueError(f"Failed to collect and distribute group royalties: {str(e)}")
 
     def _get_license_data(self, license_data: list) -> list:
         """

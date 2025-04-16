@@ -301,7 +301,7 @@ class Group:
                         'signer': self.grouping_workflows_client.contract.address,
                         'to': self.licensing_module_client.contract.address,
                         'permission': 1,  # ALLOW
-                        'func': "setLicensingConfig(address,uint256,tuple)"
+                        'func': "setLicensingConfig(address,address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))"
                     }
                 ]
             )
@@ -329,7 +329,7 @@ class Group:
             print(f"  Signature: {self.web3.to_bytes(hexstr=sig_add_to_group['signature'])}")
             print(f"Transaction Options: {tx_options}")
             print("============================")
-            
+
             response = build_and_send_transaction(
                 self.web3,
                 self.account,

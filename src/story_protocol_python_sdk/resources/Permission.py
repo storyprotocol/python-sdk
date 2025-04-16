@@ -102,9 +102,6 @@ class Permission:
                 ]
             )
             
-            if tx_options and tx_options.get('encoded_tx_data_only'):
-                return {'encoded_tx_data': data}
-            
             response = self.ip_account.execute(
                 to=self.access_controller_client.contract.address,
                 value=0,
@@ -141,28 +138,36 @@ class Permission:
             
             self._check_is_registered(ip_id)
             
-            ip_account_client = IPAccountImplClient(self.web3, address=ip_id)
+            ip_account_client = IPAccountImplClient(self.web3, contract_address=ip_id)
             
-            data = self.access_controller_client.encode_set_transient_permission(
-                ip_account=ip_id,
-                signer=signer,
-                to=to,
-                func=func,
-                permission=permission
+            # Convert addresses to checksum format
+            ip_id = self.web3.to_checksum_address(ip_id)
+            signer = self.web3.to_checksum_address(signer)
+            to = self.web3.to_checksum_address(to)
+            
+            data = self.access_controller_client.contract.encode_abi(
+                abi_element_identifier="setTransientPermission",
+                args=[
+                    ip_id,
+                    signer,
+                    to,
+                    Web3.keccak(text=func)[:4] if func else b'\x00\x00\x00\x00',
+                    permission
+                ]
             )
             
             # Get state and calculate deadline
             state = ip_account_client.state()
             block_timestamp = self.web3.eth.get_block('latest').timestamp
-            calculated_deadline = self.sign_util.get_deadline(block_timestamp, deadline)
+            calculated_deadline = self.sign_util.get_deadline(deadline)
             
             # Get permission signature
-            signature = self.sign_util.get_permission_signature(
+            signature_response = self.sign_util.get_permission_signature(
                 ip_id=ip_id,
                 deadline=calculated_deadline,
                 state=state,
                 permissions=[{
-                    'ip_id': ip_id,
+                    'ipId': ip_id,
                     'signer': signer,
                     'to': to,
                     'permission': permission,
@@ -170,36 +175,23 @@ class Permission:
                 }]
             )
             
-            execute_with_sig_data = ip_account_client.encode_execute_with_sig(
-                to=self.access_controller_client.address,
+            # Extract the signature string from the response
+            signature_hex = signature_response["signature"]
+            
+            # Create and sign the transaction
+            response = self.ip_account.execute_with_sig(
+                to=self.access_controller_client.contract.address,
                 value=0,
+                ip_id=ip_id,
                 data=data,
                 signer=signer,
                 deadline=calculated_deadline,
-                signature=signature
+                signature=self.web3.to_bytes(hexstr=signature_hex),
+                tx_options=tx_options
             )
-            
-            if tx_options and tx_options.get('encoded_tx_data_only'):
-                return {'encoded_tx_data': execute_with_sig_data}
-            
-            tx_hash = ip_account_client.execute_with_sig(
-                to=self.access_controller_client.address,
-                value=0,
-                data=data,
-                signer=signer,
-                deadline=calculated_deadline,
-                signature=signature
-            )
-            
-            if tx_options and tx_options.get('wait_for_transaction'):
-                # Wait for transaction receipt logic would go here
-                return {
-                    'txHash': tx_hash,
-                    'success': True
-                }
             
             return {
-                'txHash': tx_hash
+                'tx_hash': response['tx_hash']
             }
 
         except Exception as e:

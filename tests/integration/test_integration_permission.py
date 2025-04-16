@@ -58,67 +58,34 @@ class TestPermissions:
         assert isinstance(response['tx_hash'], str)
         assert len(response['tx_hash']) > 0
 
-    # def test_create_set_permission_signature(self, story_client, ip_id):
-    #     """Test creating set permission signature."""
-    #     deadline = web3.eth.get_block('latest')['timestamp'] + 60000
+    def test_create_set_permission_signature(self, story_client, ip_id):
+        """Test creating set permission signature."""
+        deadline = web3.eth.get_block('latest')['timestamp'] + 60000
         
-    #     response = story_client.Permission.create_set_permission_signature(
-    #         ip_id=ip_id,
-    #         signer=account.address,
-    #         to=CORE_METADATA_MODULE,
-    #         func="function setAll(address,string,bytes32,bytes32)",
-    #         permission=1,  # ALLOW
-    #         deadline=deadline,
-    #         tx_options={"wait_for_transaction": True}
-    #     )
+        response = story_client.Permission.create_set_permission_signature(
+            ip_id=ip_id,
+            signer=account.address,
+            to=CORE_METADATA_MODULE,
+            func="setAll(address,string,bytes32,bytes32)",
+            permission=1,  # ALLOW
+            deadline=deadline,
+        )
 
-    #     assert response is not None
-    #     assert 'txHash' in response
-    #     assert isinstance(response['txHash'], str)
-    #     assert len(response['txHash']) > 0
-    #     assert response['success'] is True
+        assert response is not None
+        assert 'tx_hash' in response
+        assert isinstance(response['tx_hash'], str)
+        assert len(response['tx_hash']) > 0
 
-    # def test_get_encoded_data_for_create_set_permission_signature(self, story_client, ip_id):
-    #     """Test getting encoded data for createSetPermissionSignature."""
-    #     deadline = web3.eth.get_block('latest')['timestamp'] + 60000
+    def test_set_permission_invalid_ip(self, story_client):
+        """Test setting permission for an unregistered IP."""
+        unregistered_ip = "0x1234567890123456789012345678901234567890"
         
-    #     response = story_client.Permission.create_set_permission_signature(
-    #         ip_id=ip_id,
-    #         signer=account.address,
-    #         to=CORE_METADATA_MODULE,
-    #         func="function setAll(address,string,bytes32,bytes32)",
-    #         permission=1,  # ALLOW
-    #         deadline=deadline,
-    #         tx_options={"encoded_tx_data_only": True}
-    #     )
-
-    #     assert 'encoded_tx_data' in response
-    #     assert isinstance(response['encoded_tx_data']['data'], str)
-    #     assert len(response['encoded_tx_data']['data']) > 0
-
-    # def test_set_permission_invalid_ip(self, story_client):
-    #     """Test setting permission for an unregistered IP."""
-    #     unregistered_ip = "0x1234567890123456789012345678901234567890"
+        with pytest.raises(ValueError) as exc_info:
+            story_client.Permission.set_permission(
+                ip_id=unregistered_ip,
+                signer=account.address,
+                to=CORE_METADATA_MODULE,
+                permission=1,
+            )
         
-    #     with pytest.raises(ValueError) as exc_info:
-    #         story_client.Permission.set_permission(
-    #             ip_id=unregistered_ip,
-    #             signer=account.address,
-    #             to="CORE_METADATA_MODULE",
-    #             permission=1,
-    #             tx_options={"wait_for_transaction": True}
-    #         )
-        
-    #     assert f"IP id with {unregistered_ip} is not registered" in str(exc_info.value)
-
-    # def test_set_permission_invalid_function_signature(self, story_client, ip_id):
-    #     """Test setting permission with invalid function signature."""
-    #     with pytest.raises(Exception):
-    #         story_client.Permission.set_permission(
-    #             ip_id=ip_id,
-    #             signer=account.address,
-    #             to=CORE_METADATA_MODULE,
-    #             permission=1,
-    #             func="invalid_function_signature",
-    #             tx_options={"wait_for_transaction": True}
-    #         )
+        assert f"IP id with {unregistered_ip} is not registered" in str(exc_info.value)

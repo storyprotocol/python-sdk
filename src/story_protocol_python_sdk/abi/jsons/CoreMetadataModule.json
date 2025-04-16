@@ -1,519 +1,497 @@
 [
   {
-    "type": "constructor",
     "inputs": [
       {
+        "internalType": "address",
         "name": "accessController",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       },
       {
+        "internalType": "address",
         "name": "ipAccountRegistry",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       }
     ],
-    "stateMutability": "nonpayable"
+    "stateMutability": "nonpayable",
+    "type": "constructor"
   },
   {
-    "type": "function",
-    "name": "ACCESS_CONTROLLER",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IAccessController"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "IP_ASSET_REGISTRY",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IIPAssetRegistry"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "UPGRADE_INTERFACE_VERSION",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "string",
-        "internalType": "string"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "authority",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "freezeMetadata",
     "inputs": [
       {
-        "name": "ipId",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "initialize",
-    "inputs": [
-      {
-        "name": "accessManager",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "isConsumingScheduledOp",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes4",
-        "internalType": "bytes4"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "isMetadataFrozen",
-    "inputs": [
-      {
-        "name": "ipId",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "name",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "string",
-        "internalType": "string"
-      }
-    ],
-    "stateMutability": "pure"
-  },
-  {
-    "type": "function",
-    "name": "proxiableUUID",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "setAll",
-    "inputs": [
-      {
-        "name": "ipId",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "metadataURI",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "metadataHash",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
-      {
-        "name": "nftMetadataHash",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setAuthority",
-    "inputs": [
-      {
-        "name": "newAuthority",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setMetadataURI",
-    "inputs": [
-      {
-        "name": "ipId",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "metadataURI",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "metadataHash",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "supportsInterface",
-    "inputs": [
-      {
-        "name": "interfaceId",
-        "type": "bytes4",
-        "internalType": "bytes4"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "updateNftTokenURI",
-    "inputs": [
-      {
-        "name": "ipId",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "nftMetadataHash",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "upgradeToAndCall",
-    "inputs": [
-      {
-        "name": "newImplementation",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "data",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "payable"
-  },
-  {
-    "type": "event",
-    "name": "AuthorityUpdated",
-    "inputs": [
-      {
-        "name": "authority",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "Initialized",
-    "inputs": [
-      {
-        "name": "version",
-        "type": "uint64",
-        "indexed": false,
-        "internalType": "uint64"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "MetadataFrozen",
-    "inputs": [
-      {
-        "name": "ipId",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "MetadataURISet",
-    "inputs": [
-      {
-        "name": "ipId",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "metadataURI",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
-      },
-      {
-        "name": "metadataHash",
-        "type": "bytes32",
-        "indexed": false,
-        "internalType": "bytes32"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "NFTTokenURISet",
-    "inputs": [
-      {
-        "name": "ipId",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "nftTokenURI",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
-      },
-      {
-        "name": "nftMetadataHash",
-        "type": "bytes32",
-        "indexed": false,
-        "internalType": "bytes32"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "Upgraded",
-    "inputs": [
-      {
-        "name": "implementation",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "error",
-    "name": "AccessControlled__NotIpAccount",
-    "inputs": [
-      {
+        "internalType": "address",
         "name": "ipAccount",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       }
-    ]
+    ],
+    "name": "AccessControlled__NotIpAccount",
+    "type": "error"
   },
   {
-    "type": "error",
+    "inputs": [],
     "name": "AccessControlled__ZeroAddress",
-    "inputs": []
+    "type": "error"
   },
   {
-    "type": "error",
-    "name": "AccessManagedInvalidAuthority",
     "inputs": [
       {
+        "internalType": "address",
         "name": "authority",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       }
-    ]
+    ],
+    "name": "AccessManagedInvalidAuthority",
+    "type": "error"
   },
   {
-    "type": "error",
-    "name": "AccessManagedRequiredDelay",
     "inputs": [
       {
+        "internalType": "address",
         "name": "caller",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       },
       {
+        "internalType": "uint32",
         "name": "delay",
-        "type": "uint32",
-        "internalType": "uint32"
+        "type": "uint32"
       }
-    ]
+    ],
+    "name": "AccessManagedRequiredDelay",
+    "type": "error"
   },
   {
-    "type": "error",
-    "name": "AccessManagedUnauthorized",
     "inputs": [
       {
+        "internalType": "address",
         "name": "caller",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       }
-    ]
+    ],
+    "name": "AccessManagedUnauthorized",
+    "type": "error"
   },
   {
-    "type": "error",
-    "name": "AddressEmptyCode",
     "inputs": [
       {
+        "internalType": "address",
         "name": "target",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       }
-    ]
+    ],
+    "name": "AddressEmptyCode",
+    "type": "error"
   },
   {
-    "type": "error",
+    "inputs": [],
     "name": "CoreMetadataModule__MetadataAlreadyFrozen",
-    "inputs": []
+    "type": "error"
   },
   {
-    "type": "error",
-    "name": "CoreMetadataModule__MetadataURIContainsDoubleQuote",
-    "inputs": [
-      {
-        "name": "uri",
-        "type": "string",
-        "internalType": "string"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "CoreMetadataModule__NFTTokenURIContainsDoubleQuote",
-    "inputs": [
-      {
-        "name": "uri",
-        "type": "string",
-        "internalType": "string"
-      }
-    ]
-  },
-  {
-    "type": "error",
+    "inputs": [],
     "name": "CoreMetadataModule__ZeroAccessManager",
-    "inputs": []
+    "type": "error"
   },
   {
-    "type": "error",
-    "name": "ERC1967InvalidImplementation",
     "inputs": [
       {
+        "internalType": "address",
         "name": "implementation",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       }
-    ]
+    ],
+    "name": "ERC1967InvalidImplementation",
+    "type": "error"
   },
   {
-    "type": "error",
+    "inputs": [],
     "name": "ERC1967NonPayable",
-    "inputs": []
+    "type": "error"
   },
   {
-    "type": "error",
-    "name": "FailedInnerCall",
-    "inputs": []
+    "inputs": [],
+    "name": "FailedCall",
+    "type": "error"
   },
   {
-    "type": "error",
+    "inputs": [],
     "name": "InvalidInitialization",
-    "inputs": []
+    "type": "error"
   },
   {
-    "type": "error",
+    "inputs": [],
     "name": "NotInitializing",
-    "inputs": []
+    "type": "error"
   },
   {
-    "type": "error",
+    "inputs": [],
     "name": "UUPSUnauthorizedCallContext",
-    "inputs": []
+    "type": "error"
   },
   {
-    "type": "error",
-    "name": "UUPSUnsupportedProxiableUUID",
     "inputs": [
       {
+        "internalType": "bytes32",
         "name": "slot",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        "type": "bytes32"
       }
-    ]
+    ],
+    "name": "UUPSUnsupportedProxiableUUID",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "authority",
+        "type": "address"
+      }
+    ],
+    "name": "AuthorityUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "version",
+        "type": "uint64"
+      }
+    ],
+    "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      }
+    ],
+    "name": "MetadataFrozen",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "metadataURI",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "metadataHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "MetadataURISet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "nftTokenURI",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "nftMetadataHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "NFTTokenURISet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "Upgraded",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "ACCESS_CONTROLLER",
+    "outputs": [
+      {
+        "internalType": "contract IAccessController",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "IP_ASSET_REGISTRY",
+    "outputs": [
+      {
+        "internalType": "contract IIPAssetRegistry",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "UPGRADE_INTERFACE_VERSION",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "authority",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      }
+    ],
+    "name": "freezeMetadata",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "accessManager",
+        "type": "address"
+      }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "isConsumingScheduledOp",
+    "outputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      }
+    ],
+    "name": "isMetadataFrozen",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "name",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "proxiableUUID",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "metadataURI",
+        "type": "string"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "metadataHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "nftMetadataHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "setAll",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newAuthority",
+        "type": "address"
+      }
+    ],
+    "name": "setAuthority",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "metadataURI",
+        "type": "string"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "metadataHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "setMetadataURI",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "interfaceId",
+        "type": "bytes4"
+      }
+    ],
+    "name": "supportsInterface",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "nftMetadataHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "updateNftTokenURI",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newImplementation",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "upgradeToAndCall",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
   }
 ]

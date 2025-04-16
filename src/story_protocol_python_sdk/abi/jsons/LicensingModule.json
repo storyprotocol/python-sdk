@@ -1,1253 +1,1357 @@
 [
   {
-    "type": "constructor",
     "inputs": [
       {
+        "internalType": "address",
         "name": "accessController",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       },
       {
+        "internalType": "address",
         "name": "ipAccountRegistry",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       },
       {
+        "internalType": "address",
         "name": "moduleRegistry",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       },
       {
+        "internalType": "address",
         "name": "royaltyModule",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       },
       {
+        "internalType": "address",
         "name": "licenseRegistry",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       },
       {
+        "internalType": "address",
         "name": "disputeModule",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       },
       {
+        "internalType": "address",
         "name": "licenseToken",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "ACCESS_CONTROLLER",
-    "inputs": [],
-    "outputs": [
+        "type": "address"
+      },
       {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IAccessController"
+        "internalType": "address",
+        "name": "ipGraphAcl",
+        "type": "address"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "nonpayable",
+    "type": "constructor"
   },
   {
-    "type": "function",
-    "name": "DISPUTE_MODULE",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IDisputeModule"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "IP_ASSET_REGISTRY",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IIPAssetRegistry"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "LICENSE_NFT",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract ILicenseToken"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "LICENSE_REGISTRY",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract ILicenseRegistry"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "MODULE_REGISTRY",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IModuleRegistry"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "ROYALTY_MODULE",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract RoyaltyModule"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "UPGRADE_INTERFACE_VERSION",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "string",
-        "internalType": "string"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "__ProtocolPausable_init",
     "inputs": [
       {
-        "name": "accessManager",
-        "type": "address",
-        "internalType": "address"
+        "internalType": "address",
+        "name": "ipAccount",
+        "type": "address"
       }
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    "name": "AccessControlled__NotIpAccount",
+    "type": "error"
   },
   {
-    "type": "function",
-    "name": "attachLicenseTerms",
+    "inputs": [],
+    "name": "AccessControlled__ZeroAddress",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "authority",
+        "type": "address"
+      }
+    ],
+    "name": "AccessManagedInvalidAuthority",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "internalType": "uint32",
+        "name": "delay",
+        "type": "uint32"
+      }
+    ],
+    "name": "AccessManagedRequiredDelay",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      }
+    ],
+    "name": "AccessManagedUnauthorized",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
+    ],
+    "name": "AddressEmptyCode",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "ERC1967InvalidImplementation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ERC1967NonPayable",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "EnforcedPause",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ExpectedPause",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FailedCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidInitialization",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LicenseRegistry__LicenseTemplateCannotBeZeroAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "licenseTemplate",
+        "type": "address"
+      }
+    ],
+    "name": "LicenseRegistry__UnregisteredLicenseTemplate",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "licenseTemplate",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "licenseTermsId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "newRoyaltyPercent",
+        "type": "uint32"
+      }
+    ],
+    "name": "LicensingModule__CurrentLicenseNotAllowOverrideRoyaltyPercent",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "childIpId",
+        "type": "address"
+      }
+    ],
+    "name": "LicensingModule__DerivativeAlreadyHasBeenMintedLicenseTokens",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LicensingModule__DisputedIpId",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "ipId",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       },
       {
+        "internalType": "address",
         "name": "licenseTemplate",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       },
       {
+        "internalType": "uint256",
         "name": "licenseTermsId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "authority",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "initialize",
-    "inputs": [
-      {
-        "name": "accessManager",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "isConsumingScheduledOp",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes4",
-        "internalType": "bytes4"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "mintLicenseTokens",
-    "inputs": [
-      {
-        "name": "licensorIpId",
-        "type": "address",
-        "internalType": "address"
+        "type": "uint256"
       },
       {
-        "name": "licenseTemplate",
-        "type": "address",
-        "internalType": "address"
+        "internalType": "uint32",
+        "name": "revenueShare",
+        "type": "uint32"
       },
       {
-        "name": "licenseTermsId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "receiver",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "royaltyContext",
-        "type": "bytes",
-        "internalType": "bytes"
-      },
-      {
-        "name": "maxMintingFee",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
+        "internalType": "uint32",
         "name": "maxRevenueShare",
-        "type": "uint32",
-        "internalType": "uint32"
+        "type": "uint32"
       }
     ],
-    "outputs": [
-      {
-        "name": "startLicenseTokenId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "nonpayable"
+    "name": "LicensingModule__ExceedMaxRevenueShare",
+    "type": "error"
   },
   {
-    "type": "function",
-    "name": "name",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "string",
-        "internalType": "string"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "pause",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "paused",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "predictMintingLicenseFee",
     "inputs": [
       {
-        "name": "licensorIpId",
-        "type": "address",
-        "internalType": "address"
+        "internalType": "address",
+        "name": "groupId",
+        "type": "address"
+      }
+    ],
+    "name": "LicensingModule__GroupIpCannotChangeHookData",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "groupId",
+        "type": "address"
+      }
+    ],
+    "name": "LicensingModule__GroupIpCannotChangeIsSet",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "groupId",
+        "type": "address"
+      }
+    ],
+    "name": "LicensingModule__GroupIpCannotChangeLicensingHook",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "groupId",
+        "type": "address"
+      }
+    ],
+    "name": "LicensingModule__GroupIpCannotChangeMintingFee",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "groupId",
+        "type": "address"
       },
       {
+        "internalType": "uint32",
+        "name": "newRoyaltyPercent",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "oldRoyaltyPercent",
+        "type": "uint32"
+      }
+    ],
+    "name": "LicensingModule__GroupIpCannotDecreaseRoyalty",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "groupId",
+        "type": "address"
+      }
+    ],
+    "name": "LicensingModule__GroupIpCannotSetExpectGroupRewardPool",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "licenseTemplate",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       },
       {
+        "internalType": "uint256",
         "name": "licenseTermsId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "receiver",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "royaltyContext",
-        "type": "bytes",
-        "internalType": "bytes"
+        "type": "uint256"
       }
     ],
-    "outputs": [
-      {
-        "name": "currencyToken",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "tokenAmount",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
+    "name": "LicensingModule__InvalidLicenseTermsId",
+    "type": "error"
   },
   {
-    "type": "function",
-    "name": "proxiableUUID",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "registerDerivative",
     "inputs": [
       {
-        "name": "childIpId",
-        "type": "address",
-        "internalType": "address"
-      },
+        "internalType": "address",
+        "name": "hook",
+        "type": "address"
+      }
+    ],
+    "name": "LicensingModule__InvalidLicensingHook",
+    "type": "error"
+  },
+  {
+    "inputs": [
       {
-        "name": "parentIpIds",
-        "type": "address[]",
-        "internalType": "address[]"
-      },
-      {
-        "name": "licenseTermsIds",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      },
-      {
+        "internalType": "address",
         "name": "licenseTemplate",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       },
       {
-        "name": "royaltyContext",
-        "type": "bytes",
-        "internalType": "bytes"
+        "internalType": "uint256",
+        "name": "licenseTermsId",
+        "type": "uint256"
       },
       {
-        "name": "maxMintingFee",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "maxRts",
-        "type": "uint32",
-        "internalType": "uint32"
-      },
-      {
-        "name": "maxRevenueShare",
-        "type": "uint32",
-        "internalType": "uint32"
+        "internalType": "address",
+        "name": "licensorIpId",
+        "type": "address"
       }
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    "name": "LicensingModule__LicenseDenyMintLicenseToken",
+    "type": "error"
   },
   {
-    "type": "function",
-    "name": "registerDerivativeWithLicenseTokens",
     "inputs": [
       {
-        "name": "childIpId",
-        "type": "address",
-        "internalType": "address"
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
       },
       {
+        "internalType": "address",
+        "name": "licenseTemplate",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "licenseTermsId",
+        "type": "uint256"
+      }
+    ],
+    "name": "LicensingModule__LicenseDisabled",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "childIpId",
+        "type": "address"
+      }
+    ],
+    "name": "LicensingModule__LicenseNotCompatibleForDerivative",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "ipLength",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "licenseTermsLength",
+        "type": "uint256"
+      }
+    ],
+    "name": "LicensingModule__LicenseTermsLengthMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "childIpId",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256[]",
         "name": "licenseTokenIds",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      },
-      {
-        "name": "royaltyContext",
-        "type": "bytes",
-        "internalType": "bytes"
-      },
-      {
-        "name": "maxRts",
-        "type": "uint32",
-        "internalType": "uint32"
+        "type": "uint256[]"
       }
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    "name": "LicensingModule__LicenseTokenNotCompatibleForDerivative",
+    "type": "error"
   },
   {
-    "type": "function",
-    "name": "setAuthority",
     "inputs": [
       {
-        "name": "newAuthority",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setLicensingConfig",
-    "inputs": [
-      {
-        "name": "ipId",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
+        "internalType": "address",
         "name": "licenseTemplate",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       },
       {
+        "internalType": "uint256",
         "name": "licenseTermsId",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       },
       {
-        "name": "licensingConfig",
-        "type": "tuple",
-        "internalType": "struct Licensing.LicensingConfig",
+        "internalType": "uint256",
+        "name": "licensingConfigMintingFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "licenseTermsMintingFee",
+        "type": "uint256"
+      }
+    ],
+    "name": "LicensingModule__LicensingConfigMintingFeeBelowLicenseTerms",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "licensingHookMintingFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "licenseTermsMintingFee",
+        "type": "uint256"
+      }
+    ],
+    "name": "LicensingModule__LicensingHookMintingFeeBelowLicenseTerms",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LicensingModule__LicensorIpNotRegistered",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LicensingModule__MintAmountZero",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "mintingFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxMintingFee",
+        "type": "uint256"
+      }
+    ],
+    "name": "LicensingModule__MintingFeeExceedMaxMintingFee",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LicensingModule__MintingFeeRequiresRoyaltyPolicy",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LicensingModule__NoLicenseToken",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LicensingModule__NoParentIp",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LicensingModule__ReceiverZeroAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "royaltyPolicy",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "anotherRoyaltyPolicy",
+        "type": "address"
+      }
+    ],
+    "name": "LicensingModule__RoyaltyPolicyMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "licensorIpId",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "ancestors",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxAncestors",
+        "type": "uint256"
+      }
+    ],
+    "name": "LicensingModule__TooManyAncestorsForMintingLicenseTokenAllowRegisterDerivative",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LicensingModule__ZeroAccessManager",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LicensingModule__ZeroDisputeModule",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LicensingModule__ZeroIPGraphACL",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LicensingModule__ZeroLicenseRegistry",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LicensingModule__ZeroLicenseTemplate",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LicensingModule__ZeroLicenseToken",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LicensingModule__ZeroModuleRegistry",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LicensingModule__ZeroRoyaltyModule",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotInitializing",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReentrancyGuardReentrantCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UUPSUnauthorizedCallContext",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "slot",
+        "type": "bytes32"
+      }
+    ],
+    "name": "UUPSUnsupportedProxiableUUID",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "authority",
+        "type": "address"
+      }
+    ],
+    "name": "AuthorityUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "childIpId",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256[]",
+        "name": "licenseTokenIds",
+        "type": "uint256[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "address[]",
+        "name": "parentIpIds",
+        "type": "address[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256[]",
+        "name": "licenseTermsIds",
+        "type": "uint256[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "licenseTemplate",
+        "type": "address"
+      }
+    ],
+    "name": "DerivativeRegistered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "version",
+        "type": "uint64"
+      }
+    ],
+    "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "licenseTemplate",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "licenseTermsId",
+        "type": "uint256"
+      }
+    ],
+    "name": "LicenseTermsAttached",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "licensorIpId",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "licenseTemplate",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "licenseTermsId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "receiver",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "startLicenseTokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "LicenseTokensMinted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Paused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Unpaused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "Upgraded",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "ACCESS_CONTROLLER",
+    "outputs": [
+      {
+        "internalType": "contract IAccessController",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DISPUTE_MODULE",
+    "outputs": [
+      {
+        "internalType": "contract IDisputeModule",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "IP_ASSET_REGISTRY",
+    "outputs": [
+      {
+        "internalType": "contract IIPAssetRegistry",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "IP_GRAPH_ACL",
+    "outputs": [
+      {
+        "internalType": "contract IPGraphACL",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "LICENSE_NFT",
+    "outputs": [
+      {
+        "internalType": "contract ILicenseToken",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "LICENSE_REGISTRY",
+    "outputs": [
+      {
+        "internalType": "contract ILicenseRegistry",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MODULE_REGISTRY",
+    "outputs": [
+      {
+        "internalType": "contract IModuleRegistry",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ROYALTY_MODULE",
+    "outputs": [
+      {
+        "internalType": "contract RoyaltyModule",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "UPGRADE_INTERFACE_VERSION",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "accessManager",
+        "type": "address"
+      }
+    ],
+    "name": "__ProtocolPausable_init",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      }
+    ],
+    "name": "attachDefaultLicenseTerms",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "licenseTemplate",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "licenseTermsId",
+        "type": "uint256"
+      }
+    ],
+    "name": "attachLicenseTerms",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "authority",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "accessManager",
+        "type": "address"
+      }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "isConsumingScheduledOp",
+    "outputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "licensorIpId",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "licenseTemplate",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "licenseTermsId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "receiver",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "royaltyContext",
+        "type": "bytes"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxMintingFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "maxRevenueShare",
+        "type": "uint32"
+      }
+    ],
+    "name": "mintLicenseTokens",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "startLicenseTokenId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "name",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "paused",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "licensorIpId",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "licenseTemplate",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "licenseTermsId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "receiver",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "royaltyContext",
+        "type": "bytes"
+      }
+    ],
+    "name": "predictMintingLicenseFee",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "currencyToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "proxiableUUID",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "childIpId",
+        "type": "address"
+      },
+      {
+        "internalType": "address[]",
+        "name": "parentIpIds",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "licenseTermsIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "address",
+        "name": "licenseTemplate",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "royaltyContext",
+        "type": "bytes"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxMintingFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "maxRts",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "maxRevenueShare",
+        "type": "uint32"
+      }
+    ],
+    "name": "registerDerivative",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "childIpId",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "licenseTokenIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "bytes",
+        "name": "royaltyContext",
+        "type": "bytes"
+      },
+      {
+        "internalType": "uint32",
+        "name": "maxRts",
+        "type": "uint32"
+      }
+    ],
+    "name": "registerDerivativeWithLicenseTokens",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newAuthority",
+        "type": "address"
+      }
+    ],
+    "name": "setAuthority",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "ipId",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "licenseTemplate",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "licenseTermsId",
+        "type": "uint256"
+      },
+      {
         "components": [
           {
+            "internalType": "bool",
             "name": "isSet",
-            "type": "bool",
-            "internalType": "bool"
+            "type": "bool"
           },
           {
+            "internalType": "uint256",
             "name": "mintingFee",
-            "type": "uint256",
-            "internalType": "uint256"
+            "type": "uint256"
           },
           {
+            "internalType": "address",
             "name": "licensingHook",
-            "type": "address",
-            "internalType": "address"
+            "type": "address"
           },
           {
+            "internalType": "bytes",
             "name": "hookData",
-            "type": "bytes",
-            "internalType": "bytes"
+            "type": "bytes"
           },
           {
+            "internalType": "uint32",
             "name": "commercialRevShare",
-            "type": "uint32",
-            "internalType": "uint32"
+            "type": "uint32"
           },
           {
+            "internalType": "bool",
             "name": "disabled",
-            "type": "bool",
-            "internalType": "bool"
+            "type": "bool"
           },
           {
+            "internalType": "uint32",
             "name": "expectMinimumGroupRewardShare",
-            "type": "uint32",
-            "internalType": "uint32"
+            "type": "uint32"
           },
           {
+            "internalType": "address",
             "name": "expectGroupRewardPool",
-            "type": "address",
-            "internalType": "address"
+            "type": "address"
           }
-        ]
+        ],
+        "internalType": "struct Licensing.LicensingConfig",
+        "name": "licensingConfig",
+        "type": "tuple"
       }
     ],
+    "name": "setLicensingConfig",
     "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    "type": "function",
-    "name": "supportsInterface",
     "inputs": [
       {
+        "internalType": "bytes4",
         "name": "interfaceId",
-        "type": "bytes4",
-        "internalType": "bytes4"
+        "type": "bytes4"
       }
     ],
+    "name": "supportsInterface",
     "outputs": [
       {
+        "internalType": "bool",
         "name": "",
-        "type": "bool",
-        "internalType": "bool"
+        "type": "bool"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    "type": "function",
-    "name": "unpause",
     "inputs": [],
+    "name": "unpause",
     "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    "type": "function",
-    "name": "upgradeToAndCall",
     "inputs": [
       {
+        "internalType": "address",
         "name": "newImplementation",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       },
       {
+        "internalType": "bytes",
         "name": "data",
-        "type": "bytes",
-        "internalType": "bytes"
+        "type": "bytes"
       }
     ],
+    "name": "upgradeToAndCall",
     "outputs": [],
-    "stateMutability": "payable"
-  },
-  {
-    "type": "event",
-    "name": "AuthorityUpdated",
-    "inputs": [
-      {
-        "name": "authority",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "DerivativeRegistered",
-    "inputs": [
-      {
-        "name": "caller",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "childIpId",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "licenseTokenIds",
-        "type": "uint256[]",
-        "indexed": false,
-        "internalType": "uint256[]"
-      },
-      {
-        "name": "parentIpIds",
-        "type": "address[]",
-        "indexed": false,
-        "internalType": "address[]"
-      },
-      {
-        "name": "licenseTermsIds",
-        "type": "uint256[]",
-        "indexed": false,
-        "internalType": "uint256[]"
-      },
-      {
-        "name": "licenseTemplate",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "Initialized",
-    "inputs": [
-      {
-        "name": "version",
-        "type": "uint64",
-        "indexed": false,
-        "internalType": "uint64"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "LicenseTermsAttached",
-    "inputs": [
-      {
-        "name": "caller",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "ipId",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "licenseTemplate",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      },
-      {
-        "name": "licenseTermsId",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "LicenseTokensMinted",
-    "inputs": [
-      {
-        "name": "caller",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "licensorIpId",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "licenseTemplate",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      },
-      {
-        "name": "licenseTermsId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "receiver",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      },
-      {
-        "name": "startLicenseTokenId",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "Paused",
-    "inputs": [
-      {
-        "name": "account",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "Unpaused",
-    "inputs": [
-      {
-        "name": "account",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "Upgraded",
-    "inputs": [
-      {
-        "name": "implementation",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "error",
-    "name": "AccessControlled__NotIpAccount",
-    "inputs": [
-      {
-        "name": "ipAccount",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "AccessControlled__ZeroAddress",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "AccessManagedInvalidAuthority",
-    "inputs": [
-      {
-        "name": "authority",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "AccessManagedRequiredDelay",
-    "inputs": [
-      {
-        "name": "caller",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "delay",
-        "type": "uint32",
-        "internalType": "uint32"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "AccessManagedUnauthorized",
-    "inputs": [
-      {
-        "name": "caller",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "AddressEmptyCode",
-    "inputs": [
-      {
-        "name": "target",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "ERC1967InvalidImplementation",
-    "inputs": [
-      {
-        "name": "implementation",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "ERC1967NonPayable",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "EnforcedPause",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "ExpectedPause",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "FailedInnerCall",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "InvalidInitialization",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "LicenseRegistry__LicenseTemplateCannotBeZeroAddress",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "LicenseRegistry__UnregisteredLicenseTemplate",
-    "inputs": [
-      {
-        "name": "licenseTemplate",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__CurrentLicenseNotAllowOverrideRoyaltyPercent",
-    "inputs": [
-      {
-        "name": "licenseTemplate",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "licenseTermsId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "newRoyaltyPercent",
-        "type": "uint32",
-        "internalType": "uint32"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__DerivativeAlreadyHasBeenMintedLicenseTokens",
-    "inputs": [
-      {
-        "name": "childIpId",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__DisputedIpId",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__ExceedMaxRevenueShare",
-    "inputs": [
-      {
-        "name": "ipId",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "licenseTemplate",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "licenseTermsId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "revenueShare",
-        "type": "uint32",
-        "internalType": "uint32"
-      },
-      {
-        "name": "maxRevenueShare",
-        "type": "uint32",
-        "internalType": "uint32"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__GroupIpCannotChangeHookData",
-    "inputs": [
-      {
-        "name": "groupId",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__GroupIpCannotChangeIsSet",
-    "inputs": [
-      {
-        "name": "groupId",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__GroupIpCannotChangeLicensingHook",
-    "inputs": [
-      {
-        "name": "groupId",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__GroupIpCannotChangeMintingFee",
-    "inputs": [
-      {
-        "name": "groupId",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__GroupIpCannotDecreaseRoyalty",
-    "inputs": [
-      {
-        "name": "groupId",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "newRoyaltyPercent",
-        "type": "uint32",
-        "internalType": "uint32"
-      },
-      {
-        "name": "oldRoyaltyPercent",
-        "type": "uint32",
-        "internalType": "uint32"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__GroupIpCannotSetExpectGroupRewardPool",
-    "inputs": [
-      {
-        "name": "groupId",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__InvalidLicenseTermsId",
-    "inputs": [
-      {
-        "name": "licenseTemplate",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "licenseTermsId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__InvalidLicensingHook",
-    "inputs": [
-      {
-        "name": "hook",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__LicenseDenyMintLicenseToken",
-    "inputs": [
-      {
-        "name": "licenseTemplate",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "licenseTermsId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "licensorIpId",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__LicenseDisabled",
-    "inputs": [
-      {
-        "name": "ipId",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "licenseTemplate",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "licenseTermsId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__LicenseNotCompatibleForDerivative",
-    "inputs": [
-      {
-        "name": "childIpId",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__LicenseTemplateCannotBeZeroAddressToOverrideRoyaltyPercent",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__LicenseTermsLengthMismatch",
-    "inputs": [
-      {
-        "name": "ipLength",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "licenseTermsLength",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__LicenseTokenNotCompatibleForDerivative",
-    "inputs": [
-      {
-        "name": "childIpId",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "licenseTokenIds",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__LicensorIpNotRegistered",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__MintAmountZero",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__MintingFeeExceedMaxMintingFee",
-    "inputs": [
-      {
-        "name": "mintingFee",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "maxMintingFeeRemaining",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__NoLicenseToken",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__NoParentIp",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__ReceiverZeroAddress",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__RoyaltyPolicyMismatch",
-    "inputs": [
-      {
-        "name": "royaltyPolicy",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "anotherRoyaltyPolicy",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__ZeroAccessManager",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__ZeroDisputeModule",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__ZeroLicenseRegistry",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__ZeroLicenseToken",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__ZeroModuleRegistry",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "LicensingModule__ZeroRoyaltyModule",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "NotInitializing",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "ReentrancyGuardReentrantCall",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "UUPSUnauthorizedCallContext",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "UUPSUnsupportedProxiableUUID",
-    "inputs": [
-      {
-        "name": "slot",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ]
+    "stateMutability": "payable",
+    "type": "function"
   }
 ]

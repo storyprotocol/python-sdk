@@ -76,7 +76,7 @@ class Permission:
             }
 
         except Exception as e:
-            raise e
+            raise Exception(f"Failed to set permission for IP {ip_id}: {str(e)}")
 
     def set_all_permissions(self, ip_id: str, signer: str, permission: int, tx_options: dict = None) -> dict:
         """
@@ -115,7 +115,7 @@ class Permission:
             }
 
         except Exception as e:
-            raise e
+            raise Exception(f"Failed to set all permissions for IP {ip_id} and signer {signer}: {str(e)}")
 
     def create_set_permission_signature(self, ip_id: str, signer: str, to: str, permission: int, 
                                         func: str = DEFAULT_FUNCTION_SELECTOR, deadline: int = None, 
@@ -195,7 +195,7 @@ class Permission:
             }
 
         except Exception as e:
-            raise e
+            raise Exception(f"Failed to create permission signature for IP {ip_id}, signer {signer}, to {to}: {str(e)}")
 
     def _check_is_registered(self, ip_id: str) -> None:
         """

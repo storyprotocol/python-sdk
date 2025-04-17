@@ -277,54 +277,54 @@ class TestAdvancedGroupOperations:
         assert isinstance(response['ip_id'], str)
         assert response['ip_id'].startswith("0x")
     
-    # def test_register_group_and_attach_license_and_add_ips(self, story_client, ip_with_license):
-    #     response = story_client.Group.register_group_and_attach_license_and_add_ips(
-    #         group_pool=EVEN_SPLIT_GROUP_POOL,
-    #         max_allowed_reward_share=5,
-    #         ip_ids=[ip_with_license['ip_id']],
-    #         license_data={
-    #             'license_terms_id': ip_with_license['license_terms_id'],
-    #             'licensing_config': {
-    #                 'is_set': True,
-    #                 'minting_fee': 0,
-    #                 'hook_data': ZERO_ADDRESS,
-    #                 'licensing_hook': ZERO_ADDRESS,
-    #                 'commercial_rev_share': 0,
-    #                 'disabled': False,
-    #                 'expect_minimum_group_reward_share': 0,
-    #                 'expect_group_reward_pool': ZERO_ADDRESS
-    #             }
-    #         }
-    #     )
+    def test_register_group_and_attach_license_and_add_ips(self, story_client, ip_with_license):
+        response = story_client.Group.register_group_and_attach_license_and_add_ips(
+            group_pool=EVEN_SPLIT_GROUP_POOL,
+            max_allowed_reward_share=5,
+            ip_ids=[ip_with_license['ip_id']],
+            license_data={
+                'license_terms_id': ip_with_license['license_terms_id'],
+                'licensing_config': {
+                    'is_set': True,
+                    'minting_fee': 0,
+                    'hook_data': ZERO_ADDRESS,
+                    'licensing_hook': ZERO_ADDRESS,
+                    'commercial_rev_share': 0,
+                    'disabled': False,
+                    'expect_minimum_group_reward_share': 0,
+                    'expect_group_reward_pool': ZERO_ADDRESS
+                }
+            }
+        )
         
-    #     assert 'tx_hash' in response
-    #     assert isinstance(response['tx_hash'], str)
-    #     assert len(response['tx_hash']) > 0
+        assert 'tx_hash' in response
+        assert isinstance(response['tx_hash'], str)
+        assert len(response['tx_hash']) > 0
         
-    #     assert 'group_id' in response
-    #     assert isinstance(response['group_id'], str)
-    #     assert response['group_id'].startswith("0x")
+        assert 'group_id' in response
+        assert isinstance(response['group_id'], str)
+        assert response['group_id'].startswith("0x")
     
-    # def test_fail_add_unregistered_ip_to_group(self, story_client, ip_with_license):
-    #     with pytest.raises(ValueError, match="Failed to register group and attach license and add IPs"):
-    #         story_client.Group.register_group_and_attach_license_and_add_ips(
-    #             group_pool=EVEN_SPLIT_GROUP_POOL,
-    #             max_allowed_reward_share=5,
-    #             ip_ids=[ZERO_ADDRESS],  # Invalid IP address
-    #             license_data={
-    #                 'license_terms_id': ip_with_license['license_terms_id'],
-    #                 'licensing_config': {
-    #                     'is_set': True,
-    #                     'minting_fee': 0,
-    #                     'hook_data': ZERO_ADDRESS,
-    #                     'licensing_hook': ZERO_ADDRESS,
-    #                     'commercial_rev_share': 0,
-    #                     'disabled': False,
-    #                     'expect_minimum_group_reward_share': 0,
-    #                     'expect_group_reward_pool': ZERO_ADDRESS
-    #                 }
-    #             }
-    #         )
+    def test_fail_add_unregistered_ip_to_group(self, story_client, ip_with_license):
+        with pytest.raises(ValueError, match="Failed to register group and attach license and add IPs"):
+            story_client.Group.register_group_and_attach_license_and_add_ips(
+                group_pool=EVEN_SPLIT_GROUP_POOL,
+                max_allowed_reward_share=5,
+                ip_ids=[ZERO_ADDRESS],  # Invalid IP address
+                license_data={
+                    'license_terms_id': ip_with_license['license_terms_id'],
+                    'licensing_config': {
+                        'is_set': True,
+                        'minting_fee': 0,
+                        'hook_data': ZERO_ADDRESS,
+                        'licensing_hook': ZERO_ADDRESS,
+                        'commercial_rev_share': 0,
+                        'disabled': False,
+                        'expect_minimum_group_reward_share': 0,
+                        'expect_group_reward_pool': ZERO_ADDRESS
+                    }
+                }
+            )
 
 class TestCollectRoyaltyAndClaimReward:
     @pytest.fixture(scope="module")

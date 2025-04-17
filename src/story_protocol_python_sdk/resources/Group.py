@@ -311,24 +311,6 @@ class Group:
             
             # Process IP metadata
             metadata = self._get_ip_metadata(ip_metadata)
-            # Print all parameters before sending the transaction
-            print("=== Transaction Parameters ===")
-            print(f"NFT Contract: {nft_contract}")
-            print(f"Token ID: {token_id}")
-            print(f"Group ID: {group_id}")
-            print(f"Max Allowed Reward Share: {max_allowed_reward_share}")
-            print(f"Licenses Data: {licenses_data}")
-            print(f"Metadata: {metadata}")
-            print("Signature Metadata and Attach:")
-            print(f"  Signer: {self.account.address}")
-            print(f"  Deadline: {calculated_deadline}")
-            print(f"  Signature: {self.web3.to_bytes(hexstr=sig_metadata_and_attach['signature'])}")
-            print("Signature Add to Group:")
-            print(f"  Signer: {self.account.address}")
-            print(f"  Deadline: {calculated_deadline}")
-            print(f"  Signature: {self.web3.to_bytes(hexstr=sig_add_to_group['signature'])}")
-            print(f"Transaction Options: {tx_options}")
-            print("============================")
 
             response = build_and_send_transaction(
                 self.web3,

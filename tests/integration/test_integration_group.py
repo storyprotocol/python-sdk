@@ -17,156 +17,156 @@ from setup_for_integration import (
     ROYALTY_POLICY_LRP
 )
 
-# class TestGroupBasicOperations:
-#     def test_register_basic_group(self, story_client):
-#         response = story_client.Group.register_group(
-#             group_pool=EVEN_SPLIT_GROUP_POOL
-#         )
+class TestGroupBasicOperations:
+    def test_register_basic_group(self, story_client):
+        response = story_client.Group.register_group(
+            group_pool=EVEN_SPLIT_GROUP_POOL
+        )
         
-#         assert 'tx_hash' in response
-#         assert isinstance(response['tx_hash'], str)
-#         assert len(response['tx_hash']) > 0
+        assert 'tx_hash' in response
+        assert isinstance(response['tx_hash'], str)
+        assert len(response['tx_hash']) > 0
         
-#         assert 'group_id' in response
-#         assert isinstance(response['group_id'], str)
-#         assert response['group_id'].startswith("0x")
+        assert 'group_id' in response
+        assert isinstance(response['group_id'], str)
+        assert response['group_id'].startswith("0x")
 
-# class TestGroupWithLicenseOperations:
-#     @pytest.fixture(scope="module")
-#     def nft_collection(self, story_client):
-#         tx_data = story_client.NFTClient.create_nft_collection(
-#             name="test-collection",
-#             symbol="TEST",
-#             max_supply=100,
-#             is_public_minting=True,
-#             mint_open=True,
-#             contract_uri="test-uri",
-#             mint_fee_recipient=account.address,
-#         )
-#         return tx_data['nft_contract']
+class TestGroupWithLicenseOperations:
+    @pytest.fixture(scope="module")
+    def nft_collection(self, story_client):
+        tx_data = story_client.NFTClient.create_nft_collection(
+            name="test-collection",
+            symbol="TEST",
+            max_supply=100,
+            is_public_minting=True,
+            mint_open=True,
+            contract_uri="test-uri",
+            mint_fee_recipient=account.address,
+        )
+        return tx_data['nft_contract']
     
-#     @pytest.fixture(scope="module")
-#     def ip_with_license(self, story_client, nft_collection):
-#         # Create initial IP with license terms
-#         response = story_client.IPAsset.mint_and_register_ip_asset_with_pil_terms(
-#             spg_nft_contract=nft_collection,
-#             terms=[{
-#                 'terms': {
-#                     'transferable': True,
-#                     'royalty_policy': ROYALTY_POLICY_LRP,
-#                     'default_minting_fee': 0,
-#                     'expiration': 1000,
-#                     'commercial_use': True,
-#                     'commercial_attribution': False,
-#                     'commercializer_checker': ZERO_ADDRESS,
-#                     'commercializer_checker_data': ZERO_ADDRESS,
-#                     'commercial_rev_share': 0,
-#                     'commercial_rev_ceiling': 0,
-#                     'derivatives_allowed': True,
-#                     'derivatives_attribution': True,
-#                     'derivatives_approval': False,
-#                     'derivatives_reciprocal': True,
-#                     'derivative_rev_ceiling': 0,
-#                     'currency': MockERC20,
-#                     'uri': "test case"
-#                 },
-#                 'licensing_config': {
-#                     'is_set': True,
-#                     'minting_fee': 0,
-#                     'hook_data': ZERO_ADDRESS,
-#                     'licensing_hook': ZERO_ADDRESS,
-#                     'commercial_rev_share': 0,
-#                     'disabled': False,
-#                     'expect_minimum_group_reward_share': 0,
-#                     'expect_group_reward_pool': EVEN_SPLIT_GROUP_POOL
-#                 }
-#             }]
-#         )
+    @pytest.fixture(scope="module")
+    def ip_with_license(self, story_client, nft_collection):
+        # Create initial IP with license terms
+        response = story_client.IPAsset.mint_and_register_ip_asset_with_pil_terms(
+            spg_nft_contract=nft_collection,
+            terms=[{
+                'terms': {
+                    'transferable': True,
+                    'royalty_policy': ROYALTY_POLICY_LRP,
+                    'default_minting_fee': 0,
+                    'expiration': 1000,
+                    'commercial_use': True,
+                    'commercial_attribution': False,
+                    'commercializer_checker': ZERO_ADDRESS,
+                    'commercializer_checker_data': ZERO_ADDRESS,
+                    'commercial_rev_share': 0,
+                    'commercial_rev_ceiling': 0,
+                    'derivatives_allowed': True,
+                    'derivatives_attribution': True,
+                    'derivatives_approval': False,
+                    'derivatives_reciprocal': True,
+                    'derivative_rev_ceiling': 0,
+                    'currency': MockERC20,
+                    'uri': "test case"
+                },
+                'licensing_config': {
+                    'is_set': True,
+                    'minting_fee': 0,
+                    'hook_data': ZERO_ADDRESS,
+                    'licensing_hook': ZERO_ADDRESS,
+                    'commercial_rev_share': 0,
+                    'disabled': False,
+                    'expect_minimum_group_reward_share': 0,
+                    'expect_group_reward_pool': EVEN_SPLIT_GROUP_POOL
+                }
+            }]
+        )
         
-#         ip_id = response['ip_id']
-#         license_terms_id = response['license_terms_ids'][0]
+        ip_id = response['ip_id']
+        license_terms_id = response['license_terms_ids'][0]
 
-#         licensing_config = {
-#             'isSet': True,
-#             'mintingFee': 0,
-#             'licensingHook': ZERO_ADDRESS,
-#             'hookData': ZERO_ADDRESS,
-#             'commercialRevShare': 0,
-#             'disabled': False,
-#             'expectMinimumGroupRewardShare': 0,
-#             'expectGroupRewardPool': EVEN_SPLIT_GROUP_POOL
-#         }
+        licensing_config = {
+            'isSet': True,
+            'mintingFee': 0,
+            'licensingHook': ZERO_ADDRESS,
+            'hookData': ZERO_ADDRESS,
+            'commercialRevShare': 0,
+            'disabled': False,
+            'expectMinimumGroupRewardShare': 0,
+            'expectGroupRewardPool': EVEN_SPLIT_GROUP_POOL
+        }
         
-#         # Set licensing config
-#         story_client.License.set_licensing_config(
-#             ip_id=ip_id,
-#             license_terms_id=license_terms_id,
-#             license_template=PIL_LICENSE_TEMPLATE,
-#             licensing_config=licensing_config
-#         )
+        # Set licensing config
+        story_client.License.set_licensing_config(
+            ip_id=ip_id,
+            license_terms_id=license_terms_id,
+            license_template=PIL_LICENSE_TEMPLATE,
+            licensing_config=licensing_config
+        )
         
-#         return {
-#             'ip_id': ip_id,
-#             'license_terms_id': license_terms_id
-#         }
+        return {
+            'ip_id': ip_id,
+            'license_terms_id': license_terms_id
+        }
     
-#     @pytest.fixture(scope="module")
-#     def group_with_license(self, story_client, ip_with_license):
-#         response = story_client.Group.register_group_and_attach_license(
-#             group_pool=EVEN_SPLIT_GROUP_POOL,
-#             license_data={
-#                 'license_terms_id': ip_with_license['license_terms_id'],
-#                 'licensing_config': {
-#                     'is_set': True,
-#                     'minting_fee': 0,
-#                     'hook_data': ZERO_ADDRESS,
-#                     'licensing_hook': ZERO_ADDRESS,
-#                     'commercial_rev_share': 0,
-#                     'disabled': False,
-#                     'expect_minimum_group_reward_share': 0,
-#                     'expect_group_reward_pool': ZERO_ADDRESS
-#                 }
-#             }
-#         )
+    @pytest.fixture(scope="module")
+    def group_with_license(self, story_client, ip_with_license):
+        response = story_client.Group.register_group_and_attach_license(
+            group_pool=EVEN_SPLIT_GROUP_POOL,
+            license_data={
+                'license_terms_id': ip_with_license['license_terms_id'],
+                'licensing_config': {
+                    'is_set': True,
+                    'minting_fee': 0,
+                    'hook_data': ZERO_ADDRESS,
+                    'licensing_hook': ZERO_ADDRESS,
+                    'commercial_rev_share': 0,
+                    'disabled': False,
+                    'expect_minimum_group_reward_share': 0,
+                    'expect_group_reward_pool': ZERO_ADDRESS
+                }
+            }
+        )
 
-#         assert 'tx_hash' in response
-#         assert isinstance(response['tx_hash'], str)
+        assert 'tx_hash' in response
+        assert isinstance(response['tx_hash'], str)
 
-#         assert response is not None
-#         assert 'group_id' in response
-#         assert response['group_id'] is not None
-#         return response['group_id']
+        assert response is not None
+        assert 'group_id' in response
+        assert response['group_id'] is not None
+        return response['group_id']
     
-#     def test_register_group_and_attach_license(self, group_with_license):
-#         assert group_with_license is not None
+    def test_register_group_and_attach_license(self, group_with_license):
+        assert group_with_license is not None
 
-#     def test_mint_register_ip_attach_license_add_to_group(self, story_client, group_with_license, ip_with_license, nft_collection):
-#         response = story_client.Group.mint_and_register_ip_and_attach_license_and_add_to_group(
-#             group_id=group_with_license,
-#             spg_nft_contract=nft_collection,
-#             license_data=[{
-#                 'license_terms_id': ip_with_license['license_terms_id'],
-#                 'licensing_config': {
-#                     'is_set': True,
-#                     'minting_fee': 0,
-#                     'hook_data': ZERO_ADDRESS,
-#                     'licensing_hook': ZERO_ADDRESS,
-#                     'commercial_rev_share': 0,
-#                     'disabled': False,
-#                     'expect_minimum_group_reward_share': 0,
-#                     'expect_group_reward_pool': EVEN_SPLIT_GROUP_POOL
-#                 }
-#             }],
-#             max_allowed_reward_share=5
-#         )
+    def test_mint_register_ip_attach_license_add_to_group(self, story_client, group_with_license, ip_with_license, nft_collection):
+        response = story_client.Group.mint_and_register_ip_and_attach_license_and_add_to_group(
+            group_id=group_with_license,
+            spg_nft_contract=nft_collection,
+            license_data=[{
+                'license_terms_id': ip_with_license['license_terms_id'],
+                'licensing_config': {
+                    'is_set': True,
+                    'minting_fee': 0,
+                    'hook_data': ZERO_ADDRESS,
+                    'licensing_hook': ZERO_ADDRESS,
+                    'commercial_rev_share': 0,
+                    'disabled': False,
+                    'expect_minimum_group_reward_share': 0,
+                    'expect_group_reward_pool': EVEN_SPLIT_GROUP_POOL
+                }
+            }],
+            max_allowed_reward_share=5
+        )
         
-#         assert 'tx_hash' in response
-#         assert isinstance(response['tx_hash'], str)
-#         assert len(response['tx_hash']) > 0
+        assert 'tx_hash' in response
+        assert isinstance(response['tx_hash'], str)
+        assert len(response['tx_hash']) > 0
         
-#         assert 'ip_id' in response
-#         assert isinstance(response['ip_id'], str)
-#         assert response['ip_id'].startswith("0x")
+        assert 'ip_id' in response
+        assert isinstance(response['ip_id'], str)
+        assert response['ip_id'].startswith("0x")
 
 class TestAdvancedGroupOperations:
     @pytest.fixture(scope="module")
@@ -225,9 +225,24 @@ class TestAdvancedGroupOperations:
         }
     
     @pytest.fixture(scope="module")
-    def group_id(self, story_client):
-        response = story_client.Group.register_group(
-            group_pool=EVEN_SPLIT_GROUP_POOL
+    def group_id(self, story_client, ip_with_license):
+        # Create a group with license attached
+        response = story_client.Group.register_group_and_attach_license(
+            group_pool=EVEN_SPLIT_GROUP_POOL,
+            license_data={
+                'license_terms_id': ip_with_license['license_terms_id'],
+                'license_template': PIL_LICENSE_TEMPLATE,
+                'licensing_config': {
+                    'is_set': True,
+                    'minting_fee': 0,
+                    'hook_data': ZERO_ADDRESS,
+                    'licensing_hook': ZERO_ADDRESS,
+                    'commercial_rev_share': 0,
+                    'disabled': False,
+                    'expect_minimum_group_reward_share': 0,
+                    'expect_group_reward_pool': ZERO_ADDRESS
+                }
+            }
         )
         return response['group_id']
     

@@ -27,7 +27,8 @@ from utils import (
     ARBITRATION_POLICY_UMA,
     generate_cid,
     WIP_TOKEN_ADDRESS,
-    setup_royalty_vault
+    setup_royalty_vault,
+    CORE_METADATA_MODULE
 )
 
 # Load environment variables
@@ -86,5 +87,6 @@ __all__ = [
     'wallet_address',
     'wallet_address_2',
     'private_key',
-    'private_key_2'
+    'private_key_2',
+    'CORE_METADATA_MODULE'
 ]

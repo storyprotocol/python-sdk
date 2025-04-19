@@ -219,7 +219,9 @@
             "functions": [
                 "minLiveness",
                 "maxLiveness",
-                "maxBonds"
+                "maxBonds",
+                "disputeIdToAssertionId",
+                "oov3"
             ]
         },
         {
@@ -239,7 +241,8 @@
                 "approve",
                 "balanceOf",
                 "transfer",
-                "transferFrom"
+                "transferFrom",
+                "allowance"
             ]
         },
         {

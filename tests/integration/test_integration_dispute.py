@@ -39,25 +39,15 @@ class TestDispute:
         
         response = story_client_2.IPAsset.mint_and_register_ip(
             spg_nft_contract=nft_contract,
-            ip_metadata=metadata_a,
-            tx_options={ "wait_for_transaction": True}
+            ip_metadata=metadata_a
         )
 
         return response['ip_id']
 
-    def test_raise_dispute(self, story_client, target_ip_id):
-        """Test raising a dispute"""
+    @pytest.fixture(scope="module")
+    def dispute_id(self, story_client, target_ip_id):
         cid = generate_cid()
         bond_amount = 1000000000000000000  # 1 ETH in wei
-
-        # Add approval before raising dispute
-        # approve(
-        #     erc20_contract_address="0x1514000000000000000000000000000000000000",
-        #     web3=web3,
-        #     account=account,
-        #     spender_address="0xfFD98c3877B8789124f02C7E8239A4b0Ef11E936",
-        #     amount=2**256 - 1  # maximum uint256 value
-        # )
         
         response = story_client.Dispute.raise_dispute(
             target_ip_id=target_ip_id,
@@ -73,3 +63,33 @@ class TestDispute:
         assert 'dispute_id' in response
         assert isinstance(response['dispute_id'], int)
         assert response['dispute_id'] > 0
+
+        return response['dispute_id']
+    
+    def test_raise_dispute(self, story_client, dispute_id):
+        """Test raising a dispute"""
+        assert dispute_id is not None
+    
+    def test_counter_dispute(self, story_client_2, story_client, target_ip_id, dispute_id):
+        """Test countering a dispute"""
+        # Get the assertion ID from the dispute ID
+        assertion_id = story_client_2.Dispute.dispute_id_to_assertion_id(dispute_id)
+        
+        # Generate a CID for counter evidence
+        counter_evidence_cid = generate_cid()
+        
+        deposit_response_2 = story_client_2.WIP.deposit(
+            amount=Web3.to_wei(1, 'ether') #1 IP
+        )
+
+        # Counter the dispute assertion with story_client_2 (the IP owner)
+        response = story_client_2.Dispute.dispute_assertion(
+            ip_id=target_ip_id,
+            assertion_id=assertion_id,
+            counter_evidence_cid=counter_evidence_cid
+        )
+        
+        # Verify the response
+        assert 'tx_hash' in response
+        assert isinstance(response['tx_hash'], str)
+        assert len(response['tx_hash']) > 0

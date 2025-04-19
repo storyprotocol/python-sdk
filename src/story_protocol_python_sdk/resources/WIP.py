@@ -196,3 +196,26 @@ class WIP:
 
         except Exception as e:
             raise ValueError(f"Failed to transfer WIP from another address: {str(e)}")
+    
+    def allowance(self, owner: str, spender: str) -> int:
+        """
+        Returns the amount of WIP tokens that `spender` is allowed to spend on behalf of `owner`.
+
+        :param owner str: The address of the token owner.
+        :param spender str: The address of the spender.
+        :return int: The amount of WIP tokens the spender is allowed to spend.
+        """
+        try:
+            if not self.web3.is_address(owner):
+                raise ValueError(f"The owner address {owner} is not valid.")
+
+            if not self.web3.is_address(spender):
+                raise ValueError(f"The spender address {spender} is not valid.")
+
+            owner = self.web3.to_checksum_address(owner)
+            spender = self.web3.to_checksum_address(spender)
+
+            return self.wip_client.allowance(owner, spender)
+
+        except Exception as e:
+            raise ValueError(f"Failed to get allowance: {str(e)}")

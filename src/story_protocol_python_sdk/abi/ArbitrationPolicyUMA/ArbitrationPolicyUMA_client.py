@@ -22,6 +22,9 @@ class ArbitrationPolicyUMAClient:
             abi = json.load(abi_file)
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
+    def disputeIdToAssertionId(self, disputeId):
+        return self.contract.functions.disputeIdToAssertionId(disputeId).call()
+    
     def maxBonds(self, token):
         return self.contract.functions.maxBonds(token).call()
     
@@ -30,5 +33,8 @@ class ArbitrationPolicyUMAClient:
     
     def minLiveness(self):
         return self.contract.functions.minLiveness().call()
+    
+    def oov3(self):
+        return self.contract.functions.oov3().call()
         
     

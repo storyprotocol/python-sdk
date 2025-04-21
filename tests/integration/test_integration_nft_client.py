@@ -113,7 +113,7 @@ class TestErrorCases:
     def test_invalid_mint_fee_values(self, story_client):
         """Test with invalid mint fee values"""
         with pytest.raises(ValueError) as exc_info:
-            story_client.NFTClient.createNFTCollection(
+            story_client.NFTClient.create_nft_collection(
                 name="test-collection",
                 symbol="TEST",
                 is_public_minting=True,
@@ -127,7 +127,7 @@ class TestErrorCases:
         
         try:
             huge_mint_fee = 2**256 - 1  # Max uint256 value
-            story_client.NFTClient.createNFTCollection(
+            story_client.NFTClient.create_nft_collection(
                 name="test-collection",
                 symbol="TEST",
                 is_public_minting=True,
@@ -145,7 +145,7 @@ class TestErrorCases:
         """Test omitting required parameters"""
         
         with pytest.raises(TypeError) as exc_info:
-            story_client.NFTClient.createNFTCollection(
+            story_client.NFTClient.create_nft_collection(
                 # name is omitted
                 symbol="TEST",
                 is_public_minting=True,
@@ -155,7 +155,7 @@ class TestErrorCases:
             )
         
         with pytest.raises(TypeError) as exc_info:
-            story_client.NFTClient.createNFTCollection(
+            story_client.NFTClient.create_nft_collection(
                 name="test-collection",
                 # symbol is omitted
                 is_public_minting=True,
@@ -165,7 +165,7 @@ class TestErrorCases:
             )
         
         with pytest.raises(TypeError) as exc_info:
-            story_client.NFTClient.createNFTCollection(
+            story_client.NFTClient.create_nft_collection(
                 name="test-collection",
                 symbol="TEST",
                 # is_public_minting is omitted
@@ -175,7 +175,7 @@ class TestErrorCases:
             )
     
         with pytest.raises(TypeError) as exc_info:
-            story_client.NFTClient.createNFTCollection(
+            story_client.NFTClient.create_nft_collection(
                 name="test-collection",
                 symbol="TEST",
                 is_public_minting=True,
@@ -185,7 +185,7 @@ class TestErrorCases:
             )
         
         with pytest.raises(TypeError) as exc_info:
-            story_client.NFTClient.createNFTCollection(
+            story_client.NFTClient.create_nft_collection(
                 name="test-collection",
                 symbol="TEST",
                 is_public_minting=True,
@@ -195,7 +195,7 @@ class TestErrorCases:
             )
         
         with pytest.raises(TypeError) as exc_info:
-            story_client.NFTClient.createNFTCollection(
+            story_client.NFTClient.create_nft_collection(
                 name="test-collection",
                 symbol="TEST",
                 is_public_minting=True,
@@ -209,7 +209,7 @@ class TestErrorCases:
         
         different_owner = "0x1234567890123456789012345678901234567890"
         
-        response = story_client.NFTClient.createNFTCollection(
+        response = story_client.NFTClient.create_nft_collection(
             name="test-collection",
             symbol="TEST",
             is_public_minting=True,
@@ -220,8 +220,8 @@ class TestErrorCases:
         )
         
         assert response is not None
-        assert 'nftContract' in response
-        assert Web3.is_address(response['nftContract'])
+        assert 'nft_contract' in response
+        assert Web3.is_address(response['nft_contract'])
 
 class TestMintFee:
     """Tests for mint fee functionality in NFT collections"""

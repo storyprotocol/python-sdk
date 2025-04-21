@@ -420,10 +420,11 @@ class TestSetIpMetadata:
             nft_contract=MockERC721,
             token_id=token_id
         )
-        ip_id = register_response['ipId']
+        print(register_response)
+        ip_id = register_response['ip_id']
 
         deadline = get_block_timestamp(web3) + 100
-        state = story_client.IPAccount.getIpAccountNonce(ip_id)        
+        state = story_client.IPAccount.get_ip_account_nonce(ip_id)        
         data = "0x"
         
         execute_data = story_client.IPAccount.ip_account_client.contract.encode_abi(
@@ -472,7 +473,7 @@ class TestSetIpMetadata:
         wrong_signer = "0x1234567890123456789012345678901234567890"
         
         with pytest.raises(Exception) as exc_info:
-            story_client.IPAccount.executeWithSig(
+            story_client.IPAccount.execute_with_sig(
                 ip_id=ip_id,
                 to=story_client.IPAccount.access_controller_client.contract.address,
                 value=0,
@@ -509,10 +510,10 @@ class TestSetIpMetadata:
             nft_contract=MockERC721,
             token_id=token_id
         )
-        ip_id = register_response['ipId']
+        ip_id = register_response['ip_id']
         
         with pytest.raises(ValueError) as exc_info:
-            story_client.IPAccount.transferERC20(
+            story_client.IPAccount.transfer_erc20(
                 ip_id=ip_id,
                 tokens=[
                     {

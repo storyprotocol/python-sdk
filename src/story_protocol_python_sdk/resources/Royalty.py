@@ -9,6 +9,7 @@ from story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client import Roy
 from story_protocol_python_sdk.abi.RoyaltyWorkflows.RoyaltyWorkflows_client import RoyaltyWorkflowsClient
 from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import IPAccountImplClient
 from story_protocol_python_sdk.abi.MockERC20.MockERC20_client import MockERC20Client
+from story_protocol_python_sdk.abi.RoyaltyPolicyLRP.RoyaltyPolicyLRP_client import RoyaltyPolicyLRPClient
 
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
@@ -32,6 +33,7 @@ class Royalty:
         self.royalty_workflows_client = RoyaltyWorkflowsClient(web3)
         self.ip_account_impl_client = IPAccountImplClient(web3)
         self.mock_erc20_client = MockERC20Client(web3)
+        self.royalty_policy_lrp_client = RoyaltyPolicyLRPClient(web3)
 
     def get_royalty_vault_address(self, ip_id: str) -> str:
         """
@@ -206,9 +208,7 @@ class Royalty:
             if royalty_policy == "LAP":
                 royalty_policy_client = self.royalty_policy_lap_client
             elif royalty_policy == "LRP":
-                royalty_policy_client = self.royalty_policy_lap_client  # Same ABI for all royalty policies
-                # Override the contract address for LRP
-                royalty_policy_client.contract.address = "0x9156e603C949481883B1d3355c6f1132D191fC41"
+                royalty_policy_client = self.royalty_policy_lrp_client
             else:
                 # If it's a custom address
                 if not self.web3.is_address(royalty_policy):

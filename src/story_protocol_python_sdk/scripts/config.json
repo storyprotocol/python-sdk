@@ -207,7 +207,7 @@
         {
             "contract_name": "RoyaltyPolicyLRP",
             "contract_address": "0x9156e603C949481883B1d3355c6f1132D191fC41",
-            "functions": []
+            "functions": ["transferToVault"]
         },
         {
             "contract_name": "ArbitrationPolicyUMA", 

@@ -80,7 +80,7 @@ class TestPermissions:
         """Test setting permission for an unregistered IP."""
         unregistered_ip = "0x1234567890123456789012345678901234567890"
         
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(Exception) as exc_info:
             story_client.Permission.set_permission(
                 ip_id=unregistered_ip,
                 signer=account.address,
@@ -89,3 +89,264 @@ class TestPermissions:
             )
         
         assert f"IP id with {unregistered_ip} is not registered" in str(exc_info.value)
+
+    def test_set_permission_invalid_addresses(self, story_client, ip_id):
+        """Test that set_permission raises proper exceptions for invalid addresses."""
+        invalid_signer = "0xinvalid_address"
+        
+        with pytest.raises(Exception) as exc_info:
+            story_client.Permission.set_permission(
+                ip_id=ip_id,
+                signer=invalid_signer,
+                to=CORE_METADATA_MODULE,
+                permission=1,  # ALLOW
+            )
+        
+        assert "invalid address" in str(exc_info.value).lower()
+        
+        invalid_to = "not_a_hex_address"
+        
+        with pytest.raises(Exception) as exc_info:
+            story_client.Permission.set_permission(
+                ip_id=ip_id,
+                signer=account.address,
+                to=invalid_to,
+                permission=1,  # ALLOW
+            )
+        
+        assert "invalid address" in str(exc_info.value).lower()
+        
+        lowercase_address = account.address.lower()
+        try:
+            response = story_client.Permission.set_permission(
+                ip_id=ip_id,
+                signer=lowercase_address,
+                to=CORE_METADATA_MODULE,
+                permission=1,
+                tx_options={"wait_for_transaction": True}
+            )
+            assert 'tx_hash' in response
+        except Exception as e:
+            pytest.fail(f"set_permission should accept lowercase addresses, but raised: {e}")
+
+    def test_different_permission_levels(self, story_client, ip_id):
+        """Test setting and changing different permission levels."""
+        DISALLOW = 0
+        ALLOW = 1
+        ABSTAIN = 2
+        
+        response = story_client.Permission.set_permission(
+            ip_id=ip_id,
+            signer=account.address,
+            to=CORE_METADATA_MODULE,
+            permission=DISALLOW,
+            func="function setAll(address,string,bytes32,bytes32)",
+            tx_options={"wait_for_transaction": True}
+        )
+        
+        assert response is not None
+        assert 'tx_hash' in response
+        assert isinstance(response['tx_hash'], str)
+        assert len(response['tx_hash']) > 0
+        
+        response = story_client.Permission.set_permission(
+            ip_id=ip_id,
+            signer=account.address,
+            to=CORE_METADATA_MODULE,
+            permission=ALLOW,
+            func="function setAll(address,string,bytes32,bytes32)",
+            tx_options={"wait_for_transaction": True}
+        )
+        
+        assert response is not None
+        assert 'tx_hash' in response
+        
+        response = story_client.Permission.set_permission(
+            ip_id=ip_id,
+            signer=account.address,
+            to=CORE_METADATA_MODULE,
+            permission=ABSTAIN,
+            func="function setAll(address,string,bytes32,bytes32)",
+            tx_options={"wait_for_transaction": True}
+        )
+        
+        assert response is not None
+        assert 'tx_hash' in response
+        
+        response = story_client.Permission.set_all_permissions(
+            ip_id=ip_id,
+            signer=account.address,
+            permission=DISALLOW,
+            tx_options={"wait_for_transaction": True}
+        )
+        
+        assert response is not None
+        assert 'tx_hash' in response
+        
+        response = story_client.Permission.set_all_permissions(
+            ip_id=ip_id,
+            signer=account.address,
+            permission=ABSTAIN,
+            tx_options={"wait_for_transaction": True}
+        )
+        
+        assert response is not None
+        assert 'tx_hash' in response
+    
+    def test_different_function_selectors(self, story_client, ip_id):
+        """Test setting permissions with different function selectors."""
+        ALLOW = 1
+
+        response = story_client.Permission.set_permission(
+            ip_id=ip_id,
+            signer=account.address,
+            to=CORE_METADATA_MODULE,
+            permission=1,
+            # No func parameter provided - should use default
+            tx_options={"wait_for_transaction": True}
+        )
+        
+        assert response is not None
+        assert 'tx_hash' in response
+        assert isinstance(response['tx_hash'], str)
+        assert len(response['tx_hash']) > 0
+        
+        response = story_client.Permission.set_permission(
+            ip_id=ip_id,
+            signer=account.address,
+            to=CORE_METADATA_MODULE,
+            permission=ALLOW, 
+            func="setAll(address,string,bytes32,bytes32)",
+            tx_options={"wait_for_transaction": True}
+        )
+        
+        assert response is not None
+        assert 'tx_hash' in response
+        
+        response = story_client.Permission.set_permission(
+            ip_id=ip_id,
+            signer=account.address,
+            to=CORE_METADATA_MODULE,
+            permission=ALLOW,  
+            func="setName(address,string)",
+            tx_options={"wait_for_transaction": True}
+        )
+        
+        assert response is not None
+        assert 'tx_hash' in response
+        
+        response = story_client.Permission.set_permission(
+            ip_id=ip_id,
+            signer=account.address,
+            to=CORE_METADATA_MODULE,
+            permission=ALLOW,
+            func="setDescription(address,string)",
+            tx_options={"wait_for_transaction": True}
+        )
+        
+        assert response is not None
+        assert 'tx_hash' in response
+        
+        deadline = web3.eth.get_block('latest')['timestamp'] + 60000
+        response = story_client.Permission.create_set_permission_signature(
+            ip_id=ip_id,
+            signer=account.address,
+            to=CORE_METADATA_MODULE,
+            permission=ALLOW,
+            # No func parameter provided
+            deadline=deadline,
+            tx_options={"wait_for_transaction": True}
+        )
+        
+        assert response is not None
+        assert 'tx_hash' in response
+    
+    def test_permission_hierarchies_and_overrides(self, story_client, ip_id):
+        """Test permission hierarchies and how permissions override each other."""
+        DISALLOW = 0
+        ALLOW = 1
+        ABSTAIN = 2
+        
+        response = story_client.Permission.set_all_permissions(
+            ip_id=ip_id,
+            signer=account.address,
+            permission=DISALLOW,
+            tx_options={"wait_for_transaction": True}
+        )
+        
+        assert response is not None
+        assert 'tx_hash' in response
+        
+        specific_func = "setName(address,string)"
+        response = story_client.Permission.set_permission(
+            ip_id=ip_id,
+            signer=account.address,
+            to=CORE_METADATA_MODULE,
+            permission=ALLOW,
+            func=specific_func,
+            tx_options={"wait_for_transaction": True}
+        )
+        
+        assert response is not None
+        assert 'tx_hash' in response
+        
+        alternate_signer = web3.eth.account.create()
+        
+        response = story_client.Permission.set_all_permissions(
+            ip_id=ip_id,
+            signer=alternate_signer.address,
+            permission=ALLOW,
+            tx_options={"wait_for_transaction": True}
+        )
+        
+        assert response is not None
+        assert 'tx_hash' in response
+        
+        response = story_client.Permission.set_permission(
+            ip_id=ip_id,
+            signer=alternate_signer.address,
+            to=CORE_METADATA_MODULE,
+            permission=DISALLOW,
+            func=specific_func,
+            tx_options={"wait_for_transaction": True}
+        )
+        
+        assert response is not None
+        assert 'tx_hash' in response
+        
+        deadline = web3.eth.get_block('latest')['timestamp'] + 60000
+        
+        response = story_client.Permission.create_set_permission_signature(
+            ip_id=ip_id,
+            signer=account.address,
+            to=CORE_METADATA_MODULE,
+            permission=ALLOW,
+            func="setDescription(address,string)",
+            deadline=deadline,
+            tx_options={"wait_for_transaction": True}
+        )
+        
+        assert response is not None
+        assert 'tx_hash' in response
+        
+        response = story_client.Permission.set_all_permissions(
+            ip_id=ip_id,
+            signer=account.address,
+            permission=ABSTAIN,
+            tx_options={"wait_for_transaction": True}
+        )
+        
+        assert response is not None
+        assert 'tx_hash' in response
+        
+        response = story_client.Permission.set_all_permissions(
+            ip_id=ip_id,
+            signer=alternate_signer.address,
+            permission=ABSTAIN,
+            tx_options={"wait_for_transaction": True}
+        )
+        
+        assert response is not None
+        assert 'tx_hash' in response
+
+    

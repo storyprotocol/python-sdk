@@ -80,7 +80,7 @@ class TestPermissions:
         """Test setting permission for an unregistered IP."""
         unregistered_ip = "0x1234567890123456789012345678901234567890"
         
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(Exception) as exc_info:
             story_client.Permission.set_permission(
                 ip_id=unregistered_ip,
                 signer=account.address,

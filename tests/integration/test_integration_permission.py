@@ -9,10 +9,6 @@ from setup_for_integration import (
     story_client,
     get_token_id,
     MockERC721,
-    MockERC20,
-    ZERO_ADDRESS,
-    ROYALTY_POLICY,
-    PIL_LICENSE_TEMPLATE,
     CORE_METADATA_MODULE
 )
 
@@ -23,8 +19,7 @@ class TestPermissions:
         token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
         response = story_client.IPAsset.register(
             nft_contract=MockERC721,
-            token_id=token_id,
-            tx_options={"wait_for_transaction": True}
+            token_id=token_id
         )
         assert 'ip_id' in response, "Failed to register IP"
         return response['ip_id']
@@ -36,8 +31,7 @@ class TestPermissions:
             signer=account.address,
             to=CORE_METADATA_MODULE,
             permission=1,  # ALLOW
-            func="function setAll(address,string,bytes32,bytes32)",
-            tx_options={"wait_for_transaction": True}
+            func="function setAll(address,string,bytes32,bytes32)"
         )
 
         assert response is not None
@@ -50,7 +44,7 @@ class TestPermissions:
         response = story_client.Permission.set_all_permissions(
             ip_id=ip_id,
             signer=account.address,
-            permission=1,  # ALLOW
+            permission=1  # ALLOW
         )
 
         assert response is not None
@@ -68,7 +62,7 @@ class TestPermissions:
             to=CORE_METADATA_MODULE,
             func="setAll(address,string,bytes32,bytes32)",
             permission=1,  # ALLOW
-            deadline=deadline,
+            deadline=deadline
         )
 
         assert response is not None
@@ -85,7 +79,7 @@ class TestPermissions:
                 ip_id=unregistered_ip,
                 signer=account.address,
                 to=CORE_METADATA_MODULE,
-                permission=1,
+                permission=1
             )
         
         assert f"IP id with {unregistered_ip} is not registered" in str(exc_info.value)
@@ -99,7 +93,7 @@ class TestPermissions:
                 ip_id=ip_id,
                 signer=invalid_signer,
                 to=CORE_METADATA_MODULE,
-                permission=1,  # ALLOW
+                permission=1  # ALLOW
             )
         
         assert "invalid address" in str(exc_info.value).lower()
@@ -111,7 +105,7 @@ class TestPermissions:
                 ip_id=ip_id,
                 signer=account.address,
                 to=invalid_to,
-                permission=1,  # ALLOW
+                permission=1  # ALLOW
             )
         
         assert "invalid address" in str(exc_info.value).lower()
@@ -122,8 +116,7 @@ class TestPermissions:
                 ip_id=ip_id,
                 signer=lowercase_address,
                 to=CORE_METADATA_MODULE,
-                permission=1,
-                tx_options={"wait_for_transaction": True}
+                permission=1
             )
             assert 'tx_hash' in response
         except Exception as e:
@@ -140,8 +133,7 @@ class TestPermissions:
             signer=account.address,
             to=CORE_METADATA_MODULE,
             permission=DISALLOW,
-            func="function setAll(address,string,bytes32,bytes32)",
-            tx_options={"wait_for_transaction": True}
+            func="function setAll(address,string,bytes32,bytes32)"
         )
         
         assert response is not None
@@ -154,8 +146,7 @@ class TestPermissions:
             signer=account.address,
             to=CORE_METADATA_MODULE,
             permission=ALLOW,
-            func="function setAll(address,string,bytes32,bytes32)",
-            tx_options={"wait_for_transaction": True}
+            func="function setAll(address,string,bytes32,bytes32)"
         )
         
         assert response is not None
@@ -166,8 +157,7 @@ class TestPermissions:
             signer=account.address,
             to=CORE_METADATA_MODULE,
             permission=ABSTAIN,
-            func="function setAll(address,string,bytes32,bytes32)",
-            tx_options={"wait_for_transaction": True}
+            func="function setAll(address,string,bytes32,bytes32)"
         )
         
         assert response is not None
@@ -176,8 +166,7 @@ class TestPermissions:
         response = story_client.Permission.set_all_permissions(
             ip_id=ip_id,
             signer=account.address,
-            permission=DISALLOW,
-            tx_options={"wait_for_transaction": True}
+            permission=DISALLOW
         )
         
         assert response is not None
@@ -186,8 +175,7 @@ class TestPermissions:
         response = story_client.Permission.set_all_permissions(
             ip_id=ip_id,
             signer=account.address,
-            permission=ABSTAIN,
-            tx_options={"wait_for_transaction": True}
+            permission=ABSTAIN
         )
         
         assert response is not None
@@ -201,9 +189,8 @@ class TestPermissions:
             ip_id=ip_id,
             signer=account.address,
             to=CORE_METADATA_MODULE,
-            permission=1,
+            permission=1
             # No func parameter provided - should use default
-            tx_options={"wait_for_transaction": True}
         )
         
         assert response is not None
@@ -216,8 +203,7 @@ class TestPermissions:
             signer=account.address,
             to=CORE_METADATA_MODULE,
             permission=ALLOW, 
-            func="setAll(address,string,bytes32,bytes32)",
-            tx_options={"wait_for_transaction": True}
+            func="setAll(address,string,bytes32,bytes32)"
         )
         
         assert response is not None
@@ -228,8 +214,7 @@ class TestPermissions:
             signer=account.address,
             to=CORE_METADATA_MODULE,
             permission=ALLOW,  
-            func="setName(address,string)",
-            tx_options={"wait_for_transaction": True}
+            func="setName(address,string)"
         )
         
         assert response is not None
@@ -240,8 +225,7 @@ class TestPermissions:
             signer=account.address,
             to=CORE_METADATA_MODULE,
             permission=ALLOW,
-            func="setDescription(address,string)",
-            tx_options={"wait_for_transaction": True}
+            func="setDescription(address,string)"
         )
         
         assert response is not None
@@ -254,8 +238,7 @@ class TestPermissions:
             to=CORE_METADATA_MODULE,
             permission=ALLOW,
             # No func parameter provided
-            deadline=deadline,
-            tx_options={"wait_for_transaction": True}
+            deadline=deadline
         )
         
         assert response is not None
@@ -270,8 +253,7 @@ class TestPermissions:
         response = story_client.Permission.set_all_permissions(
             ip_id=ip_id,
             signer=account.address,
-            permission=DISALLOW,
-            tx_options={"wait_for_transaction": True}
+            permission=DISALLOW
         )
         
         assert response is not None
@@ -283,8 +265,7 @@ class TestPermissions:
             signer=account.address,
             to=CORE_METADATA_MODULE,
             permission=ALLOW,
-            func=specific_func,
-            tx_options={"wait_for_transaction": True}
+            func=specific_func
         )
         
         assert response is not None
@@ -295,8 +276,7 @@ class TestPermissions:
         response = story_client.Permission.set_all_permissions(
             ip_id=ip_id,
             signer=alternate_signer.address,
-            permission=ALLOW,
-            tx_options={"wait_for_transaction": True}
+            permission=ALLOW
         )
         
         assert response is not None
@@ -307,8 +287,7 @@ class TestPermissions:
             signer=alternate_signer.address,
             to=CORE_METADATA_MODULE,
             permission=DISALLOW,
-            func=specific_func,
-            tx_options={"wait_for_transaction": True}
+            func=specific_func
         )
         
         assert response is not None
@@ -322,8 +301,7 @@ class TestPermissions:
             to=CORE_METADATA_MODULE,
             permission=ALLOW,
             func="setDescription(address,string)",
-            deadline=deadline,
-            tx_options={"wait_for_transaction": True}
+            deadline=deadline
         )
         
         assert response is not None
@@ -332,8 +310,7 @@ class TestPermissions:
         response = story_client.Permission.set_all_permissions(
             ip_id=ip_id,
             signer=account.address,
-            permission=ABSTAIN,
-            tx_options={"wait_for_transaction": True}
+            permission=ABSTAIN
         )
         
         assert response is not None
@@ -342,8 +319,7 @@ class TestPermissions:
         response = story_client.Permission.set_all_permissions(
             ip_id=ip_id,
             signer=alternate_signer.address,
-            permission=ABSTAIN,
-            tx_options={"wait_for_transaction": True}
+            permission=ABSTAIN
         )
         
         assert response is not None

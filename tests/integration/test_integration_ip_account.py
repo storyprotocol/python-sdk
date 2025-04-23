@@ -181,7 +181,7 @@ class TestSignatureOperations:
         assert len(response['tx_hash']) > 0
 
     def test_execute_with_sig_multiple_permissions(self, story_client):
-        """Test executeWithSig setting multiple permissions."""
+        """Test execute_with_sig setting multiple permissions."""
         token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
         register_response = story_client.IPAsset.register(
             nft_contract=MockERC721,
@@ -319,30 +319,8 @@ class TestErrorCases:
         
         assert "is not registered" in str(exc_info.value)
 
-class TestSetIpMetadata:
-    """Tests for setting IP metadata"""
-    
-    def test_set_ip_metadata(self, story_client):
-        token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
-        response = story_client.IPAsset.register(
-            nft_contract=MockERC721,
-            token_id=token_id
-        )
-
-        response = story_client.IPAccount.set_ip_metadata(
-            ip_id=response['ip_id'],
-            metadata_uri="https://example.com",
-            metadata_hash=web3.to_hex(web3.keccak(text="test-metadata-hash"))
-        )
-
-        assert response is not None, "Response is None, indicating the contract interaction failed."
-        assert 'tx_hash' in response, "Response does not contain 'tx_hash'."
-        assert response['tx_hash'] is not None, "'tx_hash' is None."
-        assert isinstance(response['tx_hash'], str), "'tx_hash' is not a string."
-        assert len(response['tx_hash']) > 0, "'tx_hash' is empty."
-
     def test_execute_with_sig_wrong_signer(self, story_client):
-        """Test executeWithSig with a valid signature but wrong signer address."""
+        """Test execute_with_sig with a valid signature but wrong signer address."""
         token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
         register_response = story_client.IPAsset.register(
             nft_contract=MockERC721,
@@ -413,7 +391,30 @@ class TestSetIpMetadata:
         error_hex = '0x3fd60002'
         assert error_hex in str(exc_info.value), f"Expected error code {error_hex} for wrong signer"
 
-class TestTransferERC20:
+class TestSetIpMetadata:
+    """Tests for setting IP metadata"""
+    
+    def test_set_ip_metadata(self, story_client):
+        token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+        response = story_client.IPAsset.register(
+            nft_contract=MockERC721,
+            token_id=token_id
+        )
+
+        response = story_client.IPAccount.set_ip_metadata(
+            ip_id=response['ip_id'],
+            metadata_uri="https://example.com",
+            metadata_hash=web3.to_hex(web3.keccak(text="test-metadata-hash"))
+        )
+
+        assert response is not None, "Response is None, indicating the contract interaction failed."
+        assert 'tx_hash' in response, "Response does not contain 'tx_hash'."
+        assert response['tx_hash'] is not None, "'tx_hash' is None."
+        assert isinstance(response['tx_hash'], str), "'tx_hash' is not a string."
+        assert len(response['tx_hash']) > 0, "'tx_hash' is empty."
+
+
+class Testtransfer_erc20:
     """Tests for transferring ERC20 tokens"""
 
     def test_transfer_erc20(self, story_client):
@@ -505,7 +506,7 @@ class TestTransferERC20:
 
     @pytest.mark.skip(reason="contract allows empty calls")
     def test_transfer_erc20_empty_tokens(self, story_client):
-        """Test transferERC20 with empty tokens list."""
+        """Test transfer_erc20 with empty tokens list."""
         token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
         register_response = story_client.IPAsset.register(
             nft_contract=MockERC721,
@@ -521,7 +522,7 @@ class TestTransferERC20:
        )
     
     def test_transfer_erc20_invalid_token_params(self, story_client):
-        """Test transferERC20 with invalid token parameters."""
+        """Test transfer_erc20 with invalid token parameters."""
         token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
         register_response = story_client.IPAsset.register(
             nft_contract=MockERC721,

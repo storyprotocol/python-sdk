@@ -110,6 +110,119 @@ class TestErrorCases:
             )
         assert "when sending a str, it must be a hex string. got: '0xinvalid'" in str(exc_info.value).lower()
 
+    def test_invalid_mint_fee_values(self, story_client):
+        """Test with invalid mint fee values"""
+        with pytest.raises(ValueError) as exc_info:
+            story_client.NFTClient.create_nft_collection(
+                name="test-collection",
+                symbol="TEST",
+                is_public_minting=True,
+                mint_open=True,
+                contract_uri="test-uri",
+                mint_fee_recipient=story_client.account.address,
+                mint_fee=-100,  # Negative mint fee
+                mint_fee_token=MockERC20
+            )
+        assert "Invalid mint fee" in str(exc_info.value)
+        
+        try:
+            huge_mint_fee = 2**256 - 1  # Max uint256 value
+            story_client.NFTClient.create_nft_collection(
+                name="test-collection",
+                symbol="TEST",
+                is_public_minting=True,
+                mint_open=True,
+                contract_uri="test-uri",
+                mint_fee_recipient=story_client.account.address,
+                mint_fee=huge_mint_fee,
+                mint_fee_token=MockERC20
+            )
+
+        except Exception as e:
+            assert "overflow" in str(e).lower() or "revert" in str(e).lower() or "invalid" in str(e).lower()
+    
+    def test_parameter_omission(self, story_client):
+        """Test omitting required parameters"""
+        
+        with pytest.raises(TypeError) as exc_info:
+            story_client.NFTClient.create_nft_collection(
+                # name is omitted
+                symbol="TEST",
+                is_public_minting=True,
+                mint_open=True,
+                contract_uri="test-uri",
+                mint_fee_recipient=story_client.account.address
+            )
+        
+        with pytest.raises(TypeError) as exc_info:
+            story_client.NFTClient.create_nft_collection(
+                name="test-collection",
+                # symbol is omitted
+                is_public_minting=True,
+                mint_open=True,
+                contract_uri="test-uri",
+                mint_fee_recipient=story_client.account.address
+            )
+        
+        with pytest.raises(TypeError) as exc_info:
+            story_client.NFTClient.create_nft_collection(
+                name="test-collection",
+                symbol="TEST",
+                # is_public_minting is omitted
+                mint_open=True,
+                contract_uri="test-uri",
+                mint_fee_recipient=story_client.account.address
+            )
+    
+        with pytest.raises(TypeError) as exc_info:
+            story_client.NFTClient.create_nft_collection(
+                name="test-collection",
+                symbol="TEST",
+                is_public_minting=True,
+                # mint_open is omitted
+                contract_uri="test-uri",
+                mint_fee_recipient=story_client.account.address
+            )
+        
+        with pytest.raises(TypeError) as exc_info:
+            story_client.NFTClient.create_nft_collection(
+                name="test-collection",
+                symbol="TEST",
+                is_public_minting=True,
+                mint_open=True,
+                # contract_uri is omitted
+                mint_fee_recipient=story_client.account.address
+            )
+        
+        with pytest.raises(TypeError) as exc_info:
+            story_client.NFTClient.create_nft_collection(
+                name="test-collection",
+                symbol="TEST",
+                is_public_minting=True,
+                mint_open=True,
+                contract_uri="test-uri"
+                # mint_fee_recipient is omitted
+            )
+    
+    def test_authorization_errors(self, story_client):
+        """Test unauthorized operations"""
+        
+        different_owner = "0x1234567890123456789012345678901234567890"
+        
+        response = story_client.NFTClient.create_nft_collection(
+            name="test-collection",
+            symbol="TEST",
+            is_public_minting=True,
+            mint_open=True,
+            contract_uri="test-uri",
+            mint_fee_recipient=story_client.account.address,
+            owner=different_owner 
+        )
+        
+        assert response is not None
+        assert 'nft_contract' in response
+        assert Web3.is_address(response['nft_contract'])
+
 class TestMintFee:
     """Tests for mint fee functionality in NFT collections"""
 

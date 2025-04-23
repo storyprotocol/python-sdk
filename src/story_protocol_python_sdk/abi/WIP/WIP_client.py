@@ -52,6 +52,9 @@ class WIPClient:
     def build_withdraw_transaction(self, value, tx_params):
         return self.contract.functions.withdraw(value).build_transaction(tx_params)
     
+    def allowance(self, owner, spender):
+        return self.contract.functions.allowance(owner, spender).call()
+    
     def balanceOf(self, owner):
         return self.contract.functions.balanceOf(owner).call()
         

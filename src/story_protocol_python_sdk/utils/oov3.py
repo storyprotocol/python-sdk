@@ -18,7 +18,7 @@ def get_oov3_contract(arbitration_policy_uma_client: ArbitrationPolicyUMAClient)
     """
     return arbitration_policy_uma_client.oov3()
 
-def get_assertion_details(web3: Web3, arbitration_policy_uma_client: ArbitrationPolicyUMAClient, assertion_id: str) -> int:
+def get_assertion_bond(web3: Web3, arbitration_policy_uma_client: ArbitrationPolicyUMAClient, assertion_id: str) -> int:
     """
     Get assertion details to determine bond amount.
     

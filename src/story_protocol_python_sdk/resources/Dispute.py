@@ -10,7 +10,7 @@ from story_protocol_python_sdk.abi.WIP.WIP_client import WIPClient
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 from story_protocol_python_sdk.utils.ipfs import convert_cid_to_hash_ipfs
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
-from story_protocol_python_sdk.utils.oov3 import get_assertion_details
+from story_protocol_python_sdk.utils.oov3 import get_assertion_bond
 
 class Dispute:
     """
@@ -245,7 +245,7 @@ class Dispute:
             ip_account = IPAccountImplClient(self.web3, contract_address=ip_id)
             
             # Get assertion details to determine bond amount
-            bond = get_assertion_details(self.web3, self.arbitration_policy_uma_client, assertion_id)
+            bond = get_assertion_bond(self.web3, self.arbitration_policy_uma_client, assertion_id)
 
             # Check if user has enough WIP tokens
             user_balance = self.wip.balance_of(address=self.account.address)
@@ -350,8 +350,8 @@ class Dispute:
         except Exception as e:
             raise ValueError(f"Failed to convert dispute ID to assertion ID: {str(e)}")
     
-    def get_bond_amount(self, assertion_id: str) -> int:
+    def get_assertion_bond(self, assertion_id: str) -> int:
         """
         Get the bond amount for a given assertion ID.
         """
-        return get_assertion_details(self.web3, self.arbitration_policy_uma_client, assertion_id)
+        return get_assertion_bond(self.web3, self.arbitration_policy_uma_client, assertion_id)

@@ -500,7 +500,7 @@ class TestCollectRoyaltyAndClaimReward:
             ancestor_ip_id=group_ip_id,
             token=MockERC20
         )
-        
+
         return {
             'group_ip_id': group_ip_id,
             'ip_ids': ip_ids
@@ -523,6 +523,7 @@ class TestCollectRoyaltyAndClaimReward:
         assert len(response['tx_hash']) > 0
         
         assert 'collected_royalties' in response
+
         assert len(response['collected_royalties']) > 0
         assert response['collected_royalties'][0]['amount'] == 20
         

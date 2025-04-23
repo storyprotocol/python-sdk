@@ -472,7 +472,7 @@ class Group:
                 member_ip_ids,
                 tx_options=tx_options
             )
-            
+
             # Parse events to get collected royalties
             collected_royalties = self._parse_tx_collected_royalties_to_group_pool_event(response['tx_receipt'])
             royalties_distributed = self._parse_tx_royalty_paid_event(response['tx_receipt'])
@@ -607,14 +607,14 @@ class Group:
         :param tx_receipt dict: The transaction receipt.
         :return list: List of collected royalties.
         """
-        event_signature = self.web3.keccak(text="CollectedRoyaltiesToGroupPool(address,uint256,address)").hex()
+        event_signature = self.web3.keccak(text="CollectedRoyaltiesToGroupPool(address,address,address,uint256)").hex()
         collected_royalties = []
-        
+
         for log in tx_receipt['logs']:
             if log['topics'][0].hex() == event_signature:
                 group_id = '0x' + log['topics'][1].hex()[24:]
-                amount = int(log['data'][:66], 16)
-                token = '0x' + log['data'][90:130]
+                amount = int(log['data'][:66].hex(), 16)
+                token = '0x' + log['topics'][2].hex()[24:]
                 
                 collected_royalties.append({
                     'group_id': self.web3.to_checksum_address(group_id),
@@ -631,16 +631,16 @@ class Group:
         :param tx_receipt dict: The transaction receipt.
         :return list: List of royalties distributed.
         """
-        event_signature = self.web3.keccak(text="RoyaltyPaid(address,uint256,address,uint256)").hex()
+        event_signature = self.web3.keccak(text="RoyaltyPaid(address,address,address,address,uint256,uint256)").hex()
         royalties_distributed = []
         
         for log in tx_receipt['logs']:
             if log['topics'][0].hex() == event_signature:
-                receiver_ip_id = '0x' + log['topics'][1].hex()[24:]
+                receiver_ip_id = '0x' + log['topics'][0].hex()[24:]
                 data = log['data']
-                amount = int(data[:66], 16)
-                token = '0x' + data[90:130]
-                amount_after_fee = int(data[154:], 16)
+                amount = int(data[128:160].hex(), 16)
+                token = '0x' + data[108:128].hex()
+                amount_after_fee = int(data[160:].hex(), 16)
                 
                 royalties_distributed.append({
                     'ip_id': self.web3.to_checksum_address(receiver_ip_id),

@@ -239,13 +239,19 @@ class Dispute:
         """
         try:
             # Validate IP ID
-            # ip_id = self._validate_address(ip_id)
+            ip_id = self._validate_address(ip_id)
             
             # Create IP Account client
             ip_account = IPAccountImplClient(self.web3, contract_address=ip_id)
             
             # Get assertion details to determine bond amount
             bond = get_assertion_details(self.web3, self.arbitration_policy_uma_client, assertion_id)
+
+            # Check if user has enough WIP tokens
+            user_balance = self.wip.balance_of(address=self.account.address)
+            
+            if user_balance < bond:
+                raise ValueError(f"Insufficient WIP balance. Required: {bond}, Available: {user_balance}")
             
             # Convert CID to IPFS hash
             counter_evidence_hash = convert_cid_to_hash_ipfs(counter_evidence_cid)
@@ -343,3 +349,9 @@ class Dispute:
             return assertion_id
         except Exception as e:
             raise ValueError(f"Failed to convert dispute ID to assertion ID: {str(e)}")
+    
+    def get_bond_amount(self, assertion_id: str) -> int:
+        """
+        Get the bond amount for a given assertion ID.
+        """
+        return get_assertion_details(self.web3, self.arbitration_policy_uma_client, assertion_id)

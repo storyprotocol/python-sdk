@@ -4,10 +4,13 @@ from eth_abi.abi import encode
 from story_protocol_python_sdk.resources.WIP import WIP
 from story_protocol_python_sdk.abi.DisputeModule.DisputeModule_client import DisputeModuleClient
 from story_protocol_python_sdk.abi.ArbitrationPolicyUMA.ArbitrationPolicyUMA_client import ArbitrationPolicyUMAClient
+from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import IPAccountImplClient
+from story_protocol_python_sdk.abi.WIP.WIP_client import WIPClient
 
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 from story_protocol_python_sdk.utils.ipfs import convert_cid_to_hash_ipfs
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
+from story_protocol_python_sdk.utils.oov3 import get_assertion_bond
 
 class Dispute:
     """
@@ -25,7 +28,8 @@ class Dispute:
         self.dispute_module_client = DisputeModuleClient(web3)
         self.arbitration_policy_uma_client = ArbitrationPolicyUMAClient(web3)
         self.wip = WIP(web3, account, chain_id)
-        
+        self.wip_client = WIPClient(web3)
+
     def _validate_address(self, address: str) -> str:
         """
         Validates if a string is a valid Ethereum address.
@@ -214,3 +218,140 @@ class Dispute:
                 dispute_id = int.from_bytes(data[:32], byteorder='big')
                 return dispute_id
         return None
+
+    def dispute_assertion(self, assertion_id: str, counter_evidence_cid: str, ip_id: str, tx_options: dict = None) -> dict:
+        """
+        Counters a dispute that was raised by another party on an IP using counter evidence.
+        The counter evidence (e.g., documents, images) should be uploaded to IPFS,
+        and its corresponding CID is converted to a hash for the request.
+
+        The liveness period is split in two parts:
+        - the first part of the liveness period in which only the IP's owner can be called the method.
+        - a second part in which any address can be called the method.
+
+        If you only have a disputeId, call dispute_id_to_assertion_id to get the assertionId needed here.
+
+        :param assertion_id str: The ID of the assertion to dispute.
+        :param counter_evidence_cid str: The IPFS CID of the counter evidence.
+        :param ip_id str: The IP ID related to the dispute.
+        :param tx_options dict: [Optional] Transaction options.
+        :return dict: Transaction response containing tx_hash and receipt.
+        """
+        try:
+            # Validate IP ID
+            ip_id = self._validate_address(ip_id)
+            
+            # Create IP Account client
+            ip_account = IPAccountImplClient(self.web3, contract_address=ip_id)
+            
+            # Get assertion details to determine bond amount
+            bond = get_assertion_bond(self.web3, self.arbitration_policy_uma_client, assertion_id)
+
+            # Check if user has enough WIP tokens
+            user_balance = self.wip.balance_of(address=self.account.address)
+            
+            if user_balance < bond:
+                raise ValueError(f"Insufficient WIP balance. Required: {bond}, Available: {user_balance}")
+            
+            # Convert CID to IPFS hash
+            counter_evidence_hash = convert_cid_to_hash_ipfs(counter_evidence_cid)
+            
+            # Get encoded data for dispute assertion
+            encoded_data = self.arbitration_policy_uma_client.contract.encode_abi(
+                abi_element_identifier="disputeAssertion",
+                args= [
+                    assertion_id,
+                    counter_evidence_hash
+                ]
+            )
+
+            # Check allowance
+            allowance = self.wip.allowance(
+                owner=self.account.address,
+                spender=ip_account.contract.address
+            )
+                        
+            # Approve IP Account to transfer WrappedIP tokens if needed
+            if allowance < bond:
+                approve_tx = self.wip.approve(
+                    spender=ip_account.contract.address,
+                    amount=2**256 - 1  # maxUint256
+                )
+            
+            # Prepare calls for executeBatch
+            calls = []
+            
+            if bond > 0:
+                # Transfer tokens from wallet to IP Account
+                transfer_data = self.wip_client.contract.encode_abi(
+                    abi_element_identifier="transferFrom",
+                    args=[
+                        self.account.address,
+                        ip_account.contract.address,
+                        bond
+                    ]
+                )
+                calls.append({
+                    'target': self.wip_client.contract.address,
+                    'value': 0,
+                    'data': transfer_data
+                })
+                
+                # Approve arbitration policy to spend tokens
+                approve_data = self.wip_client.contract.encode_abi(
+                    abi_element_identifier="approve",
+                    args=[
+                        self.arbitration_policy_uma_client.contract.address,
+                        2**256 - 1  # maxUint256
+                    ]
+                )
+                calls.append({
+                    'target': self.wip_client.contract.address,
+                    'value': 0,
+                    'data': approve_data
+                })
+            
+            # Add dispute assertion call
+            calls.append({
+                'target': self.arbitration_policy_uma_client.contract.address,
+                'value': 0,
+                'data': encoded_data
+            })
+            
+            # Execute batch transaction
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                ip_account.build_executeBatch_transaction,
+                calls,
+                0,
+                tx_options=tx_options
+            )
+
+            return {
+                'tx_hash': response['tx_hash'],
+                'receipt': response.get('tx_receipt')
+            }
+            
+        except Exception as e:
+            raise ValueError(f"Failed to dispute assertion: {str(e)}")
+
+    def dispute_id_to_assertion_id(self, dispute_id: int) -> str:
+        """
+        Converts a dispute ID to its corresponding assertion ID.
+
+        :param dispute_id int: The dispute ID to convert.
+        :return str: The corresponding assertion ID as a hex string.
+        :raises ValueError: If there is an error during the conversion.
+        """
+        try:
+            assertion_id = self.arbitration_policy_uma_client.disputeIdToAssertionId(dispute_id)
+            return assertion_id
+        except Exception as e:
+            raise ValueError(f"Failed to convert dispute ID to assertion ID: {str(e)}")
+    
+    def get_assertion_bond(self, assertion_id: str) -> int:
+        """
+        Get the bond amount for a given assertion ID.
+        """
+        return get_assertion_bond(self.web3, self.arbitration_policy_uma_client, assertion_id)

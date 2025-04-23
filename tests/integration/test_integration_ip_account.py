@@ -420,7 +420,6 @@ class TestSetIpMetadata:
             nft_contract=MockERC721,
             token_id=token_id
         )
-        print(register_response)
         ip_id = register_response['ip_id']
 
         deadline = get_block_timestamp(web3) + 100

@@ -29,7 +29,8 @@ from utils import (
     WIP_TOKEN_ADDRESS,
     setup_royalty_vault,
     EVEN_SPLIT_GROUP_POOL,
-    ROYALTY_POLICY_LRP
+    ROYALTY_POLICY_LRP,
+    CORE_METADATA_MODULE
 )
 
 # Load environment variables

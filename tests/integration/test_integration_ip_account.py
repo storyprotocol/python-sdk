@@ -106,14 +106,14 @@ class TestSignatureOperations:
             token_id=token_id
         )
 
-        ip_id = response['ipId']
+        ip_id = response['ip_id']
         deadline = get_block_timestamp(web3) + 100
         state = story_client.IPAccount.get_ip_account_nonce(ip_id)
 
         core_data = story_client.IPAccount.access_controller_client.contract.encode_abi(
             abi_element_identifier="setTransientPermission",
             args=[
-                ipId,
+                ip_id,
                 account.address,
                 "0x6E81a25C99C6e8430aeC7353325EB138aFE5DC16",
                 Web3.keccak(text="function setAll(address,string,bytes32,bytes32)")[:4],
@@ -141,7 +141,7 @@ class TestSignatureOperations:
             "name": "Story Protocol IP Account",
             "version": "1",
             "chainId": 1315,
-            "verifyingContract": ipId,
+            "verifyingContract": ip_id,
         }
 
         message_types = {
@@ -168,7 +168,7 @@ class TestSignatureOperations:
         response = story_client.IPAccount.execute_with_sig(
             to=story_client.IPAccount.access_controller_client.contract.address,
             value=0,
-            ip_id=ipId,
+            ip_id=ip_id,
             data=core_data,
             signer=account.address,
             deadline=deadline,

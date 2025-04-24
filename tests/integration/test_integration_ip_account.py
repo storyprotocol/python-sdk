@@ -413,6 +413,7 @@ class TestSetIpMetadata:
         assert isinstance(response['tx_hash'], str), "'tx_hash' is not a string."
         assert len(response['tx_hash']) > 0, "'tx_hash' is empty."
 
+
 class Testtransfer_erc20:
     """Tests for transferring ERC20 tokens"""
 
@@ -425,7 +426,7 @@ class Testtransfer_erc20:
         )
         ip_id = response['ip_id']
 
-        # 1. Query token balance of ip_id and wallet before
+        # 1. Query token balance of ipId and wallet before
         initial_erc20_balance_of_ip_id = story_client.Royalty.mock_erc20_client.balanceOf(
             account=ip_id
         )
@@ -483,7 +484,7 @@ class Testtransfer_erc20:
             ]
         )
         
-        # 5. Query token balance of ip_id and wallet address after transfer
+        # 5. Query token balance of ipId and wallet address after transfer
         final_erc20_balance_of_ip_id = story_client.Royalty.mock_erc20_client.balanceOf(
             account=ip_id
         )

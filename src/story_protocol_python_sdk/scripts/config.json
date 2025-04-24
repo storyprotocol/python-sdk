@@ -109,7 +109,8 @@
             "contract_address": "0xBe54FB168b3c982b7AaE60dB6CF75Bd8447b390E",
             "functions": [
                 "onRoyaltyPayment",
-                "getRoyaltyData"
+                "getRoyaltyData",
+                "transferToVault"
             ]
         },
         {
@@ -126,19 +127,10 @@
                 "mintAndRegisterIpAndAttachLicenseAndAddToGroup",
                 "registerIpAndAttachLicenseAndAddToGroup",
                 "registerGroupAndAttachLicense",
-                "registerGroupAndAttachLicenseAndAddIps"
-            ]
-        },
-        {
-            "contract_name": "DerivativeWorkflows",
-            "contract_address": "0x9e2d496f72C547C2C535B167e06ED8729B374a4f",
-            "functions": [
-                "mintAndRegisterIpAndMakeDerivativeWithLicenseTokens",
-                "registerIpAndMakeDerivative",
-                "mintAndRegisterIpAndMakeDerivative",
-                "registerIpAndMakeDerivativeWithLicenseTokens",
-                "mintAndRegisterIpAndMakeDerivativeWithLicenseTokens",
-                "multicall"
+                "registerGroupAndAttachLicenseAndAddIps",
+                "collectRoyaltiesAndClaimReward",
+                "CollectedRoyaltiesToGroupPool",
+                "RoyaltyPaid"
             ]
         },
         {
@@ -197,7 +189,11 @@
         {
             "contract_name": "GroupingModule",
             "contract_address": "0x69D3a7aa9edb72Bc226E745A7cCdd50D947b69Ac",
-            "functions": []
+            "functions": [
+                "registerGroup",
+                "addIp",
+                "IPGroupRegistered"
+            ]
         },
         {
             "contract_name": "LicenseRegistry",
@@ -211,7 +207,7 @@
         {
             "contract_name": "RoyaltyPolicyLRP",
             "contract_address": "0x9156e603C949481883B1d3355c6f1132D191fC41",
-            "functions": []
+            "functions": ["transferToVault"]
         },
         {
             "contract_name": "ArbitrationPolicyUMA", 
@@ -252,6 +248,11 @@
                 "mintFeeToken",
                 "mintFee"
             ]
+        },
+        {
+            "contract_name": "DerivativeWorkflows",
+            "contract_address": "0x9e2d496f72C547C2C535B167e06ED8729B374a4f",
+            "functions": []
         }
     ]
 }

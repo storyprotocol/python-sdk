@@ -17,6 +17,7 @@ from story_protocol_python_sdk.resources.Permission import Permission
 from story_protocol_python_sdk.resources.NFTClient import NFTClient
 from story_protocol_python_sdk.resources.Dispute import Dispute
 from story_protocol_python_sdk.resources.WIP import WIP
+from story_protocol_python_sdk.resources.Group import Group
 
 class StoryClient:
     """
@@ -53,6 +54,7 @@ class StoryClient:
         self._nft_client = None
         self._dispute = None
         self._wip = None
+        self._group = None
 
     @property
     def IPAsset(self) -> IPAsset:
@@ -141,6 +143,15 @@ class StoryClient:
         if self._wip is None:
             self._wip = WIP(self.web3, self.account, self.chain_id)
         return self._wip
+    
+    @property
+    def Group(self) -> Group:
+        """
+        Access the Group resource.
+        """
+        if self._group is None:
+            self._group = Group(self.web3, self.account, self.chain_id)
+        return self._group
     
     def get_wallet_balance(self) -> int:
         """

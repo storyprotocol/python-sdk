@@ -22,3 +22,16 @@ class GroupingModuleClient:
             abi = json.load(abi_file)
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
+    def addIp(self, groupIpId, ipIds, maxAllowedRewardShare):
+        return self.contract.functions.addIp(groupIpId, ipIds, maxAllowedRewardShare).transact()
+        
+    def build_addIp_transaction(self, groupIpId, ipIds, maxAllowedRewardShare, tx_params):
+        return self.contract.functions.addIp(groupIpId, ipIds, maxAllowedRewardShare).build_transaction(tx_params)
+    
+    def registerGroup(self, groupPool):
+        return self.contract.functions.registerGroup(groupPool).transact()
+        
+    def build_registerGroup_transaction(self, groupPool, tx_params):
+        return self.contract.functions.registerGroup(groupPool).build_transaction(tx_params)
+    
+    

@@ -87,4 +87,4 @@ Please make sure to update tests as appropriate.
 
 ## License
 
-[MIT License](/LICENSE.md)
+[MIT License](/LICENSE)

@@ -50,7 +50,7 @@ class Group:
         :return dict: A dictionary with the transaction hash and group ID.
         """
         try:
-            if not Web3.is_address(group_pool):
+            if not self.web3.is_address(group_pool):
                 raise ValueError(f'Address "{group_pool}" is invalid.')
 
             response = build_and_send_transaction(
@@ -139,10 +139,10 @@ class Group:
         :return dict: A dictionary with the transaction hash, IP ID, and token ID.
         """
         try:
-            if not Web3.is_address(group_id):
+            if not self.web3.is_address(group_id):
                 raise ValueError(f'Group ID "{group_id}" is invalid.')
             
-            if not Web3.is_address(spg_nft_contract):
+            if not self.web3.is_address(spg_nft_contract):
                 raise ValueError(f'SPG NFT contract address "{spg_nft_contract}" is invalid.')
             
             is_registered = self.ip_asset_registry_client.isRegistered(group_id)
@@ -504,7 +504,7 @@ class Group:
             else:
                 license_template = self.pi_license_template_client.contract.address
             
-            if not Web3.is_address(license_template):
+            if not self.web3.is_address(license_template):
                 raise ValueError(f'License template address "{license_template}" is invalid.')
             
             # Validate licensing config
@@ -567,6 +567,7 @@ class Group:
 
         :param tx_receipt dict: The transaction receipt.
         :return str: The group ID.
+        :raises ValueError: If the event is not found in the transaction receipt.
         """
         event_signature = self.web3.keccak(text="IPGroupRegistered(address,address)").hex()
         
@@ -575,7 +576,7 @@ class Group:
                 group_id = '0x' + log['topics'][1].hex()[24:]
                 return self.web3.to_checksum_address(group_id)
         
-        return None
+        raise ValueError("IPGroupRegistered event not found in transaction receipt")
 
     def _parse_tx_ip_registered_event(self, tx_receipt: dict) -> dict:
         """

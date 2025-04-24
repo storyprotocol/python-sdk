@@ -584,6 +584,7 @@ class Group:
 
         :param tx_receipt dict: The transaction receipt.
         :return dict: The IP ID and token ID.
+        :raises ValueError: If the event is not found in the transaction receipt.
         """
         event_signature = self.web3.keccak(
             text="IPRegistered(address,uint256,address,uint256,string,string,uint256)"
@@ -599,7 +600,7 @@ class Group:
                     'token_id': token_id
                 }
         
-        return None
+        raise ValueError("IPRegistered event not found in transaction receipt")
 
     def _parse_tx_collected_royalties_to_group_pool_event(self, tx_receipt: dict) -> list:
         """

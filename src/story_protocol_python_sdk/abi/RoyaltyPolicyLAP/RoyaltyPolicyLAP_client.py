@@ -22,3 +22,10 @@ class RoyaltyPolicyLAPClient:
             abi = json.load(abi_file)
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
     
+    def transferToVault(self, ipId, ancestorIpId, token):
+        return self.contract.functions.transferToVault(ipId, ancestorIpId, token).transact()
+        
+    def build_transferToVault_transaction(self, ipId, ancestorIpId, token, tx_params):
+        return self.contract.functions.transferToVault(ipId, ancestorIpId, token).build_transaction(tx_params)
+    
+    

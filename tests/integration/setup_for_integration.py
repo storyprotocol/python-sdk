@@ -28,6 +28,8 @@ from utils import (
     generate_cid,
     WIP_TOKEN_ADDRESS,
     setup_royalty_vault,
+    EVEN_SPLIT_GROUP_POOL,
+    ROYALTY_POLICY_LRP,
     CORE_METADATA_MODULE
 )
 
@@ -88,5 +90,6 @@ __all__ = [
     'wallet_address_2',
     'private_key',
     'private_key_2',
-    'CORE_METADATA_MODULE'
+    'EVEN_SPLIT_GROUP_POOL',
+    'ROYALTY_POLICY_LRP'
 ]

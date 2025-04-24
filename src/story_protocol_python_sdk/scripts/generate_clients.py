@@ -91,9 +91,17 @@ def generate_python_class_from_abi(abi, contract_name, functions, output_dir):
             else:
                 function_name_counts[item['name']] = 1
                 
+            # Process inputs, replacing 'from' with 'from_address'
+            inputs = []
+            for input_param in item['inputs']:
+                param_name = input_param['name']
+                if param_name == 'from':
+                    param_name = 'from_address'
+                inputs.append(param_name)
+            
             function = {
                 'name': item['name'],
-                'inputs': [input['name'] for input in item['inputs']],
+                'inputs': inputs,
                 'stateMutability': item.get('stateMutability', 'nonpayable')
             }
             selected_functions.append(function)

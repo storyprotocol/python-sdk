@@ -104,20 +104,23 @@ class Sign:
         else:
             return current_timestamp + 1000
         
-    def get_permission_signature(self, ip_id: str, deadline: int, permissions: list, permission_func: str = "setTransientPermission", state: str = None) -> dict:
+    def get_permission_signature(self, ip_id: str, deadline: int, permissions: list, permission_func: str = None, state: str = None) -> dict:
         """
         Get the signature for setting permissions.
 
         :param ip_id str: The IP ID
         :param deadline int: The deadline
         :param permissions list: The permissions
-        :param permission_func str: The permission function (defaults to "setTransientPermission")
+        :param permission_func str: The permission function (defaults to None, which will auto-select based on permissions count)
         :param state str: The state
         :return dict: The signature response
         """
         try:
-            # Get permission function name
-            permission_function = permission_func if permission_func else "setTransientPermission"
+            # Auto-select permission function based on number of permissions if not specified
+            if permission_func is None:
+                permission_function = "setBatchTransientPermissions" if len(permissions) >= 2 else "setTransientPermission"
+            else:
+                permission_function = permission_func
 
             # Get access controller address for chain
             access_address = self.access_controller_client.contract.address
@@ -135,15 +138,19 @@ class Sign:
                     ]
                 )
             else:
-                # Encode multiple permissions
-                formatted_permissions = [{
-                    'ipAccount': self.web3.to_checksum_address(p['ipId']),
-                    'signer': self.web3.to_checksum_address(p['signer']),
-                    'to': self.web3.to_checksum_address(p['to']),
-                    'func': Web3.keccak(text=p['func'])[:4].hex() if p.get('func') else ZERO_FUNC,
-                    'permission': p['permission']
-                } for p in permissions]
+                # Encode multiple permissions - format them correctly for the contract
+                formatted_permissions = []
+                for p in permissions:
+                    formatted_permission = {
+                        'ipAccount': self.web3.to_checksum_address(p['ipId']),
+                        'signer': self.web3.to_checksum_address(p['signer']),
+                        'to': self.web3.to_checksum_address(p['to']),
+                        'func': Web3.keccak(text=p['func'])[:4] if p.get('func') else b'\x00\x00\x00\x00',
+                        'permission': p['permission']
+                    }
+                    formatted_permissions.append(formatted_permission)
 
+                # Pass the array as a single argument
                 encode_data = self.access_controller_client.contract.encode_abi(
                     abi_element_identifier=permission_function,
                     args=[formatted_permissions]

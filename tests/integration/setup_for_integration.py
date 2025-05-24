@@ -30,7 +30,8 @@ from utils import (
     setup_royalty_vault,
     EVEN_SPLIT_GROUP_POOL,
     ROYALTY_POLICY_LRP,
-    CORE_METADATA_MODULE
+    CORE_METADATA_MODULE,
+    mint_by_spg
 )
 
 # Load environment variables
@@ -91,5 +92,6 @@ __all__ = [
     'private_key',
     'private_key_2',
     'EVEN_SPLIT_GROUP_POOL',
-    'ROYALTY_POLICY_LRP'
+    'ROYALTY_POLICY_LRP',
+    'mint_by_spg'
 ]

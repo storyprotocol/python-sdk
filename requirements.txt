@@ -1,0 +1,12 @@
+web3>=7.6.1
+pytest>=8.3.4
+pytest-cov>=6.0.0
+coverage>=7.6.9
+story-protocol-python-sdk>=0.1.9
+aiohttp>=3.11.11
+eth-account>=0.13.4
+eth-utils>=5.1.0
+pydantic>=2.10.4
+python-dotenv>=1.0.1
+requests>=2.32.3
+typing_extensions>=4.12.2

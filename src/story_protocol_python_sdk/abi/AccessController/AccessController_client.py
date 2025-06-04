@@ -28,6 +28,12 @@ class AccessControllerClient:
     def build_setAllPermissions_transaction(self, ipAccount, signer, permission, tx_params):
         return self.contract.functions.setAllPermissions(ipAccount, signer, permission).build_transaction(tx_params)
     
+    def setTransientBatchPermissions(self, permissions):
+        return self.contract.functions.setTransientBatchPermissions(permissions).transact()
+        
+    def build_setTransientBatchPermissions_transaction(self, permissions, tx_params):
+        return self.contract.functions.setTransientBatchPermissions(permissions).build_transaction(tx_params)
+    
     def setTransientPermission(self, ipAccount, signer, to, func, permission):
         return self.contract.functions.setTransientPermission(ipAccount, signer, to, func, permission).transact()
         

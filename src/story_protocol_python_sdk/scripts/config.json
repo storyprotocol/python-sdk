@@ -7,7 +7,7 @@
                 "PermissionSet",
                 "setAllPermissions",
                 "setTransientPermission",
-                "setTransientBatchPermissions"
+                "setBatchTransientPermissions"
             ]
         },
         {

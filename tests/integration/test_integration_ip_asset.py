@@ -278,50 +278,46 @@ class TestSPGNFTOperations:
                     'expect_minimum_group_reward_share': 0,
                     'expect_group_reward_pool': ZERO_ADDRESS
                 }
-            }]
+            }],
+            allow_duplicates=True
         )
 
         return {
             'parent_ip_id': response['ip_id'],
             'license_terms_id': response['license_terms_ids'][0]
         }
-    # def test_register_ip_asset_with_metadata(self, story_client, nft_collection):
-    #     token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account, "test-metadata")
-
-    #     response = story_client.IPAsset.register(
-    #         nft_contract=nft_collection,
-    #         token_id=token_id,
-    #         ip_metadata={
-    #             'ip_metadata_uri': "test-uri",
-    #             'ip_metadata_hash': web3.to_hex(web3.keccak(text="test-metadata-hash")),
-    #             'nft_metadata_hash': web3.to_hex(web3.keccak(text="test-nft-metadata-hash"))
-    #         },
-    #         deadline=1000
-    #     )
-
-    #     assert 'ip_id' in response
-    #     assert isinstance(response['ip_id'], str)
-    #     assert response['ip_id'] != ''
-
-    # def test_register_derivative_ip(self, story_client, parent_ip_id, license_terms_id):
-    #     token_child_id = mint_by_spg(MockERC721, story_client.web3, story_client.account)
         
-    #     result = story_client.IPAsset.register_derivative_ip(
-    #         nft_contract=MockERC721,
-    #         token_id=token_child_id,
-    #         deriv_data={
-    #             'parentIpIds': [parent_ip_id],
-    #             'licenseTermsIds': [license_terms_id],
-    #             'maxMintingFee': 0,
-    #             'maxRts': 5 * 10**6,
-    #             'maxRevenueShare': 0
-    #         },
-    #         deadline=1000,
-    #         tx_options={'waitForTransaction': True}
-    #     )
+    def test_register_ip_asset_with_metadata(self, story_client, nft_collection):
+        token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account, "test-metadata")
 
-    #     assert isinstance(result['tx_hash'], str) and result['tx_hash']
-    #     assert isinstance(result['ip_id'], str) and result['ip_id']
+        response = story_client.IPAsset.register(
+            nft_contract=nft_collection,
+            token_id=token_id,
+            deadline=1000
+        )
+
+        assert 'ip_id' in response
+        assert isinstance(response['ip_id'], str)
+        assert response['ip_id'] != ''
+
+    def test_register_derivative_ip(self, story_client, nft_collection, parent_ip_and_license_terms):
+        token_child_id = mint_by_spg(nft_collection, story_client.web3, story_client.account)
+        
+        result = story_client.IPAsset.register_derivative_ip(
+            nft_contract=nft_collection,
+            token_id=token_child_id,
+            deriv_data={
+                'parent_ip_ids': [parent_ip_and_license_terms['parent_ip_id']],
+                'license_terms_ids': [parent_ip_and_license_terms['license_terms_id']],
+                'max_minting_fee': 0,
+                'max_rts': 5 * 10**6,
+                'max_revenue_share': 0
+            },
+            deadline=1000
+        )
+
+        assert isinstance(result['tx_hash'], str) and result['tx_hash']
+        assert isinstance(result['ip_id'], str) and result['ip_id']
 
     def test_register_ip_and_attach_pil_terms(self, story_client, nft_collection, parent_ip_and_license_terms):
         token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account)

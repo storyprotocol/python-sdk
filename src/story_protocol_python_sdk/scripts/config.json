@@ -5,9 +5,7 @@
             "contract_address": "0xcCF37d0a503Ee1D4C11208672e622ed3DFB2275a",
             "functions": [
                 "PermissionSet",
-                "setPermission", 
                 "setAllPermissions",
-                "setBatchPermissions",
                 "setTransientPermission",
                 "setTransientBatchPermissions"
             ]

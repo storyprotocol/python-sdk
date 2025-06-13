@@ -400,9 +400,7 @@ class TestSPGNFTOperations:
         assert isinstance(result['tx_hash'], str) and result['tx_hash']
         assert isinstance(result['ip_id'], str) and result['ip_id']
         assert isinstance(result['license_terms_ids'], list) and result['license_terms_ids']
-
-# BORIS
-
+        
 # Add this test class to your existing test_integration_ip_asset.py file
 
 class TestIPAssetMint:

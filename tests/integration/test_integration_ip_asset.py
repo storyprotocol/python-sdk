@@ -400,3 +400,213 @@ class TestSPGNFTOperations:
         assert isinstance(result['tx_hash'], str) and result['tx_hash']
         assert isinstance(result['ip_id'], str) and result['ip_id']
         assert isinstance(result['license_terms_ids'], list) and result['license_terms_ids']
+        
+# Add this test class to your existing test_integration_ip_asset.py file
+
+class TestIPAssetMint:
+    @pytest.fixture(scope="module")
+    def nft_collection(self, story_client):
+        tx_data = story_client.NFTClient.create_nft_collection(
+            name="test-mint-collection",
+            symbol="MINT",
+            max_supply=100,
+            is_public_minting=True,
+            mint_open=True,
+            contract_uri="test-mint-uri",
+            mint_fee_recipient=account.address,
+        )
+        return tx_data['nft_contract']
+
+    def test_mint_basic(self, story_client, nft_collection):
+        """Test basic minting functionality"""
+        metadata_uri = "https://example.com/metadata/1.json"
+        metadata_hash = web3.keccak(text="test-metadata-content")
+        
+        response = story_client.IPAsset.mint(
+            nft_contract=nft_collection,
+            to_address=account.address,
+            metadata_uri=metadata_uri,
+            metadata_hash=metadata_hash,
+            allow_duplicates=False
+        )
+        
+        assert response is not None
+        assert isinstance(response, str)
+        assert len(response) > 0
+        assert response.startswith("0x")
+        
+        # Wait for transaction confirmation to verify it was successful
+        receipt = story_client.web3.eth.wait_for_transaction_receipt(response)
+        assert receipt.status == 1
+
+    def test_mint_with_duplicates_allowed(self, story_client, nft_collection):
+        """Test minting with duplicate metadata allowed"""
+        metadata_uri = "https://example.com/metadata/duplicate.json"
+        metadata_hash = web3.keccak(text="duplicate-metadata-content")
+        
+        # First mint
+        response1 = story_client.IPAsset.mint(
+            nft_contract=nft_collection,
+            to_address=account.address,
+            metadata_uri=metadata_uri,
+            metadata_hash=metadata_hash,
+            allow_duplicates=True
+        )
+        
+        assert response1 is not None
+        receipt1 = story_client.web3.eth.wait_for_transaction_receipt(response1)
+        assert receipt1.status == 1
+        
+        # Second mint with same metadata (should succeed with allow_duplicates=True)
+        response2 = story_client.IPAsset.mint(
+            nft_contract=nft_collection,
+            to_address=account.address,
+            metadata_uri=metadata_uri,
+            metadata_hash=metadata_hash,
+            allow_duplicates=True
+        )
+        
+        assert response2 is not None
+        receipt2 = story_client.web3.eth.wait_for_transaction_receipt(response2)
+        assert receipt2.status == 1
+        
+        # Verify different transaction hashes
+        assert response1 != response2
+
+    def test_mint_to_different_address(self, story_client, nft_collection):
+        """Test minting to a different recipient address"""
+        # Create a different recipient address for testing
+        different_account = story_client.web3.eth.account.create()
+        recipient_address = different_account.address
+        
+        metadata_uri = "https://example.com/metadata/different-recipient.json"
+        metadata_hash = web3.keccak(text="different-recipient-metadata")
+        
+        response = story_client.IPAsset.mint(
+            nft_contract=nft_collection,
+            to_address=recipient_address,
+            metadata_uri=metadata_uri,
+            metadata_hash=metadata_hash,
+            allow_duplicates=False
+        )
+        
+        assert response is not None
+        receipt = story_client.web3.eth.wait_for_transaction_receipt(response)
+        assert receipt.status == 1
+
+    def test_mint_with_various_metadata_formats(self, story_client, nft_collection):
+        """Test minting with different metadata URI formats"""
+        test_cases = [
+            {
+                "uri": "ipfs://QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+                "content": "ipfs-metadata"
+            },
+            {
+                "uri": "https://gateway.pinata.cloud/ipfs/QmTest123",
+                "content": "pinata-gateway-metadata"
+            },
+            {
+                "uri": "ar://abc123def456",
+                "content": "arweave-metadata"
+            },
+            {
+                "uri": "",  # Empty URI
+                "content": "empty-uri-metadata"
+            }
+        ]
+        
+        for i, test_case in enumerate(test_cases):
+            metadata_hash = web3.keccak(text=f"{test_case['content']}-{i}")
+            
+            response = story_client.IPAsset.mint(
+                nft_contract=nft_collection,
+                to_address=account.address,
+                metadata_uri=test_case["uri"],
+                metadata_hash=metadata_hash,
+                allow_duplicates=False
+            )
+            
+            assert response is not None
+            receipt = story_client.web3.eth.wait_for_transaction_receipt(response)
+            assert receipt.status == 1
+
+    def test_mint_with_zero_hash(self, story_client, nft_collection):
+        """Test minting with zero hash"""
+        metadata_uri = "https://example.com/metadata/zero-hash.json"
+        zero_hash = b'\x00' * 32  # 32 bytes of zeros
+        
+        response = story_client.IPAsset.mint(
+            nft_contract=nft_collection,
+            to_address=account.address,
+            metadata_uri=metadata_uri,
+            metadata_hash=zero_hash,
+            allow_duplicates=False
+        )
+        
+        assert response is not None
+        receipt = story_client.web3.eth.wait_for_transaction_receipt(response)
+        assert receipt.status == 1
+
+
+    def test_mint_error_cases(self, story_client, nft_collection):
+        """Test various error cases for minting"""
+        metadata_uri = "https://example.com/metadata/error-test.json"
+        metadata_hash = web3.keccak(text="error-test-metadata")
+        
+        # Test with invalid address format (not a valid hex address)
+        with pytest.raises(Exception):
+            story_client.IPAsset.mint(
+                nft_contract=nft_collection,
+                to_address="invalid-address-format",
+                metadata_uri=metadata_uri,
+                metadata_hash=metadata_hash,
+                allow_duplicates=False
+            )
+        
+        # Test with invalid metadata hash format (wrong length - too short)
+        with pytest.raises(Exception):
+            story_client.IPAsset.mint(
+                nft_contract=nft_collection,
+                to_address=account.address,
+                metadata_uri=metadata_uri,
+                metadata_hash=b"too_short",  # bytes32 should be 32 bytes
+                allow_duplicates=False
+            )
+        
+        # Test with invalid metadata hash format (wrong length - too long)
+        with pytest.raises(Exception):
+            story_client.IPAsset.mint(
+                nft_contract=nft_collection,
+                to_address=account.address,
+                metadata_uri=metadata_uri,
+                metadata_hash=b"this_is_way_too_long_for_bytes32_format_and_should_fail",
+                allow_duplicates=False
+            )
+
+    def test_mint_with_existing_metadata_hash_no_duplicates(self, story_client, nft_collection):
+        """Test that minting with existing metadata hash fails when duplicates not allowed"""
+        metadata_uri = "https://example.com/metadata/no-duplicates.json"
+        metadata_hash = web3.keccak(text="no-duplicates-metadata")
+        
+        # First mint should succeed
+        response1 = story_client.IPAsset.mint(
+            nft_contract=nft_collection,
+            to_address=account.address,
+            metadata_uri=metadata_uri,
+            metadata_hash=metadata_hash,
+            allow_duplicates=False
+        )
+        
+        assert response1 is not None
+        receipt1 = story_client.web3.eth.wait_for_transaction_receipt(response1)
+        assert receipt1.status == 1
+        
+        # Second mint with same metadata hash should fail when allow_duplicates=False
+        with pytest.raises(Exception):
+            story_client.IPAsset.mint(
+                nft_contract=nft_collection,
+                to_address=account.address,
+                metadata_uri=metadata_uri,
+                metadata_hash=metadata_hash,
+                allow_duplicates=False
+            )

@@ -18,6 +18,8 @@ from story_protocol_python_sdk.utils.transaction_utils import build_and_send_tra
 from story_protocol_python_sdk.utils.sign import Sign
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
 
+from story_protocol_python_sdk.abi.SPGNFTImpl.SPGNFTImpl_client import SPGNFTImplClient
+
 class IPAsset:
     """
     IPAssetClient allows you to create, get, and list IP Assets with Story
@@ -46,6 +48,43 @@ class IPAsset:
         self.license_terms_util = LicenseTerms(web3)
         self.sign_util = Sign(web3, self.chain_id, self.account)
 
+    def mint(
+        self,
+        nft_contract: str,
+        to_address: str,
+        metadata_uri: str,
+        metadata_hash: bytes,
+        allow_duplicates: bool = False,
+        tx_options: dict = None
+    ):
+        spg_nft_client = SPGNFTImplClient(self.web3, contract_address=nft_contract)
+        
+        def build_mint_transaction(to, metadata_uri, metadata_hash, allow_duplicates, transaction_options):
+            return spg_nft_client.contract.functions.mint(
+                to,
+                metadata_uri,
+                metadata_hash,
+                allow_duplicates
+            ).build_transaction(transaction_options)
+        
+        response = build_and_send_transaction(
+            self.web3,
+            self.account,
+            build_mint_transaction,
+            to_address,
+            metadata_uri,
+            metadata_hash,
+            allow_duplicates,
+            tx_options=tx_options
+        )
+        
+        tx_hash = response['tx_hash']
+        # Ensure the transaction hash starts with "0x"
+        if isinstance(tx_hash, str) and not tx_hash.startswith('0x'):
+            tx_hash = '0x' + tx_hash
+        
+        return tx_hash
+    
     def register(
         self,
         nft_contract: str,

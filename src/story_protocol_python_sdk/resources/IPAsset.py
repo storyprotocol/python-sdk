@@ -44,7 +44,6 @@ class IPAsset:
         self.core_metadata_module_client = CoreMetadataModuleClient(web3)
         self.access_controller_client = AccessControllerClient(web3)
         self.pi_license_template_client = PILicenseTemplateClient(web3)
-        self.nft_client = SPGNFTImplClient(web3)
 
         self.license_terms_util = LicenseTerms(web3)
         self.sign_util = Sign(web3, self.chain_id, self.account)

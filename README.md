@@ -69,7 +69,13 @@ pytest
 - Unit Tests
 
 ```
-pytest tests/unit/resources -v -ra -q
+coverage run -m pytest tests/unit -v -ra -q
+```
+
+- Generating a Coverage Report
+
+```
+coverage report
 ```
 
 ## Release

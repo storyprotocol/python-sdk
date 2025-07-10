@@ -1,75 +1,108 @@
-import os
-import sys
 import pytest
-from unittest.mock import patch, MagicMock
-from web3 import Web3
-from dotenv import load_dotenv
+from unittest.mock import Mock, patch
 
-# Ensure the src directory is in the Python path
-current_dir = os.path.dirname(__file__)
-src_path = os.path.abspath(os.path.join(current_dir, '..', '..', '..'))
-if src_path not in sys.path:
-    sys.path.append(src_path)
+from story_protocol_python_sdk.resources.Permission import Permission
+from tests.unit.fixtures.data import CHAIN_ID, ADDRESS, CHAIN_ID, STATE, TX_HASH
+from tests.unit.fixtures.web3 import mock_web3
 
-from src.story_protocol_python_sdk.resources.Permission import Permission
-
-# Load environment variables from .env file
-load_dotenv()
-private_key = os.getenv('WALLET_PRIVATE_KEY')
-rpc_url = os.getenv('RPC_PROVIDER_URL')
-
-# Initialize Web3
-web3 = Web3(Web3.HTTPProvider(rpc_url))
-
-# Check if connected
-if not web3.is_connected():
-    raise Exception("Failed to connect to Web3 provider")
-
-# Set up the account with the private key
-account = web3.eth.account.from_key(private_key)
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 @pytest.fixture
 def permission():
-    chain_id = 11155111  # Sepolia chain ID
-    return Permission(web3, account, chain_id)
+    return Permission(mock_web3, ADDRESS, CHAIN_ID)
 
 
-def test_unregistered_ip_account(permission):
-    with patch.object(permission, '_is_registered', return_value=False):
-        with pytest.raises(ValueError, match="The IP account with id 0x0000000000000000000000000000000000000000 is not registered."):
-            permission.setPermission(ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS, 1)
+class TestSetPermission:
+    def test_unregistered_ip_account(self, permission: Permission):
+        with patch.object(
+            permission.ip_asset_registry_client, "isRegistered", return_value=False
+        ):
+            with pytest.raises(
+                Exception,
+                match="IP id with 0x1234567890123456789012345678901234567890 is not registered.",
+            ):
+                permission.set_permission(ADDRESS, ADDRESS, ADDRESS, 1)
 
-def test_invalid_signer_address(permission):
-    with pytest.raises(ValueError, match="The address 0xInvalidAddress that can call 'to' on behalf of the 'ip_asset' is not a valid address."):
-        permission.setPermission(ZERO_ADDRESS, "0xInvalidAddress", ZERO_ADDRESS, "0x11111111111111111111111111111")
+    def test_invalid_signer_address(self, permission: Permission):
+        with patch.object(
+            permission.ip_asset_registry_client, "isRegistered", return_value=True
+        ):
+            with pytest.raises(Exception, match="Invalid address: 0xInvalidAddress."):
+                permission.set_permission(ADDRESS, "0xInvalidAddress", ADDRESS, 1)
 
-def test_invalid_to_address(permission):
-    with pytest.raises(ValueError, match="The recipient of the transaction 0xInvalidAddress is not a valid address."):
-        permission.setPermission(ZERO_ADDRESS, ZERO_ADDRESS, "0xInvalidAddress", "0x11111111111111111111111111111")
+    def test_invalid_to_address(self, permission: Permission):
+        with pytest.raises(Exception, match="Invalid address: 0xInvalidAddress."):
+            permission.set_permission(ADDRESS, ADDRESS, "0xInvalidAddress", 1)
 
-def test_successful_transaction(permission):
-    ip_asset = "0x587AE719cACC8cC34188D9648d67CF885bE10558"
-    signer = "0x8059F63663576bE3605B3CcD30aaEb858C345640"
-    to = "0x2ac240293f12032E103458451dE8A8096c5A72E8"
-    func = "0x00000000"
-    permission_level = 1
-    tx_hash = "0x0c0cce07beb64ccfbdd59da111f23084ab7c9e96a951f7381af49e792d014c04"
-    
-    with patch.object(permission, '_is_registered', return_value=True), \
-         patch('story_protocol_python_sdk.resources.IPAccount.IPAccount.execute', return_value={'txHash': tx_hash}):
-        response = permission.setPermission(ip_asset, signer, to, permission_level, func)
-        assert response['txHash'] == tx_hash
+    def test_successful_transaction(self, permission: Permission):
+        with patch.object(
+            permission.ip_asset_registry_client, "isRegistered", return_value=True
+        ), patch.object(
+            permission.ip_account, "execute", return_value={"tx_hash": TX_HASH}
+        ):
+            response = permission.set_permission(ADDRESS, ADDRESS, ADDRESS, 1)
+            assert response["tx_hash"] == TX_HASH
 
-def test_transaction_request_fails(permission):
-    ip_asset = "0x587AE719cACC8cC34188D9648d67CF885bE10558"
-    signer = "0x8059F63663576bE3605B3CcD30aaEb858C345640"
-    to = "0x2ac240293f12032E103458451dE8A8096c5A72E8"
-    func = "0x00000000"
-    permission_level = 1
-    
-    with patch.object(permission, '_is_registered', return_value=True), \
-         patch('story_protocol_python_sdk.resources.IPAccount.IPAccount.execute', side_effect=Exception("Transaction failed")):
-        with pytest.raises(Exception) as excinfo:
-            permission.setPermission(ip_asset, signer, to, permission_level, func)
-        assert str(excinfo.value) == "Transaction failed"
+    def test_transaction_request_fails(self, permission: Permission):
+        with patch.object(
+            permission.ip_asset_registry_client, "isRegistered", return_value=True
+        ), patch.object(
+            permission.ip_account,
+            "execute",
+            side_effect=Exception("Transaction failed"),
+        ):
+            with pytest.raises(Exception, match="Transaction failed"):
+                permission.set_permission(ADDRESS, ADDRESS, ADDRESS, 1)
+
+
+class TestSetAllPermissions:
+    def test_successful_transaction(self, permission: Permission):
+        with patch.object(
+            permission.ip_asset_registry_client, "isRegistered", return_value=True
+        ), patch.object(
+            permission.ip_account, "execute", return_value={"tx_hash": TX_HASH}
+        ):
+            response = permission.set_all_permissions(ADDRESS, ADDRESS, 1)
+            assert response["tx_hash"] == TX_HASH
+
+    def test_transaction_request_fails(self, permission: Permission):
+        with patch.object(
+            permission.ip_asset_registry_client, "isRegistered", return_value=True
+        ), patch.object(
+            permission.ip_account,
+            "execute",
+            side_effect=Exception("Transaction failed"),
+        ):
+            with pytest.raises(Exception, match="Transaction failed"):
+                permission.set_all_permissions(ADDRESS, ADDRESS, 1)
+
+
+class TestCreateSetPermissionSignature:
+
+    def test_invalid_deadline(self, permission: Permission):
+        with pytest.raises(Exception, match="Invalid deadline value."):
+            permission.create_set_permission_signature(
+                ADDRESS, ADDRESS, ADDRESS, 1, deadline=-1
+            )
+
+    def test_successful_signature(self, permission: Permission):
+        mock_client = patch(
+            "story_protocol_python_sdk.resources.Permission.IPAccountImplClient"
+        ).start()
+        mock_client.return_value.state.return_value = STATE
+        with patch.multiple(
+            permission,
+            ip_account=Mock(
+                execute_with_sig=Mock(return_value={"tx_hash": TX_HASH}),
+            ),
+            sign_util=Mock(
+                get_permission_signature=Mock(
+                    return_value={
+                        "signature": "0x1234567890123456789012345678901234567890"
+                    }
+                )
+            ),
+        ):
+            response = permission.create_set_permission_signature(
+                ADDRESS, ADDRESS, ADDRESS, 1
+            )
+            assert response["tx_hash"] == TX_HASH

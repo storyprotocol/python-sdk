@@ -9,4 +9,12 @@ from .resources.Dispute import Dispute
 from .resources.WIP import WIP
 
 
-__all__ = ['StoryClient', 'IPAsset', 'License', 'Royalty', 'IPAccount', 'Dispute', 'WIP']
+__all__ = [
+    "StoryClient",
+    "IPAsset",
+    "License",
+    "Royalty",
+    "IPAccount",
+    "Dispute",
+    "WIP",
+]

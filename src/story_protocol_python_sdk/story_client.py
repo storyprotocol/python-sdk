@@ -5,7 +5,7 @@ import sys
 
 # Ensure the src directory is in the Python path
 current_dir = os.path.dirname(__file__)
-src_path = os.path.abspath(os.path.join(current_dir, '..'))
+src_path = os.path.abspath(os.path.join(current_dir, ".."))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
@@ -19,6 +19,7 @@ from story_protocol_python_sdk.resources.Dispute import Dispute
 from story_protocol_python_sdk.resources.WIP import WIP
 from story_protocol_python_sdk.resources.Group import Group
 
+
 class StoryClient:
     """
     A client for interacting with Story Protocol, providing access to IPAsset, License, and Royalty resources.
@@ -27,6 +28,7 @@ class StoryClient:
     :param account: The account to use for transactions.
     :param chain_id int: The ID of the blockchain network.
     """
+
     def __init__(self, web3, account, chain_id: int):
         """
         Initialize the StoryClient with the given web3 instance, account, and chain ID.
@@ -77,7 +79,7 @@ class StoryClient:
         if self._license is None:
             self._license = License(self.web3, self.account, self.chain_id)
         return self._license
-    
+
     @property
     def Royalty(self) -> Royalty:
         """
@@ -88,7 +90,7 @@ class StoryClient:
         if self._royalty is None:
             self._royalty = Royalty(self.web3, self.account, self.chain_id)
         return self._royalty
-    
+
     @property
     def IPAccount(self) -> IPAccount:
         """
@@ -99,7 +101,7 @@ class StoryClient:
         if self._ip_account is None:
             self._ip_account = IPAccount(self.web3, self.account, self.chain_id)
         return self._ip_account
-    
+
     @property
     def Permission(self) -> Permission:
         """
@@ -110,7 +112,7 @@ class StoryClient:
         if self._permission is None:
             self._permission = Permission(self.web3, self.account, self.chain_id)
         return self._permission
-    
+
     @property
     def NFTClient(self) -> NFTClient:
         """
@@ -132,7 +134,7 @@ class StoryClient:
         if self._dispute is None:
             self._dispute = Dispute(self.web3, self.account, self.chain_id)
         return self._dispute
-    
+
     @property
     def WIP(self) -> WIP:
         """
@@ -143,7 +145,7 @@ class StoryClient:
         if self._wip is None:
             self._wip = WIP(self.web3, self.account, self.chain_id)
         return self._wip
-    
+
     @property
     def Group(self) -> Group:
         """
@@ -152,7 +154,7 @@ class StoryClient:
         if self._group is None:
             self._group = Group(self.web3, self.account, self.chain_id)
         return self._group
-    
+
     def get_wallet_balance(self) -> int:
         """
         Get the WIP token balance of the current wallet.
@@ -160,7 +162,7 @@ class StoryClient:
         :return int: The WIP token balance of the current wallet.
         :raises ValueError: If no account is found.
         """
-        if not self.account or not hasattr(self.account, 'address'):
+        if not self.account or not hasattr(self.account, "address"):
             raise ValueError("No account found in wallet")
-        
+
         return self.web3.eth.get_balance(self.account.address)

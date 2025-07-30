@@ -78,10 +78,16 @@ coverage run -m pytest tests/unit -v -ra -q
 coverage report
 ```
 
+## Formatting
+
+```
+black .
+```
+
 ## Release
 
-| Package                         | Description                                    |
-| :------------------------------ | :--------------------------------------------- |
+| Package                                                      | Description                                           |
+| :----------------------------------------------------------- | :---------------------------------------------------- |
 | [story_protocol_python_sdk](./src/story_protocol_python_sdk) | A Python SDK for interacting with the Story Protocol. |
 
 ## Contributing

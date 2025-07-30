@@ -58,6 +58,12 @@ aeneid_chain_id = 1315
 story_client = StoryClient(web3, account, aeneid_chain_id)
 ```
 
+## Init pre-commit hooks
+
+```
+pre-commit install
+```
+
 ## Running test cases
 
 - Integration Tests

@@ -5,6 +5,7 @@ from web3 import Web3
 from story_protocol_python_sdk.abi.WIP.WIP_client import WIPClient
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
+
 class WIP:
     """
     A class to manage Wrapped IP (WIP) token operations.
@@ -13,6 +14,7 @@ class WIP:
     :param account: The account to use for transactions.
     :param chain_id int: The ID of the blockchain network.
     """
+
     def __init__(self, web3: Web3, account, chain_id: int):
         self.web3 = web3
         self.account = account
@@ -35,20 +37,22 @@ class WIP:
 
             # Prepare transaction options
             transaction_options = tx_options or {}
-            transaction_options.update({
-                'from': self.account.address,
-                'nonce': self.web3.eth.get_transaction_count(self.account.address),
-                'value': amount
-            })
-            
+            transaction_options.update(
+                {
+                    "from": self.account.address,
+                    "nonce": self.web3.eth.get_transaction_count(self.account.address),
+                    "value": amount,
+                }
+            )
+
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.wip_client.build_deposit_transaction,
-                tx_options=transaction_options
+                tx_options=transaction_options,
             )
 
-            return {'tx_hash': response['tx_hash']}
+            return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
             raise ValueError(f"Failed to deposit IP for WIP: {str(e)}")
@@ -70,10 +74,10 @@ class WIP:
                 self.account,
                 self.wip_client.build_withdraw_transaction,
                 amount,
-                tx_options=tx_options
+                tx_options=tx_options,
             )
 
-            return {'tx_hash': response['tx_hash']}
+            return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
             raise ValueError(f"Failed to withdraw WIP: {str(e)}")
@@ -102,10 +106,10 @@ class WIP:
                 self.wip_client.build_approve_transaction,
                 spender,
                 amount,
-                tx_options=tx_options
+                tx_options=tx_options,
             )
 
-            return {'tx_hash': response['tx_hash']}
+            return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
             raise ValueError(f"Failed to approve WIP: {str(e)}")
@@ -151,15 +155,17 @@ class WIP:
                 self.wip_client.build_transfer_transaction,
                 to,
                 amount,
-                tx_options=tx_options
+                tx_options=tx_options,
             )
 
-            return {'tx_hash': response['tx_hash']}
+            return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
             raise ValueError(f"Failed to transfer WIP: {str(e)}")
 
-    def transfer_from(self, from_address: str, to: str, amount: int, tx_options: dict = None) -> dict:
+    def transfer_from(
+        self, from_address: str, to: str, amount: int, tx_options: dict = None
+    ) -> dict:
         """
         Transfers `amount` of WIP from `from_address` to a recipient `to`.
 
@@ -189,14 +195,14 @@ class WIP:
                 from_address,
                 to,
                 amount,
-                tx_options=tx_options
+                tx_options=tx_options,
             )
 
-            return {'tx_hash': response['tx_hash']}
+            return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
             raise ValueError(f"Failed to transfer WIP from another address: {str(e)}")
-    
+
     def allowance(self, owner: str, spender: str) -> int:
         """
         Returns the amount of WIP tokens that `spender` is allowed to spend on behalf of `owner`.

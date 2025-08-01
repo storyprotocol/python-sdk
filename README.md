@@ -58,6 +58,12 @@ aeneid_chain_id = 1315
 story_client = StoryClient(web3, account, aeneid_chain_id)
 ```
 
+## Init pre-commit hooks
+
+```
+pre-commit install
+```
+
 ## Running test cases
 
 - Integration Tests
@@ -78,10 +84,16 @@ coverage run -m pytest tests/unit -v -ra -q
 coverage report
 ```
 
+## Formatting
+
+```
+black .
+```
+
 ## Release
 
-| Package                         | Description                                    |
-| :------------------------------ | :--------------------------------------------- |
+| Package                                                      | Description                                           |
+| :----------------------------------------------------------- | :---------------------------------------------------- |
 | [story_protocol_python_sdk](./src/story_protocol_python_sdk) | A Python SDK for interacting with the Story Protocol. |
 
 ## Contributing

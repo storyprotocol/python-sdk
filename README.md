@@ -58,11 +58,9 @@ aeneid_chain_id = 1315
 story_client = StoryClient(web3, account, aeneid_chain_id)
 ```
 
-## Init pre-commit hooks
+## Development
 
-```
-pre-commit install
-```
+For detailed development setup instructions, including how to install dependencies with `uv` and set up pre-commit hooks, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Running test cases
 

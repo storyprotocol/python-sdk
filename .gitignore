@@ -104,3 +104,6 @@ celerybeat.pid
 .env
 
 web3py.md
+
+# AI Assistant Configuration
+CLAUDE.md

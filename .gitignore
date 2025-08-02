@@ -102,6 +102,11 @@ celerybeat.pid
 
 # Environments
 .env
+venv/
+env/
+ENV/
+.venv/
+virtualenv/
 
 web3py.md
 

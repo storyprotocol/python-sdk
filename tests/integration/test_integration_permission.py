@@ -1,7 +1,10 @@
 # tests/integration/test_integration_permission.py
 
 import pytest
-from setup_for_integration import (
+
+from story_protocol_python_sdk.story_client import StoryClient
+
+from .setup_for_integration import (
     CORE_METADATA_MODULE,
     MockERC721,
     account,
@@ -12,7 +15,7 @@ from setup_for_integration import (
 
 class TestPermissions:
     @pytest.fixture(scope="class")
-    def ip_id(self, story_client):
+    def ip_id(self, story_client: StoryClient):
         """Fixture to create an IP for testing permissions."""
         token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
         response = story_client.IPAsset.register(
@@ -21,7 +24,7 @@ class TestPermissions:
         assert "ip_id" in response, "Failed to register IP"
         return response["ip_id"]
 
-    def test_set_permission(self, story_client, ip_id):
+    def test_set_permission(self, story_client: StoryClient, ip_id):
         """Test setting permission successfully."""
         response = story_client.Permission.set_permission(
             ip_id=ip_id,
@@ -36,7 +39,7 @@ class TestPermissions:
         assert isinstance(response["tx_hash"], str)
         assert len(response["tx_hash"]) > 0
 
-    def test_set_all_permissions(self, story_client, ip_id):
+    def test_set_all_permissions(self, story_client: StoryClient, ip_id):
         """Test setting all permissions successfully."""
         response = story_client.Permission.set_all_permissions(
             ip_id=ip_id, signer=account.address, permission=1  # ALLOW
@@ -47,7 +50,7 @@ class TestPermissions:
         assert isinstance(response["tx_hash"], str)
         assert len(response["tx_hash"]) > 0
 
-    def test_create_set_permission_signature(self, story_client, ip_id):
+    def test_create_set_permission_signature(self, story_client: StoryClient, ip_id):
         """Test creating set permission signature."""
         deadline = web3.eth.get_block("latest")["timestamp"] + 60000
 
@@ -65,7 +68,7 @@ class TestPermissions:
         assert isinstance(response["tx_hash"], str)
         assert len(response["tx_hash"]) > 0
 
-    def test_set_permission_invalid_ip(self, story_client):
+    def test_set_permission_invalid_ip(self, story_client: StoryClient):
         """Test setting permission for an unregistered IP."""
         unregistered_ip = "0x1234567890123456789012345678901234567890"
 
@@ -79,7 +82,7 @@ class TestPermissions:
 
         assert f"IP id with {unregistered_ip} is not registered" in str(exc_info.value)
 
-    def test_set_permission_invalid_addresses(self, story_client, ip_id):
+    def test_set_permission_invalid_addresses(self, story_client: StoryClient, ip_id):
         """Test that set_permission raises proper exceptions for invalid addresses."""
         invalid_signer = "0xinvalid_address"
 
@@ -119,7 +122,7 @@ class TestPermissions:
                 f"set_permission should accept lowercase addresses, but raised: {e}"
             )
 
-    def test_different_permission_levels(self, story_client, ip_id):
+    def test_different_permission_levels(self, story_client: StoryClient, ip_id):
         """Test setting and changing different permission levels."""
         DISALLOW = 0
         ALLOW = 1
@@ -174,7 +177,7 @@ class TestPermissions:
         assert response is not None
         assert "tx_hash" in response
 
-    def test_different_function_selectors(self, story_client, ip_id):
+    def test_different_function_selectors(self, story_client: StoryClient, ip_id):
         """Test setting permissions with different function selectors."""
         ALLOW = 1
 
@@ -237,7 +240,9 @@ class TestPermissions:
         assert response is not None
         assert "tx_hash" in response
 
-    def test_permission_hierarchies_and_overrides(self, story_client, ip_id):
+    def test_permission_hierarchies_and_overrides(
+        self, story_client: StoryClient, ip_id
+    ):
         """Test permission hierarchies and how permissions override each other."""
         DISALLOW = 0
         ALLOW = 1

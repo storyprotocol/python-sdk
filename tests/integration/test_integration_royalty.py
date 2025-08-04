@@ -3,7 +3,10 @@
 import copy
 
 import pytest
-from setup_for_integration import (
+
+from story_protocol_python_sdk.story_client import StoryClient
+
+from .setup_for_integration import (
     PIL_LICENSE_TEMPLATE,
     ROYALTY_MODULE,
     ROYALTY_POLICY,
@@ -21,7 +24,7 @@ from setup_for_integration import (
 class TestRoyalty:
 
     @pytest.fixture(scope="module")
-    def setup_ips_and_licenses(self, story_client):
+    def setup_ips_and_licenses(self, story_client: StoryClient):
         """Setup parent and child IPs with proper license relationships"""
 
         parent_token_id = get_token_id(
@@ -85,7 +88,9 @@ class TestRoyalty:
             "license_terms_id": license_terms_id,
         }
 
-    def test_pay_royalty_on_behalf(self, story_client, setup_ips_and_licenses):
+    def test_pay_royalty_on_behalf(
+        self, story_client: StoryClient, setup_ips_and_licenses
+    ):
         """Test paying royalty on behalf of a payer IP to a receiver IP"""
         parent_ip_id = setup_ips_and_licenses["parent_ip_id"]
         child_ip_id = setup_ips_and_licenses["child_ip_id"]
@@ -100,7 +105,7 @@ class TestRoyalty:
         assert response is not None
         assert response["tx_hash"] is not None and isinstance(response["tx_hash"], str)
 
-    def test_claimable_revenue(self, story_client, setup_ips_and_licenses):
+    def test_claimable_revenue(self, story_client: StoryClient, setup_ips_and_licenses):
         """Test checking claimable revenue"""
         parent_ip_id = setup_ips_and_licenses["parent_ip_id"]
 
@@ -111,7 +116,7 @@ class TestRoyalty:
         assert isinstance(response, int)
 
     def test_pay_royalty_unregistered_receiver(
-        self, story_client, setup_ips_and_licenses
+        self, story_client: StoryClient, setup_ips_and_licenses
     ):
         """Test that paying royalty to unregistered IP fails appropriately"""
         child_ip_id = setup_ips_and_licenses["child_ip_id"]
@@ -128,7 +133,9 @@ class TestRoyalty:
                 amount=1000,
             )
 
-    def test_pay_royalty_invalid_amount(self, story_client, setup_ips_and_licenses):
+    def test_pay_royalty_invalid_amount(
+        self, story_client: StoryClient, setup_ips_and_licenses
+    ):
         """Test that paying with invalid amount fails appropriately"""
         parent_ip_id = setup_ips_and_licenses["parent_ip_id"]
         child_ip_id = setup_ips_and_licenses["child_ip_id"]
@@ -144,7 +151,7 @@ class TestRoyalty:
 
 class TestClaimAllRevenue:
     @pytest.fixture(scope="module")
-    def setup_claim_all_revenue(self, story_client):
+    def setup_claim_all_revenue(self, story_client: StoryClient):
         # Create NFT collection
         collection_response = story_client.NFTClient.create_nft_collection(
             name="free-collection",
@@ -267,7 +274,9 @@ class TestClaimAllRevenue:
 
         return {"ip_a": ip_a, "ip_b": ip_b, "ip_c": ip_c, "ip_d": ip_d}
 
-    def test_claim_all_revenue(self, setup_claim_all_revenue, story_client):
+    def test_claim_all_revenue(
+        self, setup_claim_all_revenue, story_client: StoryClient
+    ):
         response = story_client.Royalty.claim_all_revenue(
             ancestor_ip_id=setup_claim_all_revenue["ip_a"],
             claimer=setup_claim_all_revenue["ip_a"],
@@ -286,7 +295,7 @@ class TestClaimAllRevenue:
         assert response["claimed_tokens"][0]["amount"] == 120
 
     @pytest.fixture(scope="module")
-    def setup_claim_all_revenue_claim_options(self, story_client):
+    def setup_claim_all_revenue_claim_options(self, story_client: StoryClient):
         # Create NFT collection
         collection_response = story_client.NFTClient.create_nft_collection(
             name="free-collection",
@@ -410,7 +419,7 @@ class TestClaimAllRevenue:
         return {"ip_a": ip_a, "ip_b": ip_b, "ip_c": ip_c, "ip_d": ip_d}
 
     def test_claim_all_revenue_claim_options(
-        self, setup_claim_all_revenue_claim_options, story_client
+        self, setup_claim_all_revenue_claim_options, story_client: StoryClient
     ):
         """Test claiming all revenue with specific claim options"""
         response = story_client.Royalty.claim_all_revenue(

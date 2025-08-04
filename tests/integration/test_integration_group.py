@@ -3,7 +3,8 @@
 import copy
 
 import pytest
-from setup_for_integration import (
+
+from .setup_for_integration import (
     EVEN_SPLIT_GROUP_POOL,
     PIL_LICENSE_TEMPLATE,
     ROYALTY_POLICY_LRP,

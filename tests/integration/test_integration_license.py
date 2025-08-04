@@ -1,7 +1,10 @@
 # tests/integration/test_integration_license.py
 
 import pytest
-from setup_for_integration import (
+
+from story_protocol_python_sdk.story_client import StoryClient
+
+from .setup_for_integration import (
     PIL_LICENSE_TEMPLATE,
     ROYALTY_MODULE,
     ROYALTY_POLICY,
@@ -15,7 +18,7 @@ from setup_for_integration import (
 )
 
 
-def test_register_pil_terms(story_client):
+def test_register_pil_terms(story_client: StoryClient):
     response = story_client.License.register_pil_terms(
         transferable=False,
         royalty_policy=story_client.web3.to_checksum_address(
@@ -46,7 +49,7 @@ def test_register_pil_terms(story_client):
     assert isinstance(response["license_terms_id"], int)
 
 
-def test_register_non_com_social_remixing_pil(story_client):
+def test_register_non_com_social_remixing_pil(story_client: StoryClient):
     response = story_client.License.register_non_com_social_remixing_pil()
 
     assert response is not None
@@ -56,7 +59,7 @@ def test_register_non_com_social_remixing_pil(story_client):
 
 
 @pytest.fixture(scope="module")
-def register_commercial_use_pil(story_client):
+def register_commercial_use_pil(story_client: StoryClient):
     response = story_client.License.register_commercial_use_pil(
         default_minting_fee=11, currency=MockERC20, royalty_policy=ROYALTY_POLICY
     )
@@ -75,12 +78,14 @@ def register_commercial_use_pil(story_client):
     return response["license_terms_id"]
 
 
-def test_register_commercial_use_pil(story_client, register_commercial_use_pil):
+def test_register_commercial_use_pil(
+    story_client: StoryClient, register_commercial_use_pil
+):
     assert register_commercial_use_pil is not None
 
 
 @pytest.fixture(scope="module")
-def register_commercial_remix_pil(story_client):
+def register_commercial_remix_pil(story_client: StoryClient):
     response = story_client.License.register_commercial_remix_pil(
         default_minting_fee=1,
         currency=MockERC20,
@@ -102,12 +107,14 @@ def register_commercial_remix_pil(story_client):
     return response["license_terms_id"]
 
 
-def test_register_commercial_remix_pil(story_client, register_commercial_remix_pil):
+def test_register_commercial_remix_pil(
+    story_client: StoryClient, register_commercial_remix_pil
+):
     assert register_commercial_remix_pil is not None
 
 
 @pytest.fixture(scope="module")
-def ip_id(story_client):
+def ip_id(story_client: StoryClient):
     token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
 
     response = story_client.IPAsset.register(nft_contract=MockERC721, token_id=token_id)
@@ -135,7 +142,9 @@ def ip_id(story_client):
     return response["ip_id"]
 
 
-def test_attach_license_terms(story_client, ip_id, register_commercial_use_pil):
+def test_attach_license_terms(
+    story_client: StoryClient, ip_id, register_commercial_use_pil
+):
     license_terms_id = register_commercial_use_pil
 
     response = story_client.License.attach_license_terms(
@@ -151,7 +160,9 @@ def test_attach_license_terms(story_client, ip_id, register_commercial_use_pil):
     assert len(response["tx_hash"]) > 0, "'tx_hash' is empty."
 
 
-def test_mint_license_tokens(story_client, ip_id, register_commercial_use_pil):
+def test_mint_license_tokens(
+    story_client: StoryClient, ip_id, register_commercial_use_pil
+):
     response = story_client.License.mint_license_tokens(
         licensor_ip_id=ip_id,
         license_template=PIL_LICENSE_TEMPLATE,
@@ -179,7 +190,7 @@ def test_mint_license_tokens(story_client, ip_id, register_commercial_use_pil):
     ), "Not all elements in 'license_token_ids' are integers."
 
 
-def test_get_license_terms(story_client):
+def test_get_license_terms(story_client: StoryClient):
     selectedLicenseTermsId = 3
 
     response = story_client.License.get_license_terms(selectedLicenseTermsId)
@@ -187,7 +198,9 @@ def test_get_license_terms(story_client):
     assert response is not None, "Response is None, indicating the call failed."
 
 
-def test_predict_minting_license_fee(story_client, ip_id, register_commercial_use_pil):
+def test_predict_minting_license_fee(
+    story_client: StoryClient, ip_id, register_commercial_use_pil
+):
     response = story_client.License.predict_minting_license_fee(
         licensor_ip_id=ip_id, license_terms_id=register_commercial_use_pil, amount=1
     )
@@ -204,7 +217,9 @@ def test_predict_minting_license_fee(story_client, ip_id, register_commercial_us
     assert isinstance(response["amount"], int), "'amount' is not an integer."
 
 
-def test_set_licensing_config(story_client, ip_id, register_commercial_remix_pil):
+def test_set_licensing_config(
+    story_client: StoryClient, ip_id, register_commercial_remix_pil
+):
     licensing_config = {
         "mintingFee": 1,
         "isSet": True,
@@ -234,7 +249,7 @@ def test_set_licensing_config(story_client, ip_id, register_commercial_remix_pil
     assert response["success"] is True, "'success' is not True"
 
 
-def test_register_pil_terms_with_no_minting_fee(story_client):
+def test_register_pil_terms_with_no_minting_fee(story_client: StoryClient):
     """Test registering PIL terms with no minting fee."""
     response = story_client.License.register_pil_terms(
         transferable=False,
@@ -266,7 +281,7 @@ def test_register_pil_terms_with_no_minting_fee(story_client):
     assert isinstance(response["license_terms_id"], int)
 
 
-def test_register_commercial_use_pil_without_royalty_policy(story_client):
+def test_register_commercial_use_pil_without_royalty_policy(story_client: StoryClient):
     """Test registering commercial use PIL without specifying royalty policy."""
     response = story_client.License.register_commercial_use_pil(
         default_minting_fee=1, currency=MockERC20
@@ -279,7 +294,7 @@ def test_register_commercial_use_pil_without_royalty_policy(story_client):
 
 
 @pytest.fixture(scope="module")
-def setup_license_terms(story_client, ip_id):
+def setup_license_terms(story_client: StoryClient, ip_id):
     """Fixture to set up license terms for testing."""
     response = story_client.License.register_commercial_remix_pil(
         default_minting_fee=1,
@@ -297,7 +312,7 @@ def setup_license_terms(story_client, ip_id):
     return license_id
 
 
-def test_multi_token_minting(story_client, ip_id, setup_license_terms):
+def test_multi_token_minting(story_client: StoryClient, ip_id, setup_license_terms):
     """Test minting multiple license tokens at once."""
     response = story_client.License.mint_license_tokens(
         licensor_ip_id=ip_id,
@@ -318,7 +333,7 @@ def test_multi_token_minting(story_client, ip_id, setup_license_terms):
 
 
 def test_set_licensing_config_with_hooks(
-    story_client, ip_id, register_commercial_remix_pil
+    story_client: StoryClient, ip_id, register_commercial_remix_pil
 ):
     """Test setting licensing configuration with hooks enabled."""
     licensing_config = {
@@ -349,7 +364,7 @@ def test_set_licensing_config_with_hooks(
 
 
 def test_predict_minting_fee_with_multiple_tokens(
-    story_client, ip_id, setup_license_terms
+    story_client: StoryClient, ip_id, setup_license_terms
 ):
     """Test predicting minting fee for multiple tokens."""
     response = story_client.License.predict_minting_license_fee(

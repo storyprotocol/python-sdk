@@ -1,7 +1,10 @@
 # tests/integration/test_integration_ip_asset.py
 
 import pytest
-from setup_for_integration import (
+
+from story_protocol_python_sdk.story_client import StoryClient
+
+from .setup_for_integration import (
     PIL_LICENSE_TEMPLATE,
     ROYALTY_POLICY,
     WIP_TOKEN_ADDRESS,
@@ -17,7 +20,7 @@ from setup_for_integration import (
 
 class TestIPAssetRegistration:
     @pytest.fixture(scope="module")
-    def child_ip_id(self, story_client):
+    def child_ip_id(self, story_client: StoryClient):
         token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
 
         response = story_client.IPAsset.register(
@@ -32,10 +35,10 @@ class TestIPAssetRegistration:
         assert response["ip_id"] is not None
         return response["ip_id"]
 
-    def test_register_ip_asset(self, story_client, child_ip_id):
+    def test_register_ip_asset(self, story_client: StoryClient, child_ip_id):
         assert child_ip_id is not None
 
-    def test_register_ip_asset_with_metadata(self, story_client):
+    def test_register_ip_asset_with_metadata(self, story_client: StoryClient):
         token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
         metadata = {
             "ip_metadata_uri": "test-uri",
@@ -64,7 +67,7 @@ class TestIPAssetRegistration:
 
 class TestIPAssetDerivatives:
     @pytest.fixture(scope="module")
-    def child_ip_id(self, story_client):
+    def child_ip_id(self, story_client: StoryClient):
         token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
 
         response = story_client.IPAsset.register(
@@ -80,7 +83,7 @@ class TestIPAssetDerivatives:
         return response["ip_id"]
 
     @pytest.fixture(scope="module")
-    def non_commercial_license(self, story_client):
+    def non_commercial_license(self, story_client: StoryClient):
         license_register_response = (
             story_client.License.register_non_com_social_remixing_pil()
         )
@@ -88,7 +91,7 @@ class TestIPAssetDerivatives:
         return no_commercial_license_terms_id
 
     @pytest.fixture(scope="module")
-    def parent_ip_id(self, story_client, non_commercial_license):
+    def parent_ip_id(self, story_client: StoryClient, non_commercial_license):
         token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
         response = story_client.IPAsset.register(
             nft_contract=MockERC721, token_id=token_id
@@ -101,7 +104,11 @@ class TestIPAssetDerivatives:
         return response["ip_id"]
 
     def test_register_derivative(
-        self, story_client, child_ip_id, parent_ip_id, non_commercial_license
+        self,
+        story_client: StoryClient,
+        child_ip_id,
+        parent_ip_id,
+        non_commercial_license,
     ):
         response = story_client.IPAsset.register_derivative(
             child_ip_id=child_ip_id,
@@ -119,7 +126,7 @@ class TestIPAssetDerivatives:
         assert len(response["tx_hash"]) > 0
 
     def test_register_derivative_with_license_tokens(
-        self, story_client, parent_ip_id, non_commercial_license
+        self, story_client: StoryClient, parent_ip_id, non_commercial_license
     ):
         token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
         child_response = story_client.IPAsset.register(
@@ -153,7 +160,7 @@ class TestIPAssetDerivatives:
 
 class TestIPAssetMinting:
     @pytest.fixture(scope="module")
-    def nft_collection(self, story_client):
+    def nft_collection(self, story_client: StoryClient):
         tx_data = story_client.NFTClient.create_nft_collection(
             name="test-collection",
             symbol="TEST",
@@ -165,7 +172,9 @@ class TestIPAssetMinting:
         )
         return tx_data["nft_contract"]
 
-    def test_mint_register_attach_terms(self, story_client, nft_collection):
+    def test_mint_register_attach_terms(
+        self, story_client: StoryClient, nft_collection
+    ):
         metadata = {
             "ip_metadata_uri": "test-uri",
             "ip_metadata_hash": web3.to_hex(web3.keccak(text="test-metadata-hash")),
@@ -227,7 +236,7 @@ class TestIPAssetMinting:
         assert isinstance(response["license_terms_ids"], list)
         assert all(isinstance(id, int) for id in response["license_terms_ids"])
 
-    def test_mint_register_ip(self, story_client, nft_collection):
+    def test_mint_register_ip(self, story_client: StoryClient, nft_collection):
         metadata = {
             "ip_metadata_uri": "test-uri",
             "ip_metadata_hash": web3.to_hex(web3.keccak(text="test-metadata-hash")),
@@ -244,7 +253,7 @@ class TestIPAssetMinting:
 
 class TestSPGNFTOperations:
     @pytest.fixture(scope="module")
-    def nft_collection(self, story_client):
+    def nft_collection(self, story_client: StoryClient):
         tx_data = story_client.NFTClient.create_nft_collection(
             name="test-collection",
             symbol="TEST",
@@ -257,7 +266,7 @@ class TestSPGNFTOperations:
         return tx_data["nft_contract"]
 
     @pytest.fixture(scope="module")
-    def parent_ip_and_license_terms(self, story_client, nft_collection):
+    def parent_ip_and_license_terms(self, story_client: StoryClient, nft_collection):
         response = story_client.IPAsset.mint_and_register_ip_asset_with_pil_terms(
             spg_nft_contract=nft_collection,
             terms=[
@@ -339,7 +348,7 @@ class TestSPGNFTOperations:
     #     assert isinstance(result['ip_id'], str) and result['ip_id']
 
     def test_register_ip_and_attach_pil_terms(
-        self, story_client, nft_collection, parent_ip_and_license_terms
+        self, story_client: StoryClient, nft_collection, parent_ip_and_license_terms
     ):
         token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account)
 
@@ -427,7 +436,7 @@ class TestSPGNFTOperations:
 
 class TestIPAssetMint:
     @pytest.fixture(scope="module")
-    def nft_collection(self, story_client):
+    def nft_collection(self, story_client: StoryClient):
         tx_data = story_client.NFTClient.create_nft_collection(
             name="test-mint-collection",
             symbol="MINT",
@@ -439,7 +448,7 @@ class TestIPAssetMint:
         )
         return tx_data["nft_contract"]
 
-    def test_mint_basic(self, story_client, nft_collection):
+    def test_mint_basic(self, story_client: StoryClient, nft_collection):
         """Test basic minting functionality"""
         metadata_uri = "https://example.com/metadata/1.json"
         metadata_hash = web3.keccak(text="test-metadata-content")
@@ -461,7 +470,9 @@ class TestIPAssetMint:
         receipt = story_client.web3.eth.wait_for_transaction_receipt(response)
         assert receipt.status == 1
 
-    def test_mint_with_duplicates_allowed(self, story_client, nft_collection):
+    def test_mint_with_duplicates_allowed(
+        self, story_client: StoryClient, nft_collection
+    ):
         """Test minting with duplicate metadata allowed"""
         metadata_uri = "https://example.com/metadata/duplicate.json"
         metadata_hash = web3.keccak(text="duplicate-metadata-content")
@@ -495,7 +506,7 @@ class TestIPAssetMint:
         # Verify different transaction hashes
         assert response1 != response2
 
-    def test_mint_to_different_address(self, story_client, nft_collection):
+    def test_mint_to_different_address(self, story_client: StoryClient, nft_collection):
         """Test minting to a different recipient address"""
         # Create a different recipient address for testing
         different_account = story_client.web3.eth.account.create()
@@ -516,7 +527,9 @@ class TestIPAssetMint:
         receipt = story_client.web3.eth.wait_for_transaction_receipt(response)
         assert receipt.status == 1
 
-    def test_mint_with_various_metadata_formats(self, story_client, nft_collection):
+    def test_mint_with_various_metadata_formats(
+        self, story_client: StoryClient, nft_collection
+    ):
         """Test minting with different metadata URI formats"""
         test_cases = [
             {
@@ -546,7 +559,7 @@ class TestIPAssetMint:
             receipt = story_client.web3.eth.wait_for_transaction_receipt(response)
             assert receipt.status == 1
 
-    def test_mint_with_zero_hash(self, story_client, nft_collection):
+    def test_mint_with_zero_hash(self, story_client: StoryClient, nft_collection):
         """Test minting with zero hash"""
         metadata_uri = "https://example.com/metadata/zero-hash.json"
         zero_hash = b"\x00" * 32  # 32 bytes of zeros
@@ -563,7 +576,7 @@ class TestIPAssetMint:
         receipt = story_client.web3.eth.wait_for_transaction_receipt(response)
         assert receipt.status == 1
 
-    def test_mint_error_cases(self, story_client, nft_collection):
+    def test_mint_error_cases(self, story_client: StoryClient, nft_collection):
         """Test various error cases for minting"""
         metadata_uri = "https://example.com/metadata/error-test.json"
         metadata_hash = web3.keccak(text="error-test-metadata")
@@ -599,7 +612,7 @@ class TestIPAssetMint:
             )
 
     def test_mint_with_existing_metadata_hash_no_duplicates(
-        self, story_client, nft_collection
+        self, story_client: StoryClient, nft_collection
     ):
         """Test that minting with existing metadata hash fails when duplicates not allowed"""
         metadata_uri = "https://example.com/metadata/no-duplicates.json"

@@ -102,5 +102,13 @@ celerybeat.pid
 
 # Environments
 .env
+venv/
+env/
+ENV/
+.venv/
+virtualenv/
 
 web3py.md
+
+# AI Assistant Configuration
+CLAUDE.md

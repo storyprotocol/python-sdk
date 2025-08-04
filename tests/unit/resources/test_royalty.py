@@ -1,34 +1,10 @@
-import os
-import sys
 from unittest.mock import patch
 
 import pytest
-
-# Load environment variables from .env file
-from dotenv import load_dotenv
 from web3 import Web3
 
-from src.story_protocol_python_sdk.resources.Royalty import Royalty
-
-# Ensure the src directory is in the Python path
-current_dir = os.path.dirname(__file__)
-src_path = os.path.abspath(os.path.join(current_dir, "..", "..", ".."))
-if src_path not in sys.path:
-    sys.path.append(src_path)
-
-load_dotenv()
-private_key = os.getenv("WALLET_PRIVATE_KEY")
-rpc_url = os.getenv("RPC_PROVIDER_URL")
-
-# Initialize Web3
-web3 = Web3(Web3.HTTPProvider(rpc_url))
-
-# Check if connected
-if not web3.is_connected():
-    raise Exception("Failed to connect to Web3 provider")
-
-# Set up the account with the private key
-account = web3.eth.account.from_key(private_key)
+from story_protocol_python_sdk.resources.Royalty import Royalty
+from tests.integration.config.test_config import account, web3
 
 
 @pytest.fixture

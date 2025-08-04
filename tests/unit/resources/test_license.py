@@ -1,18 +1,10 @@
-import os
-import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
 from eth_utils import is_address, to_checksum_address
 from web3 import Web3
 
-from src.story_protocol_python_sdk.resources.License import License
-
-current_dir = os.path.dirname(__file__)
-src_path = os.path.abspath(os.path.join(current_dir, "..", "..", ".."))
-if src_path not in sys.path:
-    sys.path.append(src_path)
-
+from story_protocol_python_sdk.resources.License import License
 
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 VALID_ADDRESS = "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"

@@ -1,5 +1,6 @@
 import json
 import os
+
 from web3 import Web3
 
 
@@ -21,7 +22,7 @@ class ArbitrationPolicyUMAClient:
                 break
         if not contract_address:
             raise ValueError(
-                f"Contract address for ArbitrationPolicyUMA not found in config.json"
+                "Contract address for ArbitrationPolicyUMA not found in config.json"
             )
         abi_path = os.path.join(
             os.path.dirname(__file__),

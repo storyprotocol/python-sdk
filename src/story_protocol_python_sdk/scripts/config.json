@@ -5,7 +5,7 @@
             "contract_address": "0xcCF37d0a503Ee1D4C11208672e622ed3DFB2275a",
             "functions": [
                 "PermissionSet",
-                "setPermission", 
+                "setPermission",
                 "setAllPermissions",
                 "setBatchPermissions",
                 "setTransientPermission",
@@ -17,7 +17,7 @@
             "contract_address": "0x9b7A9c70AFF961C799110954fc06F3093aeb94C5",
             "functions": [
                 "DisputeCancelled",
-                "DisputeRaised", 
+                "DisputeRaised",
                 "DisputeResolved",
                 "cancelDispute",
                 "raiseDispute",
@@ -43,7 +43,7 @@
             "functions": [
                 "IPRegistered",
                 "ipId",
-                "isRegistered", 
+                "isRegistered",
                 "register",
                 "IPAccountRegistered"
             ]
@@ -210,7 +210,7 @@
             "functions": ["transferToVault"]
         },
         {
-            "contract_name": "ArbitrationPolicyUMA", 
+            "contract_name": "ArbitrationPolicyUMA",
             "contract_address": "0xfFD98c3877B8789124f02C7E8239A4b0Ef11E936",
             "functions": [
                 "minLiveness",

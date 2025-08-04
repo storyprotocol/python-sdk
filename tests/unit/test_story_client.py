@@ -1,15 +1,15 @@
 import os
-import sys
-import pytest
-from web3 import Web3
-from dotenv import load_dotenv
 
-from story_protocol_python_sdk.story_client import StoryClient
+import pytest
+from dotenv import load_dotenv
+from web3 import Web3
+
+from story_protocol_python_sdk.resources.IPAccount import IPAccount
 from story_protocol_python_sdk.resources.IPAsset import IPAsset
 from story_protocol_python_sdk.resources.License import License
-from story_protocol_python_sdk.resources.Royalty import Royalty
-from story_protocol_python_sdk.resources.IPAccount import IPAccount
 from story_protocol_python_sdk.resources.Permission import Permission
+from story_protocol_python_sdk.resources.Royalty import Royalty
+from story_protocol_python_sdk.story_client import StoryClient
 from tests.unit.fixtures.data import CHAIN_ID
 
 # Load environment variables from .env file

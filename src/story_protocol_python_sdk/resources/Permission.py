@@ -1,22 +1,21 @@
 # src/story_protcol_python_sdk/resources/Permission.py
 
-from web3 import Web3
-import os, json
 
+from web3 import Web3
+
+from story_protocol_python_sdk.abi.AccessController.AccessController_client import (
+    AccessControllerClient,
+)
 from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
     IPAccountImplClient,
 )
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import (
     IPAssetRegistryClient,
 )
-from story_protocol_python_sdk.abi.AccessController.AccessController_client import (
-    AccessControllerClient,
-)
 from story_protocol_python_sdk.resources.IPAccount import IPAccount
-from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
-from story_protocol_python_sdk.utils.validation import validate_address
 from story_protocol_python_sdk.utils.constants import DEFAULT_FUNCTION_SELECTOR
 from story_protocol_python_sdk.utils.sign import Sign
+from story_protocol_python_sdk.utils.validation import validate_address
 
 
 class Permission:
@@ -181,7 +180,7 @@ class Permission:
 
             # Get state and calculate deadline
             state = ip_account_client.state()
-            block_timestamp = self.web3.eth.get_block("latest").timestamp
+            self.web3.eth.get_block("latest").timestamp
             calculated_deadline = self.sign_util.get_deadline(deadline)
 
             # Get permission signature

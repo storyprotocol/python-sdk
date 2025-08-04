@@ -1,18 +1,8 @@
 # tests/integration/test_integration_dispute.py
 
 import pytest
+from setup_for_integration import account, generate_cid, web3
 from web3 import Web3
-
-from setup_for_integration import (
-    web3,
-    account,
-    account_2,
-    story_client,
-    story_client_2,
-    generate_cid,
-    approve,
-    wallet_address,
-)
 
 
 class TestDispute:
@@ -82,9 +72,7 @@ class TestDispute:
         # Generate a CID for counter evidence
         counter_evidence_cid = generate_cid()
 
-        deposit_response_2 = story_client_2.WIP.deposit(
-            amount=Web3.to_wei(1, "ether")  # 1 IP
-        )
+        story_client_2.WIP.deposit(amount=Web3.to_wei(1, "ether"))  # 1 IP
 
         # Counter the dispute assertion with story_client_2 (the IP owner)
         response = story_client_2.Dispute.dispute_assertion(

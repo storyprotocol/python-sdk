@@ -1,5 +1,6 @@
 import json
 import os
+
 from web3 import Web3
 
 
@@ -21,7 +22,7 @@ class ModuleRegistryClient:
                 break
         if not contract_address:
             raise ValueError(
-                f"Contract address for ModuleRegistry not found in config.json"
+                "Contract address for ModuleRegistry not found in config.json"
             )
         abi_path = os.path.join(
             os.path.dirname(__file__), "..", "..", "abi", "jsons", "ModuleRegistry.json"

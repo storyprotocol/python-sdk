@@ -1,20 +1,17 @@
 # tests/integration/test_integration_ip_asset.py
 
 import pytest
-from web3 import Web3
-
 from setup_for_integration import (
-    web3,
-    account,
-    story_client,
-    get_token_id,
-    MockERC721,
-    MockERC20,
-    ZERO_ADDRESS,
-    ROYALTY_POLICY,
     PIL_LICENSE_TEMPLATE,
+    ROYALTY_POLICY,
     WIP_TOKEN_ADDRESS,
+    ZERO_ADDRESS,
+    MockERC20,
+    MockERC721,
+    account,
+    get_token_id,
     mint_by_spg,
+    web3,
 )
 
 
@@ -97,7 +94,7 @@ class TestIPAssetDerivatives:
             nft_contract=MockERC721, token_id=token_id
         )
 
-        attach_license_response = story_client.License.attach_license_terms(
+        story_client.License.attach_license_terms(
             response["ip_id"], PIL_LICENSE_TEMPLATE, non_commercial_license
         )
 
@@ -240,7 +237,7 @@ class TestIPAssetMinting:
             ),
         }
 
-        response = story_client.IPAsset.mint_and_register_ip(
+        story_client.IPAsset.mint_and_register_ip(
             spg_nft_contract=nft_collection, ip_metadata=metadata
         )
 

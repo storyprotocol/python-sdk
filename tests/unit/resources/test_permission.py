@@ -1,8 +1,9 @@
-import pytest
 from unittest.mock import Mock, patch
 
+import pytest
+
 from story_protocol_python_sdk.resources.Permission import Permission
-from tests.unit.fixtures.data import CHAIN_ID, ADDRESS, CHAIN_ID, STATE, TX_HASH
+from tests.unit.fixtures.data import ADDRESS, CHAIN_ID, STATE, TX_HASH
 from tests.unit.fixtures.web3 import mock_web3
 
 

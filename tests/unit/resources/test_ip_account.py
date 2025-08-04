@@ -1,18 +1,18 @@
 import os
 import sys
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from web3 import Web3
-from web3.exceptions import InvalidAddress
 from eth_utils import is_address, to_checksum_address
+from web3 import Web3
+
+from src.story_protocol_python_sdk.resources.IPAccount import IPAccount
 
 # Ensure the src directory is in the Python path
 current_dir = os.path.dirname(__file__)
 src_path = os.path.abspath(os.path.join(current_dir, "..", "..", ".."))
 if src_path not in sys.path:
     sys.path.append(src_path)
-
-from src.story_protocol_python_sdk.resources.IPAccount import IPAccount
 
 # Constants
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"

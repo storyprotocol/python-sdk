@@ -1,7 +1,29 @@
 import os
 import sys
+
 import pytest
 from dotenv import load_dotenv
+
+# Import everything from utils
+from utils import (
+    ARBITRATION_POLICY_UMA,
+    EVEN_SPLIT_GROUP_POOL,
+    PIL_LICENSE_TEMPLATE,
+    ROYALTY_POLICY_LRP,
+    WIP_TOKEN_ADDRESS,
+    ZERO_ADDRESS,
+    MockERC20,
+    MockERC721,
+    approve,
+    check_event_in_tx,
+    generate_cid,
+    get_block_timestamp,
+    get_story_client_in_devnet,
+    get_token_id,
+    mint_by_spg,
+    mint_tokens,
+    setup_royalty_vault,
+)
 from web3 import Web3
 
 # Ensure the src directory is in the Python path
@@ -10,29 +32,6 @@ src_path = os.path.abspath(os.path.join(current_dir, "..", ".."))
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-# Import everything from utils
-from utils import (
-    get_story_client_in_devnet,
-    get_token_id,
-    mint_tokens,
-    approve,
-    get_block_timestamp,
-    check_event_in_tx,
-    MockERC721,
-    MockERC20,
-    ZERO_ADDRESS,
-    ROYALTY_POLICY,
-    ROYALTY_MODULE,
-    PIL_LICENSE_TEMPLATE,
-    ARBITRATION_POLICY_UMA,
-    generate_cid,
-    WIP_TOKEN_ADDRESS,
-    setup_royalty_vault,
-    EVEN_SPLIT_GROUP_POOL,
-    ROYALTY_POLICY_LRP,
-    CORE_METADATA_MODULE,
-    mint_by_spg,
-)
 
 # Load environment variables
 load_dotenv(override=True)
@@ -81,7 +80,6 @@ __all__ = [
     "MockERC721",
     "MockERC20",
     "ZERO_ADDRESS",
-    "ROYALTY_POLICY" "ROYALTY_MODULE",
     "PIL_LICENSE_TEMPLATE",
     "ARBITRATION_POLICY_UMA",
     "account_2",

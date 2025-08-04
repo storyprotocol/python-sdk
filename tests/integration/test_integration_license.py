@@ -1,21 +1,17 @@
 # tests/integration/test_integration_license.py
 
 import pytest
-from web3 import Web3
-
 from setup_for_integration import (
-    web3,
+    PIL_LICENSE_TEMPLATE,
+    ROYALTY_MODULE,
+    ROYALTY_POLICY,
+    MockERC20,
+    MockERC721,
     account,
-    story_client,
+    approve,
     get_token_id,
     mint_tokens,
-    approve,
-    MockERC721,
-    MockERC20,
-    ZERO_ADDRESS,
-    ROYALTY_POLICY,
-    ROYALTY_MODULE,
-    PIL_LICENSE_TEMPLATE,
+    web3,
 )
 
 
@@ -116,7 +112,7 @@ def ip_id(story_client):
 
     response = story_client.IPAsset.register(nft_contract=MockERC721, token_id=token_id)
 
-    token_ids = mint_tokens(
+    mint_tokens(
         erc20_contract_address=MockERC20,
         web3=web3,
         account=account,
@@ -124,7 +120,7 @@ def ip_id(story_client):
         amount=100000 * 10**6,
     )
 
-    receipt = approve(
+    approve(
         erc20_contract_address=MockERC20,
         web3=web3,
         account=account,

@@ -1,13 +1,8 @@
 # tests/integration/test_integration_nft_client.py
 
 import pytest
+from setup_for_integration import MockERC20
 from web3 import Web3
-
-from setup_for_integration import (
-    story_client,
-    MockERC721,
-    MockERC20,
-)
 
 
 class TestNFTCollectionOperations:
@@ -153,7 +148,7 @@ class TestErrorCases:
     def test_parameter_omission(self, story_client):
         """Test omitting required parameters"""
 
-        with pytest.raises(TypeError) as exc_info:
+        with pytest.raises(TypeError):
             story_client.NFTClient.create_nft_collection(
                 # name is omitted
                 symbol="TEST",
@@ -163,7 +158,7 @@ class TestErrorCases:
                 mint_fee_recipient=story_client.account.address,
             )
 
-        with pytest.raises(TypeError) as exc_info:
+        with pytest.raises(TypeError):
             story_client.NFTClient.create_nft_collection(
                 name="test-collection",
                 # symbol is omitted
@@ -173,7 +168,7 @@ class TestErrorCases:
                 mint_fee_recipient=story_client.account.address,
             )
 
-        with pytest.raises(TypeError) as exc_info:
+        with pytest.raises(TypeError):
             story_client.NFTClient.create_nft_collection(
                 name="test-collection",
                 symbol="TEST",
@@ -183,7 +178,7 @@ class TestErrorCases:
                 mint_fee_recipient=story_client.account.address,
             )
 
-        with pytest.raises(TypeError) as exc_info:
+        with pytest.raises(TypeError):
             story_client.NFTClient.create_nft_collection(
                 name="test-collection",
                 symbol="TEST",
@@ -193,7 +188,7 @@ class TestErrorCases:
                 mint_fee_recipient=story_client.account.address,
             )
 
-        with pytest.raises(TypeError) as exc_info:
+        with pytest.raises(TypeError):
             story_client.NFTClient.create_nft_collection(
                 name="test-collection",
                 symbol="TEST",
@@ -203,7 +198,7 @@ class TestErrorCases:
                 mint_fee_recipient=story_client.account.address,
             )
 
-        with pytest.raises(TypeError) as exc_info:
+        with pytest.raises(TypeError):
             story_client.NFTClient.create_nft_collection(
                 name="test-collection",
                 symbol="TEST",

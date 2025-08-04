@@ -1,22 +1,20 @@
 # tests/integration/test_integration_royalty.py
 
-import pytest
-from web3 import Web3
 import copy
 
+import pytest
 from setup_for_integration import (
-    web3,
+    PIL_LICENSE_TEMPLATE,
+    ROYALTY_MODULE,
+    ROYALTY_POLICY,
+    ZERO_ADDRESS,
+    MockERC20,
+    MockERC721,
     account,
-    story_client,
+    approve,
     get_token_id,
     mint_tokens,
-    approve,
-    MockERC721,
-    MockERC20,
-    ZERO_ADDRESS,
-    ROYALTY_POLICY,
-    ROYALTY_MODULE,
-    PIL_LICENSE_TEMPLATE,
+    web3,
 )
 
 
@@ -387,7 +385,7 @@ class TestClaimAllRevenue:
             spg_nft_contract=spg_nft_contract, ip_metadata=metadata_b
         )
         ip_b = ip_b_response["ip_id"]
-        ip_b_derivative_response = story_client.IPAsset.register_derivative(
+        story_client.IPAsset.register_derivative(
             child_ip_id=ip_b, parent_ip_ids=[ip_a], license_terms_ids=[license_terms_id]
         )
 

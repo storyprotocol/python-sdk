@@ -5,7 +5,7 @@ from web3 import Web3
 from story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client import (
     RoyaltyModuleClient,
 )
-from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ROYALTY_POLICY
+from story_protocol_python_sdk.utils.constants import ROYALTY_POLICY, ZERO_ADDRESS
 
 
 class LicenseTerms:

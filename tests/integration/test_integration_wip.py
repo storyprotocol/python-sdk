@@ -1,9 +1,7 @@
 # tests/integration/test_integration_wip.py
 
-import pytest
+from setup_for_integration import wallet_address, wallet_address_2, web3
 from web3 import Web3
-
-from setup_for_integration import web3, story_client, wallet_address, wallet_address_2
 
 
 class TestWIPDeposit:

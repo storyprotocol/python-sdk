@@ -1,17 +1,20 @@
-import pytest, os, sys
-from unittest.mock import patch, MagicMock
+import os
+import sys
+from unittest.mock import patch
+
+import pytest
+
+# Load environment variables from .env file
+from dotenv import load_dotenv
 from web3 import Web3
+
+from src.story_protocol_python_sdk.resources.Royalty import Royalty
 
 # Ensure the src directory is in the Python path
 current_dir = os.path.dirname(__file__)
 src_path = os.path.abspath(os.path.join(current_dir, "..", "..", ".."))
 if src_path not in sys.path:
     sys.path.append(src_path)
-
-from src.story_protocol_python_sdk.resources.Royalty import Royalty
-
-# Load environment variables from .env file
-from dotenv import load_dotenv
 
 load_dotenv()
 private_key = os.getenv("WALLET_PRIVATE_KEY")

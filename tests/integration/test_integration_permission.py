@@ -1,15 +1,12 @@
 # tests/integration/test_integration_permission.py
 
 import pytest
-from web3 import Web3
-
 from setup_for_integration import (
-    web3,
-    account,
-    story_client,
-    get_token_id,
-    MockERC721,
     CORE_METADATA_MODULE,
+    MockERC721,
+    account,
+    get_token_id,
+    web3,
 )
 
 

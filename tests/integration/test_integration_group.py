@@ -1,20 +1,16 @@
 # tests/integration/test_integration_group.py
 
-import pytest
-from web3 import Web3
 import copy
 
+import pytest
 from setup_for_integration import (
-    web3,
-    account,
-    story_client,
-    get_token_id,
-    MockERC721,
-    MockERC20,
-    ZERO_ADDRESS,
-    PIL_LICENSE_TEMPLATE,
     EVEN_SPLIT_GROUP_POOL,
+    PIL_LICENSE_TEMPLATE,
     ROYALTY_POLICY_LRP,
+    ZERO_ADDRESS,
+    MockERC20,
+    account,
+    web3,
 )
 
 # class TestGroupBasicOperations:

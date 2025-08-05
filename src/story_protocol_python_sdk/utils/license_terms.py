@@ -135,9 +135,9 @@ class LicenseTerms:
         commercializer_checker_data = params.get(
             "commercializer_checker_data", ZERO_ADDRESS
         )
-        if isinstance(commercializer_checker_data, HexStr):
+        if isinstance(commercializer_checker_data, str):
             params["commercializer_checker_data"] = Web3.to_bytes(
-                hexstr=commercializer_checker_data
+                hexstr=HexStr(commercializer_checker_data)
             )
 
         params["expect_minimum_group_reward_share"] = int(

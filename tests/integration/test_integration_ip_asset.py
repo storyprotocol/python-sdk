@@ -357,8 +357,8 @@ class TestSPGNFTOperations:
             nft_contract=nft_collection,
             token_id=token_id,
             deadline=1000,
-            license_terms_data={
-                0: {
+            license_terms_data=[
+                {
                     "terms": {
                         "transferable": True,
                         "royalty_policy": ZERO_ADDRESS,
@@ -389,7 +389,7 @@ class TestSPGNFTOperations:
                         "expect_group_reward_pool": ZERO_ADDRESS,
                     },
                 },
-                1: {
+                {
                     "terms": {
                         "transferable": True,
                         "royalty_policy": ROYALTY_POLICY,
@@ -420,7 +420,7 @@ class TestSPGNFTOperations:
                         "expect_group_reward_pool": ZERO_ADDRESS,
                     },
                 },
-            },
+            ],
         )
 
         assert isinstance(result["tx_hash"], str) and result["tx_hash"]

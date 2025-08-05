@@ -572,7 +572,7 @@ class IPAsset:
         self,
         nft_contract: str,
         token_id: int,
-        license_terms_data: dict,
+        license_terms_data: list,
         ip_metadata: dict | None = None,
         deadline: int | None = None,
         tx_options: dict | None = None,
@@ -582,7 +582,7 @@ class IPAsset:
 
         :param nft_contract str: The address of the NFT collection.
         :param token_id int: The ID of the NFT.
-        :param license_terms_data dict: The PIL terms and licensing configuration data to be attached to the IP.
+        :param license_terms_data list: The PIL terms and licensing configuration data to be attached to the IP.
             :param terms dict: The PIL terms to be used for the licensing.
                 :param transferable bool: Indicates whether the license is transferable or not.
                 :param royalty_policy str: The address of the royalty policy contract which required to StoryProtocol in advance.

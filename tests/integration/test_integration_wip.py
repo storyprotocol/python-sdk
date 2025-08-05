@@ -37,7 +37,7 @@ class TestWIPDeposit:
 
         # Calculate gas cost
         tx_receipt = web3.eth.wait_for_transaction_receipt(
-            Hash32(bytes.fromhex(response["tx_hash"][2:])), timeout=300
+            Hash32(bytes.fromhex(response["tx_hash"])), timeout=300
         )
         gas_cost = tx_receipt["gasUsed"] * tx_receipt["effectiveGasPrice"]
 
@@ -101,7 +101,7 @@ class TestWIPWithdraw:
 
         # Calculate gas cost
         tx_receipt = web3.eth.wait_for_transaction_receipt(
-            Hash32(bytes.fromhex(response["tx_hash"][2:])), timeout=300
+            Hash32(bytes.fromhex(response["tx_hash"])), timeout=300
         )
         gas_cost = tx_receipt["gasUsed"] * tx_receipt["effectiveGasPrice"]
 

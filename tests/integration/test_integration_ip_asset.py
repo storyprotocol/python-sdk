@@ -1,5 +1,3 @@
-# tests/integration/test_integration_ip_asset.py
-
 import pytest
 
 from story_protocol_python_sdk.story_client import StoryClient
@@ -327,25 +325,29 @@ class TestSPGNFTOperations:
     #     assert isinstance(response['ip_id'], str)
     #     assert response['ip_id'] != ''
 
-    # def test_register_derivative_ip(self, story_client, parent_ip_id, license_terms_id):
-    #     token_child_id = mint_by_spg(MockERC721, story_client.web3, story_client.account)
+    def test_register_derivative_ip(
+        self, story_client, parent_ip_and_license_terms, nft_collection
+    ):
+        token_child_id = mint_by_spg(
+            nft_collection, story_client.web3, story_client.account
+        )
 
-    #     result = story_client.IPAsset.register_derivative_ip(
-    #         nft_contract=MockERC721,
-    #         token_id=token_child_id,
-    #         deriv_data={
-    #             'parentIpIds': [parent_ip_id],
-    #             'licenseTermsIds': [license_terms_id],
-    #             'maxMintingFee': 0,
-    #             'maxRts': 5 * 10**6,
-    #             'maxRevenueShare': 0
-    #         },
-    #         deadline=1000,
-    #         tx_options={'waitForTransaction': True}
-    #     )
-
-    #     assert isinstance(result['tx_hash'], str) and result['tx_hash']
-    #     assert isinstance(result['ip_id'], str) and result['ip_id']
+        result = story_client.IPAsset.register_derivative_ip(
+            nft_contract=nft_collection,
+            token_id=token_child_id,
+            deriv_data={
+                "parentIpIds": [parent_ip_and_license_terms["parent_ip_id"]],
+                "licenseTermsIds": [parent_ip_and_license_terms["license_terms_id"]],
+                "maxMintingFee": 0,
+                "maxRts": 5 * 10**6,
+                "maxRevenueShare": 0,
+            },
+            deadline=1000,
+            tx_options={"waitForTransaction": True},
+        )
+        print(result)
+        assert isinstance(result["tx_hash"], str) and result["tx_hash"]
+        assert isinstance(result["ip_id"], str) and result["ip_id"]
 
     def test_register_ip_and_attach_pil_terms(
         self, story_client: StoryClient, nft_collection, parent_ip_and_license_terms

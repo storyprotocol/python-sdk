@@ -6,6 +6,7 @@ from setuptools import find_packages, setup
 setup(
     name="story_protocol_python_sdk",
     version="0.3.14",
+    package_data={"story_protocol_python_sdk": ["py.typed"]},
     packages=find_packages(where="src", exclude=["tests"]),
     package_dir={"": "src"},
     install_requires=["web3>=7.0.0", "pytest", "python-dotenv", "base58"],

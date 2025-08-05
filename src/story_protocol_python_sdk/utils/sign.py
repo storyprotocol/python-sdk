@@ -1,5 +1,3 @@
-# src/story_protcol_python_sdk/utils/sign.py
-
 from datetime import datetime
 
 from eth_abi.abi import encode
@@ -13,6 +11,48 @@ from story_protocol_python_sdk.abi.AccessController.AccessController_client impo
 from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
     IPAccountImplClient,
 )
+from story_protocol_python_sdk.types.utils.sign import (
+    PermissionSignatureArgs,
+    SignatureArgs,
+)
+from story_protocol_python_sdk.utils.constants import DEFAULT_FUNCTION_SELECTOR
+from story_protocol_python_sdk.utils.validation import validate_address
+
+# ABI for access controller contract
+ACCESS_CONTROLLER_ABI = [
+    {
+        "name": "setTransientPermission",
+        "type": "function",
+        "inputs": [
+            {"name": "ipAccount", "type": "address"},
+            {"name": "signer", "type": "address"},
+            {"name": "to", "type": "address"},
+            {"name": "func", "type": "bytes4"},
+            {"name": "permission", "type": "uint8"},
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable",
+    },
+    {
+        "name": "setBatchTransientPermissions",
+        "type": "function",
+        "inputs": [
+            {
+                "name": "permissions",
+                "type": "tuple[]",
+                "components": [
+                    {"name": "ipAccount", "type": "address"},
+                    {"name": "signer", "type": "address"},
+                    {"name": "to", "type": "address"},
+                    {"name": "func", "type": "bytes4"},
+                    {"name": "permission", "type": "uint8"},
+                ],
+            }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable",
+    },
+]
 
 
 class Sign:
@@ -26,77 +66,57 @@ class Sign:
 
     def get_signature(
         self,
-        state: str,
-        to: str,
-        encode_data: bytes,
-        verifying_contract: str,
-        deadline: int,
-    ) -> dict:
+        args: SignatureArgs,
+    ) -> tuple[str, str]:
         """
         Get the signature.
 
-        :param state str: The IP Account's state.
-        :param to str: The recipient address.
-        :param encode_data bytes: The encoded data.
-        :param verifying_contract str: The verifying contract address.
-        :param deadline int: The deadline for the signature in milliseconds.
+        :param args SignatureArgs: The signature arguments containing state, to, encode_data, verifying_contract, and deadline.
         :return dict: A dictionary containing the signature and nonce.
         """
-        try:
-            execute_data = self.ip_account_client.contract.encode_abi(
-                abi_element_identifier="execute", args=[to, 0, encode_data]
-            )
+        execute_data = self.ip_account_client.contract.encode_abi(
+            abi_element_identifier="execute", args=[args.to, 0, args.encode_data]
+        )
 
-            # expected_state = nonce
-            expected_state = Web3.keccak(
-                encode(
-                    ["bytes32", "bytes"],
-                    [
-                        state,  # Current state (nonce)
-                        Web3.to_bytes(
-                            hexstr=execute_data
-                        ),  # Convert hex string to bytes
-                    ],
-                )
-            )
-
-            domain_data = {
-                "name": "Story Protocol IP Account",
-                "version": "1",
-                "chainId": self.chain_id,
-                "verifyingContract": verifying_contract,
-            }
-
-            message_types = {
-                "Execute": [
-                    {"name": "to", "type": "address"},
-                    {"name": "value", "type": "uint256"},
-                    {"name": "data", "type": "bytes"},
-                    {"name": "nonce", "type": "bytes32"},
-                    {"name": "deadline", "type": "uint256"},
+        nonce = Web3.keccak(
+            encode(
+                ["bytes32", "bytes"],
+                [
+                    args.state,
+                    Web3.to_bytes(hexstr=execute_data),
                 ],
-            }
-
-            message_data = {
-                "to": to,
-                "value": 0,
-                "data": encode_data,
-                "nonce": expected_state,
-                "deadline": deadline,
-            }
-
-            signable_message = encode_typed_data(
-                domain_data, message_types, message_data
             )
-            signed_message = Account.sign_message(signable_message, self.account.key)
+        )
 
-            return {
-                "signature": signed_message.signature.hex(),
-                "nonce": expected_state,
-            }
+        domain_data = {
+            "name": "Story Protocol IP Account",
+            "version": "1",
+            "chainId": self.chain_id,
+            "verifyingContract": args.verifying_contract,
+        }
 
-        except Exception as e:
-            raise e
+        message_types = {
+            "Execute": [
+                {"name": "to", "type": "address"},
+                {"name": "value", "type": "uint256"},
+                {"name": "data", "type": "bytes"},
+                {"name": "nonce", "type": "bytes32"},
+                {"name": "deadline", "type": "uint256"},
+            ],
+        }
+
+        message_data = {
+            "to": args.to,
+            "value": 0,
+            "data": args.encode_data,
+            "nonce": nonce,
+            "deadline": args.deadline,
+        }
+
+        signable_message = encode_typed_data(domain_data, message_types, message_data)
+        signed_message = Account.sign_message(signable_message, self.account.key)
+
+        return ("0x" + signed_message.signature.hex(), nonce)
 
     def get_deadline(self, deadline: int = None) -> int:
         """
@@ -115,83 +135,66 @@ class Sign:
             return current_timestamp + 1000
 
     def get_permission_signature(
-        self,
-        ip_id: str,
-        deadline: int,
-        permissions: list,
-        permission_func: str = None,
-        state: str = None,
-    ) -> dict:
+        self, param: PermissionSignatureArgs
+    ) -> tuple[str, str]:
         """
-        Get the signature for setting permissions.
+        Get permission signature for setting transient permissions.
 
-        :param ip_id str: The IP ID
-        :param deadline int: The deadline
-        :param permissions list: The permissions
-        :param permission_func str: The permission function (defaults to None, which will auto-select based on permissions count)
-        :param state str: The state
-        :return dict: The signature response
+        Args:
+            param: Permission signature request containing all necessary parameters
+
+        Returns:
+            SignatureResponse: Contains the signature and nonce
         """
-        try:
-            # Auto-select permission function based on number of permissions if not specified
-            if permission_func is None:
-                permission_function = (
-                    "setBatchTransientPermissions"
-                    if len(permissions) >= 2
-                    else "setTransientPermission"
-                )
-            else:
-                permission_function = permission_func
 
-            # Get access controller address for chain
-            access_address = self.access_controller_client.contract.address
+        ip_id = param.ip_id
+        deadline = param.deadline
+        state = param.state
+        permissions = param.permissions
+        access_address = self.access_controller_client.contract.address
+        is_batch_permission_function = len(permissions) >= 2
 
-            if permission_function == "setTransientPermission":
-                # Encode single permission
-                encode_data = self.access_controller_client.contract.encode_abi(
-                    abi_element_identifier="setTransientPermission",
-                    args=[
-                        self.web3.to_checksum_address(permissions[0]["ipId"]),
-                        self.web3.to_checksum_address(permissions[0]["signer"]),
-                        self.web3.to_checksum_address(permissions[0]["to"]),
-                        (
-                            Web3.keccak(text=permissions[0]["func"])[:4]
-                            if permissions[0].get("func")
-                            else b"\x00\x00\x00\x00"
-                        ),
-                        permissions[0]["permission"],
-                    ],
-                )
-            else:
-                # Encode multiple permissions - format them correctly for the contract
-                formatted_permissions = []
-                for p in permissions:
-                    formatted_permission = {
-                        "ipAccount": self.web3.to_checksum_address(p["ipId"]),
-                        "signer": self.web3.to_checksum_address(p["signer"]),
-                        "to": self.web3.to_checksum_address(p["to"]),
-                        "func": (
-                            Web3.keccak(text=p["func"])[:4]
-                            if p.get("func")
-                            else b"\x00\x00\x00\x00"
-                        ),
-                        "permission": p["permission"],
+        function_name = (
+            "setBatchTransientPermissions"
+            if is_batch_permission_function
+            else "setTransientPermission"
+        )
+
+        if is_batch_permission_function:
+            args = [
+                [
+                    {
+                        "ipAccount": validate_address(item.ip_id),
+                        "signer": validate_address(item.signer),
+                        "to": validate_address(item.to),
+                        "func": Web3.keccak(
+                            text=item.func or DEFAULT_FUNCTION_SELECTOR
+                        )[:4],
+                        "permission": item.permission.value,
                     }
-                    formatted_permissions.append(formatted_permission)
+                    for item in permissions
+                ]
+            ]
+        else:
+            permission = permissions[0]
+            args = [
+                validate_address(permission.ip_id),
+                validate_address(permission.signer),
+                validate_address(permission.to),
+                Web3.keccak(text=permission.func or DEFAULT_FUNCTION_SELECTOR)[:4],
+                permission.permission.value,
+            ]
 
-                # Pass the array as a single argument
-                encode_data = self.access_controller_client.contract.encode_abi(
-                    abi_element_identifier=permission_function,
-                    args=[formatted_permissions],
-                )
+        data = self.access_controller_client.contract.encode_abi(
+            abi_element_identifier=function_name, args=args
+        )
 
-            return self.get_signature(
+        return self.get_signature(
+            SignatureArgs(
                 state=state,
                 to=access_address,
-                encode_data=encode_data,
+                encode_data=data,
                 verifying_contract=ip_id,
                 deadline=deadline,
-            )
-
-        except Exception as e:
-            raise e
+            ),
+        )

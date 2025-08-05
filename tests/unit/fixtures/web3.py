@@ -1,8 +1,8 @@
-from web3 import Web3
 from unittest.mock import MagicMock, Mock
 
-from tests.unit.fixtures.data import ADDRESS
+from web3 import Web3
 
+from tests.unit.fixtures.data import ADDRESS
 
 mock_web3 = Mock(spec=Web3)
 mock_web3.to_checksum_address = MagicMock(return_value=ADDRESS)

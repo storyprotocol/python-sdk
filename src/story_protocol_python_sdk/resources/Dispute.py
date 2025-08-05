@@ -1,22 +1,20 @@
-from web3 import Web3
 from eth_abi.abi import encode
+from web3 import Web3
 
-from story_protocol_python_sdk.resources.WIP import WIP
-from story_protocol_python_sdk.abi.DisputeModule.DisputeModule_client import (
-    DisputeModuleClient,
-)
 from story_protocol_python_sdk.abi.ArbitrationPolicyUMA.ArbitrationPolicyUMA_client import (
     ArbitrationPolicyUMAClient,
+)
+from story_protocol_python_sdk.abi.DisputeModule.DisputeModule_client import (
+    DisputeModuleClient,
 )
 from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
     IPAccountImplClient,
 )
 from story_protocol_python_sdk.abi.WIP.WIP_client import WIPClient
-
-from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
+from story_protocol_python_sdk.resources.WIP import WIP
 from story_protocol_python_sdk.utils.ipfs import convert_cid_to_hash_ipfs
-from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
 from story_protocol_python_sdk.utils.oov3 import get_assertion_bond
+from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
 
 class Dispute:
@@ -101,7 +99,7 @@ class Dispute:
             if bond > max_bonds:
                 raise ValueError(f"Bond must be less than {max_bonds}.")
 
-            deposit_response = self.wip.deposit(amount=bond)
+            self.wip.deposit(amount=bond)
 
             # Convert CID to IPFS hash
             dispute_evidence_hash = convert_cid_to_hash_ipfs(cid)
@@ -297,7 +295,7 @@ class Dispute:
 
             # Approve IP Account to transfer WrappedIP tokens if needed
             if allowance < bond:
-                approve_tx = self.wip.approve(
+                self.wip.approve(
                     spender=ip_account.contract.address, amount=2**256 - 1  # maxUint256
                 )
 

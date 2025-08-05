@@ -1,15 +1,12 @@
-# tests/integration/test_integration_wip.py
+from story_protocol_python_sdk.story_client import StoryClient
 
-import pytest
-from web3 import Web3
-
-from setup_for_integration import web3, story_client, wallet_address, wallet_address_2
+from .setup_for_integration import wallet_address, wallet_address_2, web3
 
 
 class TestWIPDeposit:
-    def test_deposit(self, story_client):
+    def test_deposit(self, story_client: StoryClient):
         """Test depositing IP to WIP"""
-        ip_amt = Web3.to_wei(1, "ether")  # or Web3.to_wei("0.01", 'ether')
+        ip_amt = web3.to_wei(1, "ether")  # or Web3.to_wei("0.01", 'ether')
 
         # Get balances before deposit
         balance_before = story_client.get_wallet_balance()
@@ -39,9 +36,9 @@ class TestWIPDeposit:
 
 
 class TestWIPTransfer:
-    def test_transfer(self, story_client):
+    def test_transfer(self, story_client: StoryClient):
         """Test transferring WIP"""
-        transfer_amount = Web3.to_wei("0.01", "ether")
+        transfer_amount = web3.to_wei("0.01", "ether")
 
         # Get balances before transfer
         sender_wip_before = story_client.WIP.balance_of(wallet_address)
@@ -71,7 +68,7 @@ class TestWIPTransfer:
 
 
 class TestWIPWithdraw:
-    def test_withdraw(self, story_client):
+    def test_withdraw(self, story_client: StoryClient):
         """Test withdrawing WIP to IP"""
         # Get balances before withdrawal
         balance_before = story_client.get_wallet_balance()

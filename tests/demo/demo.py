@@ -1,17 +1,17 @@
 import os
+
+from demo_utils import (
+    PIL_LICENSE_TEMPLATE,
+    ROYALTY_POLICY,
+    MockERC20,
+    MockERC721,
+    get_token_id,
+    mint_tokens,
+)
 from dotenv import load_dotenv
 from web3 import Web3
 
 from story_protocol_python_sdk import StoryClient
-from demo_utils import (
-    get_token_id,
-    MockERC721,
-    MockERC20,
-    mint_tokens,
-    ROYALTY_POLICY,
-    ROYALTY_MODULE,
-    PIL_LICENSE_TEMPLATE,
-)
 
 
 def main():
@@ -69,13 +69,13 @@ def main():
         print(
             f"Attached License Terms to IP at transaction hash {attach_license_terms_response['txHash']}"
         )
-    except Exception as e:
+    except Exception:
         print(
             f"License Terms ID {register_pil_terms_response['licenseTermsId']} already attached to this IPA."
         )
 
     # Before you mint make sure you have enough ERC20 tokens according to the minting fee above
-    token_ids = mint_tokens(MockERC20, web3, account, account.address, 10000)
+    mint_tokens(MockERC20, web3, account, account.address, 10000)
 
     # 5. Mint License
     mint_license_response = story_client.License.mintLicenseTokens(

@@ -1,5 +1,6 @@
 import json
 import os
+
 from web3 import Web3
 
 
@@ -20,7 +21,7 @@ class WIPClient:
                 contract_address = contract["contract_address"]
                 break
         if not contract_address:
-            raise ValueError(f"Contract address for WIP not found in config.json")
+            raise ValueError("Contract address for WIP not found in config.json")
         abi_path = os.path.join(
             os.path.dirname(__file__), "..", "..", "abi", "jsons", "WIP.json"
         )

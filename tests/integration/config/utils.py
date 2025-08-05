@@ -1,9 +1,11 @@
-from web3 import Web3
-from dotenv import load_dotenv
-from src.story_protocol_python_sdk.story_client import StoryClient
-import os
 import hashlib
+import os
+
 import base58
+from dotenv import load_dotenv
+from web3 import Web3
+
+from story_protocol_python_sdk.story_client import StoryClient
 
 load_dotenv()
 
@@ -24,23 +26,8 @@ ROYALTY_POLICY_LRP = "0x9156e603C949481883B1d3355c6f1132D191fC41"
 CORE_METADATA_MODULE = "0x6E81a25C99C6e8430aeC7353325EB138aFE5DC16"
 
 
-def get_story_client_in_sepolia(web3: Web3, account) -> StoryClient:
-    chain_id = 11155111  # Sepolia chain ID
-    return StoryClient(web3, account, chain_id)
-
-
-def get_story_client_in_iliad(web3: Web3, account) -> StoryClient:
-    chain_id = 1513  # Sepolia chain ID
-    return StoryClient(web3, account, chain_id)
-
-
-def get_story_client_in_odyssey(web3: Web3, account) -> StoryClient:
-    chain_id = 1516  # Odyssey chain ID
-    return StoryClient(web3, account, chain_id)
-
-
-def get_story_client_in_devnet(web3: Web3, account) -> StoryClient:
-    chain_id = 1315  # Devnet chain ID
+def get_story_client(web3: Web3, account) -> StoryClient:
+    chain_id = 1315  # aeneid chain ID
     return StoryClient(web3, account, chain_id)
 
 

@@ -95,7 +95,7 @@ class Royalty:
         payer_ip_id: str,
         token: str,
         amount: int,
-        tx_options: dict = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Allows the function caller to pay royalties to the receiver IP asset on behalf of the payer IP asset.
@@ -147,8 +147,8 @@ class Royalty:
         child_ip_ids: list,
         royalty_policies: list,
         currency_tokens: list,
-        claim_options: dict = None,
-        tx_options: dict = None,
+        claim_options: dict | None = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Claims all revenue from the child IPs of an ancestor IP, then optionally transfers and unwraps tokens.
@@ -231,7 +231,7 @@ class Royalty:
         ancestor_ip_id: str,
         token: str,
         royalty_policy: str = "LAP",
-        tx_options: dict = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Transfers to vault an amount of revenue tokens claimable via a royalty policy.
@@ -246,7 +246,9 @@ class Royalty:
         try:
             if not self.web3.is_address(token):
                 raise ValueError(f'Token address "{token}" is invalid.')
-
+            royalty_policy_client: (
+                RoyaltyPolicyLAPClient | RoyaltyPolicyLRPClient | None
+            ) = None
             # Determine which royalty policy to use
             if royalty_policy == "LAP":
                 royalty_policy_client = self.royalty_policy_lap_client

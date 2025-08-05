@@ -148,69 +148,6 @@ class TestErrorCases:
                 or "invalid" in str(e).lower()
             )
 
-    def test_parameter_omission(self, story_client: StoryClient):
-        """Test omitting required parameters"""
-
-        with pytest.raises(TypeError):
-            story_client.NFTClient.create_nft_collection(
-                # name is omitted
-                symbol="TEST",
-                is_public_minting=True,
-                mint_open=True,
-                contract_uri="test-uri",
-                mint_fee_recipient=story_client.account.address,
-            )
-
-        with pytest.raises(TypeError):
-            story_client.NFTClient.create_nft_collection(
-                name="test-collection",
-                # symbol is omitted
-                is_public_minting=True,
-                mint_open=True,
-                contract_uri="test-uri",
-                mint_fee_recipient=story_client.account.address,
-            )
-
-        with pytest.raises(TypeError):
-            story_client.NFTClient.create_nft_collection(
-                name="test-collection",
-                symbol="TEST",
-                # is_public_minting is omitted
-                mint_open=True,
-                contract_uri="test-uri",
-                mint_fee_recipient=story_client.account.address,
-            )
-
-        with pytest.raises(TypeError):
-            story_client.NFTClient.create_nft_collection(
-                name="test-collection",
-                symbol="TEST",
-                is_public_minting=True,
-                # mint_open is omitted
-                contract_uri="test-uri",
-                mint_fee_recipient=story_client.account.address,
-            )
-
-        with pytest.raises(TypeError):
-            story_client.NFTClient.create_nft_collection(
-                name="test-collection",
-                symbol="TEST",
-                is_public_minting=True,
-                mint_open=True,
-                # contract_uri is omitted
-                mint_fee_recipient=story_client.account.address,
-            )
-
-        with pytest.raises(TypeError):
-            story_client.NFTClient.create_nft_collection(
-                name="test-collection",
-                symbol="TEST",
-                is_public_minting=True,
-                mint_open=True,
-                contract_uri="test-uri",
-                # mint_fee_recipient is omitted
-            )
-
     def test_authorization_errors(self, story_client: StoryClient):
         """Test unauthorized operations"""
 

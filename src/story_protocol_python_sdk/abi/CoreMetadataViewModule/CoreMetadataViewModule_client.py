@@ -15,7 +15,6 @@ class CoreMetadataViewModuleClient:
         )
         with open(config_path, "r") as config_file:
             config = json.load(config_file)
-
         contract_address = None
         for contract in config["contracts"]:
             if contract["contract_name"] == "CoreMetadataViewModule":

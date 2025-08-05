@@ -55,7 +55,7 @@ class Dispute:
         cid: str,
         liveness: int,
         bond: int,
-        tx_options: dict = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Raises a dispute on a given IP ID.
@@ -132,7 +132,7 @@ class Dispute:
             raise ValueError(f"Failed to raise dispute: {str(e)}")
 
     def cancel_dispute(
-        self, dispute_id: int, data: str = "0x", tx_options: dict = None
+        self, dispute_id: int, data: str = "0x", tx_options: dict | None = None
     ) -> dict:
         """
         Cancels an ongoing dispute.
@@ -158,7 +158,7 @@ class Dispute:
             raise ValueError(f"Failed to cancel dispute: {str(e)}")
 
     def resolve_dispute(
-        self, dispute_id: int, data: str, tx_options: dict = None
+        self, dispute_id: int, data: str, tx_options: dict | None = None
     ) -> dict:
         """
         Resolves a dispute after it has been judged.
@@ -184,7 +184,7 @@ class Dispute:
             raise ValueError(f"Failed to resolve dispute: {str(e)}")
 
     def tag_if_related_ip_infringed(
-        self, infringement_tags: list, tx_options: dict = None
+        self, infringement_tags: list, tx_options: dict | None = None
     ) -> list:
         """
         Tags a derivative if a parent has been tagged with an infringement tag.
@@ -217,7 +217,7 @@ class Dispute:
         except Exception as e:
             raise ValueError(f"Failed to tag related IP infringed: {str(e)}")
 
-    def _parse_tx_dispute_raised_event(self, tx_receipt: dict) -> int:
+    def _parse_tx_dispute_raised_event(self, tx_receipt: dict) -> int | None:
         """
         Parse the DisputeRaised event from a transaction receipt.
 
@@ -240,7 +240,7 @@ class Dispute:
         assertion_id: str,
         counter_evidence_cid: str,
         ip_id: str,
-        tx_options: dict = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Counters a dispute that was raised by another party on an IP using counter evidence.

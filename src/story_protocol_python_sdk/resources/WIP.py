@@ -22,7 +22,7 @@ class WIP:
 
         self.wip_client = WIPClient(web3)
 
-    def deposit(self, amount: int, tx_options: dict = None) -> dict:
+    def deposit(self, amount: int, tx_options: dict | None = None) -> dict:
         """
         Wraps the selected amount of IP to WIP.
         The WIP will be deposited to the wallet that transferred the IP.
@@ -57,7 +57,7 @@ class WIP:
         except Exception as e:
             raise ValueError(f"Failed to deposit IP for WIP: {str(e)}")
 
-    def withdraw(self, amount: int, tx_options: dict = None) -> dict:
+    def withdraw(self, amount: int, tx_options: dict | None = None) -> dict:
         """
         Unwraps the selected amount of WIP to IP.
 
@@ -82,7 +82,9 @@ class WIP:
         except Exception as e:
             raise ValueError(f"Failed to withdraw WIP: {str(e)}")
 
-    def approve(self, spender: str, amount: int, tx_options: dict = None) -> dict:
+    def approve(
+        self, spender: str, amount: int, tx_options: dict | None = None
+    ) -> dict:
         """
         Approve a spender to use the wallet's WIP balance.
 
@@ -131,7 +133,7 @@ class WIP:
         except Exception as e:
             raise ValueError(f"Failed to get WIP balance: {str(e)}")
 
-    def transfer(self, to: str, amount: int, tx_options: dict = None) -> dict:
+    def transfer(self, to: str, amount: int, tx_options: dict | None = None) -> dict:
         """
         Transfers `amount` of WIP to a recipient `to`.
 
@@ -164,7 +166,7 @@ class WIP:
             raise ValueError(f"Failed to transfer WIP: {str(e)}")
 
     def transfer_from(
-        self, from_address: str, to: str, amount: int, tx_options: dict = None
+        self, from_address: str, to: str, amount: int, tx_options: dict | None = None
     ) -> dict:
         """
         Transfers `amount` of WIP from `from_address` to a recipient `to`.

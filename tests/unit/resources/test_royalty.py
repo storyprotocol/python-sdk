@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 import pytest
+from ens.ens import HexStr
 from web3 import Web3
 
 from story_protocol_python_sdk.resources.Royalty import Royalty
@@ -103,7 +104,9 @@ def test_pay_royalty_on_behalf_success(royalty_client):
             with patch(
                 "web3.eth.Eth.send_raw_transaction",
                 return_value=Web3.to_bytes(
-                    hexstr="0xbadf64f2c220e27407c4d2ccbc772fb72c7dc590ac25000dc316e4dc519fbfa2"
+                    hexstr=HexStr(
+                        "0xbadf64f2c220e27407c4d2ccbc772fb72c7dc590ac25000dc316e4dc519fbfa2"
+                    )
                 ),
             ):
                 with patch(

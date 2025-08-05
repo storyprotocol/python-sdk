@@ -77,7 +77,7 @@ class IPAsset:
         metadata_uri: str,
         metadata_hash: bytes,
         allow_duplicates: bool = False,
-        tx_options: dict = None,
+        tx_options: dict | None = None,
     ):
         spg_nft_client = SPGNFTImplClient(self.web3, contract_address=nft_contract)
 
@@ -110,9 +110,9 @@ class IPAsset:
         self,
         nft_contract: str,
         token_id: int,
-        ip_metadata: dict = None,
-        deadline: int = None,
-        tx_options: dict = None,
+        ip_metadata: dict | None = None,
+        deadline: int | None = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Register an NFT as IP, creating a corresponding IP record.
@@ -132,7 +132,7 @@ class IPAsset:
             if self._is_registered(ip_id):
                 return {"tx_hash": None, "ip_id": ip_id}
 
-            req_object = {
+            req_object: dict = {
                 "tokenId": token_id,
                 "nftContract": self.web3.to_checksum_address(nft_contract),
                 "ipMetadata": {
@@ -222,8 +222,8 @@ class IPAsset:
         max_minting_fee: int = 0,
         max_rts: int = 0,
         max_revenue_share: int = 0,
-        license_template: str = None,
-        tx_options: dict = None,
+        license_template: str | None = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Registers a derivative directly with parent IP's license terms, without needing license tokens,
@@ -287,7 +287,7 @@ class IPAsset:
         child_ip_id: str,
         license_token_ids: list,
         max_rts: int = 0,
-        tx_options: dict = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Registers a derivative with license tokens. The derivative IP is registered with license tokens
@@ -338,10 +338,10 @@ class IPAsset:
         self,
         spg_nft_contract: str,
         terms: list,
-        ip_metadata: dict = None,
-        recipient: str = None,
+        ip_metadata: dict | None = None,
+        recipient: str | None = None,
         allow_duplicates: bool = False,
-        tx_options: dict = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Mint an NFT from a collection and register it as an IP.
@@ -502,10 +502,10 @@ class IPAsset:
     def mint_and_register_ip(
         self,
         spg_nft_contract: str,
-        recipient: str = None,
-        ip_metadata: dict = None,
+        recipient: str | None = None,
+        ip_metadata: dict | None = None,
         allow_duplicates: bool = True,
-        tx_options: dict = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Mint an NFT from a SPGNFT collection and register it with metadata as an IP.
@@ -573,9 +573,9 @@ class IPAsset:
         nft_contract: str,
         token_id: int,
         license_terms_data: dict,
-        ip_metadata: dict = None,
-        deadline: int = None,
-        tx_options: dict = None,
+        ip_metadata: dict | None = None,
+        deadline: int | None = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Register a given NFT as an IP and attach Programmable IP License Terms.
@@ -1030,7 +1030,7 @@ class IPAsset:
         """
         return self.ip_asset_registry_client.isRegistered(ip_id)
 
-    def _parse_tx_ip_registered_event(self, tx_receipt: dict) -> int:
+    def _parse_tx_ip_registered_event(self, tx_receipt: dict) -> dict:
         """
         Parse the IPRegistered event from a transaction receipt.
 
@@ -1049,9 +1049,9 @@ class IPAsset:
                     "ip_id": self.web3.to_checksum_address(ip_id),
                     "token_id": token_id,
                 }
-        return None
+        raise ValueError("IPRegistered event not found in transaction receipt.")
 
-    def _parse_tx_license_term_attached_event(self, tx_receipt: dict) -> int:
+    def _parse_tx_license_term_attached_event(self, tx_receipt: dict) -> int | None:
         """
         Parse the LicenseTermsAttached event from a transaction receipt.
 
@@ -1069,7 +1069,7 @@ class IPAsset:
                 return license_terms_id
         return None
 
-    def _parse_tx_license_terms_attached_event(self, tx_receipt: dict) -> list:
+    def _parse_tx_license_terms_attached_event(self, tx_receipt: dict) -> list | None:
         """
         Parse the LicenseTermsAttached events from a transaction receipt.
 

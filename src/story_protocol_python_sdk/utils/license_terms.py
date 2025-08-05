@@ -1,5 +1,6 @@
 # src/story_protocol_python_sdk/utils/license_terms.py
 
+from ens.async_ens import HexStr
 from web3 import Web3
 
 from story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client import (
@@ -134,7 +135,7 @@ class LicenseTerms:
         commercializer_checker_data = params.get(
             "commercializer_checker_data", ZERO_ADDRESS
         )
-        if isinstance(commercializer_checker_data, str):
+        if isinstance(commercializer_checker_data, HexStr):
             params["commercializer_checker_data"] = Web3.to_bytes(
                 hexstr=commercializer_checker_data
             )

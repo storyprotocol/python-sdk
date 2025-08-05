@@ -6,7 +6,11 @@ TRANSACTION_TIMEOUT = 300
 
 
 def build_and_send_transaction(
-    web3: Web3, account, client_function, *client_args, tx_options: dict = None
+    web3: Web3,
+    account,
+    client_function,
+    *client_args,
+    tx_options: dict | None = None,
 ) -> dict:
     """
     Builds and sends a transaction using the provided client function and arguments.

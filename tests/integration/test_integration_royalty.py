@@ -49,6 +49,8 @@ class TestRoyalty:
             commercial_rev_share=10,
             royalty_policy=ROYALTY_POLICY,
         )
+        if license_terms_response is None:
+            raise ValueError("Failed to register license terms")
         license_terms_id = license_terms_response["license_terms_id"]
 
         story_client.License.attach_license_terms(

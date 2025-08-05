@@ -1,5 +1,6 @@
 # src/story_protcol_python_sdk/resources/NFTClient.py
 
+from eth_typing.evm import ChecksumAddress
 from web3 import Web3
 
 from story_protocol_python_sdk.abi.RegistrationWorkflows.RegistrationWorkflows_client import (
@@ -35,11 +36,11 @@ class NFTClient:
         mint_fee_recipient: str,
         contract_uri: str,
         base_uri: str = "",
-        max_supply: int = None,
-        mint_fee: int = None,
-        mint_fee_token: str = None,
-        owner: str = None,
-        tx_options: dict = None,
+        max_supply: int | None = None,
+        mint_fee: int | None = None,
+        mint_fee_token: str | None = None,
+        owner: str | None = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Creates a new SPG NFT Collection.
@@ -99,7 +100,9 @@ class NFTClient:
         except Exception as e:
             raise e
 
-    def _parse_tx_collection_created_event(self, tx_receipt: dict) -> int:
+    def _parse_tx_collection_created_event(
+        self, tx_receipt: dict
+    ) -> ChecksumAddress | None:
         """
         Parse the CollectionCreated event from a transaction receipt.
 

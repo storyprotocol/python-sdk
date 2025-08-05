@@ -74,7 +74,12 @@ class IPAccount:
             raise ValueError(f"The IP id {ip_id} is not registered.")
 
     def execute(
-        self, to: str, value: int, ip_id: str, data: str, tx_options: dict = None
+        self,
+        to: str,
+        value: int,
+        ip_id: str,
+        data: str,
+        tx_options: dict | None = None,
     ) -> dict:
         """Execute a transaction from the IP Account.
 
@@ -109,9 +114,9 @@ class IPAccount:
         data: str,
         signer: str,
         deadline: int,
-        signature: str,
+        signature: bytes,
         value: int = 0,
-        tx_options: dict = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """Execute a signed transaction from the IP Account.
 
@@ -187,7 +192,11 @@ class IPAccount:
             raise e
 
     def set_ip_metadata(
-        self, ip_id: str, metadata_uri: str, metadata_hash: str, tx_options: dict = None
+        self,
+        ip_id: str,
+        metadata_uri: str,
+        metadata_hash: str,
+        tx_options: dict | None = None,
     ) -> dict:
         """Sets the metadataURI for an IP asset.
 
@@ -219,7 +228,9 @@ class IPAccount:
         except Exception as e:
             raise e
 
-    def transfer_erc20(self, ip_id: str, tokens: list, tx_options: dict = None) -> dict:
+    def transfer_erc20(
+        self, ip_id: str, tokens: list, tx_options: dict | None = None
+    ) -> dict:
         """Transfers ERC20 tokens from the IP Account to the target address.
 
         :param ip_id str: The IP ID to transfer tokens from.

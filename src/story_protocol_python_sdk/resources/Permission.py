@@ -44,7 +44,7 @@ class Permission:
         to: str,
         permission: int,
         func: str = DEFAULT_FUNCTION_SELECTOR,
-        tx_options: dict = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Sets the permission for a specific function call.
@@ -92,7 +92,7 @@ class Permission:
             raise Exception(f"Failed to set permission for IP {ip_id}: {str(e)}")
 
     def set_all_permissions(
-        self, ip_id: str, signer: str, permission: int, tx_options: dict = None
+        self, ip_id: str, signer: str, permission: int, tx_options: dict | None = None
     ) -> dict:
         """
         Sets permission to a signer for all functions across all modules.
@@ -139,8 +139,8 @@ class Permission:
         to: str,
         permission: int,
         func: str = DEFAULT_FUNCTION_SELECTOR,
-        deadline: int = None,
-        tx_options: dict = None,
+        deadline: int | None = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Specific permission overrides wildcard permission with signature.
@@ -180,7 +180,6 @@ class Permission:
 
             # Get state and calculate deadline
             state = ip_account_client.state()
-            self.web3.eth.get_block("latest").timestamp
             calculated_deadline = self.sign_util.get_deadline(deadline)
 
             # Get permission signature

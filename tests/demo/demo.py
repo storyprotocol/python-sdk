@@ -1,6 +1,11 @@
 import os
 
-from demo_utils import (
+from dotenv import load_dotenv
+from web3 import Web3
+
+from story_protocol_python_sdk import StoryClient
+
+from .demo_utils import (
     PIL_LICENSE_TEMPLATE,
     ROYALTY_POLICY,
     MockERC20,
@@ -8,10 +13,6 @@ from demo_utils import (
     get_token_id,
     mint_tokens,
 )
-from dotenv import load_dotenv
-from web3 import Web3
-
-from story_protocol_python_sdk import StoryClient
 
 
 def main():
@@ -42,14 +43,18 @@ def main():
     registered_ip_asset_response = story_client.IPAsset.register(
         nft_contract=MockERC721, token_id=token_id
     )
+    if registered_ip_asset_response is None:
+        raise ValueError("Failed to register IP asset")
     print(
         f"Root IPA created at transaction hash {registered_ip_asset_response['txHash']}, IPA ID: {registered_ip_asset_response['ipId']}"
     )
 
     # 3. Register PIL Terms
-    register_pil_terms_response = story_client.License.registerCommercialUsePIL(
+    register_pil_terms_response = story_client.License.register_commercial_use_pil(
         default_minting_fee=1, currency=MockERC20, royalty_policy=ROYALTY_POLICY
     )
+    if register_pil_terms_response is None:
+        raise ValueError("Failed to register PIL terms")
     if "txHash" in register_pil_terms_response:
         print(
             f"PIL Terms registered at transaction hash {register_pil_terms_response['txHash']}, License Terms ID: {register_pil_terms_response['licenseTermsId']}"
@@ -61,11 +66,13 @@ def main():
 
     # 4. Attach License Terms to IP
     try:
-        attach_license_terms_response = story_client.License.attachLicenseTerms(
+        attach_license_terms_response = story_client.License.attach_license_terms(
             ip_id=registered_ip_asset_response["ipId"],
             license_template=PIL_LICENSE_TEMPLATE,
             license_terms_id=register_pil_terms_response["licenseTermsId"],
         )
+        if attach_license_terms_response is None:
+            raise ValueError("Failed to attach license terms")
         print(
             f"Attached License Terms to IP at transaction hash {attach_license_terms_response['txHash']}"
         )
@@ -78,7 +85,7 @@ def main():
     mint_tokens(MockERC20, web3, account, account.address, 10000)
 
     # 5. Mint License
-    mint_license_response = story_client.License.mintLicenseTokens(
+    mint_license_response = story_client.License.mint_license_tokens(
         licensor_ip_id=registered_ip_asset_response["ipId"],
         license_template=PIL_LICENSE_TEMPLATE,
         license_terms_id=register_pil_terms_response["licenseTermsId"],
@@ -87,6 +94,8 @@ def main():
         max_minting_fee=1,
         max_revenue_share=0,
     )
+    if mint_license_response is None:
+        raise ValueError("Failed to mint license tokens")
     print(
         f"License Token minted at transaction hash {mint_license_response['txHash']}, License Token IDs: {mint_license_response['licenseTokenIds']}"
     )
@@ -98,15 +107,21 @@ def main():
     registered_ip_asset_derivative_response = story_client.IPAsset.register(
         nft_contract=MockERC721, token_id=derivative_token_id
     )
+    if registered_ip_asset_derivative_response is None:
+        raise ValueError("Failed to register derivative IP asset")
     print(
         f"Derivative IPA created at transaction hash {registered_ip_asset_derivative_response['txHash']}, IPA ID: {registered_ip_asset_derivative_response['ipId']}"
     )
 
-    link_derivative_response = story_client.IPAsset.registerDerivativeWithLicenseTokens(
-        child_ip_id=registered_ip_asset_derivative_response["ipId"],
-        license_token_ids=mint_license_response["licenseTokenIds"],
-        max_rts=5 * 10**6,
+    link_derivative_response = (
+        story_client.IPAsset.register_derivative_with_license_tokens(
+            child_ip_id=registered_ip_asset_derivative_response["ipId"],
+            license_token_ids=mint_license_response["licenseTokenIds"],
+            max_rts=5 * 10**6,
+        )
     )
+    if link_derivative_response is None:
+        raise ValueError("Failed to link derivative IP asset")
     print(
         f"Derivative IPA linked to parent at transaction hash {link_derivative_response['txHash']}"
     )

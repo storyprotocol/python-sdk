@@ -48,15 +48,15 @@ class StoryClient:
         self.account = account
         self.chain_id = chain_id
 
-        self._ip_asset = None
-        self._license = None
-        self._royalty = None
-        self._ip_account = None
-        self._permission = None
-        self._nft_client = None
-        self._dispute = None
-        self._wip = None
-        self._group = None
+        self._ip_asset: IPAsset | None = None
+        self._license: License | None = None
+        self._royalty: Royalty | None = None
+        self._ip_account: IPAccount | None = None
+        self._permission: Permission | None = None
+        self._nft_client: NFTClient | None = None
+        self._dispute: Dispute | None = None
+        self._wip: WIP | None = None
+        self._group: Group | None = None
 
     @property
     def IPAsset(self) -> IPAsset:

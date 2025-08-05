@@ -1,5 +1,6 @@
 import json
 import os
+
 from jinja2 import Template
 
 # Define the folder containing the ABI JSON files
@@ -24,7 +25,7 @@ class {{ class_name }}:
         return self.contract.functions.{{ function.name }}({% if function.inputs %}{{ function.inputs | join(', ') }}{% endif %}).call()
         {% else %}
         return self.contract.functions.{{ function.name }}({% if function.inputs %}{{ function.inputs | join(', ') }}{% endif %}).transact()
-        
+
     def build_{{ function.name }}_transaction(self, {% if function.inputs %}{{ function.inputs | join(', ') }}, {% endif %}tx_params):
         return self.contract.functions.{{ function.name }}({% if function.inputs %}{{ function.inputs | join(', ') }}{% endif %}).build_transaction(tx_params)
     {% endif %}

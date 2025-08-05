@@ -2,35 +2,34 @@
 
 from web3 import Web3
 
+from story_protocol_python_sdk.abi.CoreMetadataModule.CoreMetadataModule_client import (
+    CoreMetadataModuleClient,
+)
 from story_protocol_python_sdk.abi.GroupingModule.GroupingModule_client import (
     GroupingModuleClient,
 )
 from story_protocol_python_sdk.abi.GroupingWorkflows.GroupingWorkflows_client import (
     GroupingWorkflowsClient,
 )
+from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
+    IPAccountImplClient,
+)
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import (
     IPAssetRegistryClient,
-)
-from story_protocol_python_sdk.abi.CoreMetadataModule.CoreMetadataModule_client import (
-    CoreMetadataModuleClient,
-)
-from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import (
-    LicensingModuleClient,
 )
 from story_protocol_python_sdk.abi.LicenseRegistry.LicenseRegistry_client import (
     LicenseRegistryClient,
 )
+from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import (
+    LicensingModuleClient,
+)
 from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client import (
     PILicenseTemplateClient,
 )
-from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
-    IPAccountImplClient,
-)
-
-from story_protocol_python_sdk.utils.license_terms import LicenseTerms
-from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
-from story_protocol_python_sdk.utils.sign import Sign
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
+from story_protocol_python_sdk.utils.license_terms import LicenseTerms
+from story_protocol_python_sdk.utils.sign import Sign
+from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
 
 class Group:

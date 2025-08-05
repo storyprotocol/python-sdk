@@ -2,8 +2,8 @@
 
 from web3 import Web3
 
-from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client import (
-    PILicenseTemplateClient,
+from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import (
+    IPAssetRegistryClient,
 )
 from story_protocol_python_sdk.abi.LicenseRegistry.LicenseRegistry_client import (
     LicenseRegistryClient,
@@ -11,16 +11,15 @@ from story_protocol_python_sdk.abi.LicenseRegistry.LicenseRegistry_client import
 from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import (
     LicensingModuleClient,
 )
-from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import (
-    IPAssetRegistryClient,
-)
 from story_protocol_python_sdk.abi.ModuleRegistry.ModuleRegistry_client import (
     ModuleRegistryClient,
 )
-
+from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client import (
+    PILicenseTemplateClient,
+)
+from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
-from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
 
 
 class License:

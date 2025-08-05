@@ -2,43 +2,41 @@
 
 from web3 import Web3
 
-from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import (
-    IPAssetRegistryClient,
-)
-from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import (
-    LicensingModuleClient,
-)
-from story_protocol_python_sdk.abi.LicenseToken.LicenseToken_client import (
-    LicenseTokenClient,
-)
-from story_protocol_python_sdk.abi.LicenseRegistry.LicenseRegistry_client import (
-    LicenseRegistryClient,
-)
-from story_protocol_python_sdk.abi.RegistrationWorkflows.RegistrationWorkflows_client import (
-    RegistrationWorkflowsClient,
-)
-from story_protocol_python_sdk.abi.LicenseAttachmentWorkflows.LicenseAttachmentWorkflows_client import (
-    LicenseAttachmentWorkflowsClient,
-)
-from story_protocol_python_sdk.abi.DerivativeWorkflows.DerivativeWorkflows_client import (
-    DerivativeWorkflowsClient,
+from story_protocol_python_sdk.abi.AccessController.AccessController_client import (
+    AccessControllerClient,
 )
 from story_protocol_python_sdk.abi.CoreMetadataModule.CoreMetadataModule_client import (
     CoreMetadataModuleClient,
 )
-from story_protocol_python_sdk.abi.AccessController.AccessController_client import (
-    AccessControllerClient,
+from story_protocol_python_sdk.abi.DerivativeWorkflows.DerivativeWorkflows_client import (
+    DerivativeWorkflowsClient,
+)
+from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import (
+    IPAssetRegistryClient,
+)
+from story_protocol_python_sdk.abi.LicenseAttachmentWorkflows.LicenseAttachmentWorkflows_client import (
+    LicenseAttachmentWorkflowsClient,
+)
+from story_protocol_python_sdk.abi.LicenseRegistry.LicenseRegistry_client import (
+    LicenseRegistryClient,
+)
+from story_protocol_python_sdk.abi.LicenseToken.LicenseToken_client import (
+    LicenseTokenClient,
+)
+from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import (
+    LicensingModuleClient,
 )
 from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client import (
     PILicenseTemplateClient,
 )
-
-from story_protocol_python_sdk.utils.license_terms import LicenseTerms
-from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
-from story_protocol_python_sdk.utils.sign import Sign
-from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
-
+from story_protocol_python_sdk.abi.RegistrationWorkflows.RegistrationWorkflows_client import (
+    RegistrationWorkflowsClient,
+)
 from story_protocol_python_sdk.abi.SPGNFTImpl.SPGNFTImpl_client import SPGNFTImplClient
+from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
+from story_protocol_python_sdk.utils.license_terms import LicenseTerms
+from story_protocol_python_sdk.utils.sign import Sign
+from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
 
 class IPAsset:
@@ -403,9 +401,7 @@ class IPAsset:
 
             license_terms = []
             for term in terms:
-                validated_term = self.license_terms_util.validate_license_terms(
-                    term["terms"]
-                )
+                self.license_terms_util.validate_license_terms(term["terms"])
                 validated_licensing_config = (
                     self.license_terms_util.validate_licensing_config(
                         term["licensing_config"]
@@ -632,9 +628,7 @@ class IPAsset:
 
             license_terms = []
             for term in license_terms_data:
-                validated_term = self.license_terms_util.validate_license_terms(
-                    term["terms"]
-                )
+                self.license_terms_util.validate_license_terms(term["terms"])
                 validated_licensing_config = (
                     self.license_terms_util.validate_licensing_config(
                         term["licensing_config"]

@@ -1,16 +1,10 @@
-import os
-import sys
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from web3 import Web3
 from eth_utils import is_address, to_checksum_address
+from web3 import Web3
 
-current_dir = os.path.dirname(__file__)
-src_path = os.path.abspath(os.path.join(current_dir, "..", "..", ".."))
-if src_path not in sys.path:
-    sys.path.append(src_path)
-
-from src.story_protocol_python_sdk.resources.IPAsset import IPAsset
+from story_protocol_python_sdk.resources.IPAsset import IPAsset
 
 ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000"
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"

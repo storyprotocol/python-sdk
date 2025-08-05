@@ -2,20 +2,19 @@
 
 from web3 import Web3
 
-from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
-    IPAccountImplClient,
-)
-from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import (
-    IPAssetRegistryClient,
-)
 from story_protocol_python_sdk.abi.AccessController.AccessController_client import (
     AccessControllerClient,
 )
 from story_protocol_python_sdk.abi.CoreMetadataModule.CoreMetadataModule_client import (
     CoreMetadataModuleClient,
 )
+from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
+    IPAccountImplClient,
+)
+from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import (
+    IPAssetRegistryClient,
+)
 from story_protocol_python_sdk.abi.MockERC20.MockERC20_client import MockERC20Client
-
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
 

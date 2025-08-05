@@ -1,5 +1,4 @@
 import base58
-from typing import Union
 
 V0_PREFIX = "1220"
 
@@ -15,7 +14,7 @@ def convert_cid_to_hash_ipfs(cid: str) -> str:
         Hex string starting with '0x'
     """
     # Check if CID is v0 (starts with "Qm")
-    is_v0 = cid.startswith("Qm")
+    cid.startswith("Qm")
 
     # Decode base58 CID
     bytes_array = base58.b58decode(cid)

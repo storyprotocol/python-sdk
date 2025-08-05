@@ -1,5 +1,6 @@
 import json
 import os
+
 from web3 import Web3
 
 
@@ -14,6 +15,7 @@ class CoreMetadataViewModuleClient:
         )
         with open(config_path, "r") as config_file:
             config = json.load(config_file)
+
         contract_address = None
         for contract in config["contracts"]:
             if contract["contract_name"] == "CoreMetadataViewModule":
@@ -21,7 +23,7 @@ class CoreMetadataViewModuleClient:
                 break
         if not contract_address:
             raise ValueError(
-                f"Contract address for CoreMetadataViewModule not found in config.json"
+                "Contract address for CoreMetadataViewModule not found in config.json"
             )
         abi_path = os.path.join(
             os.path.dirname(__file__),

@@ -3,21 +3,21 @@
 import os
 import sys
 
+from story_protocol_python_sdk.resources.Dispute import Dispute
+from story_protocol_python_sdk.resources.Group import Group
+from story_protocol_python_sdk.resources.IPAccount import IPAccount
+from story_protocol_python_sdk.resources.IPAsset import IPAsset
+from story_protocol_python_sdk.resources.License import License
+from story_protocol_python_sdk.resources.NFTClient import NFTClient
+from story_protocol_python_sdk.resources.Permission import Permission
+from story_protocol_python_sdk.resources.Royalty import Royalty
+from story_protocol_python_sdk.resources.WIP import WIP
+
 # Ensure the src directory is in the Python path
 current_dir = os.path.dirname(__file__)
 src_path = os.path.abspath(os.path.join(current_dir, ".."))
 if src_path not in sys.path:
     sys.path.append(src_path)
-
-from story_protocol_python_sdk.resources.IPAsset import IPAsset
-from story_protocol_python_sdk.resources.License import License
-from story_protocol_python_sdk.resources.Royalty import Royalty
-from story_protocol_python_sdk.resources.IPAccount import IPAccount
-from story_protocol_python_sdk.resources.Permission import Permission
-from story_protocol_python_sdk.resources.NFTClient import NFTClient
-from story_protocol_python_sdk.resources.Dispute import Dispute
-from story_protocol_python_sdk.resources.WIP import WIP
-from story_protocol_python_sdk.resources.Group import Group
 
 
 class StoryClient:

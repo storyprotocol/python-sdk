@@ -6,9 +6,8 @@ from story_protocol_python_sdk.abi.RegistrationWorkflows.RegistrationWorkflows_c
     RegistrationWorkflowsClient,
 )
 from story_protocol_python_sdk.abi.SPGNFTImpl.SPGNFTImpl_client import SPGNFTImplClient
-
+from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
-from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
 
 
 class NFTClient:

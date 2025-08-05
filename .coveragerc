@@ -7,4 +7,3 @@ omit =
     # omit tests
     tests/*
 branch = true
-

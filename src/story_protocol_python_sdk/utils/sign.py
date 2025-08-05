@@ -1,19 +1,18 @@
 # src/story_protcol_python_sdk/utils/sign.py
 
-from web3 import Web3
-from eth_account import Account
-from eth_account.messages import encode_typed_data
-from eth_abi.abi import encode
 from datetime import datetime
 
-from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
-    IPAccountImplClient,
-)
+from eth_abi.abi import encode
+from eth_account import Account
+from eth_account.messages import encode_typed_data
+from web3 import Web3
+
 from story_protocol_python_sdk.abi.AccessController.AccessController_client import (
     AccessControllerClient,
 )
-
-from story_protocol_python_sdk.utils.constants import ZERO_FUNC
+from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
+    IPAccountImplClient,
+)
 
 
 class Sign:

@@ -1,5 +1,6 @@
 # src/story_protcol_python_sdk/resources/License.py
 
+from ens.ens import HexStr
 from web3 import Web3
 
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import (
@@ -62,7 +63,7 @@ class License:
         commercial_use: bool,
         commercial_attribution: bool,
         commercializer_checker: str,
-        commercializer_checker_data: str,
+        commercializer_checker_data: HexStr,
         commercial_rev_share: int,
         commercial_rev_ceiling: int,
         derivatives_allowed: bool,
@@ -72,7 +73,7 @@ class License:
         derivative_rev_ceiling: int,
         currency: str,
         uri: str,
-        tx_options: dict = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Registers new license terms and returns the ID of the newly registered license terms.
@@ -161,7 +162,9 @@ class License:
         except Exception as e:
             raise e
 
-    def register_non_com_social_remixing_pil(self, tx_options: dict = None) -> dict:
+    def register_non_com_social_remixing_pil(
+        self, tx_options: dict | None = None
+    ) -> dict:
         """
         Convenient function to register a PIL non-commercial social remix license to the registry.
 
@@ -197,9 +200,9 @@ class License:
         self,
         default_minting_fee: int,
         currency: str,
-        royalty_policy: str = None,
-        tx_options: dict = None,
-    ) -> dict:
+        royalty_policy: str | None = None,
+        tx_options: dict | None = None,
+    ) -> dict | None:
         """
         Convenient function to register a PIL commercial use license to the registry.
 
@@ -248,8 +251,8 @@ class License:
         currency: str,
         commercial_rev_share: int,
         royalty_policy: str,
-        tx_options: dict = None,
-    ) -> dict:
+        tx_options: dict | None = None,
+    ) -> dict | None:
         """
         Convenient function to register a PIL commercial remix license to the registry.
 
@@ -294,7 +297,7 @@ class License:
         except Exception as e:
             raise e
 
-    def _parse_tx_license_terms_registered_event(self, tx_receipt: dict) -> int:
+    def _parse_tx_license_terms_registered_event(self, tx_receipt: dict) -> int | None:
         """
         Parse the LicenseTermsRegistered event from a transaction receipt.
 
@@ -316,7 +319,7 @@ class License:
         ip_id: str,
         license_template: str,
         license_terms_id: int,
-        tx_options: dict = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Attaches license terms to an IP.
@@ -375,7 +378,7 @@ class License:
         receiver: str,
         max_minting_fee: int = 0,
         max_revenue_share: int = 0,
-        tx_options: dict = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Mints license tokens for the license terms attached to an IP.
@@ -441,7 +444,7 @@ class License:
         except Exception as e:
             raise e
 
-    def _parse_tx_license_tokens_minted_event(self, tx_receipt: dict) -> list:
+    def _parse_tx_license_tokens_minted_event(self, tx_receipt: dict) -> list | None:
         """
         Parse the LicenseTokenMinted event from a transaction receipt.
 
@@ -479,9 +482,9 @@ class License:
         licensor_ip_id: str,
         license_terms_id: int,
         amount: int,
-        license_template: str = None,
-        receiver: str = None,
-        tx_options: dict = None,
+        license_template: str | None = None,
+        receiver: str | None = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Pre-compute the minting license fee for the given IP and license terms.
@@ -505,16 +508,17 @@ class License:
             if not self.license_template_client.exists(license_terms_id):
                 raise ValueError(f"License terms id {license_terms_id} does not exist.")
 
-            # Set defaults if not provided
-            if not receiver:
-                receiver = self.account.address
-            if not license_template:
-                license_template = self.license_template_client.contract.address
-
-            # Convert addresses to checksum format
             licensor_ip_id = self.web3.to_checksum_address(licensor_ip_id)
-            license_template = self.web3.to_checksum_address(license_template)
-            receiver = self.web3.to_checksum_address(receiver)
+            license_template = (
+                self.web3.to_checksum_address(license_template)
+                if license_template
+                else self.license_template_client.contract.address
+            )
+            receiver = (
+                self.web3.to_checksum_address(receiver)
+                if receiver
+                else self.account.address
+            )
 
             response = self.licensing_module_client.predictMintingLicenseFee(
                 licensor_ip_id,
@@ -535,8 +539,8 @@ class License:
         ip_id: str,
         license_terms_id: int,
         licensing_config: dict,
-        license_template: str = None,
-        tx_options: dict = None,
+        license_template: str | None = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Sets the licensing configuration for a specific license terms of an IP. If both licenseTemplate and licenseTermsId are not specified then the licensing config apply to all licenses of given IP.
@@ -645,5 +649,4 @@ class License:
             }
 
         except Exception as e:
-            raise ValueError(f"Failed to set licensing config: {str(e)}")
             raise ValueError(f"Failed to set licensing config: {str(e)}")

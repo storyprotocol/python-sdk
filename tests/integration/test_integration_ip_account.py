@@ -4,7 +4,11 @@ import pytest
 from eth_abi.abi import encode
 from eth_account import Account
 from eth_account.messages import encode_typed_data
-from setup_for_integration import (
+from web3 import Web3
+
+from story_protocol_python_sdk.story_client import StoryClient
+
+from .setup_for_integration import (
     MockERC20,
     MockERC721,
     account,
@@ -14,9 +18,6 @@ from setup_for_integration import (
     private_key,
     web3,
 )
-from web3 import Web3
-
-from story_protocol_python_sdk.story_client import StoryClient
 
 
 class TestBasicIPAccountOperations:

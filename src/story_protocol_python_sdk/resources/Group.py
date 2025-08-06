@@ -57,7 +57,7 @@ class Group:
         self.license_terms_util = LicenseTerms(web3)
         self.sign_util = Sign(web3, self.chain_id, self.account)
 
-    def register_group(self, group_pool: str, tx_options: dict = None) -> dict:
+    def register_group(self, group_pool: str, tx_options: dict | None = None) -> dict:
         """
         Registers a Group IPA.
 
@@ -85,7 +85,7 @@ class Group:
             raise ValueError(f"Failed to register group: {str(e)}")
 
     def register_group_and_attach_license(
-        self, group_pool: str, license_data: dict, tx_options: dict = None
+        self, group_pool: str, license_data: dict, tx_options: dict | None = None
     ) -> dict:
         """
         Register a group IP with a group reward pool and attach license terms to the group IP.
@@ -124,11 +124,11 @@ class Group:
         spg_nft_contract: str,
         license_data: list,
         max_allowed_reward_share: int,
-        ip_metadata: dict = None,
-        recipient: str = None,
+        ip_metadata: dict | None = None,
+        recipient: str | None = None,
         allow_duplicates: bool = True,
-        deadline: int = None,
-        tx_options: dict = None,
+        deadline: int | None = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Mint an NFT from a SPGNFT collection, register it with metadata as an IP,
@@ -237,9 +237,9 @@ class Group:
         token_id: int,
         license_data: list,
         max_allowed_reward_share: int,
-        ip_metadata: dict = None,
-        deadline: int = None,
-        tx_options: dict = None,
+        ip_metadata: dict | None = None,
+        deadline: int | None = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Register an NFT as IP with metadata, attach license terms to the registered IP,
@@ -380,7 +380,7 @@ class Group:
         ip_ids: list,
         license_data: dict,
         max_allowed_reward_share: int,
-        tx_options: dict = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Register a group IP with a group reward pool, attach license terms to the group IP,
@@ -446,7 +446,7 @@ class Group:
         group_ip_id: str,
         currency_tokens: list,
         member_ip_ids: list,
-        tx_options: dict = None,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Collect royalties for the entire group and distribute the rewards to each member IP's royalty vault.
@@ -581,7 +581,7 @@ class Group:
 
         return result
 
-    def _get_ip_metadata(self, ip_metadata: dict = None) -> dict:
+    def _get_ip_metadata(self, ip_metadata: dict | None = None) -> dict:
         """
         Process IP metadata into the format expected by the contracts.
 

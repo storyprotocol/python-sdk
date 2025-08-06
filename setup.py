@@ -10,6 +10,7 @@ setup(
     package_dir={"": "src"},
     install_requires=["web3>=7.0.0", "pytest", "python-dotenv", "base58"],
     include_package_data=True,  # Ensure package data is included
+    package_data={"story_protocol_python_sdk": ["py.typed"]},
     url="https://github.com/storyprotocol/python-sdk",
     license="MIT",
     author="Andrew Chung",

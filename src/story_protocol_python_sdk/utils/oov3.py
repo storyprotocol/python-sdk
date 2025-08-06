@@ -40,7 +40,9 @@ def get_assertion_bond(
     :return int: The bond amount.
     """
     try:
-        oov3_contract_address = get_oov3_contract(arbitration_policy_uma_client)
+        oov3_contract_address = Web3.to_checksum_address(
+            get_oov3_contract(arbitration_policy_uma_client)
+        )
 
         oov3_contract = web3.eth.contract(
             address=oov3_contract_address, abi=ASSERTION_ABI

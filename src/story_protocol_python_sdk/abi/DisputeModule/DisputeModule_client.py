@@ -59,5 +59,17 @@ class DisputeModuleClient:
             disputeId, data
         ).build_transaction(tx_params)
 
+    def tagIfRelatedIpInfringed(self, ipIdToTag, infringerDisputeId):
+        return self.contract.functions.tagIfRelatedIpInfringed(
+            ipIdToTag, infringerDisputeId
+        ).transact()
+
+    def build_tagIfRelatedIpInfringed_transaction(
+        self, ipIdToTag, infringerDisputeId, tx_params
+    ):
+        return self.contract.functions.tagIfRelatedIpInfringed(
+            ipIdToTag, infringerDisputeId
+        ).build_transaction(tx_params)
+
     def isWhitelistedDisputeTag(self, tag):
         return self.contract.functions.isWhitelistedDisputeTag(tag).call()

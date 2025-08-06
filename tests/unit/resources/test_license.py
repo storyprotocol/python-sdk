@@ -78,7 +78,9 @@ def license_client(mock_web3, mock_account):
 class TestPILTermsRegistration:
     """Tests for PIL (Programmable IP License) terms registration."""
 
-    def test_register_pil_terms_license_terms_id_registered(self, license_client):
+    def test_register_pil_terms_license_terms_id_registered(
+        self, license_client: License
+    ):
         with patch.object(
             license_client.license_template_client, "getLicenseTermsId", return_value=1
         ), patch.object(
@@ -91,27 +93,25 @@ class TestPILTermsRegistration:
             return_value=True,
         ):
 
-            license_terms = {
-                "default_minting_fee": 1513,
-                "currency": VALID_ADDRESS,
-                "royalty_policy": VALID_ADDRESS,
-                "transferable": False,
-                "expiration": 0,
-                "commercial_use": True,
-                "commercial_attribution": False,
-                "commercializer_checker": ZERO_ADDRESS,
-                "commercializer_checker_data": "0x",
-                "commercial_rev_share": 0,
-                "commercial_rev_ceiling": 0,
-                "derivatives_allowed": False,
-                "derivatives_attribution": False,
-                "derivatives_approval": False,
-                "derivatives_reciprocal": False,
-                "derivative_rev_ceiling": 0,
-                "uri": "",
-            }
-
-            response = license_client.register_pil_terms(**license_terms)
+            response = license_client.register_pil_terms(
+                default_minting_fee=1513,
+                currency=VALID_ADDRESS,
+                royalty_policy=VALID_ADDRESS,
+                transferable=False,
+                expiration=0,
+                commercial_use=True,
+                commercial_attribution=False,
+                commercializer_checker=ZERO_ADDRESS,
+                commercializer_checker_data="0x",
+                commercial_rev_share=0,
+                commercial_rev_ceiling=0,
+                derivatives_allowed=False,
+                derivatives_attribution=False,
+                derivatives_approval=False,
+                derivatives_reciprocal=False,
+                derivative_rev_ceiling=0,
+                uri="",
+            )
             assert response["license_terms_id"] == 1
             assert "tx_hash" not in response
 

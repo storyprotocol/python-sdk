@@ -106,6 +106,12 @@ The project uses several tools to maintain code quality:
 
 All these tools are automatically run as pre-commit hooks when you commit code.
 
+### Type Checking
+
+```bash
+mypy .
+```
+
 ### Manual Pre-commit Checks
 
 To manually run all pre-commit checks:

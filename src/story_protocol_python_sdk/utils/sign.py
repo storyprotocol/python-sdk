@@ -26,7 +26,7 @@ class Sign:
 
     def get_signature(
         self,
-        state: str,
+        state: bytes,
         to: str,
         encode_data: bytes,
         verifying_contract: str,
@@ -98,7 +98,7 @@ class Sign:
         except Exception as e:
             raise e
 
-    def get_deadline(self, deadline: int = None) -> int:
+    def get_deadline(self, deadline: int | None = None) -> int:
         """
         Calculate the deadline for a transaction.
 
@@ -119,8 +119,8 @@ class Sign:
         ip_id: str,
         deadline: int,
         permissions: list,
-        permission_func: str = None,
-        state: str = None,
+        state: bytes,
+        permission_func: str | None = None,
     ) -> dict:
         """
         Get the signature for setting permissions.

@@ -302,6 +302,8 @@ def setup_license_terms(story_client: StoryClient, ip_id):
         commercial_rev_share=100,
         royalty_policy=ROYALTY_POLICY,
     )
+    if response is None:
+        raise ValueError("Failed to register license terms")
     license_id = response["license_terms_id"]
 
     # Attach the license terms

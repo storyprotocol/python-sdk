@@ -3,7 +3,6 @@
 from web3 import Web3
 
 from story_protocol_python_sdk.abi.WIP.WIP_client import WIPClient
-from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
 
@@ -56,7 +55,7 @@ class WIP:
             return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
-            raise ValueError(f"Failed to deposit IP for WIP: {str(e)}")
+            raise ValueError(str(e))
 
     def withdraw(self, amount: int, tx_options: dict | None = None) -> dict:
         """
@@ -81,7 +80,7 @@ class WIP:
             return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
-            raise ValueError(f"Failed to withdraw WIP: {str(e)}")
+            raise ValueError(str(e))
 
     def approve(
         self, spender: str, amount: int, tx_options: dict | None = None
@@ -103,9 +102,7 @@ class WIP:
 
             spender = self.web3.to_checksum_address(spender)
 
-            # Prevent self-approval (matches contract behavior)
-            if spender == self.account.address:
-                raise ValueError("Cannot approve yourself as spender.")
+            # Note: Contract handles self-approval validation with custom error ERC20InvalidSpender
 
             response = build_and_send_transaction(
                 self.web3,
@@ -119,7 +116,7 @@ class WIP:
             return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
-            raise ValueError(f"Failed to approve WIP: {str(e)}")
+            raise ValueError(str(e))
 
     def balance_of(self, address: str) -> int:
         """
@@ -136,7 +133,7 @@ class WIP:
             return self.wip_client.balanceOf(address)
 
         except Exception as e:
-            raise ValueError(f"Failed to get WIP balance: {str(e)}")
+            raise ValueError(str(e))
 
     def transfer(self, to: str, amount: int, tx_options: dict | None = None) -> dict:
         """
@@ -156,13 +153,8 @@ class WIP:
 
             to = self.web3.to_checksum_address(to)
 
-            # Prevent transfers to zero address (matches contract behavior)
-            if to == ZERO_ADDRESS:
-                raise ValueError("Cannot transfer to zero address.")
-
-            # Prevent transfers to contract address (matches contract behavior)
-            if to == self.wip_client.contract.address:
-                raise ValueError("Cannot transfer to WIP contract address.")
+            # Note: Contract handles zero address and contract address validation
+            # with custom errors ERC20InvalidReceiver
 
             response = build_and_send_transaction(
                 self.web3,
@@ -176,7 +168,7 @@ class WIP:
             return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
-            raise ValueError(f"Failed to transfer WIP: {str(e)}")
+            raise ValueError(str(e))
 
     def transfer_from(
         self, from_address: str, to: str, amount: int, tx_options: dict | None = None
@@ -203,17 +195,8 @@ class WIP:
             from_address = self.web3.to_checksum_address(from_address)
             to = self.web3.to_checksum_address(to)
 
-            # Prevent transfers from zero address
-            if from_address == ZERO_ADDRESS:
-                raise ValueError("Cannot transfer from zero address.")
-
-            # Prevent transfers to zero address (matches contract behavior)
-            if to == ZERO_ADDRESS:
-                raise ValueError("Cannot transfer to zero address.")
-
-            # Prevent transfers to contract address (matches contract behavior)
-            if to == self.wip_client.contract.address:
-                raise ValueError("Cannot transfer to WIP contract address.")
+            # Note: Contract handles zero address and contract address validation
+            # with custom errors ERC20InvalidReceiver
 
             response = build_and_send_transaction(
                 self.web3,
@@ -228,7 +211,7 @@ class WIP:
             return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
-            raise ValueError(f"Failed to transfer WIP from another address: {str(e)}")
+            raise ValueError(str(e))
 
     def allowance(self, owner: str, spender: str) -> int:
         """
@@ -251,4 +234,4 @@ class WIP:
             return self.wip_client.allowance(owner, spender)
 
         except Exception as e:
-            raise ValueError(f"Failed to get allowance: {str(e)}")
+            raise ValueError(str(e))

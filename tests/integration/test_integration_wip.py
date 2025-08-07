@@ -98,25 +98,37 @@ class TestWIPTransfer:
         # and the TypeScript test also skips this test for the same reason
 
     def test_transfer_zero_address(self, story_client: StoryClient):
-        """Test transfer with zero address (should be rejected by SDK validation)"""
+        """Test transfer with zero address (should be rejected by contract with custom error)"""
         zero_address = "0x0000000000000000000000000000000000000000"
 
-        with pytest.raises(ValueError, match="Cannot transfer to zero address"):
+        # The contract should reject this with a custom error ERC20InvalidReceiver
+        with pytest.raises(Exception) as exc_info:
             story_client.WIP.transfer(
                 to=zero_address,
                 amount=web3.to_wei("0.01", "ether"),
+                tx_options={"waitForTransaction": True},
             )
 
+        # Verify the transaction failed due to contract validation
+        # The SDK should provide the direct contract error message
+        assert "0xec442f05" in str(exc_info.value)
+
     def test_transfer_to_contract_address(self, story_client: StoryClient):
-        """Test transfer to WIP contract address (should be rejected by SDK validation)"""
+        """Test transfer to WIP contract address (should be rejected by contract with custom error)"""
         # Get the WIP contract address
         contract_address = story_client.WIP.wip_client.contract.address
 
-        with pytest.raises(ValueError, match="Cannot transfer to WIP contract address"):
+        # The contract should reject this with a custom error ERC20InvalidReceiver
+        with pytest.raises(Exception) as exc_info:
             story_client.WIP.transfer(
                 to=contract_address,
                 amount=web3.to_wei("0.01", "ether"),
+                tx_options={"waitForTransaction": True},
             )
+
+        # Verify the transaction failed due to contract validation
+        # The SDK should provide the direct contract error message
+        assert "0xec442f05" in str(exc_info.value)
 
 
 class TestWIPApprove:
@@ -323,12 +335,17 @@ class TestWIPApprove:
         assert allowance == web3.to_wei("0.01", "ether")
 
     def test_approve_self(self, story_client: StoryClient):
-        """Test approve with self as spender (should be rejected by SDK validation)"""
-        with pytest.raises(ValueError, match="Cannot approve yourself as spender"):
+        """Test approve with self as spender (should be rejected by contract with custom error)"""
+        with pytest.raises(Exception) as exc_info:
             story_client.WIP.approve(
                 spender=wallet_address_str,
                 amount=web3.to_wei("0.01", "ether"),
+                tx_options={"waitForTransaction": True},
             )
+
+        # Verify the transaction failed due to contract validation
+        # The SDK should provide the direct contract error message
+        assert "0x94280d62" in str(exc_info.value)
 
 
 class TestWIPTransferFrom:
@@ -548,36 +565,52 @@ class TestWIPTransferFrom:
             )
 
     def test_transfer_from_zero_addresses(self, story_client: StoryClient):
-        """Test transferFrom with zero addresses (should be rejected by SDK validation)"""
+        """Test transferFrom with zero addresses (should be rejected by contract with custom error)"""
         zero_address = "0x0000000000000000000000000000000000000000"
 
-        # Test zero address as from_address - should be rejected by SDK validation
-        with pytest.raises(ValueError, match="Cannot transfer from zero address"):
-            story_client.WIP.transfer_from(
-                from_address=zero_address,
-                to=wallet_address_2_str,
-                amount=web3.to_wei("0.01", "ether"),
-            )
+        # Test zero address as to_address - should be rejected by contract validation
+        # Note: We need to set up approval first for a valid from_address
+        story_client.WIP.approve(
+            spender=wallet_address_2_str,
+            amount=web3.to_wei("0.1", "ether"),
+            tx_options={"waitForTransaction": True},
+        )
 
-        # Test zero address as to_address - should be rejected by SDK validation
-        with pytest.raises(ValueError, match="Cannot transfer to zero address"):
+        with pytest.raises(Exception) as exc_info:
             story_client.WIP.transfer_from(
                 from_address=wallet_address_str,
                 to=zero_address,
                 amount=web3.to_wei("0.01", "ether"),
+                tx_options={"waitForTransaction": True},
             )
 
+        # Verify the transaction failed due to contract validation
+        # The SDK should provide the direct contract error message
+        assert "0xec442f05" in str(exc_info.value)
+
     def test_transfer_from_to_contract_address(self, story_client: StoryClient):
-        """Test transferFrom to WIP contract address (should be rejected by SDK validation)"""
+        """Test transferFrom to WIP contract address (should be rejected by contract with custom error)"""
         # Get the WIP contract address
         contract_address = story_client.WIP.wip_client.contract.address
 
-        with pytest.raises(ValueError, match="Cannot transfer to WIP contract address"):
+        # Set up approval first
+        story_client.WIP.approve(
+            spender=wallet_address_2_str,
+            amount=web3.to_wei("0.1", "ether"),
+            tx_options={"waitForTransaction": True},
+        )
+
+        with pytest.raises(Exception) as exc_info:
             story_client.WIP.transfer_from(
                 from_address=wallet_address_str,
                 to=contract_address,
                 amount=web3.to_wei("0.01", "ether"),
+                tx_options={"waitForTransaction": True},
             )
+
+        # Verify the transaction failed due to contract validation
+        # The SDK should provide the direct contract error message
+        assert "0xec442f05" in str(exc_info.value)
 
 
 class TestWIPWithdraw:

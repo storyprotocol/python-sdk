@@ -107,23 +107,39 @@ class TestWIPApprove:
         """Teardown method called after each test"""
         logger.info("Cleaning up WIP approve test")
 
-    def test_logging_demo(self):
-        """Demo test to show logging vs print output"""
-        print("🔵 PRINT: This will show with -s flag")
-        print("🔵 PRINT: Without -s, this is captured by pytest")
+        # Reset allowance to a reasonable value to avoid affecting other tests
+        try:
+            from tests.integration.config.test_config import account, web3
+            from tests.integration.config.utils import get_story_client
 
-        logger.debug("🐛 DEBUG: This won't show (level too low)")
-        logger.info("📝 INFO: This should show with proper logging config")
-        logger.warning("⚠️ WARNING: This should also show")
-        logger.error("❌ ERROR: This should definitely show")
+            story_client = get_story_client(web3, account)
 
-        # This test always passes
-        assert True
+            # Check current allowance
+            current_allowance = story_client.WIP.allowance(
+                owner=wallet_address_str, spender=wallet_address_2_str
+            )
+            target_allowance = web3.to_wei("0.01", "ether")
+
+            # Only reset if current allowance is not already 0.01 IP
+            if current_allowance != target_allowance:
+                story_client.WIP.approve(
+                    spender=wallet_address_2_str,
+                    amount=target_allowance,
+                    tx_options={"waitForTransaction": True},
+                )
+                logger.info(
+                    f"Reset allowance from {web3.from_wei(current_allowance, 'ether')} to {web3.from_wei(target_allowance, 'ether')} IP"
+                )
+            else:
+                logger.info(
+                    f"Allowance already at target value: {web3.from_wei(target_allowance, 'ether')} IP"
+                )
+        except Exception as e:
+            logger.warning(f"Failed to reset allowance in teardown: {e}")
 
     def test_approve_basic(self, story_client: StoryClient):
         """Test basic approve functionality"""
-        print("🔵 PRINT: Starting basic approve test")  # This will show with -s
-        logger.info("📝 LOGGER: Testing basic WIP approve functionality")
+        logger.info("Testing basic WIP approve functionality")
 
         approve_amount = web3.to_wei("0.1", "ether")
 
@@ -133,12 +149,12 @@ class TestWIPApprove:
                 owner=wallet_address_str, spender=wallet_address_2_str
             )
             logger.info(
-                f"Initial allowance: {web3.from_wei(initial_allowance, 'ether')} ETH"
+                f"Initial allowance: {web3.from_wei(initial_allowance, 'ether')} IP"
             )
 
             # Approve wallet_address_2 to spend WIP
             logger.info(
-                f"Approving {web3.from_wei(approve_amount, 'ether')} ETH for {wallet_address_2_str}"
+                f"Approving {web3.from_wei(approve_amount, 'ether')} IP for {wallet_address_2_str}"
             )
             response = story_client.WIP.approve(
                 spender=wallet_address_2_str,
@@ -178,12 +194,12 @@ class TestWIPApprove:
                 owner=wallet_address_str, spender=wallet_address_2_str
             )
             logger.info(
-                f"Final allowance: {web3.from_wei(final_allowance, 'ether')} ETH"
+                f"Final allowance: {web3.from_wei(final_allowance, 'ether')} IP"
             )
 
             assert final_allowance == approve_amount, (
-                f"Allowance mismatch. Expected: {web3.from_wei(approve_amount, 'ether')} ETH, "
-                f"Got: {web3.from_wei(final_allowance, 'ether')} ETH"
+                f"Allowance mismatch. Expected: {web3.from_wei(approve_amount, 'ether')} IP, "
+                f"Got: {web3.from_wei(final_allowance, 'ether')} IP"
             )
 
             logger.info("Basic approve test completed successfully!")
@@ -357,7 +373,7 @@ class TestWIPTransferFrom:
             owner_balance = story_client.WIP.balance_of(wallet_address_str)
             if owner_balance < transfer_amount:
                 logger.info(
-                    f"Insufficient balance ({web3.from_wei(owner_balance, 'ether')} ETH), depositing more WIP"
+                    f"Insufficient balance ({web3.from_wei(owner_balance, 'ether')} IP), depositing more WIP"
                 )
                 deposit_amount = (
                     transfer_amount - owner_balance + web3.to_wei("0.1", "ether")
@@ -372,13 +388,13 @@ class TestWIPTransferFrom:
             receiver_wip_before = story_client.WIP.balance_of(wallet_address_3_str)
 
             logger.info(
-                f"Owner WIP balance before: {web3.from_wei(owner_wip_before, 'ether')} ETH"
+                f"Owner WIP balance before: {web3.from_wei(owner_wip_before, 'ether')} IP"
             )
             logger.info(
-                f"Spender WIP balance before: {web3.from_wei(spender_wip_before, 'ether')} ETH"
+                f"Spender WIP balance before: {web3.from_wei(spender_wip_before, 'ether')} IP"
             )
             logger.info(
-                f"Receiver WIP balance before: {web3.from_wei(receiver_wip_before, 'ether')} ETH"
+                f"Receiver WIP balance before: {web3.from_wei(receiver_wip_before, 'ether')} IP"
             )
 
             # Approve spender to transfer from owner
@@ -399,7 +415,7 @@ class TestWIPTransferFrom:
                 owner=wallet_address_str, spender=wallet_address_2_str
             )
             assert allowance >= transfer_amount, f"Insufficient allowance: {allowance}"
-            logger.info(f"Allowance verified: {web3.from_wei(allowance, 'ether')} ETH")
+            logger.info(f"Allowance verified: {web3.from_wei(allowance, 'ether')} IP")
 
             # Execute transferFrom using spender's account
             logger.info("Executing transferFrom transaction")
@@ -445,23 +461,23 @@ class TestWIPTransferFrom:
             receiver_wip_after = story_client.WIP.balance_of(wallet_address_3_str)
 
             logger.info(
-                f"Owner WIP balance after: {web3.from_wei(owner_wip_after, 'ether')} ETH"
+                f"Owner WIP balance after: {web3.from_wei(owner_wip_after, 'ether')} IP"
             )
             logger.info(
-                f"Spender WIP balance after: {web3.from_wei(spender_wip_after, 'ether')} ETH"
+                f"Spender WIP balance after: {web3.from_wei(spender_wip_after, 'ether')} IP"
             )
             logger.info(
-                f"Receiver WIP balance after: {web3.from_wei(receiver_wip_after, 'ether')} ETH"
+                f"Receiver WIP balance after: {web3.from_wei(receiver_wip_after, 'ether')} IP"
             )
 
             # Verify balances
             assert (
                 owner_wip_after == owner_wip_before - transfer_amount
-            ), f"Owner balance should decrease by {web3.from_wei(transfer_amount, 'ether')} ETH"
+            ), f"Owner balance should decrease by {web3.from_wei(transfer_amount, 'ether')} IP"
 
             assert (
                 receiver_wip_after == receiver_wip_before + transfer_amount
-            ), f"Receiver balance should increase by {web3.from_wei(transfer_amount, 'ether')} ETH"
+            ), f"Receiver balance should increase by {web3.from_wei(transfer_amount, 'ether')} IP"
 
             # Verify spender balance remains the same (they're just the intermediary)
             assert (
@@ -475,8 +491,8 @@ class TestWIPTransferFrom:
             expected_allowance = allowance - transfer_amount
             assert final_allowance == expected_allowance, (
                 f"Allowance should be reduced by transfer amount. "
-                f"Expected: {web3.from_wei(expected_allowance, 'ether')} ETH, "
-                f"Got: {web3.from_wei(final_allowance, 'ether')} ETH"
+                f"Expected: {web3.from_wei(expected_allowance, 'ether')} IP, "
+                f"Got: {web3.from_wei(final_allowance, 'ether')} IP"
             )
 
             logger.info("Basic transferFrom test completed successfully!")
@@ -486,13 +502,13 @@ class TestWIPTransferFrom:
             # Log current balances for debugging
             try:
                 logger.error(
-                    f"Current owner balance: {web3.from_wei(story_client.WIP.balance_of(wallet_address_str), 'ether')} ETH"
+                    f"Current owner balance: {web3.from_wei(story_client.WIP.balance_of(wallet_address_str), 'ether')} IP"
                 )
                 logger.error(
-                    f"Current spender balance: {web3.from_wei(story_client_2.WIP.balance_of(wallet_address_2_str), 'ether')} ETH"
+                    f"Current spender balance: {web3.from_wei(story_client_2.WIP.balance_of(wallet_address_2_str), 'ether')} IP"
                 )
                 logger.error(
-                    f"Current allowance: {web3.from_wei(story_client.WIP.allowance(wallet_address_str, wallet_address_2_str), 'ether')} ETH"
+                    f"Current allowance: {web3.from_wei(story_client.WIP.allowance(wallet_address_str, wallet_address_2_str), 'ether')} IP"
                 )
             except Exception as logging_error:
                 logger.warning(f"Failed to log additional debug info: {logging_error}")
@@ -550,7 +566,7 @@ class TestWIPTransferFrom:
             # Get current balance
             current_balance = story_client.WIP.balance_of(wallet_address_str)
             logger.info(
-                f"Current balance: {web3.from_wei(current_balance, 'ether')} ETH"
+                f"Current balance: {web3.from_wei(current_balance, 'ether')} IP"
             )
 
             # Approve large amount

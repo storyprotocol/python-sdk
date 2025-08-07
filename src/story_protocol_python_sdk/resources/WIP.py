@@ -176,23 +176,7 @@ class WIP:
             return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
-            error_str = str(e)
-
-            # Only handle actual contract errors, not SDK validation errors
-            # Contract errors typically start with "0x" and are longer
-            if (
-                error_str.startswith("0x")
-                and len(error_str) >= 10
-                and not any(
-                    phrase in error_str.lower()
-                    for phrase in ["not valid", "cannot", "must be greater"]
-                )
-            ):
-                # Generic custom contract error
-                raise ValueError(f"WIP contract error: {error_str[:10]}...")
-            else:
-                # Re-raise the original error (SDK validation or other errors)
-                raise
+            raise ValueError(f"Failed to transfer WIP: {str(e)}")
 
     def transfer_from(
         self, from_address: str, to: str, amount: int, tx_options: dict | None = None

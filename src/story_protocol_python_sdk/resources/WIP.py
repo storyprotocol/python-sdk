@@ -3,6 +3,7 @@
 from web3 import Web3
 
 from story_protocol_python_sdk.abi.WIP.WIP_client import WIPClient
+from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
 
@@ -102,6 +103,10 @@ class WIP:
 
             spender = self.web3.to_checksum_address(spender)
 
+            # Prevent self-approval (matches contract behavior)
+            if spender == self.account.address:
+                raise ValueError("Cannot approve yourself as spender.")
+
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -151,6 +156,14 @@ class WIP:
 
             to = self.web3.to_checksum_address(to)
 
+            # Prevent transfers to zero address (matches contract behavior)
+            if to == ZERO_ADDRESS:
+                raise ValueError("Cannot transfer to zero address.")
+
+            # Prevent transfers to contract address (matches contract behavior)
+            if to == self.wip_client.contract.address:
+                raise ValueError("Cannot transfer to WIP contract address.")
+
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -163,7 +176,23 @@ class WIP:
             return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
-            raise ValueError(f"Failed to transfer WIP: {str(e)}")
+            error_str = str(e)
+
+            # Only handle actual contract errors, not SDK validation errors
+            # Contract errors typically start with "0x" and are longer
+            if (
+                error_str.startswith("0x")
+                and len(error_str) >= 10
+                and not any(
+                    phrase in error_str.lower()
+                    for phrase in ["not valid", "cannot", "must be greater"]
+                )
+            ):
+                # Generic custom contract error
+                raise ValueError(f"WIP contract error: {error_str[:10]}...")
+            else:
+                # Re-raise the original error (SDK validation or other errors)
+                raise
 
     def transfer_from(
         self, from_address: str, to: str, amount: int, tx_options: dict | None = None
@@ -189,6 +218,18 @@ class WIP:
 
             from_address = self.web3.to_checksum_address(from_address)
             to = self.web3.to_checksum_address(to)
+
+            # Prevent transfers from zero address
+            if from_address == ZERO_ADDRESS:
+                raise ValueError("Cannot transfer from zero address.")
+
+            # Prevent transfers to zero address (matches contract behavior)
+            if to == ZERO_ADDRESS:
+                raise ValueError("Cannot transfer to zero address.")
+
+            # Prevent transfers to contract address (matches contract behavior)
+            if to == self.wip_client.contract.address:
+                raise ValueError("Cannot transfer to WIP contract address.")
 
             response = build_and_send_transaction(
                 self.web3,

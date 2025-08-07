@@ -55,7 +55,7 @@ class WIP:
             return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
-            raise ValueError(f"Failed to deposit IP for WIP: {str(e)}")
+            raise ValueError(str(e))
 
     def withdraw(self, amount: int, tx_options: dict | None = None) -> dict:
         """
@@ -80,7 +80,7 @@ class WIP:
             return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
-            raise ValueError(f"Failed to withdraw WIP: {str(e)}")
+            raise ValueError(str(e))
 
     def approve(
         self, spender: str, amount: int, tx_options: dict | None = None
@@ -102,6 +102,8 @@ class WIP:
 
             spender = self.web3.to_checksum_address(spender)
 
+            # Note: Contract handles self-approval validation with custom error ERC20InvalidSpender
+
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -114,7 +116,7 @@ class WIP:
             return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
-            raise ValueError(f"Failed to approve WIP: {str(e)}")
+            raise ValueError(str(e))
 
     def balance_of(self, address: str) -> int:
         """
@@ -131,7 +133,7 @@ class WIP:
             return self.wip_client.balanceOf(address)
 
         except Exception as e:
-            raise ValueError(f"Failed to get WIP balance: {str(e)}")
+            raise ValueError(str(e))
 
     def transfer(self, to: str, amount: int, tx_options: dict | None = None) -> dict:
         """
@@ -151,6 +153,9 @@ class WIP:
 
             to = self.web3.to_checksum_address(to)
 
+            # Note: Contract handles zero address and contract address validation
+            # with custom errors ERC20InvalidReceiver
+
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -163,7 +168,7 @@ class WIP:
             return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
-            raise ValueError(f"Failed to transfer WIP: {str(e)}")
+            raise ValueError(str(e))
 
     def transfer_from(
         self, from_address: str, to: str, amount: int, tx_options: dict | None = None
@@ -190,6 +195,9 @@ class WIP:
             from_address = self.web3.to_checksum_address(from_address)
             to = self.web3.to_checksum_address(to)
 
+            # Note: Contract handles zero address and contract address validation
+            # with custom errors ERC20InvalidReceiver
+
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -203,7 +211,7 @@ class WIP:
             return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
-            raise ValueError(f"Failed to transfer WIP from another address: {str(e)}")
+            raise ValueError(str(e))
 
     def allowance(self, owner: str, spender: str) -> int:
         """
@@ -226,4 +234,4 @@ class WIP:
             return self.wip_client.allowance(owner, spender)
 
         except Exception as e:
-            raise ValueError(f"Failed to get allowance: {str(e)}")
+            raise ValueError(str(e))

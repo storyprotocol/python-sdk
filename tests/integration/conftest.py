@@ -1,7 +1,7 @@
 import pytest
 
 from story_protocol_python_sdk.story_client import StoryClient
-from tests.integration.config.test_config import account, account_2, web3
+from tests.integration.config.test_config import account, account_2, account_3, web3
 from tests.integration.config.utils import get_story_client
 
 
@@ -15,3 +15,9 @@ def story_client() -> StoryClient:
 def story_client_2() -> StoryClient:
     """Fixture to provide the secondary story client"""
     return get_story_client(web3, account_2)
+
+
+@pytest.fixture(scope="session")
+def story_client_3() -> StoryClient:
+    """Fixture to provide the secondary story client"""
+    return get_story_client(web3, account_3)

@@ -4,11 +4,10 @@ import pytest
 
 from story_protocol_python_sdk.resources.Permission import Permission
 from tests.unit.fixtures.data import ADDRESS, CHAIN_ID, STATE, TX_HASH
-from tests.unit.fixtures.web3 import mock_web3
 
 
 @pytest.fixture
-def permission():
+def permission(mock_web3):
     return Permission(mock_web3, ADDRESS, CHAIN_ID)
 
 

@@ -46,7 +46,6 @@ class Sign:
             execute_data = self.ip_account_client.contract.encode_abi(
                 abi_element_identifier="execute", args=[to, 0, encode_data]
             )
-
             # expected_state = nonce
             expected_state = Web3.keccak(
                 encode(

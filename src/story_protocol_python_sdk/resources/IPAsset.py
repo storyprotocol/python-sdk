@@ -177,7 +177,7 @@ class IPAsset:
                             "signer": self.registration_workflows_client.contract.address,
                             "to": self.core_metadata_module_client.contract.address,
                             "func": "setAll(address,string,bytes32,bytes32)",
-                            "permission": 1,
+                            "permission": AccessPermission.ALLOW,
                         }
                     ],
                 )

@@ -2,7 +2,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from _pytest.raises import raises
-from web3 import Web3
 
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import (
     IPAssetRegistryClient,
@@ -16,19 +15,6 @@ from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client im
 from story_protocol_python_sdk.utils.constants import MAX_ROYALTY_TOKEN
 from story_protocol_python_sdk.utils.derivative_data import DerivativeData
 from tests.unit.fixtures.data import ADDRESS, IP_ID
-from tests.unit.fixtures.web3 import mock_web3
-
-
-@pytest.fixture(scope="module")
-def mock_is_checksum_address():
-    """Fixture to mock Web3.is_checksum_address"""
-
-    def _mock_is_checksum_address(is_checksum_address=True):
-        return patch.object(
-            Web3, "is_checksum_address", return_value=is_checksum_address
-        )
-
-    return _mock_is_checksum_address
 
 
 @pytest.fixture(scope="module")
@@ -84,7 +70,7 @@ def mock_pi_license_template_client():
 
 
 class TestValidateParentIpIdsAndLicenseTermsIds:
-    def test_validate_parent_ip_ids_is_empty(self):
+    def test_validate_parent_ip_ids_is_empty(self, mock_web3):
         with raises(ValueError, match="The parent IP IDs must be provided."):
             DerivativeData(
                 web3=mock_web3,
@@ -96,7 +82,7 @@ class TestValidateParentIpIdsAndLicenseTermsIds:
                 license_template="0x1234567890123456789012345678901234567890",
             )
 
-    def test_validate_license_terms_ids_is_empty(self):
+    def test_validate_license_terms_ids_is_empty(self, mock_web3):
         with raises(ValueError, match="The license terms IDs must be provided."):
             DerivativeData(
                 web3=mock_web3,
@@ -108,7 +94,9 @@ class TestValidateParentIpIdsAndLicenseTermsIds:
                 license_template="0x1234567890123456789012345678901234567890",
             )
 
-    def test_validate_parent_ip_ids_and_license_terms_ids_are_not_equal(self):
+    def test_validate_parent_ip_ids_and_license_terms_ids_are_not_equal(
+        self, mock_web3
+    ):
         with raises(
             ValueError,
             match="The number of parent IP IDs must match the number of license terms IDs.",
@@ -124,7 +112,7 @@ class TestValidateParentIpIdsAndLicenseTermsIds:
             )
 
     def test_validate_parent_ip_ids_is_not_valid_address(
-        self, mock_is_checksum_address
+        self, mock_web3, mock_is_checksum_address
     ):
         with mock_is_checksum_address(is_checksum_address=False):
             with raises(ValueError, match="The parent IP ID must be a valid address."):
@@ -139,7 +127,10 @@ class TestValidateParentIpIdsAndLicenseTermsIds:
                 )
 
     def test_validate_parent_ip_ids_is_not_registered(
-        self, mock_ip_asset_registry_client, mock_is_checksum_address
+        self,
+        mock_web3,
+        mock_is_checksum_address,
+        mock_ip_asset_registry_client,
     ):
         with mock_is_checksum_address(), mock_ip_asset_registry_client(
             is_registered=False
@@ -160,9 +151,10 @@ class TestValidateParentIpIdsAndLicenseTermsIds:
 
     def test_validate_license_terms_not_attached(
         self,
+        mock_web3,
+        mock_is_checksum_address,
         mock_ip_asset_registry_client,
         mock_license_registry_client,
-        mock_is_checksum_address,
     ):
         with mock_is_checksum_address(), mock_ip_asset_registry_client(
             is_registered=True
@@ -183,9 +175,10 @@ class TestValidateParentIpIdsAndLicenseTermsIds:
 
     def test_validate_royalty_percent_exceeds_max_revenue_share(
         self,
+        mock_web3,
+        mock_is_checksum_address,
         mock_ip_asset_registry_client,
         mock_license_registry_client,
-        mock_is_checksum_address,
     ):
         with mock_is_checksum_address(), mock_ip_asset_registry_client(
             is_registered=True
@@ -208,9 +201,10 @@ class TestValidateParentIpIdsAndLicenseTermsIds:
 
     def test_validate_royalty_percent_is_less_than_max_revenue_share(
         self,
+        mock_web3,
+        mock_is_checksum_address,
         mock_ip_asset_registry_client,
         mock_license_registry_client,
-        mock_is_checksum_address,
     ):
         with mock_is_checksum_address(), mock_ip_asset_registry_client(), mock_license_registry_client():
             derivative_data = DerivativeData(
@@ -227,9 +221,10 @@ class TestValidateParentIpIdsAndLicenseTermsIds:
 class TestValidateMaxMintingFee:
     def test_validate_max_minting_fee_is_less_than_0(
         self,
+        mock_web3,
+        mock_is_checksum_address,
         mock_ip_asset_registry_client,
         mock_license_registry_client,
-        mock_is_checksum_address,
     ):
         with mock_is_checksum_address(), mock_ip_asset_registry_client(), mock_license_registry_client():
             with raises(
@@ -249,9 +244,10 @@ class TestValidateMaxMintingFee:
 class TestValidateMaxRts:
     def test_validate_max_rts_is_less_than_0(
         self,
+        mock_web3,
+        mock_is_checksum_address,
         mock_ip_asset_registry_client,
         mock_license_registry_client,
-        mock_is_checksum_address,
     ):
         with mock_is_checksum_address(), mock_ip_asset_registry_client(), mock_license_registry_client():
             with raises(
@@ -266,9 +262,7 @@ class TestValidateMaxRts:
                 )
 
     def test_validate_max_rts_is_greater_than_100_000_000(
-        self,
-        mock_ip_asset_registry_client,
-        mock_license_registry_client,
+        self, mock_web3, mock_ip_asset_registry_client, mock_license_registry_client
     ):
         with mock_ip_asset_registry_client(), mock_license_registry_client():
             with raises(
@@ -284,9 +278,10 @@ class TestValidateMaxRts:
 
     def test_validate_max_rts_default_value_is_max_rts(
         self,
+        mock_web3,
+        mock_is_checksum_address,
         mock_ip_asset_registry_client,
         mock_license_registry_client,
-        mock_is_checksum_address,
     ):
         with mock_is_checksum_address(), mock_ip_asset_registry_client(), mock_license_registry_client():
             derivative_data = DerivativeData(
@@ -299,9 +294,7 @@ class TestValidateMaxRts:
 
 class TestValidateMaxRevenueShare:
     def test_validate_max_revenue_share_is_less_than_0(
-        self,
-        mock_ip_asset_registry_client,
-        mock_license_registry_client,
+        self, mock_web3, mock_ip_asset_registry_client, mock_license_registry_client
     ):
         with mock_ip_asset_registry_client(), mock_license_registry_client():
             with raises(
@@ -318,9 +311,10 @@ class TestValidateMaxRevenueShare:
 
     def test_validate_max_revenue_share_is_greater_than_100(
         self,
+        mock_web3,
+        mock_is_checksum_address,
         mock_ip_asset_registry_client,
         mock_license_registry_client,
-        mock_is_checksum_address,
     ):
         with mock_is_checksum_address(), mock_ip_asset_registry_client(), mock_license_registry_client():
             with raises(
@@ -337,9 +331,10 @@ class TestValidateMaxRevenueShare:
 
     def test_validate_max_revenue_share_default_value_is_100(
         self,
+        mock_web3,
+        mock_is_checksum_address,
         mock_ip_asset_registry_client,
         mock_license_registry_client,
-        mock_is_checksum_address,
     ):
         with mock_is_checksum_address(), mock_ip_asset_registry_client(), mock_license_registry_client():
             derivative_data = DerivativeData(
@@ -353,10 +348,11 @@ class TestValidateMaxRevenueShare:
 class TestValidateLicenseTemplate:
     def test_validate_license_template_default_value_is_pi_license_template(
         self,
+        mock_web3,
+        mock_is_checksum_address,
+        mock_pi_license_template_client,
         mock_ip_asset_registry_client,
         mock_license_registry_client,
-        mock_pi_license_template_client,
-        mock_is_checksum_address,
     ):
         with mock_is_checksum_address(), mock_pi_license_template_client(), mock_ip_asset_registry_client(), mock_license_registry_client():
             derivative_data = DerivativeData(
@@ -370,10 +366,11 @@ class TestValidateLicenseTemplate:
 class TestGetValidatedData:
     def test_get_validated_data_with_default_values(
         self,
+        mock_web3,
+        mock_is_checksum_address,
+        mock_pi_license_template_client,
         mock_ip_asset_registry_client,
         mock_license_registry_client,
-        mock_pi_license_template_client,
-        mock_is_checksum_address,
     ):
         with mock_is_checksum_address(), mock_pi_license_template_client(), mock_ip_asset_registry_client(), mock_license_registry_client():
             derivative_data = DerivativeData(
@@ -393,6 +390,7 @@ class TestGetValidatedData:
 
     def test_get_validated_data_with_custom_values(
         self,
+        mock_web3,
         mock_ip_asset_registry_client,
         mock_license_registry_client,
         mock_pi_license_template_client,

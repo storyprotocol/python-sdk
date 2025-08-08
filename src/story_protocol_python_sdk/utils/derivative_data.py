@@ -13,7 +13,7 @@ from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client im
     PILicenseTemplateClient,
 )
 from story_protocol_python_sdk.types.common import RevShareType
-from story_protocol_python_sdk.utils.constants import MAX_ROYALTY_TOKEN
+from story_protocol_python_sdk.utils.constants import MAX_ROYALTY_TOKEN, ZERO_ADDRESS
 from story_protocol_python_sdk.utils.validation import get_revenue_share
 
 
@@ -26,7 +26,7 @@ class DerivativeData:
     license_terms_ids: List[int]
     max_minting_fee: int | float = field(default=0)
     max_rts: int | float = field(default=MAX_ROYALTY_TOKEN)
-    max_revenue_share: int | float = field(default=100)
+    max_revenue_share: int = field(default=100)
     license_template: Optional[str] = field(default=None)
 
     pi_license_template_client: PILicenseTemplateClient = field(init=False)
@@ -64,7 +64,7 @@ class DerivativeData:
 
         ip_asset_registry_client: IPAssetRegistryClient = self.ip_asset_registry_client
         license_registry_client: LicenseRegistryClient = self.license_registry_client
-
+        total_royalty_percent = 0
         for parent_ip_id, license_terms_id in zip(
             self.parent_ip_ids, self.license_terms_ids
         ):
@@ -81,9 +81,13 @@ class DerivativeData:
             royalty_percent = license_registry_client.getRoyaltyPercent(
                 parent_ip_id, self.license_template, license_terms_id
             )
-            if self.max_revenue_share != 0 and royalty_percent > self.max_revenue_share:
+            total_royalty_percent += royalty_percent
+            if (
+                self.max_revenue_share != 0
+                and total_royalty_percent > self.max_revenue_share
+            ):
                 raise ValueError(
-                    f"The royalty percent for the parent IP {parent_ip_id} is greater than the maximum revenue share {self.max_revenue_share}."
+                    f"The total royalty percent for the parent IP {parent_ip_id} is greater than the maximum revenue share {self.max_revenue_share}."
                 )
 
     def validate_max_minting_fee(self):
@@ -104,4 +108,5 @@ class DerivativeData:
             "maxRts": self.max_rts,
             "maxRevenueShare": self.max_revenue_share,
             "licenseTemplate": self.license_template,
+            "royaltyContext": ZERO_ADDRESS,
         }

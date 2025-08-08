@@ -91,7 +91,7 @@ class Sign:
             signed_message = Account.sign_message(signable_message, self.account.key)
 
             return {
-                "signature": signed_message.signature.hex(),
+                "signature": "0x" + signed_message.signature.hex(),
                 "nonce": expected_state,
             }
 
@@ -159,7 +159,7 @@ class Sign:
                             if permissions[0].get("func")
                             else b"\x00\x00\x00\x00"
                         ),
-                        permissions[0]["permission"],
+                        permissions[0]["permission"].value,
                     ],
                 )
             else:
@@ -175,7 +175,7 @@ class Sign:
                             if p.get("func")
                             else b"\x00\x00\x00\x00"
                         ),
-                        "permission": p["permission"],
+                        "permission": p["permission"].value,
                     }
                     formatted_permissions.append(formatted_permission)
 

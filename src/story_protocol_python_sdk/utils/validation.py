@@ -18,9 +18,9 @@ def validate_address(address: str) -> str:
 
 
 def get_revenue_share(
-    revShare: int | float,
+    revShare: int,
     type: RevShareType = RevShareType.COMMERCIAL_REVENUE_SHARE,
-) -> int | float:
+) -> int:
     """
     Convert revenue share percentage to token amount.
 
@@ -31,4 +31,4 @@ def get_revenue_share(
     if revShare < 0 or revShare > 100:
         raise ValueError(f"The {type.value} must be between 0 and 100.")
 
-    return (revShare * MAX_ROYALTY_TOKEN) / 100
+    return (revShare * MAX_ROYALTY_TOKEN) // 100

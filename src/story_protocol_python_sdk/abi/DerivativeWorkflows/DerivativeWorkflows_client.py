@@ -35,3 +35,23 @@ class DerivativeWorkflowsClient:
         with open(abi_path, "r") as abi_file:
             abi = json.load(abi_file)
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
+
+    def registerIpAndMakeDerivative(
+        self, nftContract, tokenId, derivData, ipMetadata, sigMetadataAndRegister
+    ):
+        return self.contract.functions.registerIpAndMakeDerivative(
+            nftContract, tokenId, derivData, ipMetadata, sigMetadataAndRegister
+        ).transact()
+
+    def build_registerIpAndMakeDerivative_transaction(
+        self,
+        nftContract,
+        tokenId,
+        derivData,
+        ipMetadata,
+        sigMetadataAndRegister,
+        tx_params,
+    ):
+        return self.contract.functions.registerIpAndMakeDerivative(
+            nftContract, tokenId, derivData, ipMetadata, sigMetadataAndRegister
+        ).build_transaction(tx_params)

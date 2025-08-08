@@ -48,13 +48,13 @@ class AccessControllerClient:
             ipAccount, signer, permission
         ).build_transaction(tx_params)
 
-    def setTransientBatchPermissions(self, permissions):
-        return self.contract.functions.setTransientBatchPermissions(
+    def setBatchTransientPermissions(self, permissions):
+        return self.contract.functions.setBatchTransientPermissions(
             permissions
         ).transact()
 
-    def build_setTransientBatchPermissions_transaction(self, permissions, tx_params):
-        return self.contract.functions.setTransientBatchPermissions(
+    def build_setBatchTransientPermissions_transaction(self, permissions, tx_params):
+        return self.contract.functions.setBatchTransientPermissions(
             permissions
         ).build_transaction(tx_params)
 

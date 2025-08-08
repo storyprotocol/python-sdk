@@ -19,7 +19,7 @@ from tests.unit.fixtures.data import ADDRESS, IP_ID
 from tests.unit.fixtures.web3 import mock_web3
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def mock_is_checksum_address():
     """Fixture to mock Web3.is_checksum_address"""
 
@@ -31,7 +31,7 @@ def mock_is_checksum_address():
     return _mock_is_checksum_address
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def mock_ip_asset_registry_client():
     """Fixture to mock IPAssetRegistryClient"""
 
@@ -45,7 +45,7 @@ def mock_ip_asset_registry_client():
     return _mock_ip_registered
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def mock_license_registry_client():
     """Fixture to mock LicenseRegistryClient"""
 
@@ -66,7 +66,7 @@ def mock_license_registry_client():
     return _mock_license_registry_client
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def mock_pi_license_template_client():
     """Fixture to mock PILicenseTemplateClient"""
 
@@ -194,7 +194,7 @@ class TestValidateParentIpIdsAndLicenseTermsIds:
         ):
             with raises(
                 ValueError,
-                match="The royalty percent for the parent IP 0xaeF5999378C0Af338Db01f38F6Ac51E82E4E5a57 is greater than the maximum revenue share 110000.0",
+                match="The total royalty percent for the parent IP 0xaeF5999378C0Af338Db01f38F6Ac51E82E4E5a57 is greater than the maximum revenue share 1000000",
             ):
                 DerivativeData(
                     web3=mock_web3,
@@ -202,7 +202,7 @@ class TestValidateParentIpIdsAndLicenseTermsIds:
                     license_terms_ids=[2],
                     max_minting_fee=10,
                     max_rts=10,
-                    max_revenue_share=0.11,
+                    max_revenue_share=1,
                     license_template="0x1234567890123456789012345678901234567890",
                 )
 
@@ -388,6 +388,7 @@ class TestGetValidatedData:
                 "maxRts": MAX_ROYALTY_TOKEN,
                 "maxRevenueShare": MAX_ROYALTY_TOKEN,
                 "licenseTemplate": ADDRESS,
+                "royaltyContext": "0x0000000000000000000000000000000000000000",
             }
 
     def test_get_validated_data_with_custom_values(
@@ -414,4 +415,5 @@ class TestGetValidatedData:
                 "maxRts": 10,
                 "maxRevenueShare": 10000000.0,
                 "licenseTemplate": "0x1234567890123456789012345678901234567890",
+                "royaltyContext": "0x0000000000000000000000000000000000000000",
             }

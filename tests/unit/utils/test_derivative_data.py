@@ -137,7 +137,7 @@ class TestValidateParentIpIdsAndLicenseTermsIds:
         ):
             with raises(
                 ValueError,
-                match="The parent IP ID 0xaeF5999378C0Af338Db01f38F6Ac51E82E4E5a57 must be registered.",
+                match=f"The parent IP ID {IP_ID} must be registered.",
             ):
                 DerivativeData(
                     web3=mock_web3,
@@ -161,7 +161,7 @@ class TestValidateParentIpIdsAndLicenseTermsIds:
         ), mock_license_registry_client(has_ip_attached_license_terms=False):
             with raises(
                 ValueError,
-                match="License terms id 2 must be attached to the parent ipId 0xaeF5999378C0Af338Db01f38F6Ac51E82E4E5a57 before registering derivative.",
+                match=f"License terms id 2 must be attached to the parent ipId {IP_ID} before registering derivative.",
             ):
                 DerivativeData(
                     web3=mock_web3,
@@ -187,7 +187,7 @@ class TestValidateParentIpIdsAndLicenseTermsIds:
         ):
             with raises(
                 ValueError,
-                match="The total royalty percent for the parent IP 0xaeF5999378C0Af338Db01f38F6Ac51E82E4E5a57 is greater than the maximum revenue share 1000000",
+                match=f"The total royalty percent for the parent IP {IP_ID} is greater than the maximum revenue share 1000000",
             ):
                 DerivativeData(
                     web3=mock_web3,

@@ -112,3 +112,41 @@ def mock_signature_related_methods():
                 patch_obj.stop()
 
     return SignatureMockContext
+
+
+@pytest.fixture(scope="package")
+def mock_license_registry_client():
+    """Fixture to mock LicenseRegistryClient for derivative data validation"""
+
+    def _mock():
+        # Create a mock that returns a proper value for getRoyaltyPercent
+        mock_client = MagicMock()
+        mock_client.hasIpAttachedLicenseTerms = MagicMock(return_value=True)
+        mock_client.getRoyaltyPercent = MagicMock(return_value=10)
+
+        # Patch both IPAsset and derivative_data modules
+        patch1 = patch(
+            "story_protocol_python_sdk.resources.IPAsset.LicenseRegistryClient",
+            return_value=mock_client,
+        )
+        patch2 = patch(
+            "story_protocol_python_sdk.utils.derivative_data.LicenseRegistryClient",
+            return_value=mock_client,
+        )
+
+        # Start both patches
+        patch1.start()
+        patch2.start()
+
+        # Return a context manager that stops both patches
+        class MockContext:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                patch1.stop()
+                patch2.stop()
+
+        return MockContext()
+
+    return _mock

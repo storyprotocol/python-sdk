@@ -19,7 +19,8 @@ def build_and_send_transaction(
     :param account: The account to use for signing the transaction.
     :param client_function: The client function to build the transaction.
     :param client_args: Arguments to pass to the client function.
-    :param tx_options dict: Optional transaction options.
+    :param tx_options dict: Optional transaction options. Can include 'nonce' to use a custom nonce value.
+                            If not provided, nonce will be fetched from web3.eth.get_transaction_count().
     :return dict: A dictionary with the transaction hash and receipt, or encoded data if encodedTxDataOnly is True.
     :raises Exception: If there is an error during the transaction process.
     """
@@ -28,8 +29,19 @@ def build_and_send_transaction(
 
         transaction_options = {
             "from": account.address,
-            "nonce": web3.eth.get_transaction_count(account.address),
         }
+
+        if "nonce" in tx_options:
+            nonce = tx_options["nonce"]
+            if not isinstance(nonce, int) or nonce < 0:
+                raise ValueError(
+                    f"Invalid nonce value: {nonce}. Nonce must be a non-negative integer."
+                )
+            transaction_options["nonce"] = nonce
+        else:
+            transaction_options["nonce"] = web3.eth.get_transaction_count(
+                account.address
+            )
 
         # Add value if it exists in tx_options
         if "value" in tx_options:

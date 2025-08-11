@@ -35,7 +35,10 @@ from story_protocol_python_sdk.abi.RegistrationWorkflows.RegistrationWorkflows_c
 from story_protocol_python_sdk.abi.SPGNFTImpl.SPGNFTImpl_client import SPGNFTImplClient
 from story_protocol_python_sdk.types.common import AccessPermission
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
-from story_protocol_python_sdk.utils.derivative_data import DerivativeData
+from story_protocol_python_sdk.utils.derivative_data import (
+    DerivativeData,
+    DerivativeDataInput,
+)
 from story_protocol_python_sdk.utils.function_signature import get_function_signature
 from story_protocol_python_sdk.utils.ip_metadata import get_ip_metadata
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
@@ -772,7 +775,7 @@ class IPAsset:
         self,
         nft_contract: str,
         token_id: int,
-        deriv_data: dict,
+        deriv_data: DerivativeDataInput,
         metadata: dict | None = None,
         deadline: int | None = None,
         tx_options: dict | None = None,
@@ -783,13 +786,7 @@ class IPAsset:
 
         :param nft_contract str: The address of the NFT collection.
         :param token_id int: The ID of the NFT.
-        :param deriv_data dict: The derivative data for registerDerivative.
-            :param parent_ip_ids list[str]: The parent IP IDs (Address[]).
-            :param license_terms_ids list[int]: The IDs of the license terms that the parent IP supports (bigint[] | string[] | number[]).
-            :param max_minting_fee int: [Optional] The maximum minting fee that the caller is willing to pay. If set to 0 then no limit. Defaults to 0.
-            :param max_rts int: [Optional] The maximum number of royalty tokens that can be distributed to the external royalty policies (max: 100,000,000). Defaults to 100,000,000.
-            :param max_revenue_share int: [Optional] The maximum revenue share percentage allowed for minting the License Tokens. Must be between 0 and 100 (where 100% represents 100,000,000). Defaults to 100.
-            :param license_template str: [Optional] The address of the license template. Defaults to the License Template address if not provided. See https://docs.story.foundation/docs/programmable-ip-license for more information.
+        :param deriv_data DerivativeDataInput: The derivative data for registerDerivative.
         :param metadata dict: [Optional] Desired IP metadata.
              :param ip_metadata_uri str: [Optional] The URI of the metadata for the IP. Defaults to "".
              :param ip_metadata_hash str: [Optional] The hash of the metadata for the IP. Defaults to zero hash.
@@ -805,8 +802,8 @@ class IPAsset:
                 raise ValueError(
                     f"The NFT with id {token_id} is already registered as IP."
                 )
-            validated_deriv_data = DerivativeData(
-                web3=self.web3, **deriv_data
+            validated_deriv_data = DerivativeData.from_input(
+                web3=self.web3, input_data=deriv_data
             ).get_validated_data()
             calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
             sig_register_signature = self.sign_util.get_permission_signature(

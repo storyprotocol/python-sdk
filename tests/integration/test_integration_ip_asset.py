@@ -3,6 +3,7 @@
 import pytest
 
 from story_protocol_python_sdk.story_client import StoryClient
+from story_protocol_python_sdk.utils.derivative_data import DerivativeDataInput
 
 from .setup_for_integration import (
     PIL_LICENSE_TEMPLATE,
@@ -377,16 +378,16 @@ class TestSPGNFTOperations:
         result = story_client.IPAsset.register_derivative_ip(
             nft_contract=nft_collection,
             token_id=token_child_id,
-            deriv_data={
-                "parent_ip_ids": [
+            deriv_data=DerivativeDataInput(
+                parent_ip_ids=[
                     parent_ip_and_license_terms["parent_ip_id"],
                     second_ip_id_response["ip_id"],
                 ],
-                "license_terms_ids": [
+                license_terms_ids=[
                     parent_ip_and_license_terms["license_terms_id"],
                     second_ip_id_response["license_terms_ids"][0],
                 ],
-            },
+            ),
             deadline=1000,
         )
         assert isinstance(result["tx_hash"], str) and result["tx_hash"]

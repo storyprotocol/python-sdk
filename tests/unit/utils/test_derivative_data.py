@@ -13,7 +13,10 @@ from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client im
     PILicenseTemplateClient,
 )
 from story_protocol_python_sdk.utils.constants import MAX_ROYALTY_TOKEN
-from story_protocol_python_sdk.utils.derivative_data import DerivativeData
+from story_protocol_python_sdk.utils.derivative_data import (
+    DerivativeData,
+    DerivativeDataInput,
+)
 from tests.unit.fixtures.data import ADDRESS, IP_ID
 
 
@@ -207,13 +210,15 @@ class TestValidateParentIpIdsAndLicenseTermsIds:
         mock_license_registry_client,
     ):
         with mock_is_checksum_address(), mock_ip_asset_registry_client(), mock_license_registry_client():
-            derivative_data = DerivativeData(
+            derivative_data = DerivativeData.from_input(
                 web3=mock_web3,
-                parent_ip_ids=[IP_ID],
-                license_terms_ids=[2],
-                max_minting_fee=10,
-                max_rts=10,
-                license_template="0x1234567890123456789012345678901234567890",
+                input_data=DerivativeDataInput(
+                    parent_ip_ids=[IP_ID],
+                    license_terms_ids=[2],
+                    max_minting_fee=10,
+                    max_rts=10,
+                    license_template="0x1234567890123456789012345678901234567890",
+                ),
             )
             assert derivative_data.max_revenue_share == MAX_ROYALTY_TOKEN
 
@@ -254,11 +259,13 @@ class TestValidateMaxRts:
                 ValueError,
                 match="The maxRts must be greater than 0 and less than 100000000.",
             ):
-                DerivativeData(
+                DerivativeData.from_input(
                     web3=mock_web3,
-                    parent_ip_ids=[IP_ID],
-                    license_terms_ids=[2],
-                    max_rts=-1,
+                    input_data=DerivativeDataInput(
+                        parent_ip_ids=[IP_ID],
+                        license_terms_ids=[2],
+                        max_rts=-1,
+                    ),
                 )
 
     def test_validate_max_rts_is_greater_than_100_000_000(
@@ -269,11 +276,13 @@ class TestValidateMaxRts:
                 ValueError,
                 match="The maxRts must be greater than 0 and less than 100000000.",
             ):
-                DerivativeData(
+                DerivativeData.from_input(
                     web3=mock_web3,
-                    parent_ip_ids=[IP_ID],
-                    license_terms_ids=[2],
-                    max_rts=1000000000001,
+                    input_data=DerivativeDataInput(
+                        parent_ip_ids=[IP_ID],
+                        license_terms_ids=[2],
+                        max_rts=1000000000001,
+                    ),
                 )
 
     def test_validate_max_rts_default_value_is_max_rts(
@@ -284,10 +293,12 @@ class TestValidateMaxRts:
         mock_license_registry_client,
     ):
         with mock_is_checksum_address(), mock_ip_asset_registry_client(), mock_license_registry_client():
-            derivative_data = DerivativeData(
+            derivative_data = DerivativeData.from_input(
                 web3=mock_web3,
-                parent_ip_ids=[IP_ID],
-                license_terms_ids=[2],
+                input_data=DerivativeDataInput(
+                    parent_ip_ids=[IP_ID],
+                    license_terms_ids=[2],
+                ),
             )
             assert derivative_data.max_rts == MAX_ROYALTY_TOKEN
 
@@ -300,13 +311,15 @@ class TestValidateMaxRevenueShare:
             with raises(
                 ValueError, match="The maxRevenueShare must be between 0 and 100."
             ):
-                DerivativeData(
+                DerivativeData.from_input(
                     web3=mock_web3,
-                    parent_ip_ids=[IP_ID],
-                    license_terms_ids=[2],
-                    max_minting_fee=10,
-                    max_rts=10,
-                    max_revenue_share=-1,
+                    input_data=DerivativeDataInput(
+                        parent_ip_ids=[IP_ID],
+                        license_terms_ids=[2],
+                        max_minting_fee=10,
+                        max_rts=10,
+                        max_revenue_share=-1,
+                    ),
                 )
 
     def test_validate_max_revenue_share_is_greater_than_100(
@@ -320,13 +333,15 @@ class TestValidateMaxRevenueShare:
             with raises(
                 ValueError, match="The maxRevenueShare must be between 0 and 100."
             ):
-                DerivativeData(
+                DerivativeData.from_input(
                     web3=mock_web3,
-                    parent_ip_ids=[IP_ID],
-                    license_terms_ids=[2],
-                    max_minting_fee=10,
-                    max_rts=10,
-                    max_revenue_share=101,
+                    input_data=DerivativeDataInput(
+                        parent_ip_ids=[IP_ID],
+                        license_terms_ids=[2],
+                        max_minting_fee=10,
+                        max_rts=10,
+                        max_revenue_share=101,
+                    ),
                 )
 
     def test_validate_max_revenue_share_default_value_is_100(
@@ -337,10 +352,12 @@ class TestValidateMaxRevenueShare:
         mock_license_registry_client,
     ):
         with mock_is_checksum_address(), mock_ip_asset_registry_client(), mock_license_registry_client():
-            derivative_data = DerivativeData(
+            derivative_data = DerivativeData.from_input(
                 web3=mock_web3,
-                parent_ip_ids=[IP_ID],
-                license_terms_ids=[2],
+                input_data=DerivativeDataInput(
+                    parent_ip_ids=[IP_ID],
+                    license_terms_ids=[2],
+                ),
             )
             assert derivative_data.max_revenue_share == MAX_ROYALTY_TOKEN
 
@@ -355,10 +372,12 @@ class TestValidateLicenseTemplate:
         mock_license_registry_client,
     ):
         with mock_is_checksum_address(), mock_pi_license_template_client(), mock_ip_asset_registry_client(), mock_license_registry_client():
-            derivative_data = DerivativeData(
+            derivative_data = DerivativeData.from_input(
                 web3=mock_web3,
-                parent_ip_ids=[IP_ID],
-                license_terms_ids=[2],
+                input_data=DerivativeDataInput(
+                    parent_ip_ids=[IP_ID],
+                    license_terms_ids=[2],
+                ),
             )
             assert derivative_data.license_template == ADDRESS
 
@@ -373,10 +392,12 @@ class TestGetValidatedData:
         mock_license_registry_client,
     ):
         with mock_is_checksum_address(), mock_pi_license_template_client(), mock_ip_asset_registry_client(), mock_license_registry_client():
-            derivative_data = DerivativeData(
+            derivative_data = DerivativeData.from_input(
                 web3=mock_web3,
-                parent_ip_ids=[IP_ID],
-                license_terms_ids=[2],
+                input_data=DerivativeDataInput(
+                    parent_ip_ids=[IP_ID],
+                    license_terms_ids=[2],
+                ),
             )
             assert derivative_data.get_validated_data() == {
                 "parentIpIds": [IP_ID],

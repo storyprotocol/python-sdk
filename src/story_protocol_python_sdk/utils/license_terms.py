@@ -6,7 +6,10 @@ from web3 import Web3
 from story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client import (
     RoyaltyModuleClient,
 )
-from story_protocol_python_sdk.utils.constants import ROYALTY_POLICY, ZERO_ADDRESS
+from story_protocol_python_sdk.utils.constants import (
+    ROYALTY_POLICY_LAP_ADDRESS,
+    ZERO_ADDRESS,
+)
 
 
 class LicenseTerms:
@@ -51,7 +54,7 @@ class LicenseTerms:
                 )
 
             if term["royaltyPolicyAddress"] is None:
-                term["royaltyPolicyAddress"] = ROYALTY_POLICY
+                term["royaltyPolicyAddress"] = ROYALTY_POLICY_LAP_ADDRESS
 
             license_terms.update(
                 {

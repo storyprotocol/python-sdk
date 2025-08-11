@@ -4,6 +4,7 @@ import pytest
 
 from story_protocol_python_sdk.resources.IPAsset import IPAsset
 from story_protocol_python_sdk.utils.constants import ZERO_HASH
+from story_protocol_python_sdk.utils.derivative_data import DerivativeDataInput
 from tests.unit.fixtures.data import ADDRESS, CHAIN_ID, IP_ID, TX_HASH
 
 
@@ -140,10 +141,10 @@ class TestRegisterDerivativeIp:
                 ip_asset.register_derivative_ip(
                     nft_contract=ADDRESS,
                     token_id=3,
-                    deriv_data={
-                        "parent_ip_ids": [],
-                        "license_terms_ids": [],
-                    },
+                    deriv_data=DerivativeDataInput(
+                        parent_ip_ids=[],
+                        license_terms_ids=[],
+                    ),
                 )
 
     def test_success(
@@ -161,13 +162,13 @@ class TestRegisterDerivativeIp:
                 result = ip_asset.register_derivative_ip(
                     nft_contract=ADDRESS,
                     token_id=3,
-                    deriv_data={
-                        "max_minting_fee": 10,
-                        "max_rts": 100,
-                        "max_revenue_share": 100,
-                        "parent_ip_ids": [IP_ID, IP_ID],
-                        "license_terms_ids": [1, 2],
-                    },
+                    deriv_data=DerivativeDataInput(
+                        parent_ip_ids=[IP_ID, IP_ID],
+                        license_terms_ids=[1, 2],
+                        max_minting_fee=10,
+                        max_rts=100,
+                        max_revenue_share=100,
+                    ),
                 )
                 assert result["tx_hash"] == TX_HASH.hex()
                 assert result["ip_id"] == IP_ID

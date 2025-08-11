@@ -129,7 +129,7 @@ class TestPermissions:
             ip_id=ip_id,
             signer=account.address,
             to=CORE_METADATA_MODULE,
-            permission=AccessPermission.DENY,
+            permission=AccessPermission.ABSTAIN,
             func="function setAll(address,string,bytes32,bytes32)",
         )
 

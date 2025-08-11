@@ -4,6 +4,7 @@ import pytest
 
 from story_protocol_python_sdk.story_client import StoryClient
 from story_protocol_python_sdk.utils.derivative_data import DerivativeDataInput
+from story_protocol_python_sdk.utils.ip_metadata import IPMetadataInput
 
 from .setup_for_integration import (
     PIL_LICENSE_TEMPLATE,
@@ -387,6 +388,12 @@ class TestSPGNFTOperations:
                     parent_ip_and_license_terms["license_terms_id"],
                     second_ip_id_response["license_terms_ids"][0],
                 ],
+            ),
+            metadata=IPMetadataInput(
+                nft_metadata_uri="https://ipfs.io/ipfs/Qm...",
+                nft_metadata_hash=web3.to_hex(
+                    web3.keccak(text="test-nft-metadata-hash")
+                ),
             ),
             deadline=1000,
         )

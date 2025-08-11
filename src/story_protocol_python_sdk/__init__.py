@@ -18,6 +18,7 @@ from .utils.constants import (
     ZERO_HASH,
 )
 from .utils.derivative_data import DerivativeDataInput
+from .utils.ip_metadata import IPMetadataInput
 
 __all__ = [
     "StoryClient",
@@ -29,6 +30,7 @@ __all__ = [
     "WIP",
     "AccessPermission",
     "DerivativeDataInput",
+    "IPMetadataInput",
     # Constants
     "ZERO_ADDRESS",
     "ZERO_HASH",

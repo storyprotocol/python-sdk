@@ -40,7 +40,7 @@ from story_protocol_python_sdk.utils.derivative_data import (
     DerivativeDataInput,
 )
 from story_protocol_python_sdk.utils.function_signature import get_function_signature
-from story_protocol_python_sdk.utils.ip_metadata import get_ip_metadata
+from story_protocol_python_sdk.utils.ip_metadata import IPMetadata, IPMetadataInput
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
 from story_protocol_python_sdk.utils.sign import Sign
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
@@ -776,7 +776,7 @@ class IPAsset:
         nft_contract: str,
         token_id: int,
         deriv_data: DerivativeDataInput,
-        metadata: dict | None = None,
+        metadata: IPMetadataInput | None = None,
         deadline: int | None = None,
         tx_options: dict | None = None,
     ) -> dict:
@@ -787,11 +787,7 @@ class IPAsset:
         :param nft_contract str: The address of the NFT collection.
         :param token_id int: The ID of the NFT.
         :param deriv_data DerivativeDataInput: The derivative data for registerDerivative.
-        :param metadata dict: [Optional] Desired IP metadata.
-             :param ip_metadata_uri str: [Optional] The URI of the metadata for the IP. Defaults to "".
-             :param ip_metadata_hash str: [Optional] The hash of the metadata for the IP. Defaults to zero hash.
-             :param nft_metadata_uri str: [Optional] The URI of the metadata for the NFT. Defaults to "".
-             :param nft_metadata_hash str: [Optional] The hash of the metadata for the NFT. Defaults to zero hash.
+        :param metadata IPMetadataInput: Desired IP metadata.
         :param deadline int: [Optional] Signature deadline in milliseconds.
         :param tx_options dict: [Optional] Transaction options.
         :return dict: Dictionary with the tx hash and IP ID.
@@ -840,7 +836,7 @@ class IPAsset:
                 nft_contract,
                 token_id,
                 validated_deriv_data,
-                get_ip_metadata(metadata),
+                IPMetadata.from_input(metadata).get_validated_data(),
                 {
                     "signer": self.account.address,
                     "deadline": calculated_deadline,

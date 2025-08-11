@@ -7,6 +7,7 @@ from .resources.License import License
 from .resources.Royalty import Royalty
 from .resources.WIP import WIP
 from .story_client import StoryClient
+from .types.common import AccessPermission
 
 __all__ = [
     "StoryClient",
@@ -16,4 +17,5 @@ __all__ = [
     "IPAccount",
     "Dispute",
     "WIP",
+    "AccessPermission",
 ]

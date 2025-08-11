@@ -3,6 +3,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from story_protocol_python_sdk.resources.Permission import Permission
+from story_protocol_python_sdk.types.common import AccessPermission
 from tests.unit.fixtures.data import ADDRESS, CHAIN_ID, STATE, TX_HASH
 
 
@@ -20,18 +21,24 @@ class TestSetPermission:
                 Exception,
                 match="IP id with 0x1234567890123456789012345678901234567890 is not registered.",
             ):
-                permission.set_permission(ADDRESS, ADDRESS, ADDRESS, 1)
+                permission.set_permission(
+                    ADDRESS, ADDRESS, ADDRESS, AccessPermission.ALLOW
+                )
 
     def test_invalid_signer_address(self, permission: Permission):
         with patch.object(
             permission.ip_asset_registry_client, "isRegistered", return_value=True
         ):
             with pytest.raises(Exception, match="Invalid address: 0xInvalidAddress."):
-                permission.set_permission(ADDRESS, "0xInvalidAddress", ADDRESS, 1)
+                permission.set_permission(
+                    ADDRESS, "0xInvalidAddress", ADDRESS, AccessPermission.ALLOW
+                )
 
     def test_invalid_to_address(self, permission: Permission):
         with pytest.raises(Exception, match="Invalid address: 0xInvalidAddress."):
-            permission.set_permission(ADDRESS, ADDRESS, "0xInvalidAddress", 1)
+            permission.set_permission(
+                ADDRESS, ADDRESS, "0xInvalidAddress", AccessPermission.ALLOW
+            )
 
     def test_successful_transaction(self, permission: Permission):
         with patch.object(
@@ -39,7 +46,9 @@ class TestSetPermission:
         ), patch.object(
             permission.ip_account, "execute", return_value={"tx_hash": TX_HASH}
         ):
-            response = permission.set_permission(ADDRESS, ADDRESS, ADDRESS, 1)
+            response = permission.set_permission(
+                ADDRESS, ADDRESS, ADDRESS, AccessPermission.ALLOW
+            )
             assert response["tx_hash"] == TX_HASH
 
     def test_transaction_request_fails(self, permission: Permission):
@@ -51,7 +60,9 @@ class TestSetPermission:
             side_effect=Exception("Transaction failed"),
         ):
             with pytest.raises(Exception, match="Transaction failed"):
-                permission.set_permission(ADDRESS, ADDRESS, ADDRESS, 1)
+                permission.set_permission(
+                    ADDRESS, ADDRESS, ADDRESS, AccessPermission.ALLOW
+                )
 
 
 class TestSetAllPermissions:
@@ -61,7 +72,9 @@ class TestSetAllPermissions:
         ), patch.object(
             permission.ip_account, "execute", return_value={"tx_hash": TX_HASH}
         ):
-            response = permission.set_all_permissions(ADDRESS, ADDRESS, 1)
+            response = permission.set_all_permissions(
+                ADDRESS, ADDRESS, AccessPermission.ALLOW
+            )
             assert response["tx_hash"] == TX_HASH
 
     def test_transaction_request_fails(self, permission: Permission):
@@ -73,7 +86,7 @@ class TestSetAllPermissions:
             side_effect=Exception("Transaction failed"),
         ):
             with pytest.raises(Exception, match="Transaction failed"):
-                permission.set_all_permissions(ADDRESS, ADDRESS, 1)
+                permission.set_all_permissions(ADDRESS, ADDRESS, AccessPermission.ALLOW)
 
 
 class TestCreateSetPermissionSignature:
@@ -81,7 +94,7 @@ class TestCreateSetPermissionSignature:
     def test_invalid_deadline(self, permission: Permission):
         with pytest.raises(Exception, match="Invalid deadline value."):
             permission.create_set_permission_signature(
-                ADDRESS, ADDRESS, ADDRESS, 1, deadline=-1
+                ADDRESS, ADDRESS, ADDRESS, AccessPermission.ALLOW, deadline=-1
             )
 
     def test_successful_signature(self, permission: Permission):
@@ -103,6 +116,6 @@ class TestCreateSetPermissionSignature:
             ),
         ):
             response = permission.create_set_permission_signature(
-                ADDRESS, ADDRESS, ADDRESS, 1
+                ADDRESS, ADDRESS, ADDRESS, AccessPermission.ALLOW
             )
             assert response["tx_hash"] == TX_HASH

@@ -3,6 +3,7 @@
 import pytest
 
 from story_protocol_python_sdk.story_client import StoryClient
+from story_protocol_python_sdk.types.common import AccessPermission
 
 from .setup_for_integration import (
     CORE_METADATA_MODULE,
@@ -30,7 +31,7 @@ class TestPermissions:
             ip_id=ip_id,
             signer=account.address,
             to=CORE_METADATA_MODULE,
-            permission=1,  # ALLOW
+            permission=AccessPermission.ALLOW,
             func="function setAll(address,string,bytes32,bytes32)",
         )
 
@@ -42,7 +43,7 @@ class TestPermissions:
     def test_set_all_permissions(self, story_client: StoryClient, ip_id):
         """Test setting all permissions successfully."""
         response = story_client.Permission.set_all_permissions(
-            ip_id=ip_id, signer=account.address, permission=1  # ALLOW
+            ip_id=ip_id, signer=account.address, permission=AccessPermission.ALLOW
         )
 
         assert response is not None
@@ -59,7 +60,7 @@ class TestPermissions:
             signer=account.address,
             to=CORE_METADATA_MODULE,
             func="setAll(address,string,bytes32,bytes32)",
-            permission=1,  # ALLOW
+            permission=AccessPermission.ALLOW,
             deadline=deadline,
         )
 
@@ -77,7 +78,7 @@ class TestPermissions:
                 ip_id=unregistered_ip,
                 signer=account.address,
                 to=CORE_METADATA_MODULE,
-                permission=1,
+                permission=AccessPermission.ALLOW,
             )
 
         assert f"IP id with {unregistered_ip} is not registered" in str(exc_info.value)
@@ -91,7 +92,7 @@ class TestPermissions:
                 ip_id=ip_id,
                 signer=invalid_signer,
                 to=CORE_METADATA_MODULE,
-                permission=1,  # ALLOW
+                permission=AccessPermission.ALLOW,
             )
 
         assert "invalid address" in str(exc_info.value).lower()
@@ -103,7 +104,7 @@ class TestPermissions:
                 ip_id=ip_id,
                 signer=account.address,
                 to=invalid_to,
-                permission=1,  # ALLOW
+                permission=AccessPermission.ALLOW,
             )
 
         assert "invalid address" in str(exc_info.value).lower()
@@ -114,7 +115,7 @@ class TestPermissions:
                 ip_id=ip_id,
                 signer=lowercase_address,
                 to=CORE_METADATA_MODULE,
-                permission=1,
+                permission=AccessPermission.ALLOW,
             )
             assert "tx_hash" in response
         except Exception as e:
@@ -124,15 +125,11 @@ class TestPermissions:
 
     def test_different_permission_levels(self, story_client: StoryClient, ip_id):
         """Test setting and changing different permission levels."""
-        DISALLOW = 0
-        ALLOW = 1
-        ABSTAIN = 2
-
         response = story_client.Permission.set_permission(
             ip_id=ip_id,
             signer=account.address,
             to=CORE_METADATA_MODULE,
-            permission=DISALLOW,
+            permission=AccessPermission.DENY,
             func="function setAll(address,string,bytes32,bytes32)",
         )
 
@@ -145,7 +142,7 @@ class TestPermissions:
             ip_id=ip_id,
             signer=account.address,
             to=CORE_METADATA_MODULE,
-            permission=ALLOW,
+            permission=AccessPermission.ALLOW,
             func="function setAll(address,string,bytes32,bytes32)",
         )
 
@@ -156,7 +153,7 @@ class TestPermissions:
             ip_id=ip_id,
             signer=account.address,
             to=CORE_METADATA_MODULE,
-            permission=ABSTAIN,
+            permission=AccessPermission.DENY,
             func="function setAll(address,string,bytes32,bytes32)",
         )
 
@@ -164,14 +161,14 @@ class TestPermissions:
         assert "tx_hash" in response
 
         response = story_client.Permission.set_all_permissions(
-            ip_id=ip_id, signer=account.address, permission=DISALLOW
+            ip_id=ip_id, signer=account.address, permission=AccessPermission.ABSTAIN
         )
 
         assert response is not None
         assert "tx_hash" in response
 
         response = story_client.Permission.set_all_permissions(
-            ip_id=ip_id, signer=account.address, permission=ABSTAIN
+            ip_id=ip_id, signer=account.address, permission=AccessPermission.DENY
         )
 
         assert response is not None
@@ -179,13 +176,11 @@ class TestPermissions:
 
     def test_different_function_selectors(self, story_client: StoryClient, ip_id):
         """Test setting permissions with different function selectors."""
-        ALLOW = 1
-
         response = story_client.Permission.set_permission(
             ip_id=ip_id,
             signer=account.address,
             to=CORE_METADATA_MODULE,
-            permission=1,
+            permission=AccessPermission.ALLOW,
             # No func parameter provided - should use default
         )
 
@@ -198,7 +193,7 @@ class TestPermissions:
             ip_id=ip_id,
             signer=account.address,
             to=CORE_METADATA_MODULE,
-            permission=ALLOW,
+            permission=AccessPermission.ALLOW,
             func="setAll(address,string,bytes32,bytes32)",
         )
 
@@ -209,7 +204,7 @@ class TestPermissions:
             ip_id=ip_id,
             signer=account.address,
             to=CORE_METADATA_MODULE,
-            permission=ALLOW,
+            permission=AccessPermission.ALLOW,
             func="setName(address,string)",
         )
 
@@ -220,7 +215,7 @@ class TestPermissions:
             ip_id=ip_id,
             signer=account.address,
             to=CORE_METADATA_MODULE,
-            permission=ALLOW,
+            permission=AccessPermission.ALLOW,
             func="setDescription(address,string)",
         )
 
@@ -232,7 +227,7 @@ class TestPermissions:
             ip_id=ip_id,
             signer=account.address,
             to=CORE_METADATA_MODULE,
-            permission=ALLOW,
+            permission=AccessPermission.ALLOW,
             # No func parameter provided
             deadline=deadline,
         )
@@ -244,12 +239,8 @@ class TestPermissions:
         self, story_client: StoryClient, ip_id
     ):
         """Test permission hierarchies and how permissions override each other."""
-        DISALLOW = 0
-        ALLOW = 1
-        ABSTAIN = 2
-
         response = story_client.Permission.set_all_permissions(
-            ip_id=ip_id, signer=account.address, permission=DISALLOW
+            ip_id=ip_id, signer=account.address, permission=AccessPermission.ABSTAIN
         )
 
         assert response is not None
@@ -260,7 +251,7 @@ class TestPermissions:
             ip_id=ip_id,
             signer=account.address,
             to=CORE_METADATA_MODULE,
-            permission=ALLOW,
+            permission=AccessPermission.ALLOW,
             func=specific_func,
         )
 
@@ -270,7 +261,9 @@ class TestPermissions:
         alternate_signer = web3.eth.account.create()
 
         response = story_client.Permission.set_all_permissions(
-            ip_id=ip_id, signer=alternate_signer.address, permission=ALLOW
+            ip_id=ip_id,
+            signer=alternate_signer.address,
+            permission=AccessPermission.ALLOW,
         )
 
         assert response is not None
@@ -280,7 +273,7 @@ class TestPermissions:
             ip_id=ip_id,
             signer=alternate_signer.address,
             to=CORE_METADATA_MODULE,
-            permission=DISALLOW,
+            permission=AccessPermission.ABSTAIN,
             func=specific_func,
         )
 
@@ -293,7 +286,7 @@ class TestPermissions:
             ip_id=ip_id,
             signer=account.address,
             to=CORE_METADATA_MODULE,
-            permission=ALLOW,
+            permission=AccessPermission.ALLOW,
             func="setDescription(address,string)",
             deadline=deadline,
         )
@@ -302,14 +295,16 @@ class TestPermissions:
         assert "tx_hash" in response
 
         response = story_client.Permission.set_all_permissions(
-            ip_id=ip_id, signer=account.address, permission=ABSTAIN
+            ip_id=ip_id, signer=account.address, permission=AccessPermission.DENY
         )
 
         assert response is not None
         assert "tx_hash" in response
 
         response = story_client.Permission.set_all_permissions(
-            ip_id=ip_id, signer=alternate_signer.address, permission=ABSTAIN
+            ip_id=ip_id,
+            signer=alternate_signer.address,
+            permission=AccessPermission.DENY,
         )
 
         assert response is not None

@@ -694,21 +694,21 @@ class IPAsset:
                         "ipId": ip_id,
                         "signer": self.license_attachment_workflows_client.contract.address,
                         "to": self.core_metadata_module_client.contract.address,
-                        "permission": 1,  # ALLOW
+                        "permission": AccessPermission.ALLOW,
                         "func": "setAll(address,string,bytes32,bytes32)",
                     },
                     {
                         "ipId": ip_id,
                         "signer": self.license_attachment_workflows_client.contract.address,
                         "to": self.licensing_module_client.contract.address,
-                        "permission": 1,  # ALLOW
+                        "permission": AccessPermission.ALLOW,
                         "func": "attachLicenseTerms(address,address,uint256)",
                     },
                     {
                         "ipId": ip_id,
                         "signer": self.license_attachment_workflows_client.contract.address,
                         "to": self.licensing_module_client.contract.address,
-                        "permission": 1,  # ALLOW
+                        "permission": AccessPermission.ALLOW,
                         "func": "setLicensingConfig(address,address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))",
                     },
                 ],

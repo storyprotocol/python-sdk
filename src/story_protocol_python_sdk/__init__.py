@@ -8,6 +8,16 @@ from .resources.Royalty import Royalty
 from .resources.WIP import WIP
 from .story_client import StoryClient
 from .types.common import AccessPermission
+from .utils.constants import (
+    DEFAULT_FUNCTION_SELECTOR,
+    MAX_ROYALTY_TOKEN,
+    ROYALTY_POLICY_LAP_ADDRESS,
+    ROYALTY_POLICY_LRP_ADDRESS,
+    ZERO_ADDRESS,
+    ZERO_FUNC,
+    ZERO_HASH,
+)
+from .utils.derivative_data import DerivativeDataInput
 
 __all__ = [
     "StoryClient",
@@ -18,4 +28,13 @@ __all__ = [
     "Dispute",
     "WIP",
     "AccessPermission",
+    "DerivativeDataInput",
+    # Constants
+    "ZERO_ADDRESS",
+    "ZERO_HASH",
+    "ROYALTY_POLICY_LAP_ADDRESS",
+    "ROYALTY_POLICY_LRP_ADDRESS",
+    "ZERO_FUNC",
+    "DEFAULT_FUNCTION_SELECTOR",
+    "MAX_ROYALTY_TOKEN",
 ]

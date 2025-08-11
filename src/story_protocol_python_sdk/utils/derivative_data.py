@@ -111,23 +111,21 @@ class DerivativeData:
                 "The number of parent IP IDs must match the number of license terms IDs."
             )
 
-        ip_asset_registry_client: IPAssetRegistryClient = self.ip_asset_registry_client
-        license_registry_client: LicenseRegistryClient = self.license_registry_client
         total_royalty_percent = 0
         for parent_ip_id, license_terms_id in zip(
             self.parent_ip_ids, self.license_terms_ids
         ):
             if not Web3.is_checksum_address(parent_ip_id):
                 raise ValueError("The parent IP ID must be a valid address.")
-            if not ip_asset_registry_client.isRegistered(parent_ip_id):
+            if not self.ip_asset_registry_client.isRegistered(parent_ip_id):
                 raise ValueError(f"The parent IP ID {parent_ip_id} must be registered.")
-            if not license_registry_client.hasIpAttachedLicenseTerms(
+            if not self.license_registry_client.hasIpAttachedLicenseTerms(
                 parent_ip_id, self.license_template, license_terms_id
             ):
                 raise ValueError(
                     f"License terms id {license_terms_id} must be attached to the parent ipId {parent_ip_id} before registering derivative."
                 )
-            royalty_percent = license_registry_client.getRoyaltyPercent(
+            royalty_percent = self.license_registry_client.getRoyaltyPercent(
                 parent_ip_id, self.license_template, license_terms_id
             )
             total_royalty_percent += royalty_percent

@@ -786,8 +786,8 @@ class IPAsset:
 
         :param nft_contract str: The address of the NFT collection.
         :param token_id int: The ID of the NFT.
-        :param deriv_data DerivativeDataInput: The derivative data for registerDerivative.
-        :param metadata IPMetadataInput: Desired IP metadata.
+        :param deriv_data `DerivativeDataInput`: The derivative data for registerDerivative.
+        :param metadata `IPMetadataInput`: [Optional] Desired IP metadata.
         :param deadline int: [Optional] Signature deadline in milliseconds.
         :param tx_options dict: [Optional] Transaction options.
         :return dict: Dictionary with the tx hash and IP ID.

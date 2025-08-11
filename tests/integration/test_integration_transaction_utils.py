@@ -2,7 +2,6 @@
 
 import pytest
 
-from story_protocol_python_sdk.story_client import StoryClient
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
 from .setup_for_integration import MockERC20, account, web3
@@ -11,12 +10,7 @@ from .setup_for_integration import MockERC20, account, web3
 class TestTransactionUtils:
     """Integration tests for transaction utilities with custom nonce support."""
 
-    @pytest.fixture(scope="module")
-    def story_client(self):
-        """Create a StoryClient instance for testing."""
-        return StoryClient(web3, account, chain_id=1315)
-
-    def test_custom_nonce_with_sequential_transactions(self, story_client: StoryClient):
+    def test_custom_nonce_with_sequential_transactions(self):
         """Test custom nonce works correctly with sequential transactions."""
         current_nonce = web3.eth.get_transaction_count(account.address, "pending")
 
@@ -43,7 +37,7 @@ class TestTransactionUtils:
         tx = web3.eth.get_transaction(result["tx_hash"])
         assert tx["nonce"] == current_nonce
 
-    def test_automatic_nonce_fallback(self, story_client: StoryClient):
+    def test_automatic_nonce_fallback(self):
         """Test backward compatibility - automatic nonce when not specified."""
 
         def create_transfer_tx(to_address, value):
@@ -67,7 +61,7 @@ class TestTransactionUtils:
         tx = web3.eth.get_transaction(result["tx_hash"])
         assert tx["nonce"] >= 0
 
-    def test_invalid_nonce_validation(self, story_client: StoryClient):
+    def test_invalid_nonce_validation(self):
         """Test that invalid nonce values are properly rejected."""
 
         def dummy_func(tx_options):
@@ -96,7 +90,7 @@ class TestTransactionUtils:
             assert "Invalid nonce value" in str(exc_info.value)
             assert "must be a non-negative integer" in str(exc_info.value)
 
-    def test_nonce_with_contract_interaction(self, story_client: StoryClient):
+    def test_nonce_with_contract_interaction(self):
         """Test custom nonce works with actual contract calls."""
         erc20_contract = web3.eth.contract(
             address=MockERC20,

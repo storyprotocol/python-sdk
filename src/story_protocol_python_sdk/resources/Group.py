@@ -547,34 +547,12 @@ class Group:
                     f'License template address "{license_template}" is invalid.'
                 )
 
-            # Validate licensing config
-            licensing_config = item.get("licensing_config", {})
-
-            try:
-                self.license_terms_util.validate_licensing_config(licensing_config)
-            except Exception as e:
-                raise ValueError(f"Licensing config validation failed: {str(e)}")
-
-            # Convert to camelCase for contract interaction
-            camelcase_config = {
-                "isSet": licensing_config.get("is_set", True),
-                "mintingFee": licensing_config.get("minting_fee", 0),
-                "hookData": licensing_config.get("hook_data", ZERO_ADDRESS),
-                "licensingHook": licensing_config.get("licensing_hook", ZERO_ADDRESS),
-                "commercialRevShare": licensing_config.get("commercial_rev_share", 0),
-                "disabled": licensing_config.get("disabled", False),
-                "expectMinimumGroupRewardShare": licensing_config.get(
-                    "expect_minimum_group_reward_share", 0
-                ),
-                "expectGroupRewardPool": licensing_config.get(
-                    "expect_group_reward_pool", ZERO_ADDRESS
-                ),
-            }
-
             processed_item = {
                 "licenseTemplate": license_template,
                 "licenseTermsId": item["license_terms_id"],
-                "licensingConfig": camelcase_config,
+                "licensingConfig": self.license_terms_util.validate_licensing_config(
+                    item.get("licensing_config", {})
+                ),
             }
 
             result.append(processed_item)

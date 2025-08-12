@@ -187,7 +187,7 @@ class TestPILTermsRegistration:
         ):
 
             with pytest.raises(
-                ValueError, match="CommercialRevShare should be between 0 and 100."
+                ValueError, match="commercial_rev_share should be between 0 and 100."
             ):
                 license_client.register_pil_terms(
                     transferable=False,
@@ -225,7 +225,7 @@ class TestPILTermsRegistration:
         ):
 
             with pytest.raises(
-                ValueError, match="CommercialRevShare should be between 0 and 100."
+                ValueError, match="commercial_rev_share should be between 0 and 100."
             ):
                 license_client.register_pil_terms(
                     transferable=False,

@@ -99,48 +99,27 @@ class License:
         :return dict: A dictionary with the transaction hash and license terms ID.
         """
         try:
-            license_terms = {
-                "transferable": transferable,
-                "royaltyPolicy": royalty_policy,
-                "defaultMintingFee": default_minting_fee,
-                "expiration": expiration,
-                "commercialUse": commercial_use,
-                "commercialAttribution": commercial_attribution,
-                "commercializerChecker": commercializer_checker,
-                "commercializerCheckerData": commercializer_checker_data,
-                "commercialRevShare": commercial_rev_share,
-                "commercialRevCeiling": commercial_rev_ceiling,
-                "derivativesAllowed": derivatives_allowed,
-                "derivativesAttribution": derivatives_attribution,
-                "derivativesApproval": derivatives_approval,
-                "derivativesReciprocal": derivatives_reciprocal,
-                "derivativeRevCeiling": derivative_rev_ceiling,
-                "currency": currency,
-                "uri": uri,
-            }
-
-            license_terms_snake = {
-                "transferable": transferable,
-                "royalty_policy": royalty_policy,
-                "default_minting_fee": default_minting_fee,
-                "expiration": expiration,
-                "commercial_use": commercial_use,
-                "commercial_attribution": commercial_attribution,
-                "commercializer_checker": commercializer_checker,
-                "commercializer_checker_data": commercializer_checker_data,
-                "commercial_rev_share": commercial_rev_share,
-                "commercial_rev_ceiling": commercial_rev_ceiling,
-                "derivatives_allowed": derivatives_allowed,
-                "derivatives_attribution": derivatives_attribution,
-                "derivatives_approval": derivatives_approval,
-                "derivatives_reciprocal": derivatives_reciprocal,
-                "derivative_rev_ceiling": derivative_rev_ceiling,
-                "currency": currency,
-                "uri": uri,
-            }
-
-            # Validate the license terms
-            self.license_terms_util.validate_license_terms(license_terms_snake)
+            license_terms = self.license_terms_util.validate_license_terms(
+                {
+                    "transferable": transferable,
+                    "royalty_policy": royalty_policy,
+                    "default_minting_fee": default_minting_fee,
+                    "expiration": expiration,
+                    "commercial_use": commercial_use,
+                    "commercial_attribution": commercial_attribution,
+                    "commercializer_checker": commercializer_checker,
+                    "commercializer_checker_data": commercializer_checker_data,
+                    "commercial_rev_share": commercial_rev_share,
+                    "commercial_rev_ceiling": commercial_rev_ceiling,
+                    "derivatives_allowed": derivatives_allowed,
+                    "derivatives_attribution": derivatives_attribution,
+                    "derivatives_approval": derivatives_approval,
+                    "derivatives_reciprocal": derivatives_reciprocal,
+                    "derivative_rev_ceiling": derivative_rev_ceiling,
+                    "currency": currency,
+                    "uri": uri,
+                }
+            )
 
             license_terms_id = self._get_license_terms_id(license_terms)
             if (license_terms_id is not None) and (license_terms_id != 0):

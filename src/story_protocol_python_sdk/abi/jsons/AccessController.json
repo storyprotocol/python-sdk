@@ -6,27 +6,15 @@
         "name": "ipAccountRegistry",
         "type": "address"
       },
-      {
-        "internalType": "address",
-        "name": "moduleRegistry",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "moduleRegistry", "type": "address" }
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "signer",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "signer", "type": "address" },
+      { "internalType": "address", "name": "to", "type": "address" }
     ],
     "name": "AccessController__BothCallerAndRecipientAreNotRegisteredModule",
     "type": "error"
@@ -38,11 +26,7 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "ipAccount",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "ipAccount", "type": "address" }
     ],
     "name": "AccessController__IPAccountIsNotValid",
     "type": "error"
@@ -54,42 +38,18 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "ipAccount",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "ipAccount", "type": "address" },
+      { "internalType": "address", "name": "owner", "type": "address" }
     ],
     "name": "AccessController__OwnerIsIPAccount",
     "type": "error"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "ipAccount",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "signer",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes4",
-        "name": "func",
-        "type": "bytes4"
-      }
+      { "internalType": "address", "name": "ipAccount", "type": "address" },
+      { "internalType": "address", "name": "signer", "type": "address" },
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "bytes4", "name": "func", "type": "bytes4" }
     ],
     "name": "AccessController__PermissionDenied",
     "type": "error"
@@ -126,106 +86,50 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "authority",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "authority", "type": "address" }
     ],
     "name": "AccessManagedInvalidAuthority",
     "type": "error"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "caller",
-        "type": "address"
-      },
-      {
-        "internalType": "uint32",
-        "name": "delay",
-        "type": "uint32"
-      }
+      { "internalType": "address", "name": "caller", "type": "address" },
+      { "internalType": "uint32", "name": "delay", "type": "uint32" }
     ],
     "name": "AccessManagedRequiredDelay",
     "type": "error"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "caller",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "caller", "type": "address" }
     ],
     "name": "AccessManagedUnauthorized",
     "type": "error"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "target",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "target", "type": "address" }
     ],
     "name": "AddressEmptyCode",
     "type": "error"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "implementation",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "implementation", "type": "address" }
     ],
     "name": "ERC1967InvalidImplementation",
     "type": "error"
   },
-  {
-    "inputs": [],
-    "name": "ERC1967NonPayable",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "EnforcedPause",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ExpectedPause",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "FailedCall",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidInitialization",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NotInitializing",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "UUPSUnauthorizedCallContext",
-    "type": "error"
-  },
+  { "inputs": [], "name": "ERC1967NonPayable", "type": "error" },
+  { "inputs": [], "name": "EnforcedPause", "type": "error" },
+  { "inputs": [], "name": "ExpectedPause", "type": "error" },
+  { "inputs": [], "name": "FailedCall", "type": "error" },
+  { "inputs": [], "name": "InvalidInitialization", "type": "error" },
+  { "inputs": [], "name": "NotInitializing", "type": "error" },
+  { "inputs": [], "name": "UUPSUnauthorizedCallContext", "type": "error" },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "slot",
-        "type": "bytes32"
-      }
+      { "internalType": "bytes32", "name": "slot", "type": "bytes32" }
     ],
     "name": "UUPSUnsupportedProxiableUUID",
     "type": "error"
@@ -410,23 +314,13 @@
   {
     "inputs": [],
     "name": "UPGRADE_INTERFACE_VERSION",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
+    "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "accessManager",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "accessManager", "type": "address" }
     ],
     "name": "__ProtocolPausable_init",
     "outputs": [],
@@ -436,38 +330,16 @@
   {
     "inputs": [],
     "name": "authority",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "ipAccount",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "signer",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes4",
-        "name": "func",
-        "type": "bytes4"
-      }
+      { "internalType": "address", "name": "ipAccount", "type": "address" },
+      { "internalType": "address", "name": "signer", "type": "address" },
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "bytes4", "name": "func", "type": "bytes4" }
     ],
     "name": "checkPermission",
     "outputs": [],
@@ -476,113 +348,43 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "ipAccount",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "signer",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes4",
-        "name": "func",
-        "type": "bytes4"
-      }
+      { "internalType": "address", "name": "ipAccount", "type": "address" },
+      { "internalType": "address", "name": "signer", "type": "address" },
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "bytes4", "name": "func", "type": "bytes4" }
     ],
     "name": "getPermanentPermission",
-    "outputs": [
-      {
-        "internalType": "uint8",
-        "name": "",
-        "type": "uint8"
-      }
-    ],
+    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "ipAccount",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "signer",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes4",
-        "name": "func",
-        "type": "bytes4"
-      }
+      { "internalType": "address", "name": "ipAccount", "type": "address" },
+      { "internalType": "address", "name": "signer", "type": "address" },
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "bytes4", "name": "func", "type": "bytes4" }
     ],
     "name": "getPermission",
-    "outputs": [
-      {
-        "internalType": "uint8",
-        "name": "",
-        "type": "uint8"
-      }
-    ],
+    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "ipAccount",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "signer",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes4",
-        "name": "func",
-        "type": "bytes4"
-      }
+      { "internalType": "address", "name": "ipAccount", "type": "address" },
+      { "internalType": "address", "name": "signer", "type": "address" },
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "bytes4", "name": "func", "type": "bytes4" }
     ],
     "name": "getTransientPermission",
-    "outputs": [
-      {
-        "internalType": "uint8",
-        "name": "",
-        "type": "uint8"
-      }
-    ],
+    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "accessManager",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "accessManager", "type": "address" }
     ],
     "name": "initialize",
     "outputs": [],
@@ -592,13 +394,7 @@
   {
     "inputs": [],
     "name": "isConsumingScheduledOp",
-    "outputs": [
-      {
-        "internalType": "bytes4",
-        "name": "",
-        "type": "bytes4"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes4", "name": "", "type": "bytes4" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -612,46 +408,22 @@
   {
     "inputs": [],
     "name": "paused",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "proxiableUUID",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "ipAccount",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "signer",
-        "type": "address"
-      },
-      {
-        "internalType": "uint8",
-        "name": "permission",
-        "type": "uint8"
-      }
+      { "internalType": "address", "name": "ipAccount", "type": "address" },
+      { "internalType": "address", "name": "signer", "type": "address" },
+      { "internalType": "uint8", "name": "permission", "type": "uint8" }
     ],
     "name": "setAllPermissions",
     "outputs": [],
@@ -660,21 +432,9 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "ipAccount",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "signer",
-        "type": "address"
-      },
-      {
-        "internalType": "uint8",
-        "name": "permission",
-        "type": "uint8"
-      }
+      { "internalType": "address", "name": "ipAccount", "type": "address" },
+      { "internalType": "address", "name": "signer", "type": "address" },
+      { "internalType": "uint8", "name": "permission", "type": "uint8" }
     ],
     "name": "setAllTransientPermissions",
     "outputs": [],
@@ -683,11 +443,7 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "newAuthority",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "newAuthority", "type": "address" }
     ],
     "name": "setAuthority",
     "outputs": [],
@@ -698,31 +454,11 @@
     "inputs": [
       {
         "components": [
-          {
-            "internalType": "address",
-            "name": "ipAccount",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "signer",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "to",
-            "type": "address"
-          },
-          {
-            "internalType": "bytes4",
-            "name": "func",
-            "type": "bytes4"
-          },
-          {
-            "internalType": "uint8",
-            "name": "permission",
-            "type": "uint8"
-          }
+          { "internalType": "address", "name": "ipAccount", "type": "address" },
+          { "internalType": "address", "name": "signer", "type": "address" },
+          { "internalType": "address", "name": "to", "type": "address" },
+          { "internalType": "bytes4", "name": "func", "type": "bytes4" },
+          { "internalType": "uint8", "name": "permission", "type": "uint8" }
         ],
         "internalType": "struct AccessPermission.Permission[]",
         "name": "permissions",
@@ -738,31 +474,11 @@
     "inputs": [
       {
         "components": [
-          {
-            "internalType": "address",
-            "name": "ipAccount",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "signer",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "to",
-            "type": "address"
-          },
-          {
-            "internalType": "bytes4",
-            "name": "func",
-            "type": "bytes4"
-          },
-          {
-            "internalType": "uint8",
-            "name": "permission",
-            "type": "uint8"
-          }
+          { "internalType": "address", "name": "ipAccount", "type": "address" },
+          { "internalType": "address", "name": "signer", "type": "address" },
+          { "internalType": "address", "name": "to", "type": "address" },
+          { "internalType": "bytes4", "name": "func", "type": "bytes4" },
+          { "internalType": "uint8", "name": "permission", "type": "uint8" }
         ],
         "internalType": "struct AccessPermission.Permission[]",
         "name": "permissions",
@@ -776,31 +492,11 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "ipAccount",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "signer",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes4",
-        "name": "func",
-        "type": "bytes4"
-      },
-      {
-        "internalType": "uint8",
-        "name": "permission",
-        "type": "uint8"
-      }
+      { "internalType": "address", "name": "ipAccount", "type": "address" },
+      { "internalType": "address", "name": "signer", "type": "address" },
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "bytes4", "name": "func", "type": "bytes4" },
+      { "internalType": "uint8", "name": "permission", "type": "uint8" }
     ],
     "name": "setPermission",
     "outputs": [],
@@ -809,31 +505,11 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "ipAccount",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "signer",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes4",
-        "name": "func",
-        "type": "bytes4"
-      },
-      {
-        "internalType": "uint8",
-        "name": "permission",
-        "type": "uint8"
-      }
+      { "internalType": "address", "name": "ipAccount", "type": "address" },
+      { "internalType": "address", "name": "signer", "type": "address" },
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "bytes4", "name": "func", "type": "bytes4" },
+      { "internalType": "uint8", "name": "permission", "type": "uint8" }
     ],
     "name": "setTransientPermission",
     "outputs": [],
@@ -854,11 +530,7 @@
         "name": "newImplementation",
         "type": "address"
       },
-      {
-        "internalType": "bytes",
-        "name": "data",
-        "type": "bytes"
-      }
+      { "internalType": "bytes", "name": "data", "type": "bytes" }
     ],
     "name": "upgradeToAndCall",
     "outputs": [],

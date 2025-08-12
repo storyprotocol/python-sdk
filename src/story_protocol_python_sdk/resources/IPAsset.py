@@ -33,7 +33,14 @@ from story_protocol_python_sdk.abi.RegistrationWorkflows.RegistrationWorkflows_c
     RegistrationWorkflowsClient,
 )
 from story_protocol_python_sdk.abi.SPGNFTImpl.SPGNFTImpl_client import SPGNFTImplClient
+from story_protocol_python_sdk.types.common import AccessPermission
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
+from story_protocol_python_sdk.utils.derivative_data import (
+    DerivativeData,
+    DerivativeDataInput,
+)
+from story_protocol_python_sdk.utils.function_signature import get_function_signature
+from story_protocol_python_sdk.utils.ip_metadata import IPMetadata, IPMetadataInput
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
 from story_protocol_python_sdk.utils.sign import Sign
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
@@ -173,7 +180,7 @@ class IPAsset:
                             "signer": self.registration_workflows_client.contract.address,
                             "to": self.core_metadata_module_client.contract.address,
                             "func": "setAll(address,string,bytes32,bytes32)",
-                            "permission": 1,
+                            "permission": AccessPermission.ALLOW,
                         }
                     ],
                 )
@@ -690,21 +697,21 @@ class IPAsset:
                         "ipId": ip_id,
                         "signer": self.license_attachment_workflows_client.contract.address,
                         "to": self.core_metadata_module_client.contract.address,
-                        "permission": 1,  # ALLOW
+                        "permission": AccessPermission.ALLOW,
                         "func": "setAll(address,string,bytes32,bytes32)",
                     },
                     {
                         "ipId": ip_id,
                         "signer": self.license_attachment_workflows_client.contract.address,
                         "to": self.licensing_module_client.contract.address,
-                        "permission": 1,  # ALLOW
+                        "permission": AccessPermission.ALLOW,
                         "func": "attachLicenseTerms(address,address,uint256)",
                     },
                     {
                         "ipId": ip_id,
                         "signer": self.license_attachment_workflows_client.contract.address,
                         "to": self.licensing_module_client.contract.address,
-                        "permission": 1,  # ALLOW
+                        "permission": AccessPermission.ALLOW,
                         "func": "setLicensingConfig(address,address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))",
                     },
                 ],
@@ -764,143 +771,86 @@ class IPAsset:
         except Exception as e:
             raise e
 
-    # def register_derivative_ip(
-    #     self,
-    #     nft_contract: str,
-    #     token_id: int,
-    #     deriv_data: dict,
-    #     metadata: dict = None,
-    #     deadline: int = None,
-    #     tx_options: dict = None
-    # ) -> dict:
-    #     """
-    #     Register the given NFT as a derivative IP with metadata without using
-    #     license tokens.
+    def register_derivative_ip(
+        self,
+        nft_contract: str,
+        token_id: int,
+        deriv_data: DerivativeDataInput,
+        metadata: IPMetadataInput | None = None,
+        deadline: int | None = None,
+        tx_options: dict | None = None,
+    ) -> dict:
+        """
+        Register the given NFT as a derivative IP with metadata without using
+        license tokens.
 
-    #     :param nft_contract str: The address of the NFT collection.
-    #     :param token_id int: The ID of the NFT.
-    #     :param deriv_data dict: The derivative data for registerDerivative.
-    #         :param parentIpIds list: The parent IP IDs.
-    #         :param licenseTemplate str: License template address to be used.
-    #         :param licenseTermsIds list: The license terms IDs.
-    #     :param metadata dict: [Optional] Desired IP metadata.
-    #         :param metadataURI str: [Optional] Metadata URI for the IP.
-    #         :param metadataHash str: [Optional] Metadata hash for the IP.
-    #         :param nftMetadataHash str: [Optional] NFT metadata hash.
-    #     :param deadline int: [Optional] Signature deadline in milliseconds.
-    #     :param tx_options dict: [Optional] Transaction options.
-    #     :return dict: Dictionary with the tx hash and IP ID.
-    #     """
-    #     try:
-    #         ip_id = self._get_ip_id(nft_contract, token_id)
-    #         if self._is_registered(ip_id):
-    #             raise ValueError(
-    #                 f"The NFT with id {token_id} is already registered as IP."
-    #             )
+        :param nft_contract str: The address of the NFT collection.
+        :param token_id int: The ID of the NFT.
+        :param deriv_data `DerivativeDataInput`: The derivative data for registerDerivative.
+        :param metadata `IPMetadataInput`: [Optional] Desired IP metadata.
+        :param deadline int: [Optional] Signature deadline in milliseconds.
+        :param tx_options dict: [Optional] Transaction options.
+        :return dict: Dictionary with the tx hash and IP ID.
+        """
+        try:
+            ip_id = self._get_ip_id(nft_contract, token_id)
+            if self._is_registered(ip_id):
+                raise ValueError(
+                    f"The NFT with id {token_id} is already registered as IP."
+                )
+            validated_deriv_data = DerivativeData.from_input(
+                web3=self.web3, input_data=deriv_data
+            ).get_validated_data()
+            calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
+            sig_register_signature = self.sign_util.get_permission_signature(
+                ip_id=ip_id,
+                deadline=calculated_deadline,
+                state=Web3.to_bytes(0),
+                permissions=[
+                    {
+                        "ipId": ip_id,
+                        "signer": self.derivative_workflows_client.contract.address,
+                        "to": self.core_metadata_module_client.contract.address,
+                        "permission": AccessPermission.ALLOW,
+                        "func": get_function_signature(
+                            self.core_metadata_module_client.contract.abi,
+                            "setAll",
+                        ),
+                    },
+                    {
+                        "ipId": ip_id,
+                        "signer": self.derivative_workflows_client.contract.address,
+                        "to": self.licensing_module_client.contract.address,
+                        "permission": AccessPermission.ALLOW,
+                        "func": get_function_signature(
+                            self.licensing_module_client.contract.abi,
+                            "registerDerivative",
+                        ),
+                    },
+                ],
+            )
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.derivative_workflows_client.build_registerIpAndMakeDerivative_transaction,
+                nft_contract,
+                token_id,
+                validated_deriv_data,
+                IPMetadata.from_input(metadata).get_validated_data(),
+                {
+                    "signer": self.account.address,
+                    "deadline": calculated_deadline,
+                    "signature": sig_register_signature["signature"],
+                },
+                tx_options=tx_options,
+            )
 
-    #         if len(deriv_data['parentIpIds']) != len(deriv_data['licenseTermsIds']):
-    #             raise ValueError(
-    #                 "Parent IP IDs and license terms IDs must match in quantity."
-    #             )
-    #         if len(deriv_data['parentIpIds']) not in [1, 2]:
-    #             raise ValueError("There can only be 1 or 2 parent IP IDs.")
+            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])
 
-    #         for parent_ip_id, license_terms_id in zip(
-    #             deriv_data['parentIpIds'],
-    #             deriv_data['licenseTermsIds']
-    #         ):
-    #             if not self.license_registry_client.hasIpAttachedLicenseTerms(
-    #                 parent_ip_id,
-    #                 self.pi_license_template_client.contract.address,
-    #                 license_terms_id
-    #             ):
-    #                 raise ValueError(
-    #                     f"License terms id {license_terms_id} must be attached to "
-    #                     f"the parent ipId {parent_ip_id} before registering "
-    #                     f"derivative."
-    #                 )
+            return {"tx_hash": response["tx_hash"], "ip_id": ip_registered["ip_id"]}
 
-    #         calculated_deadline = self._get_deadline(deadline=deadline)
-    #         sig_register_signature = self._get_signature(
-    #             ip_id,
-    #             self.licensing_module_client.contract.address,
-    #             calculated_deadline,
-    #             "registerDerivative(address,address[],uint256[],address,bytes)",
-    #             2
-    #         )
-
-    #         req_object = {
-    #             'nftContract': nft_contract,
-    #             'tokenId': token_id,
-    #             'derivData': {
-    #                 'parentIpIds': [
-    #                     self.web3.to_checksum_address(id)
-    #                     for id in deriv_data['parentIpIds']
-    #                 ],
-    #                 'licenseTermsIds': deriv_data['licenseTermsIds'],
-    #                 'licenseTemplate': self.pi_license_template_client.contract.address,
-    #                 'royaltyContext': ZERO_ADDRESS,
-    #             },
-    #             'sigRegister': {
-    #                 'signer': self.web3.to_checksum_address(self.account.address),
-    #                 'deadline': calculated_deadline,
-    #                 'signature': sig_register_signature,
-    #             },
-    #             'metadata': {
-    #                 'metadataURI': "",
-    #                 'metadataHash': ZERO_HASH,
-    #                 'nftMetadataHash': ZERO_HASH,
-    #             },
-    #             'sigMetadata': {
-    #                 'signer': ZERO_ADDRESS,
-    #                 'deadline': 0,
-    #                 'signature': ZERO_HASH,
-    #             },
-    #         }
-
-    #         if metadata:
-    #             req_object['metadata'].update({
-    #                 'metadataURI': metadata.get('metadataURI', ""),
-    #                 'metadataHash': metadata.get('metadataHash', ZERO_HASH),
-    #                 'nftMetadataHash': metadata.get('nftMetadataHash', ZERO_HASH),
-    #             })
-
-    #         signature = self._get_signature(
-    #             ip_id,
-    #             self.core_metadata_module_client.contract.address,
-    #             calculated_deadline,
-    #             "setAll(address,string,bytes32,bytes32)",
-    #             1
-    #         )
-
-    #         req_object['sigMetadata'] = {
-    #             'signer': self.web3.to_checksum_address(self.account.address),
-    #             'deadline': calculated_deadline,
-    #             'signature': signature,
-    #         }
-
-    #         response = build_and_send_transaction(
-    #             self.web3,
-    #             self.account,
-    #             self.derivative_workflows_client.build_registerIpAndMakeDerivative_transaction,  # noqa: E501
-    #             req_object['nftContract'],
-    #             req_object['tokenId'],
-    #             req_object['derivData'],
-    #             req_object['metadata'],
-    #             req_object['sigMetadata'],
-    #             req_object['sigRegister'],
-    #             tx_options=tx_options
-    #         )
-
-    #         ip_registered = self._parse_tx_ip_registered_event(response['tx_receipt'])
-
-    #         return {
-    #             'tx_hash': response['tx_hash'],
-    #             'ip_id': ip_registered['ip_id']
-    #         }
-
-    #     except Exception as e:
-    #         raise e
+        except Exception as e:
+            raise e
 
     def _validate_max_rts(self, max_rts: int):
         """

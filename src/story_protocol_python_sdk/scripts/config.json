@@ -5,11 +5,9 @@
       "contract_address": "0xcCF37d0a503Ee1D4C11208672e622ed3DFB2275a",
       "functions": [
         "PermissionSet",
-        "setPermission",
         "setAllPermissions",
-        "setBatchPermissions",
         "setTransientPermission",
-        "setTransientBatchPermissions"
+        "setBatchTransientPermissions"
       ]
     },
     {
@@ -230,7 +228,7 @@
     {
       "contract_name": "DerivativeWorkflows",
       "contract_address": "0x9e2d496f72C547C2C535B167e06ED8729B374a4f",
-      "functions": []
+      "functions": ["registerIpAndMakeDerivative"]
     }
   ]
 }

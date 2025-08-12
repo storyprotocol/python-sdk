@@ -13,6 +13,7 @@ from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import
     IPAssetRegistryClient,
 )
 from story_protocol_python_sdk.resources.IPAccount import IPAccount
+from story_protocol_python_sdk.types.common import AccessPermission
 from story_protocol_python_sdk.utils.constants import DEFAULT_FUNCTION_SELECTOR
 from story_protocol_python_sdk.utils.sign import Sign
 from story_protocol_python_sdk.utils.validation import validate_address
@@ -42,7 +43,7 @@ class Permission:
         ip_id: str,
         signer: str,
         to: str,
-        permission: int,
+        permission: AccessPermission,
         func: str = DEFAULT_FUNCTION_SELECTOR,
         tx_options: dict | None = None,
     ) -> dict:
@@ -56,7 +57,7 @@ class Permission:
         :param ip_id str: The IP ID of the IP account that grants the permission for `signer`.
         :param signer str: The address that can call `to` on behalf of the `ip_id`.
         :param to str: The address that can be called by the `signer`.
-        :param permission int: The new permission level.
+        :param permission `AccessPermission`: The new permission level.
         :param func str: [Optional] The function selector string of `to` that can be called by the `signer` on behalf of the `ipAccount`.
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash and success status if waiting for transaction.
@@ -74,7 +75,7 @@ class Permission:
                     self.web3.to_checksum_address(signer),
                     self.web3.to_checksum_address(to),
                     Web3.keccak(text=func)[:4] if func else b"\x00\x00\x00\x00",
-                    permission,
+                    permission.value,
                 ],
             )
 
@@ -92,14 +93,18 @@ class Permission:
             raise Exception(f"Failed to set permission for IP {ip_id}: {str(e)}")
 
     def set_all_permissions(
-        self, ip_id: str, signer: str, permission: int, tx_options: dict | None = None
+        self,
+        ip_id: str,
+        signer: str,
+        permission: AccessPermission,
+        tx_options: dict | None = None,
     ) -> dict:
         """
         Sets permission to a signer for all functions across all modules.
 
         :param ip_id str: The IP ID of the IP account that grants the permission.
         :param signer str: The address that will receive the permissions.
-        :param permission int: The new permission level.
+        :param permission `AccessPermission`: The new permission level.
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash and success status if waiting for transaction.
         """
@@ -113,7 +118,7 @@ class Permission:
                 args=[
                     self.web3.to_checksum_address(ip_id),
                     self.web3.to_checksum_address(signer),
-                    permission,
+                    permission.value,
                 ],
             )
 
@@ -137,7 +142,7 @@ class Permission:
         ip_id: str,
         signer: str,
         to: str,
-        permission: int,
+        permission: AccessPermission,
         func: str = DEFAULT_FUNCTION_SELECTOR,
         deadline: int | None = None,
         tx_options: dict | None = None,
@@ -148,7 +153,7 @@ class Permission:
         :param ip_id str: The IP ID of the IP account that grants the permission.
         :param signer str: The address that can call `to` on behalf of the `ip_id`.
         :param to str: The address that can be called by the `signer`.
-        :param permission int: The new permission level.
+        :param permission `AccessPermission`: The new permission level.
         :param func str: [Optional] The function selector string.
         :param deadline int: [Optional] The deadline for the signature validity.
         :param tx_options dict: [Optional] The transaction options.
@@ -174,7 +179,7 @@ class Permission:
                     signer,
                     to,
                     Web3.keccak(text=func)[:4] if func else b"\x00\x00\x00\x00",
-                    permission,
+                    permission.value,
                 ],
             )
 

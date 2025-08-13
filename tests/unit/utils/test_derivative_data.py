@@ -309,7 +309,7 @@ class TestValidateMaxRevenueShare:
     ):
         with mock_ip_asset_registry_client(), mock_license_registry_client():
             with raises(
-                ValueError, match="The maxRevenueShare must be between 0 and 100."
+                ValueError, match="max_revenue_share must be between 0 and 100."
             ):
                 DerivativeData.from_input(
                     web3=mock_web3,
@@ -331,7 +331,7 @@ class TestValidateMaxRevenueShare:
     ):
         with mock_is_checksum_address(), mock_ip_asset_registry_client(), mock_license_registry_client():
             with raises(
-                ValueError, match="The maxRevenueShare must be between 0 and 100."
+                ValueError, match="max_revenue_share must be between 0 and 100."
             ):
                 DerivativeData.from_input(
                     web3=mock_web3,

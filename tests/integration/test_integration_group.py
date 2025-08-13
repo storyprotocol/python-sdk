@@ -369,7 +369,7 @@ class TestCollectRoyaltyAndClaimReward:
                     "licensing_hook": ZERO_ADDRESS,
                     "commercial_rev_share": 10,
                     "disabled": False,
-                    "expect_minimum_group_reward_share": 0,
+                    "expect_minimum_group_reward_share": 10,
                     "expect_group_reward_pool": EVEN_SPLIT_GROUP_POOL,
                 },
             }

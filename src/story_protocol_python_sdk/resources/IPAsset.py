@@ -247,7 +247,7 @@ class IPAsset:
             if set to 0 then no limit
         :param max_rts int: The maximum number of royalty tokens that can be distributed
             (max: 100,000,000)
-        :param max_revenue_share int: The maximum revenue share percentage allowed (0-100,000,000)
+        :param max_revenue_share int: The maximum revenue share percentage allowed. Must be between 0 and 100 (where 100% represents 100,000,000). Default is 100.
         :param license_template str: [Optional] The license template address
         :param tx_options dict: [Optional] Transaction options
         :return dict: A dictionary with the transaction hash
@@ -257,31 +257,24 @@ class IPAsset:
                 raise ValueError(
                     f"The child IP with id {child_ip_id} is not registered."
                 )
-
-            derivative_data = self._validate_derivative_data(
-                {
-                    "childIpId": child_ip_id,
-                    "parentIpIds": parent_ip_ids,
-                    "licenseTermsIds": license_terms_ids,
-                    "maxMintingFee": max_minting_fee,
-                    "maxRts": max_rts,
-                    "maxRevenueShare": max_revenue_share,
-                    "licenseTemplate": license_template,
-                }
-            )
+            derivative_data = DerivativeData.from_input(
+                web3=self.web3,
+                input_data=DerivativeDataInput(
+                    parent_ip_ids=parent_ip_ids,
+                    license_terms_ids=license_terms_ids,
+                    max_minting_fee=max_minting_fee,
+                    max_rts=max_rts,
+                    max_revenue_share=max_revenue_share,
+                    license_template=license_template,
+                ),
+            ).get_validated_data()
 
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.licensing_module_client.build_registerDerivative_transaction,
-                derivative_data["childIpId"],
-                derivative_data["parentIpIds"],
-                derivative_data["licenseTermsIds"],
-                derivative_data["licenseTemplate"],
-                derivative_data["royaltyContext"],
-                derivative_data["maxMintingFee"],
-                derivative_data["maxRts"],
-                derivative_data["maxRevenueShare"],
+                child_ip_id,
+                **derivative_data,
                 tx_options=tx_options,
             )
 
@@ -367,7 +360,7 @@ class IPAsset:
                 :param commercializer_checker str: Allowed commercializers or zero
                     address for none.
                 :param commercializer_checker_data str: Data for checker contract.
-                :param commercial_rev_share int: The commercial revenue share percentage (from 0 to 100%, represented as 100_000_000).
+                :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor. Must be between 0 and 100 (where 100% represents 100,000,000).
                 :param commercial_rev_ceiling int: Maximum commercial revenue.
                 :param derivatives_allowed bool: Whether derivatives are allowed.
                 :param derivatives_attribution bool: Whether attribution is needed
@@ -385,12 +378,10 @@ class IPAsset:
                 :param hook_data str: The data used by the licensing hook.
                 :param licensing_hook str: The licensing hook contract address or
                     address(0) if none.
-                :param commercial_rev_share int: The commercial revenue share percentage (from 0 to 100%, represented as 100_000_000).
+                :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor. Must be between 0 and 100 (where 100% represents 100,000,000).
                 :param disabled bool: Whether the license is disabled.
-                :param expect_minimum_group_reward_share int: Minimum group reward
-                    share percentage (from 0 to 100%, represented as 100_000_000).
-                :param expect_group_reward_pool str: Address of the expected group
-                    reward pool.
+                :param expect_minimum_group_reward_share int: Minimum group reward share percentage. Must be between 0 and 100 (where 100% represents 100,000,000).
+                :param expect_group_reward_pool str: Address of the expected group reward pool.
         :param ip_metadata dict: [Optional] NFT and IP metadata.
             :param ip_metadata_uri str: [Optional] IP metadata URI.
             :param ip_metadata_hash str: [Optional] IP metadata hash.
@@ -560,7 +551,7 @@ class IPAsset:
                 :param commercial_attribution bool: Whether attribution is required when reproducing the work commercially or not.
                 :param commercializer_checker str: Commercializers that are allowed to commercially exploit the work.
                 :param commercializer_checker_data str: The data to be passed to the commercializer checker contract.
-                :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor.
+                :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor. Must be between 0 and 100 (where 100% represents 100,000,000).
                 :param commercial_rev_ceiling int: The maximum revenue that can be generated from the commercial use of the work.
                 :param derivatives_allowed bool: Indicates whether the licensee can create derivatives of his work or not.
                 :param derivatives_attribution bool: Indicates whether attribution is required for derivatives of the work or not.
@@ -574,9 +565,9 @@ class IPAsset:
                 :param minting_fee int: The minting fee to be paid when minting license tokens.
                 :param licensing_hook str: The hook contract address for the licensing module.
                 :param hook_data str: The data to be used by the licensing hook.
-                :param commercial_rev_share int: The commercial revenue share percentage.
+                :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor. Must be between 0 and 100 (where 100% represents 100,000,000).
                 :param disabled bool: Whether the licensing is disabled or not.
-                :param expect_minimum_group_reward_share int: The minimum percentage of the group's reward share.
+                :param expect_minimum_group_reward_share int: The minimum percentage of the group's reward share. Must be between 0 and 100 (where 100% represents 100,000,000).
                 :param expect_group_reward_pool str: The address of the expected group reward pool.
         :param ip_metadata dict: [Optional] The metadata for the newly registered IP.
             :param ip_metadata_uri str: [Optional] The URI of the metadata for the IP.

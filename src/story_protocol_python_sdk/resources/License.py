@@ -18,9 +18,11 @@ from story_protocol_python_sdk.abi.ModuleRegistry.ModuleRegistry_client import (
 from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client import (
     PILicenseTemplateClient,
 )
+from story_protocol_python_sdk.types.common import RevShareType
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
+from story_protocol_python_sdk.utils.validation import get_revenue_share
 
 
 class License:
@@ -86,7 +88,7 @@ class License:
         :param commercial_attribution bool: Whether attribution is required when reproducing the work commercially or not.
         :param commercializer_checker str: Commercializers that are allowed to commercially exploit the work. If zero address, then no restrictions is enforced.
         :param commercializer_checker_data str: The data to be passed to the commercializer checker contract.
-        :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor.
+        :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor. Must be between 0 and 100 (where 100% represents 100,000,000).
         :param commercial_rev_ceiling int: The maximum revenue that can be generated from the commercial use of the work.
         :param derivatives_allowed bool: Indicates whether the licensee can create derivatives of his work or not.
         :param derivatives_attribution bool: Indicates whether attribution is required for derivatives of the work or not.
@@ -237,7 +239,7 @@ class License:
 
         :param default_minting_fee int: The fee to be paid when minting a license.
         :param currency str: The ERC20 token to be used to pay the minting fee.
-        :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor.
+        :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor. Must be between 0 and 100 (where 100% represents 100,000,000).
         :param royalty_policy str: The address of the royalty policy contract.
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash and the license terms ID.
@@ -368,7 +370,7 @@ class License:
         :param amount int: The amount of license tokens to mint.
         :param receiver str: The address of the receiver.
         :param max_minting_fee int: [Optional] The maximum minting fee that the caller is willing to pay. If set to 0 then no limit. Defaults to 0.
-        :param max_revenue_share int: [Optional] The maximum revenue share percentage allowed for minting the License Tokens. Must be between 0 and 100,000,000 (where 100,000,000 represents 100%). Defaults to 0.
+        :param max_revenue_share int: [Optional] The maximum revenue share percentage allowed for minting the License Tokens. Must be between 0 and 100,000,000 (where 100,000,000 represents 100%). Defaults to 100.
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash and the license token IDs.
         """
@@ -410,7 +412,10 @@ class License:
                 receiver,
                 ZERO_ADDRESS,  # Zero address for royalty context
                 max_minting_fee,
-                self.license_terms_util.get_revenue_share(max_revenue_share),
+                get_revenue_share(
+                    100 if max_revenue_share is None else max_revenue_share,
+                    RevShareType.MAX_REVENUE_SHARE,
+                ),
                 tx_options=tx_options,
             )
 

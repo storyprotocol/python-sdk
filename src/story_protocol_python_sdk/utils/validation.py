@@ -1,7 +1,6 @@
 from web3 import Web3
 
 from story_protocol_python_sdk.types.common import RevShareType
-from story_protocol_python_sdk.utils.constants import MAX_ROYALTY_TOKEN
 
 
 def validate_address(address: str) -> str:
@@ -25,10 +24,10 @@ def get_revenue_share(
     Convert revenue share percentage to token amount.
 
     :param revShare int: Revenue share percentage between 0-100
-    :param type RevShareType: Type of revenue share
+    :param type RevShareType: Type of revenue share, default is commercial revenue share
     :return int: Revenue share token amount
     """
     if revShare < 0 or revShare > 100:
         raise ValueError(f"The {type.value} must be between 0 and 100.")
 
-    return (revShare * MAX_ROYALTY_TOKEN) // 100
+    return revShare * 10**6

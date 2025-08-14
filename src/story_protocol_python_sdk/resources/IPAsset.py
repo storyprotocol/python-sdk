@@ -274,7 +274,13 @@ class IPAsset:
                 self.account,
                 self.licensing_module_client.build_registerDerivative_transaction,
                 child_ip_id,
-                **derivative_data,
+                derivative_data["parentIpIds"],
+                derivative_data["licenseTermsIds"],
+                derivative_data["licenseTemplate"],
+                derivative_data["royaltyContext"],
+                derivative_data["maxMintingFee"],
+                derivative_data["maxRts"],
+                derivative_data["maxRevenueShare"],
                 tx_options=tx_options,
             )
 

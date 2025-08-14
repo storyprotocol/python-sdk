@@ -878,7 +878,7 @@ def patch_has_ip_attached_license_terms(license):
 
 
 class TestMintLicenseTokens:
-    def test_defaults_to_100_max_revenue_share_when_not_provided(
+    def test_default_value_when_not_provided(
         self,
         license: License,
         patch_is_registered,
@@ -898,10 +898,11 @@ class TestMintLicenseTokens:
                     amount=1,
                     receiver=ZERO_ADDRESS,
                 )
-            max_revenue_share = mock_build_mintLicenseTokens_transaction.call_args[0][7]
-            assert max_revenue_share == 100 * 10**6
+            call_args = mock_build_mintLicenseTokens_transaction.call_args[0]
+            assert call_args[6] == 0  # max_minting_fee
+            assert call_args[7] == 100 * 10**6  # max_revenue_share
 
-    def test_max_revenue_share_is_10_when_provided(
+    def test_call_value_when_provided(
         self,
         license: License,
         patch_is_registered,
@@ -921,6 +922,8 @@ class TestMintLicenseTokens:
                     amount=1,
                     receiver=ZERO_ADDRESS,
                     max_revenue_share=10,
+                    max_minting_fee=10,
                 )
-            max_revenue_share = mock_build_mintLicenseTokens_transaction.call_args[0][7]
-            assert max_revenue_share == 10 * 10**6
+            call_args = mock_build_mintLicenseTokens_transaction.call_args[0]
+            assert call_args[6] == 10  # max_minting_fee
+            assert call_args[7] == 10 * 10**6  # max_revenue_share

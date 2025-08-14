@@ -35,7 +35,11 @@ from story_protocol_python_sdk.abi.RegistrationWorkflows.RegistrationWorkflows_c
 )
 from story_protocol_python_sdk.abi.SPGNFTImpl.SPGNFTImpl_client import SPGNFTImplClient
 from story_protocol_python_sdk.types.common import AccessPermission
-from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
+from story_protocol_python_sdk.utils.constants import (
+    MAX_ROYALTY_TOKEN,
+    ZERO_ADDRESS,
+    ZERO_HASH,
+)
 from story_protocol_python_sdk.utils.derivative_data import (
     DerivativeData,
     DerivativeDataInput,
@@ -228,8 +232,8 @@ class IPAsset:
         parent_ip_ids: list,
         license_terms_ids: list,
         max_minting_fee: int = 0,
-        max_rts: int = 0,
-        max_revenue_share: int = 0,
+        max_rts: int = MAX_ROYALTY_TOKEN,
+        max_revenue_share: int = 100,
         license_template: str | None = None,
         tx_options: dict | None = None,
     ) -> dict:
@@ -244,11 +248,11 @@ class IPAsset:
         :param parent_ip_ids list: The parent IP IDs
         :param license_terms_ids list: The IDs of the license terms that the parent IP supports
         :param max_minting_fee int: The maximum minting fee that the caller is willing to pay.
-            if set to 0 then no limit
+            if set to 0 then no limit. (default: 0)
         :param max_rts int: The maximum number of royalty tokens that can be distributed
-            (max: 100,000,000)
-        :param max_revenue_share int: The maximum revenue share percentage allowed. Must be between 0 and 100 (where 100% represents 100,000,000). Default is 100.
-        :param license_template str: [Optional] The license template address
+            (max: 100,000,000) (default: 100,000,000)
+        :param max_revenue_share int: The maximum revenue share percentage allowed. Must be between 0 and 100 (where 100% represents 100,000,000). (default: 100)
+        :param license_template str: [Optional] The license template address. Defaults to [License Template](https://docs.story.foundation/docs/programmable-ip-license) address if not provided.
         :param tx_options dict: [Optional] Transaction options
         :return dict: A dictionary with the transaction hash
         """

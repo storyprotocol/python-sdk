@@ -1,10 +1,12 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from _pytest.fixtures import fixture
 from eth_utils import is_address, to_checksum_address
 from web3 import Web3
 
 from story_protocol_python_sdk.resources.License import License
+from tests.unit.fixtures.data import ADDRESS, CHAIN_ID, IP_ID
 
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 VALID_ADDRESS = "0x1daAE3197Bc469Cb97B917aa460a12dD95c6627c"
@@ -832,3 +834,93 @@ class TestLicensingConfig:
                     license_template=ZERO_ADDRESS,
                     licensing_config=config,
                 )
+
+
+########################################################################################
+##TODO: Need to refactor the previous test case
+
+
+@fixture
+def license(mock_web3, mock_account):
+    return License(web3=mock_web3, account=mock_account, chain_id=CHAIN_ID)
+
+
+@fixture
+def patch_is_registered(license):
+    def _patch(is_registered=True):
+        return patch.object(
+            license.ip_asset_registry_client, "isRegistered", return_value=is_registered
+        )
+
+    return _patch
+
+
+@fixture
+def patch_exists(license):
+    def _patch(exists=True):
+        return patch.object(
+            license.license_template_client, "exists", return_value=exists
+        )
+
+    return _patch
+
+
+@fixture
+def patch_has_ip_attached_license_terms(license):
+    def _patch(has_ip_attached_license_terms=True):
+        return patch.object(
+            license.license_registry_client,
+            "hasIpAttachedLicenseTerms",
+            return_value=has_ip_attached_license_terms,
+        )
+
+    return _patch
+
+
+class TestMintLicenseTokens:
+    def test_defaults_to_100_max_revenue_share_when_not_provided(
+        self,
+        license: License,
+        patch_is_registered,
+        patch_exists,
+        patch_has_ip_attached_license_terms,
+    ):
+        with patch_is_registered(), patch_exists(), patch_has_ip_attached_license_terms():
+            with patch.object(
+                license.licensing_module_client,
+                "build_mintLicenseTokens_transaction",
+            ) as mock_build_mintLicenseTokens_transaction:
+
+                license.mint_license_tokens(
+                    licensor_ip_id=IP_ID,
+                    license_template=ADDRESS,
+                    license_terms_id=1,
+                    amount=1,
+                    receiver=ZERO_ADDRESS,
+                )
+            max_revenue_share = mock_build_mintLicenseTokens_transaction.call_args[0][7]
+            assert max_revenue_share == 100 * 10**6
+
+    def test_max_revenue_share_is_10_when_provided(
+        self,
+        license: License,
+        patch_is_registered,
+        patch_exists,
+        patch_has_ip_attached_license_terms,
+    ):
+        with patch_is_registered(), patch_exists(), patch_has_ip_attached_license_terms():
+            with patch.object(
+                license.licensing_module_client,
+                "build_mintLicenseTokens_transaction",
+            ) as mock_build_mintLicenseTokens_transaction:
+
+                license.mint_license_tokens(
+                    licensor_ip_id=IP_ID,
+                    license_template=ADDRESS,
+                    license_terms_id=1,
+                    amount=1,
+                    receiver=ZERO_ADDRESS,
+                    max_revenue_share=10,
+                )
+            max_revenue_share = mock_build_mintLicenseTokens_transaction.call_args[0][7]
+            assert max_revenue_share == 10 * 10**6

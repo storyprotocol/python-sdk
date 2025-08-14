@@ -358,7 +358,7 @@ class License:
         amount: int,
         receiver: str,
         max_minting_fee: int = 0,
-        max_revenue_share: int = 0,
+        max_revenue_share: int = 100,
         tx_options: dict | None = None,
     ) -> dict:
         """
@@ -413,7 +413,7 @@ class License:
                 ZERO_ADDRESS,  # Zero address for royalty context
                 max_minting_fee,
                 get_revenue_share(
-                    100 if max_revenue_share is None else max_revenue_share,
+                    max_revenue_share,
                     RevShareType.MAX_REVENUE_SHARE,
                 ),
                 tx_options=tx_options,

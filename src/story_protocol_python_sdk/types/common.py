@@ -2,9 +2,10 @@ from enum import Enum
 
 
 class RevShareType(Enum):
-    COMMERCIAL_REVENUE_SHARE = "commercialRevShare"
-    MAX_REVENUE_SHARE = "maxRevenueShare"
-    MAX_ALLOWED_REWARD_SHARE = "maxAllowedRewardShare"
+    COMMERCIAL_REVENUE_SHARE = "commercial_rev_share"
+    MAX_REVENUE_SHARE = "max_revenue_share"
+    MAX_ALLOWED_REWARD_SHARE = "max_allowed_reward_share"
+    EXPECT_MINIMUM_GROUP_REWARD_SHARE = "expect_minimum_group_reward_share"
 
 
 class AccessPermission(Enum):

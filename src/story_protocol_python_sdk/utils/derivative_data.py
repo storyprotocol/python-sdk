@@ -30,7 +30,7 @@ class DerivativeDataInput:
         license_terms_ids: List of license terms IDs corresponding to each parent IP.
         max_minting_fee: [Optional] The maximum minting fee that the caller is willing to pay. if set to 0 then no limit. (default: 0).
         max_rts: [Optional] The maximum number of royalty tokens that can be distributed to the external royalty policies. (max: 100,000,000) (default: 100,000,000).
-        max_revenue_share: [Optional] The maximum revenue share percentage allowed for minting the License Tokens. Must be between 0 and 100 (where 100% represents 100_000_000) (default: 100).
+        max_revenue_share: [Optional] The maximum revenue share percentage allowed for minting the License Tokens. Must be between 0 and 100 (where 100% represents 100,000,000) (default: 100).
         license_template: [Optional] The address of the license template. Defaults to [License Template](https://docs.story.foundation/docs/programmable-ip-license) address if not provided
     """
 

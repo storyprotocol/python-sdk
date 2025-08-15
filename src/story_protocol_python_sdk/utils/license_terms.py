@@ -6,10 +6,12 @@ from web3 import Web3
 from story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client import (
     RoyaltyModuleClient,
 )
+from story_protocol_python_sdk.types.common import RevShareType
 from story_protocol_python_sdk.utils.constants import (
     ROYALTY_POLICY_LAP_ADDRESS,
     ZERO_ADDRESS,
 )
+from story_protocol_python_sdk.utils.validation import get_revenue_share
 
 
 class LicenseTerms:
@@ -90,9 +92,7 @@ class LicenseTerms:
                     "currency": term["currency"],
                     "commercialUse": True,
                     "commercialAttribution": True,
-                    "commercialRevShare": int(
-                        (term["commercialRevShare"] / 100) * 100000000
-                    ),
+                    "commercialRevShare": get_revenue_share(term["commercialRevShare"]),
                     "derivativesReciprocal": True,
                     "royaltyPolicy": term["royaltyPolicyAddress"],
                 }
@@ -119,34 +119,37 @@ class LicenseTerms:
         if royalty_policy != ZERO_ADDRESS and currency == ZERO_ADDRESS:
             raise ValueError("Royalty policy requires currency token.")
 
-        params["default_minting_fee"] = int(params.get("default_minting_fee", 0))
-        params["expiration"] = int(params.get("expiration", 0))
-        params["commercial_rev_ceiling"] = int(params.get("commercial_rev_ceiling", 0))
-        params["derivative_rev_ceiling"] = int(params.get("derivative_rev_ceiling", 0))
-
-        self.verify_commercial_use(params)
-        self.verify_derivatives(params)
-
         commercial_rev_share = params.get("commercial_rev_share", 0)
         if commercial_rev_share < 0 or commercial_rev_share > 100:
-            raise ValueError("CommercialRevShare should be between 0 and 100.")
-        else:
-            params["commercial_rev_share"] = int(
-                (commercial_rev_share / 100) * 100000000
-            )
+            raise ValueError("commercial_rev_share should be between 0 and 100.")
 
-        commercializer_checker_data = params.get(
-            "commercializer_checker_data", ZERO_ADDRESS
-        )
-        if isinstance(commercializer_checker_data, str):
-            params["commercializer_checker_data"] = Web3.to_bytes(
-                hexstr=HexStr(commercializer_checker_data)
-            )
+        validated_params = {
+            "transferable": params.get("transferable"),
+            "royaltyPolicy": params.get("royalty_policy"),
+            "defaultMintingFee": int(params.get("default_minting_fee", 0)),
+            "expiration": int(params.get("expiration", 0)),
+            "commercialUse": params.get("commercial_use"),
+            "commercialAttribution": params.get("commercial_attribution"),
+            "commercializerChecker": params.get("commercializer_checker"),
+            "commercializerCheckerData": Web3.to_bytes(
+                hexstr=HexStr(params.get("commercializer_checker_data", ZERO_ADDRESS))
+            ),
+            "commercialRevShare": get_revenue_share(
+                params.get("commercial_rev_share", 0)
+            ),
+            "commercialRevCeiling": int(params.get("commercial_rev_ceiling", 0)),
+            "derivativesAllowed": params.get("derivatives_allowed"),
+            "derivativesAttribution": params.get("derivatives_attribution"),
+            "derivativesApproval": params.get("derivatives_approval"),
+            "derivativesReciprocal": params.get("derivatives_reciprocal"),
+            "derivativeRevCeiling": int(params.get("derivative_rev_ceiling", 0)),
+            "currency": params.get("currency"),
+            "uri": params.get("uri"),
+        }
 
-        params["expect_minimum_group_reward_share"] = int(
-            params.get("expect_minimum_group_reward_share", 0)
-        )
-        return params
+        self.verify_commercial_use(validated_params)
+        self.verify_derivatives(validated_params)
+        return validated_params
 
     def validate_licensing_config(self, params):
         if not isinstance(params, dict):
@@ -169,14 +172,14 @@ class LicenseTerms:
                     raise TypeError(f"{param} must be of type {expected_type.__name__}")
 
         default_params = {
-            "is_set": False,
-            "minting_fee": 0,
-            "hook_data": ZERO_ADDRESS,
-            "licensing_hook": ZERO_ADDRESS,
-            "commercial_rev_share": 0,
+            "isSet": False,
+            "mintingFee": 0,
+            "hookData": ZERO_ADDRESS,
+            "licensingHook": ZERO_ADDRESS,
+            "commercialRevShare": 0,
             "disabled": False,
-            "expect_minimum_group_reward_share": 0,
-            "expect_group_reward_pool": ZERO_ADDRESS,
+            "expectMinimumGroupRewardShare": 0,
+            "expectGroupRewardPool": ZERO_ADDRESS,
         }
 
         if not params.get("is_set", False):
@@ -190,11 +193,6 @@ class LicenseTerms:
             or params.get("commercial_rev_share", 0) > 100
         ):
             raise ValueError("Commercial revenue share must be between 0 and 100")
-        else:
-            params["commercial_rev_share"] = int(
-                (params["commercial_rev_share"] / 100) * 100000000
-            )
-
         if (
             params.get("expect_minimum_group_reward_share", 0) < 0
             or params.get("expect_minimum_group_reward_share", 0) > 100
@@ -202,60 +200,71 @@ class LicenseTerms:
             raise ValueError(
                 "Expect minimum group reward share must be between 0 and 100"
             )
+        validated_params = {
+            "isSet": params.get("is_set", False),
+            "mintingFee": params.get("minting_fee", 0),
+            "hookData": Web3.to_bytes(hexstr=HexStr(params["hook_data"])),
+            "licensingHook": params.get("licensing_hook", ZERO_ADDRESS),
+            "commercialRevShare": get_revenue_share(params["commercial_rev_share"]),
+            "disabled": params.get("disabled", False),
+            "expectMinimumGroupRewardShare": get_revenue_share(
+                params["expect_minimum_group_reward_share"],
+                RevShareType.EXPECT_MINIMUM_GROUP_REWARD_SHARE,
+            ),
+            "expectGroupRewardPool": params.get(
+                "expect_group_reward_pool", ZERO_ADDRESS
+            ),
+        }
 
-        params["hook_data"] = Web3.to_bytes(hexstr=params["hook_data"])
-
-        default_params.update(params)
-
-        return default_params
+        return validated_params
 
     def verify_commercial_use(self, terms):
-        if not terms.get("commercial_use", False):
-            if terms.get("commercial_attribution"):
+        if not terms.get("commercialUse", False):
+            if terms.get("commercialAttribution", False):
                 raise ValueError(
                     "Cannot add commercial attribution when commercial use is disabled."
                 )
-            if terms.get("commercializer_checker") != ZERO_ADDRESS:
+            if terms.get("commercializerChecker") != ZERO_ADDRESS:
                 raise ValueError(
                     "Cannot add commercializerChecker when commercial use is disabled."
                 )
-            if terms.get("commercial_rev_share", 0) > 0:
+            if terms.get("commercialRevShare", 0) > 0:
                 raise ValueError(
                     "Cannot add commercial revenue share when commercial use is disabled."
                 )
-            if terms.get("commercial_rev_ceiling", 0) > 0:
+            if terms.get("commercialRevCeiling", 0) > 0:
                 raise ValueError(
                     "Cannot add commercial revenue ceiling when commercial use is disabled."
                 )
-            if terms.get("derivative_rev_ceiling", 0) > 0:
+            if terms.get("derivativeRevCeiling", 0) > 0:
                 raise ValueError(
                     "Cannot add derivative revenue ceiling when commercial use is disabled."
                 )
-            if terms.get("royalty_policy") != ZERO_ADDRESS:
+            if terms.get("royaltyPolicy") != ZERO_ADDRESS:
                 raise ValueError(
                     "Cannot add commercial royalty policy when commercial use is disabled."
                 )
         else:
-            if terms.get("royalty_policy") == ZERO_ADDRESS:
+            if terms.get("royaltyPolicy") == ZERO_ADDRESS:
                 raise ValueError(
                     "Royalty policy is required when commercial use is enabled."
                 )
 
     def verify_derivatives(self, terms):
-        if not terms.get("derivatives_allowed", False):
-            if terms.get("derivatives_attribution"):
+        if not terms.get("derivativesAllowed", False):
+            if terms.get("derivativesAttribution", False):
                 raise ValueError(
                     "Cannot add derivative attribution when derivative use is disabled."
                 )
-            if terms.get("derivatives_approval"):
+            if terms.get("derivativesApproval", False):
                 raise ValueError(
                     "Cannot add derivative approval when derivative use is disabled."
                 )
-            if terms.get("derivatives_reciprocal"):
+            if terms.get("derivativesReciprocal", False):
                 raise ValueError(
                     "Cannot add derivative reciprocal when derivative use is disabled."
                 )
-            if terms.get("derivative_rev_ceiling", 0) > 0:
+            if terms.get("derivativeRevCeiling", 0) > 0:
                 raise ValueError(
                     "Cannot add derivative revenue ceiling when derivative use is disabled."
                 )

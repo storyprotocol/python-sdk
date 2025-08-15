@@ -1,6 +1,6 @@
 """Module for handling IP Account operations and transactions."""
 
-from ens.ens import Address
+from ens.ens import Address, HexStr
 from web3 import Web3
 
 from story_protocol_python_sdk.abi.AccessController.AccessController_client import (
@@ -36,7 +36,11 @@ from story_protocol_python_sdk.abi.RegistrationWorkflows.RegistrationWorkflows_c
 from story_protocol_python_sdk.abi.SPGNFTImpl.SPGNFTImpl_client import SPGNFTImplClient
 from story_protocol_python_sdk.types.common import AccessPermission
 from story_protocol_python_sdk.types.resource.IPAsset import RegistrationResponse
-from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
+from story_protocol_python_sdk.utils.constants import (
+    MAX_ROYALTY_TOKEN,
+    ZERO_ADDRESS,
+    ZERO_HASH,
+)
 from story_protocol_python_sdk.utils.derivative_data import (
     DerivativeData,
     DerivativeDataInput,
@@ -176,7 +180,7 @@ class IPAsset:
                 signature_response = self.sign_util.get_permission_signature(
                     ip_id=ip_id,
                     deadline=calculated_deadline,
-                    state=self.web3.to_bytes(hexstr=ZERO_HASH),
+                    state=self.web3.to_bytes(hexstr=HexStr(ZERO_HASH)),
                     permissions=[
                         {
                             "ipId": ip_id,
@@ -230,8 +234,8 @@ class IPAsset:
         parent_ip_ids: list,
         license_terms_ids: list,
         max_minting_fee: int = 0,
-        max_rts: int = 0,
-        max_revenue_share: int = 0,
+        max_rts: int = MAX_ROYALTY_TOKEN,
+        max_revenue_share: int = 100,
         license_template: str | None = None,
         tx_options: dict | None = None,
     ) -> dict:
@@ -246,11 +250,11 @@ class IPAsset:
         :param parent_ip_ids list: The parent IP IDs
         :param license_terms_ids list: The IDs of the license terms that the parent IP supports
         :param max_minting_fee int: The maximum minting fee that the caller is willing to pay.
-            if set to 0 then no limit
+            if set to 0 then no limit. (default: 0)
         :param max_rts int: The maximum number of royalty tokens that can be distributed
-            (max: 100,000,000)
-        :param max_revenue_share int: The maximum revenue share percentage allowed (0-100,000,000)
-        :param license_template str: [Optional] The license template address
+            (max: 100,000,000) (default: 100,000,000)
+        :param max_revenue_share int: The maximum revenue share percentage allowed. Must be between 0 and 100 (where 100% represents 100,000,000). (default: 100)
+        :param license_template str: [Optional] The license template address. Defaults to [License Template](https://docs.story.foundation/docs/programmable-ip-license) address if not provided.
         :param tx_options dict: [Optional] Transaction options
         :return dict: A dictionary with the transaction hash
         """
@@ -259,24 +263,23 @@ class IPAsset:
                 raise ValueError(
                     f"The child IP with id {child_ip_id} is not registered."
                 )
-
-            derivative_data = self._validate_derivative_data(
-                {
-                    "childIpId": child_ip_id,
-                    "parentIpIds": parent_ip_ids,
-                    "licenseTermsIds": license_terms_ids,
-                    "maxMintingFee": max_minting_fee,
-                    "maxRts": max_rts,
-                    "maxRevenueShare": max_revenue_share,
-                    "licenseTemplate": license_template,
-                }
-            )
+            derivative_data = DerivativeData.from_input(
+                web3=self.web3,
+                input_data=DerivativeDataInput(
+                    parent_ip_ids=parent_ip_ids,
+                    license_terms_ids=license_terms_ids,
+                    max_minting_fee=max_minting_fee,
+                    max_rts=max_rts,
+                    max_revenue_share=max_revenue_share,
+                    license_template=license_template,
+                ),
+            ).get_validated_data()
 
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.licensing_module_client.build_registerDerivative_transaction,
-                derivative_data["childIpId"],
+                child_ip_id,
                 derivative_data["parentIpIds"],
                 derivative_data["licenseTermsIds"],
                 derivative_data["licenseTemplate"],
@@ -369,7 +372,7 @@ class IPAsset:
                 :param commercializer_checker str: Allowed commercializers or zero
                     address for none.
                 :param commercializer_checker_data str: Data for checker contract.
-                :param commercial_rev_share int: Revenue share percentage.
+                :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor. Must be between 0 and 100 (where 100% represents 100,000,000).
                 :param commercial_rev_ceiling int: Maximum commercial revenue.
                 :param derivatives_allowed bool: Whether derivatives are allowed.
                 :param derivatives_attribution bool: Whether attribution is needed
@@ -387,12 +390,10 @@ class IPAsset:
                 :param hook_data str: The data used by the licensing hook.
                 :param licensing_hook str: The licensing hook contract address or
                     address(0) if none.
-                :param commercial_rev_share int: Commercial revenue share percent.
+                :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor. Must be between 0 and 100 (where 100% represents 100,000,000).
                 :param disabled bool: Whether the license is disabled.
-                :param expect_minimum_group_reward_share int: Minimum group reward
-                    share (0-100%, as 100 * 10^6).
-                :param expect_group_reward_pool str: Address of the expected group
-                    reward pool.
+                :param expect_minimum_group_reward_share int: Minimum group reward share percentage. Must be between 0 and 100 (where 100% represents 100,000,000).
+                :param expect_group_reward_pool str: Address of the expected group reward pool.
         :param ip_metadata dict: [Optional] NFT and IP metadata.
             :param ip_metadata_uri str: [Optional] IP metadata URI.
             :param ip_metadata_hash str: [Optional] IP metadata hash.
@@ -408,57 +409,17 @@ class IPAsset:
                 raise ValueError(
                     f"The NFT contract address {spg_nft_contract} is not valid."
                 )
-
             license_terms = []
             for term in terms:
-                self.license_terms_util.validate_license_terms(term["terms"])
-                validated_licensing_config = (
-                    self.license_terms_util.validate_licensing_config(
-                        term["licensing_config"]
-                    )
-                )
-
-                camelcase_term = {
-                    "transferable": term["terms"]["transferable"],
-                    "royaltyPolicy": term["terms"]["royalty_policy"],
-                    "defaultMintingFee": term["terms"]["default_minting_fee"],
-                    "expiration": term["terms"]["expiration"],
-                    "commercialUse": term["terms"]["commercial_use"],
-                    "commercialAttribution": term["terms"]["commercial_attribution"],
-                    "commercializerChecker": term["terms"]["commercializer_checker"],
-                    "commercializerCheckerData": term["terms"][
-                        "commercializer_checker_data"
-                    ],
-                    "commercialRevShare": term["terms"]["commercial_rev_share"],
-                    "commercialRevCeiling": term["terms"]["commercial_rev_ceiling"],
-                    "derivativesAllowed": term["terms"]["derivatives_allowed"],
-                    "derivativesAttribution": term["terms"]["derivatives_attribution"],
-                    "derivativesApproval": term["terms"]["derivatives_approval"],
-                    "derivativesReciprocal": term["terms"]["derivatives_reciprocal"],
-                    "derivativeRevCeiling": term["terms"]["derivative_rev_ceiling"],
-                    "currency": term["terms"]["currency"],
-                    "uri": term["terms"]["uri"],
-                }
-
-                camelcase_config = {
-                    "isSet": validated_licensing_config["is_set"],
-                    "mintingFee": validated_licensing_config["minting_fee"],
-                    "hookData": validated_licensing_config["hook_data"],
-                    "licensingHook": validated_licensing_config["licensing_hook"],
-                    "commercialRevShare": validated_licensing_config[
-                        "commercial_rev_share"
-                    ],
-                    "disabled": validated_licensing_config["disabled"],
-                    "expectMinimumGroupRewardShare": validated_licensing_config[
-                        "expect_minimum_group_reward_share"
-                    ],
-                    "expectGroupRewardPool": validated_licensing_config[
-                        "expect_group_reward_pool"
-                    ],
-                }
-
                 license_terms.append(
-                    {"terms": camelcase_term, "licensingConfig": camelcase_config}
+                    {
+                        "terms": self.license_terms_util.validate_license_terms(
+                            term["terms"]
+                        ),
+                        "licensingConfig": self.license_terms_util.validate_licensing_config(
+                            term["licensing_config"]
+                        ),
+                    }
                 )
 
             metadata = {
@@ -602,7 +563,7 @@ class IPAsset:
                 :param commercial_attribution bool: Whether attribution is required when reproducing the work commercially or not.
                 :param commercializer_checker str: Commercializers that are allowed to commercially exploit the work.
                 :param commercializer_checker_data str: The data to be passed to the commercializer checker contract.
-                :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor.
+                :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor. Must be between 0 and 100 (where 100% represents 100,000,000).
                 :param commercial_rev_ceiling int: The maximum revenue that can be generated from the commercial use of the work.
                 :param derivatives_allowed bool: Indicates whether the licensee can create derivatives of his work or not.
                 :param derivatives_attribution bool: Indicates whether attribution is required for derivatives of the work or not.
@@ -616,9 +577,9 @@ class IPAsset:
                 :param minting_fee int: The minting fee to be paid when minting license tokens.
                 :param licensing_hook str: The hook contract address for the licensing module.
                 :param hook_data str: The data to be used by the licensing hook.
-                :param commercial_rev_share int: The commercial revenue share percentage.
+                :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor. Must be between 0 and 100 (where 100% represents 100,000,000).
                 :param disabled bool: Whether the licensing is disabled or not.
-                :param expect_minimum_group_reward_share int: The minimum percentage of the group's reward share.
+                :param expect_minimum_group_reward_share int: The minimum percentage of the group's reward share. Must be between 0 and 100 (where 100% represents 100,000,000).
                 :param expect_group_reward_pool str: The address of the expected group reward pool.
         :param ip_metadata dict: [Optional] The metadata for the newly registered IP.
             :param ip_metadata_uri str: [Optional] The URI of the metadata for the IP.
@@ -635,57 +596,17 @@ class IPAsset:
                 raise ValueError(
                     f"The NFT with id {token_id} is already registered as IP."
                 )
-
             license_terms = []
             for term in license_terms_data:
-                self.license_terms_util.validate_license_terms(term["terms"])
-                validated_licensing_config = (
-                    self.license_terms_util.validate_licensing_config(
-                        term["licensing_config"]
-                    )
-                )
-
-                camelcase_term = {
-                    "transferable": term["terms"]["transferable"],
-                    "royaltyPolicy": term["terms"]["royalty_policy"],
-                    "defaultMintingFee": term["terms"]["default_minting_fee"],
-                    "expiration": term["terms"]["expiration"],
-                    "commercialUse": term["terms"]["commercial_use"],
-                    "commercialAttribution": term["terms"]["commercial_attribution"],
-                    "commercializerChecker": term["terms"]["commercializer_checker"],
-                    "commercializerCheckerData": term["terms"][
-                        "commercializer_checker_data"
-                    ],
-                    "commercialRevShare": term["terms"]["commercial_rev_share"],
-                    "commercialRevCeiling": term["terms"]["commercial_rev_ceiling"],
-                    "derivativesAllowed": term["terms"]["derivatives_allowed"],
-                    "derivativesAttribution": term["terms"]["derivatives_attribution"],
-                    "derivativesApproval": term["terms"]["derivatives_approval"],
-                    "derivativesReciprocal": term["terms"]["derivatives_reciprocal"],
-                    "derivativeRevCeiling": term["terms"]["derivative_rev_ceiling"],
-                    "currency": term["terms"]["currency"],
-                    "uri": term["terms"]["uri"],
-                }
-
-                camelcase_config = {
-                    "isSet": validated_licensing_config["is_set"],
-                    "mintingFee": validated_licensing_config["minting_fee"],
-                    "hookData": validated_licensing_config["hook_data"],
-                    "licensingHook": validated_licensing_config["licensing_hook"],
-                    "commercialRevShare": validated_licensing_config[
-                        "commercial_rev_share"
-                    ],
-                    "disabled": validated_licensing_config["disabled"],
-                    "expectMinimumGroupRewardShare": validated_licensing_config[
-                        "expect_minimum_group_reward_share"
-                    ],
-                    "expectGroupRewardPool": validated_licensing_config[
-                        "expect_group_reward_pool"
-                    ],
-                }
-
                 license_terms.append(
-                    {"terms": camelcase_term, "licensingConfig": camelcase_config}
+                    {
+                        "terms": self.license_terms_util.validate_license_terms(
+                            term["terms"]
+                        ),
+                        "licensingConfig": self.license_terms_util.validate_licensing_config(
+                            term["licensing_config"]
+                        ),
+                    }
                 )
 
             calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
@@ -694,7 +615,7 @@ class IPAsset:
             signature_response = self.sign_util.get_permission_signature(
                 ip_id=ip_id,
                 deadline=calculated_deadline,
-                state=self.web3.to_bytes(hexstr=ZERO_HASH),
+                state=self.web3.to_bytes(hexstr=HexStr(ZERO_HASH)),
                 permissions=[
                     {
                         "ipId": ip_id,

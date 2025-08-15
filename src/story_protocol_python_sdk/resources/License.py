@@ -18,9 +18,11 @@ from story_protocol_python_sdk.abi.ModuleRegistry.ModuleRegistry_client import (
 from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client import (
     PILicenseTemplateClient,
 )
+from story_protocol_python_sdk.types.common import RevShareType
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
+from story_protocol_python_sdk.utils.validation import get_revenue_share
 
 
 class License:
@@ -86,7 +88,7 @@ class License:
         :param commercial_attribution bool: Whether attribution is required when reproducing the work commercially or not.
         :param commercializer_checker str: Commercializers that are allowed to commercially exploit the work. If zero address, then no restrictions is enforced.
         :param commercializer_checker_data str: The data to be passed to the commercializer checker contract.
-        :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor.
+        :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor. Must be between 0 and 100 (where 100% represents 100,000,000).
         :param commercial_rev_ceiling int: The maximum revenue that can be generated from the commercial use of the work.
         :param derivatives_allowed bool: Indicates whether the licensee can create derivatives of his work or not.
         :param derivatives_attribution bool: Indicates whether attribution is required for derivatives of the work or not.
@@ -99,48 +101,27 @@ class License:
         :return dict: A dictionary with the transaction hash and license terms ID.
         """
         try:
-            license_terms = {
-                "transferable": transferable,
-                "royaltyPolicy": royalty_policy,
-                "defaultMintingFee": default_minting_fee,
-                "expiration": expiration,
-                "commercialUse": commercial_use,
-                "commercialAttribution": commercial_attribution,
-                "commercializerChecker": commercializer_checker,
-                "commercializerCheckerData": commercializer_checker_data,
-                "commercialRevShare": commercial_rev_share,
-                "commercialRevCeiling": commercial_rev_ceiling,
-                "derivativesAllowed": derivatives_allowed,
-                "derivativesAttribution": derivatives_attribution,
-                "derivativesApproval": derivatives_approval,
-                "derivativesReciprocal": derivatives_reciprocal,
-                "derivativeRevCeiling": derivative_rev_ceiling,
-                "currency": currency,
-                "uri": uri,
-            }
-
-            license_terms_snake = {
-                "transferable": transferable,
-                "royalty_policy": royalty_policy,
-                "default_minting_fee": default_minting_fee,
-                "expiration": expiration,
-                "commercial_use": commercial_use,
-                "commercial_attribution": commercial_attribution,
-                "commercializer_checker": commercializer_checker,
-                "commercializer_checker_data": commercializer_checker_data,
-                "commercial_rev_share": commercial_rev_share,
-                "commercial_rev_ceiling": commercial_rev_ceiling,
-                "derivatives_allowed": derivatives_allowed,
-                "derivatives_attribution": derivatives_attribution,
-                "derivatives_approval": derivatives_approval,
-                "derivatives_reciprocal": derivatives_reciprocal,
-                "derivative_rev_ceiling": derivative_rev_ceiling,
-                "currency": currency,
-                "uri": uri,
-            }
-
-            # Validate the license terms
-            self.license_terms_util.validate_license_terms(license_terms_snake)
+            license_terms = self.license_terms_util.validate_license_terms(
+                {
+                    "transferable": transferable,
+                    "royalty_policy": royalty_policy,
+                    "default_minting_fee": default_minting_fee,
+                    "expiration": expiration,
+                    "commercial_use": commercial_use,
+                    "commercial_attribution": commercial_attribution,
+                    "commercializer_checker": commercializer_checker,
+                    "commercializer_checker_data": commercializer_checker_data,
+                    "commercial_rev_share": commercial_rev_share,
+                    "commercial_rev_ceiling": commercial_rev_ceiling,
+                    "derivatives_allowed": derivatives_allowed,
+                    "derivatives_attribution": derivatives_attribution,
+                    "derivatives_approval": derivatives_approval,
+                    "derivatives_reciprocal": derivatives_reciprocal,
+                    "derivative_rev_ceiling": derivative_rev_ceiling,
+                    "currency": currency,
+                    "uri": uri,
+                }
+            )
 
             license_terms_id = self._get_license_terms_id(license_terms)
             if (license_terms_id is not None) and (license_terms_id != 0):
@@ -258,7 +239,7 @@ class License:
 
         :param default_minting_fee int: The fee to be paid when minting a license.
         :param currency str: The ERC20 token to be used to pay the minting fee.
-        :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor.
+        :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor. Must be between 0 and 100 (where 100% represents 100,000,000).
         :param royalty_policy str: The address of the royalty policy contract.
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash and the license terms ID.
@@ -377,7 +358,7 @@ class License:
         amount: int,
         receiver: str,
         max_minting_fee: int = 0,
-        max_revenue_share: int = 0,
+        max_revenue_share: int = 100,
         tx_options: dict | None = None,
     ) -> dict:
         """
@@ -388,8 +369,8 @@ class License:
         :param license_terms_id int: The ID of the license terms within the license template.
         :param amount int: The amount of license tokens to mint.
         :param receiver str: The address of the receiver.
-        :param max_minting_fee int: [Optional] The maximum minting fee that the caller is willing to pay. If set to 0 then no limit. Defaults to 0.
-        :param max_revenue_share int: [Optional] The maximum revenue share percentage allowed for minting the License Tokens. Must be between 0 and 100,000,000 (where 100,000,000 represents 100%). Defaults to 0.
+        :param max_minting_fee int: [Optional] The maximum minting fee that the caller is willing to pay. If set to 0 then no limit. (default: 0)
+        :param max_revenue_share int: [Optional] The maximum revenue share percentage allowed for minting the License Tokens. Must be between 0 and 100,000,000 (where 100,000,000 represents 100%). (default: 100)
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash and the license token IDs.
         """
@@ -431,7 +412,10 @@ class License:
                 receiver,
                 ZERO_ADDRESS,  # Zero address for royalty context
                 max_minting_fee,
-                self.license_terms_util.get_revenue_share(max_revenue_share),
+                get_revenue_share(
+                    max_revenue_share,
+                    RevShareType.MAX_REVENUE_SHARE,
+                ),
                 tx_options=tx_options,
             )
 

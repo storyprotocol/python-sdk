@@ -1,5 +1,6 @@
 # src/story_protocol_python_sdk/resources/Group.py
 
+from ens.ens import HexStr
 from web3 import Web3
 
 from story_protocol_python_sdk.abi.CoreMetadataModule.CoreMetadataModule_client import (
@@ -26,10 +27,12 @@ from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import
 from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client import (
     PILicenseTemplateClient,
 )
+from story_protocol_python_sdk.types.common import RevShareType
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
 from story_protocol_python_sdk.utils.sign import Sign
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
+from story_protocol_python_sdk.utils.validation import get_revenue_share
 
 
 class Group:
@@ -137,7 +140,7 @@ class Group:
         :param group_id str: The ID of the group to add the IP to.
         :param spg_nft_contract str: The address of the SPG NFT contract.
         :param license_data list: List of license data objects with terms and config.
-        :param max_allowed_reward_share int: Maximum allowed reward share percentage.
+        :param max_allowed_reward_share int: Maximum allowed reward share percentage. Must be between 0 and 100 (where 100% represents 100,000,000).
         :param ip_metadata dict: [Optional] The metadata for the IP.
         :param recipient str: [Optional] The recipient of the NFT (defaults to caller).
         :param allow_duplicates bool: [Optional] Whether to allow duplicate IPs.
@@ -185,8 +188,8 @@ class Group:
 
             metadata = self._get_ip_metadata(ip_metadata)
 
-            max_allowed_reward_share = self.license_terms_util.get_revenue_share(
-                max_allowed_reward_share
+            max_allowed_reward_share = get_revenue_share(
+                max_allowed_reward_share, type=RevShareType.MAX_ALLOWED_REWARD_SHARE
             )
 
             # Set recipient to caller if not provided
@@ -249,7 +252,7 @@ class Group:
         :param nft_contract str: The address of the NFT contract.
         :param token_id int: The token ID of the NFT.
         :param license_data list: List of license data objects with terms and config.
-        :param max_allowed_reward_share int: Maximum allowed reward share percentage.
+        :param max_allowed_reward_share int: Maximum allowed reward share percentage. Must be between 0 and 100 (where 100% represents 100,000,000).
         :param ip_metadata dict: [Optional] The metadata for the IP.
         :param deadline int: [Optional] The deadline for the signature in milliseconds.
         :param tx_options dict: [Optional] The transaction options.
@@ -299,7 +302,7 @@ class Group:
             sig_metadata_and_attach = self.sign_util.get_permission_signature(
                 ip_id=ip_id,
                 deadline=calculated_deadline,
-                state=self.web3.to_bytes(hexstr=ZERO_HASH),
+                state=self.web3.to_bytes(hexstr=HexStr(ZERO_HASH)),
                 permissions=[
                     {
                         "ipId": ip_id,
@@ -338,7 +341,9 @@ class Group:
                 nft_contract,
                 token_id,
                 group_id,
-                self.license_terms_util.get_revenue_share(max_allowed_reward_share),
+                get_revenue_share(
+                    max_allowed_reward_share, type=RevShareType.MAX_ALLOWED_REWARD_SHARE
+                ),
                 licenses_data,
                 metadata,
                 {
@@ -389,7 +394,7 @@ class Group:
         :param group_pool str: The address of the group pool.
         :param ip_ids list: List of IP IDs to add to the group.
         :param license_data dict: License data object with terms and config.
-        :param max_allowed_reward_share int: Maximum allowed reward share percentage.
+        :param max_allowed_reward_share int: Maximum allowed reward share percentage. Must be between 0 and 100 (where 100% represents 100,000,000).
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash and group ID.
         """
@@ -427,7 +432,9 @@ class Group:
                 self.grouping_workflows_client.build_registerGroupAndAttachLicenseAndAddIps_transaction,
                 group_pool,
                 ip_ids,
-                self.license_terms_util.get_revenue_share(max_allowed_reward_share),
+                get_revenue_share(
+                    max_allowed_reward_share, type=RevShareType.MAX_ALLOWED_REWARD_SHARE
+                ),
                 license_data_processed,
                 tx_options=tx_options,
             )
@@ -547,34 +554,12 @@ class Group:
                     f'License template address "{license_template}" is invalid.'
                 )
 
-            # Validate licensing config
-            licensing_config = item.get("licensing_config", {})
-
-            try:
-                self.license_terms_util.validate_licensing_config(licensing_config)
-            except Exception as e:
-                raise ValueError(f"Licensing config validation failed: {str(e)}")
-
-            # Convert to camelCase for contract interaction
-            camelcase_config = {
-                "isSet": licensing_config.get("is_set", True),
-                "mintingFee": licensing_config.get("minting_fee", 0),
-                "hookData": licensing_config.get("hook_data", ZERO_ADDRESS),
-                "licensingHook": licensing_config.get("licensing_hook", ZERO_ADDRESS),
-                "commercialRevShare": licensing_config.get("commercial_rev_share", 0),
-                "disabled": licensing_config.get("disabled", False),
-                "expectMinimumGroupRewardShare": licensing_config.get(
-                    "expect_minimum_group_reward_share", 0
-                ),
-                "expectGroupRewardPool": licensing_config.get(
-                    "expect_group_reward_pool", ZERO_ADDRESS
-                ),
-            }
-
             processed_item = {
                 "licenseTemplate": license_template,
                 "licenseTermsId": item["license_terms_id"],
-                "licensingConfig": camelcase_config,
+                "licensingConfig": self.license_terms_util.validate_licensing_config(
+                    item.get("licensing_config", {})
+                ),
             }
 
             result.append(processed_item)

@@ -293,7 +293,7 @@ class IPAsset:
             return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
-            raise ValueError("Failed to register derivative") from e
+            raise ValueError(f"Failed to register derivative: {str(e)}") from e
 
     def register_derivative_with_license_tokens(
         self,

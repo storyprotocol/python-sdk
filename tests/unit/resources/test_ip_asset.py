@@ -342,3 +342,68 @@ class TestRegisterIpAndAttachPilTerms:
                 "license_terms_ids": [1, 2],
                 "token_id": 1,
             }
+
+
+class TestRegisterDerivative:
+    def test_default_value_when_not_provided(
+        self,
+        ip_asset: IPAsset,
+        mock_get_ip_id,
+        mock_is_registered,
+        mock_parse_ip_registered_event,
+        mock_license_registry_client,
+    ):
+        with mock_get_ip_id(), mock_is_registered(
+            True
+        ), mock_parse_ip_registered_event(), mock_license_registry_client():
+            with patch.object(
+                ip_asset.licensing_module_client,
+                "build_registerDerivative_transaction",
+            ) as mock_build_registerDerivative_transaction:
+
+                ip_asset.register_derivative(
+                    child_ip_id=IP_ID,
+                    parent_ip_ids=[IP_ID, IP_ID],
+                    license_terms_ids=[1, 2],
+                )
+                call_args = mock_build_registerDerivative_transaction.call_args[0]
+                print(call_args)
+                assert (
+                    call_args[3] == "0x1234567890123456789012345678901234567890"
+                )  # license_template
+                assert (
+                    call_args[4] == "0x0000000000000000000000000000000000000000"
+                )  # royalty_context
+                assert call_args[5] == 0  # max_minting_fee
+                assert call_args[6] == 100000000  # max_rts
+                assert call_args[7] == 100 * 10**6  # max_revenue_share
+
+    def test_call_value_when_provided(
+        self,
+        ip_asset: IPAsset,
+        mock_get_ip_id,
+        mock_is_registered,
+        mock_parse_ip_registered_event,
+        mock_license_registry_client,
+    ):
+        with mock_get_ip_id(), mock_is_registered(
+            True
+        ), mock_parse_ip_registered_event(), mock_license_registry_client():
+            with patch.object(
+                ip_asset.licensing_module_client,
+                "build_registerDerivative_transaction",
+            ) as mock_build_registerDerivative_transaction:
+                ip_asset.register_derivative(
+                    child_ip_id=IP_ID,
+                    parent_ip_ids=[IP_ID, IP_ID],
+                    license_terms_ids=[1, 2],
+                    max_revenue_share=10,
+                    max_minting_fee=10,
+                    max_rts=100,
+                    license_template=ADDRESS,
+                )
+                call_args = mock_build_registerDerivative_transaction.call_args[0]
+                assert call_args[7] == 10 * 10**6  # max_revenue_share
+                assert call_args[5] == 10  # max_minting_fee
+                assert call_args[6] == 100  # max_rts
+                assert call_args[3] == ADDRESS  # license_template

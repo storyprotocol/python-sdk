@@ -92,9 +92,7 @@ class LicenseTerms:
                     "currency": term["currency"],
                     "commercialUse": True,
                     "commercialAttribution": True,
-                    "commercialRevShare": int(
-                        (term["commercialRevShare"] / 100) * 100000000
-                    ),
+                    "commercialRevShare": get_revenue_share(term["commercialRevShare"]),
                     "derivativesReciprocal": True,
                     "royaltyPolicy": term["royaltyPolicyAddress"],
                 }
@@ -125,16 +123,6 @@ class LicenseTerms:
         if commercial_rev_share < 0 or commercial_rev_share > 100:
             raise ValueError("commercial_rev_share should be between 0 and 100.")
 
-        expect_minimum_group_reward_share = params.get(
-            "expect_minimum_group_reward_share", 0
-        )
-        if (
-            expect_minimum_group_reward_share < 0
-            or expect_minimum_group_reward_share > 100
-        ):
-            raise ValueError(
-                "Expect minimum group reward share must be between 0 and 100"
-            )
         validated_params = {
             "transferable": params.get("transferable"),
             "royaltyPolicy": params.get("royalty_policy"),
@@ -147,8 +135,7 @@ class LicenseTerms:
                 hexstr=HexStr(params.get("commercializer_checker_data", ZERO_ADDRESS))
             ),
             "commercialRevShare": get_revenue_share(
-                params.get("commercial_rev_share", 0),
-                RevShareType.COMMERCIAL_REVENUE_SHARE,
+                params.get("commercial_rev_share", 0)
             ),
             "commercialRevCeiling": int(params.get("commercial_rev_ceiling", 0)),
             "derivativesAllowed": params.get("derivatives_allowed"),

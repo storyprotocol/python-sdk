@@ -2,10 +2,13 @@
 from tests.integration.config.test_config import (
     account,
     account_2,
+    account_3,
     private_key,
     private_key_2,
+    private_key_3,
     wallet_address,
     wallet_address_2,
+    wallet_address_3,
     web3,
 )
 
@@ -38,10 +41,13 @@ __all__ = [
     "web3",
     "account",
     "account_2",
+    "account_3",
     "wallet_address",
     "wallet_address_2",
+    "wallet_address_3",
     "private_key",
     "private_key_2",
+    "private_key_3",
     "get_story_client",
     "get_token_id",
     "mint_tokens",

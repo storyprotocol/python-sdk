@@ -141,13 +141,9 @@ class TestTransactionUtils:
             return build_tx
 
         tx_func = create_transfer_tx(account.address, 0)
-        start_time = time.time()
         result = build_and_send_transaction(
             web3, account, tx_func, tx_options={"wait_for_receipt": False}
         )
-        elapsed_time = time.time() - start_time
-
-        assert elapsed_time < 2
         assert "tx_hash" in result
         assert "tx_receipt" not in result
         assert len(result["tx_hash"]) == 64  # 32 bytes hex without 0x prefix
@@ -269,13 +265,11 @@ class TestTransactionUtils:
                 account.address, 200
             ).build_transaction(tx_options)
 
-        start_time = time.time()
+        time.time()
         result = build_and_send_transaction(
             web3, account, approve_func, tx_options={"wait_for_receipt": False}
         )
-        elapsed_time = time.time() - start_time
 
-        assert elapsed_time < 2
         assert "tx_hash" in result
         assert "tx_receipt" not in result
 

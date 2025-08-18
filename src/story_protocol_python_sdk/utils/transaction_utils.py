@@ -1,5 +1,3 @@
-# src/story_protcol_python_sdk/utils/transaction_utils.py
-
 from web3 import Web3
 
 TRANSACTION_TIMEOUT = 300
@@ -19,9 +17,16 @@ def build_and_send_transaction(
     :param account: The account to use for signing the transaction.
     :param client_function: The client function to build the transaction.
     :param client_args: Arguments to pass to the client function.
-    :param tx_options dict: Optional transaction options. Can include 'nonce' to use a custom nonce value.
-                            If not provided, nonce will be fetched from web3.eth.get_transaction_count().
-    :return dict: A dictionary with the transaction hash and receipt, or encoded data if encodedTxDataOnly is True.
+    :param tx_options dict: Optional transaction options. Can include:
+                            - 'nonce': Custom nonce value (int). If not provided, nonce will be fetched from web3.eth.get_transaction_count().
+                            - 'wait_for_receipt': Whether to wait for transaction receipt (bool, default True).
+                            - 'timeout': Custom timeout in seconds for waiting for receipt (int/float, default TRANSACTION_TIMEOUT).
+                            - 'encodedTxDataOnly': If True, returns encoded transaction data without sending.
+                            - 'value': Transaction value in wei.
+                            - 'gasPrice': Gas price in gwei.
+                            - 'maxFeePerGas': Max fee per gas in wei.
+    :return dict: A dictionary with the transaction hash and optionally receipt (if wait_for_receipt is True),
+                  or encoded data if encodedTxDataOnly is True.
     :raises Exception: If there is an error during the transaction process.
     """
     try:
@@ -43,7 +48,6 @@ def build_and_send_transaction(
                 account.address
             )
 
-        # Add value if it exists in tx_options
         if "value" in tx_options:
             transaction_options["value"] = tx_options["value"]
 
@@ -56,18 +60,20 @@ def build_and_send_transaction(
 
         transaction = client_function(*client_args, transaction_options)
 
-        # If encodedTxDataOnly is True, return the transaction data without sending
         if tx_options.get("encodedTxDataOnly"):
             return {"encodedTxData": transaction}
 
         signed_txn = account.sign_transaction(transaction)
         tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
 
-        tx_receipt = web3.eth.wait_for_transaction_receipt(
-            tx_hash, timeout=TRANSACTION_TIMEOUT
-        )
+        wait_for_receipt = tx_options.get("wait_for_receipt", True)
 
-        return {"tx_hash": tx_hash.hex(), "tx_receipt": tx_receipt}
+        if wait_for_receipt:
+            timeout = tx_options.get("timeout", TRANSACTION_TIMEOUT)
+            tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash, timeout=timeout)
+            return {"tx_hash": tx_hash.hex(), "tx_receipt": tx_receipt}
+        else:
+            return {"tx_hash": tx_hash.hex()}
 
     except Exception as e:
         raise e

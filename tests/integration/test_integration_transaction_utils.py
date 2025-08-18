@@ -1,6 +1,7 @@
 import time
 
 import pytest
+from web3.exceptions import TimeExhausted
 
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
@@ -146,7 +147,7 @@ class TestTransactionUtils:
         )
         assert "tx_hash" in result
         assert "tx_receipt" not in result
-        assert len(result["tx_hash"]) == 64  # 32 bytes hex without 0x prefix
+        assert len(result["tx_hash"]) == 64
 
         tx_receipt = web3.eth.wait_for_transaction_receipt(result["tx_hash"])
         assert tx_receipt["status"] == 1
@@ -275,3 +276,25 @@ class TestTransactionUtils:
 
         tx_receipt = web3.eth.wait_for_transaction_receipt(result["tx_hash"])
         assert tx_receipt["status"] == 1
+
+    def test_timeout_too_short_raises_exception(self):
+        """Test that very short timeout raises TimeExhausted exception."""
+
+        def build_tx(tx_options):
+            return {
+                "to": account.address,
+                "value": 0,
+                "data": "0x",
+                "gas": 21000,
+                "gasPrice": web3.eth.gas_price,
+                "chainId": 1315,
+                **tx_options,
+            }
+
+        with pytest.raises(TimeExhausted):
+            build_and_send_transaction(
+                web3,
+                account,
+                build_tx,
+                tx_options={"wait_for_receipt": True, "timeout": 0.001},
+            )

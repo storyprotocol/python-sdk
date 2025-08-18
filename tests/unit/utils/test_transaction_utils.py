@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 from web3 import Web3
+from web3.exceptions import TimeExhausted
 
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
@@ -515,3 +516,27 @@ class TestBuildAndSendTransaction:
         assert result["tx_hash"] == "0xhashexplicit"
         assert result["tx_receipt"]["status"] == 1
         assert result["tx_receipt"]["blockNumber"] == 12345
+
+    def test_timeout_exception_is_propagated(
+        self, mock_web3, mock_account, mock_client_function
+    ):
+        """Test that TimeExhausted exception is properly propagated when timeout occurs."""
+        mock_web3.eth.get_transaction_count.return_value = 10
+        mock_web3.eth.send_raw_transaction.return_value = Mock(
+            hex=Mock(return_value="0xhashtimeout")
+        )
+        mock_web3.eth.wait_for_transaction_receipt.side_effect = TimeExhausted(
+            "Transaction receipt not found after 0.5 seconds"
+        )
+        mock_account.sign_transaction.return_value = Mock(raw_transaction=b"signed_tx")
+
+        with pytest.raises(TimeExhausted):
+            build_and_send_transaction(
+                mock_web3,
+                mock_account,
+                mock_client_function,
+                tx_options={"wait_for_receipt": True, "timeout": 0.5},
+            )
+        mock_web3.eth.wait_for_transaction_receipt.assert_called_once_with(
+            mock_web3.eth.send_raw_transaction.return_value, timeout=0.5
+        )

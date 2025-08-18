@@ -1,7 +1,6 @@
 from unittest.mock import Mock
 
 import pytest
-from web3 import Web3
 from web3.exceptions import TimeExhausted
 
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
@@ -10,21 +9,13 @@ from story_protocol_python_sdk.utils.transaction_utils import build_and_send_tra
 class TestBuildAndSendTransaction:
     """Test suite for build_and_send_transaction function."""
 
-    @pytest.fixture
-    def mock_web3(self):
-        """Create a mock Web3 instance."""
-        web3 = Mock(spec=Web3)
-        web3.eth = Mock()
-        web3.to_wei = Mock(side_effect=lambda value, unit: value * 1000000000)
-        return web3
-
-    @pytest.fixture
-    def mock_account(self):
-        """Create a mock account."""
-        account = Mock()
-        account.address = "0x1234567890123456789012345678901234567890"
-        account.sign_transaction = Mock()
-        return account
+    @pytest.fixture(autouse=True)
+    def setup_mocks(self, mock_web3, mock_account):
+        """Configure and reset the mocks from conftest for our specific needs."""
+        mock_web3.reset_mock()
+        mock_web3.eth.reset_mock()
+        mock_account.reset_mock()
+        mock_web3.to_wei = Mock(side_effect=lambda value, unit: value * 1000000000)
 
     @pytest.fixture
     def mock_client_function(self):

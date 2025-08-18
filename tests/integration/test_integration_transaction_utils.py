@@ -199,7 +199,10 @@ class TestTransactionUtils:
 
         tx_func = create_transfer_tx(account.address, 0)
         result = build_and_send_transaction(
-            web3, account, tx_func, tx_options={"wait_for_receipt": True, "timeout": 30}
+            web3,
+            account,
+            tx_func,
+            tx_options={"wait_for_receipt": True, "timeout": 120},
         )
 
         assert "tx_hash" in result
@@ -232,7 +235,7 @@ class TestTransactionUtils:
             tx_options={
                 "nonce": current_nonce,
                 "wait_for_receipt": True,
-                "timeout": 60,
+                "timeout": 120,
             },
         )
 

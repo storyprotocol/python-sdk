@@ -1,6 +1,6 @@
 """Module for handling IP Account operations and transactions."""
 
-from ens.ens import HexStr
+from ens.ens import Address, HexStr
 from web3 import Web3
 
 from story_protocol_python_sdk.abi.AccessController.AccessController_client import (
@@ -35,6 +35,7 @@ from story_protocol_python_sdk.abi.RegistrationWorkflows.RegistrationWorkflows_c
 )
 from story_protocol_python_sdk.abi.SPGNFTImpl.SPGNFTImpl_client import SPGNFTImplClient
 from story_protocol_python_sdk.types.common import AccessPermission
+from story_protocol_python_sdk.types.resource.IPAsset import RegistrationResponse
 from story_protocol_python_sdk.utils.constants import (
     MAX_ROYALTY_TOKEN,
     ZERO_ADDRESS,
@@ -49,6 +50,7 @@ from story_protocol_python_sdk.utils.ip_metadata import IPMetadata, IPMetadataIn
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
 from story_protocol_python_sdk.utils.sign import Sign
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
+from story_protocol_python_sdk.utils.validation import validate_address
 
 
 class IPAsset:
@@ -291,7 +293,7 @@ class IPAsset:
             return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
-            raise ValueError("Failed to register derivative") from e
+            raise ValueError(f"Failed to register derivative: {str(e)}") from e
 
     def register_derivative_with_license_tokens(
         self,
@@ -771,6 +773,55 @@ class IPAsset:
 
             return {"tx_hash": response["tx_hash"], "ip_id": ip_registered["ip_id"]}
 
+        except Exception as e:
+            raise e
+
+    def mint_and_register_ip_and_make_derivative(
+        self,
+        spg_nft_contract: str,
+        deriv_data: DerivativeDataInput,
+        ip_metadata: IPMetadataInput | None = None,
+        recipient: Address | None = None,
+        allow_duplicates: bool = True,
+        tx_options: dict | None = None,
+    ) -> RegistrationResponse:
+        """
+        Mint an NFT from a collection and register it as a derivative IP without license tokens.
+
+        :param spg_nft_contract str: The address of the SPGNFT collection.
+        :param deriv_data `DerivativeDataInput`: The derivative data to be used for register derivative.
+        :param ip_metadata `IPMetadataInput`: [Optional] The desired metadata for the newly minted NFT and newly registered IP.
+        :param recipient str: [Optional] The address to receive the minted NFT. If not provided, the client's own wallet address will be used.
+        :param allow_duplicates bool: [Optional] Set to true to allow minting an NFT with a duplicate metadata hash. (default: True)
+        :param tx_options dict: [Optional] Transaction options.
+        :return RegistrationResponse: Dictionary with the tx hash, IP ID and token ID.
+        """
+
+        try:
+            validated_deriv_data = DerivativeData.from_input(
+                web3=self.web3, input_data=deriv_data
+            ).get_validated_data()
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.derivative_workflows_client.build_mintAndRegisterIpAndMakeDerivative_transaction,
+                validate_address(spg_nft_contract),
+                validated_deriv_data,
+                IPMetadata.from_input(ip_metadata).get_validated_data(),
+                (
+                    validate_address(recipient)
+                    if recipient is not None
+                    else self.account.address
+                ),
+                allow_duplicates,
+                tx_options=tx_options,
+            )
+            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])
+            return {
+                "tx_hash": response["tx_hash"],
+                "ip_id": ip_registered["ip_id"],
+                "token_id": ip_registered["token_id"],
+            }
         except Exception as e:
             raise e
 

@@ -681,3 +681,47 @@ class TestMintAndRegisterIpAndMakeDerivative:
         assert isinstance(response["tx_hash"], str)
         assert isinstance(response["ip_id"], str)
         assert isinstance(response["token_id"], int)
+
+
+class TestMintAndRegisterIpAndMakeDerivativeWithLicenseTokens:
+    def test_default_value(
+        self,
+        story_client: StoryClient,
+        nft_collection,
+        mint_and_approve_license_token,
+    ):
+        license_token_ids = mint_and_approve_license_token
+        response = story_client.IPAsset.mint_and_register_ip_and_make_derivative_with_license_tokens(
+            spg_nft_contract=nft_collection,
+            license_token_ids=[license_token_ids[0]],
+            max_rts=100000000,
+        )
+        assert response is not None
+        assert isinstance(response["tx_hash"], str)
+        assert isinstance(response["ip_id"], str)
+        assert isinstance(response["token_id"], int)
+
+    def test_with_custom_value(
+        self,
+        story_client: StoryClient,
+        nft_collection,
+        mint_and_approve_license_token,
+    ):
+        license_token_ids = mint_and_approve_license_token
+        response = story_client.IPAsset.mint_and_register_ip_and_make_derivative_with_license_tokens(
+            spg_nft_contract=nft_collection,
+            license_token_ids=[license_token_ids[1]],
+            max_rts=100000000,
+            ip_metadata=IPMetadataInput(
+                ip_metadata_uri="https://example.com/metadata/custom-value.json",
+                ip_metadata_hash=web3.keccak(text="custom-value-metadata"),
+                nft_metadata_uri="https://example.com/metadata/custom-value.json",
+                nft_metadata_hash=web3.keccak(text="custom-value-metadata"),
+            ),
+            recipient=account_2.address,
+            allow_duplicates=False,
+        )
+        assert response is not None
+        assert isinstance(response["tx_hash"], str)
+        assert isinstance(response["ip_id"], str)
+        assert isinstance(response["token_id"], int)

@@ -81,6 +81,7 @@ def parent_ip_and_license_terms(story_client: StoryClient, nft_collection):
                 },
             }
         ],
+        allow_duplicates=True,
     )
     return {
         "parent_ip_id": response["ip_id"],

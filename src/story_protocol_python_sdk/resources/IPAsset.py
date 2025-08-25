@@ -820,11 +820,11 @@ class IPAsset:
                 tx_options=tx_options,
             )
             ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])
-            return {
-                "tx_hash": response["tx_hash"],
-                "ip_id": ip_registered["ip_id"],
-                "token_id": ip_registered["token_id"],
-            }
+            return RegistrationResponse(
+                tx_hash=response["tx_hash"],
+                ip_id=ip_registered["ip_id"],
+                token_id=ip_registered["token_id"],
+            )
         except Exception as e:
             raise e
 
@@ -873,11 +873,11 @@ class IPAsset:
                 tx_options=tx_options,
             )
             ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])
-            return {
-                "tx_hash": response["tx_hash"],
-                "ip_id": ip_registered["ip_id"],
-                "token_id": ip_registered["token_id"],
-            }
+            return RegistrationResponse(
+                tx_hash=response["tx_hash"],
+                ip_id=ip_registered["ip_id"],
+                token_id=ip_registered["token_id"],
+            )
         except Exception as e:
             raise e
 

@@ -837,7 +837,7 @@ class IPAsset:
         allow_duplicates: bool = True,
         ip_metadata: IPMetadataInput | None = None,
         tx_options: dict | None = None,
-    ):
+    ) -> RegistrationResponse:
         """
         Mint an NFT from a collection and register it as a derivative IP with license tokens.
 
@@ -848,6 +848,7 @@ class IPAsset:
         :param allow_duplicates bool: [Optional] Set to true to allow minting an NFT with a duplicate metadata hash. (default: True)
         :param ip_metadata IPMetadataInput: [Optional] The desired metadata for the newly minted NFT and newly registered IP.
         :param tx_options dict: [Optional] Transaction options.
+        :return RegistrationResponse: Dictionary with the tx hash, IP ID and token ID.
         """
         try:
             validated_license_token_ids = self._validate_license_token_ids(
@@ -917,7 +918,7 @@ class IPAsset:
         if internal_data["maxMintingFee"] < 0:
             raise ValueError("The maxMintingFee must be greater than 0.")
 
-        self._validate_max_rts(internal_data["maxRts"])
+        validate_max_rts(internal_data["maxRts"])
 
         for parent_id, terms_id in zip(
             internal_data["parentIpIds"], internal_data["licenseTermsIds"]

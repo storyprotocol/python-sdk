@@ -9,6 +9,7 @@ from story_protocol_python_sdk.utils.derivative_data import DerivativeDataInput
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadata, IPMetadataInput
 from tests.integration.config.utils import ZERO_ADDRESS
 from tests.unit.fixtures.data import (
+    ACCOUNT_ADDRESS,
     ADDRESS,
     CHAIN_ID,
     IP_ID,
@@ -389,7 +390,6 @@ class TestRegisterDerivative:
                     license_terms_ids=[1, 2],
                 )
                 call_args = mock_build_registerDerivative_transaction.call_args[0]
-                print(call_args)
                 assert (
                     call_args[3] == "0x1234567890123456789012345678901234567890"
                 )  # license_template
@@ -540,3 +540,142 @@ class TestMintAndRegisterIpAndMakeDerivative:
             }
             assert mock_build_transaction.call_args[0][3] == ADDRESS  # recipient
             assert not mock_build_transaction.call_args[0][4]  # allowDuplicates
+
+
+@pytest.fixture(scope="class")
+def mock_owner_of(ip_asset: IPAsset):
+    def _mock(owner: str = ACCOUNT_ADDRESS):
+        return patch.object(
+            ip_asset.license_token_client, "ownerOf", return_value=owner
+        )
+
+    return _mock
+
+
+class TestMintAndRegisterIpAndMakeDerivativeWithLicenseTokens:
+
+    def test_throw_error_when_license_token_ids_is_not_owned_by_caller(
+        self,
+        ip_asset: IPAsset,
+        mock_owner_of,
+    ):
+        with mock_owner_of("0x1234567890123456789012345678901234567890"):
+            with pytest.raises(
+                ValueError, match="License token id 1 must be owned by the caller."
+            ):
+                ip_asset.mint_and_register_ip_and_make_derivative_with_license_tokens(
+                    spg_nft_contract=ADDRESS,
+                    license_token_ids=[1, 2, 3],
+                    max_rts=100,
+                )
+
+    def test_throw_error_when_max_rts_is_invalid(
+        self,
+        ip_asset: IPAsset,
+        mock_owner_of,
+    ):
+        with mock_owner_of():
+            with pytest.raises(
+                ValueError,
+                match="The maxRts must be greater than 0 and less than 100,000,000.",
+            ):
+                ip_asset.mint_and_register_ip_and_make_derivative_with_license_tokens(
+                    spg_nft_contract=ADDRESS,
+                    license_token_ids=[1, 2, 3],
+                    max_rts=1000000000000000000,
+                )
+
+    def test_success_when_default_values_not_provided(
+        self,
+        ip_asset: IPAsset,
+        mock_owner_of,
+        mock_parse_ip_registered_event,
+    ):
+        with mock_owner_of():
+            with patch.object(
+                ip_asset.derivative_workflows_client,
+                "build_mintAndRegisterIpAndMakeDerivativeWithLicenseTokens_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_transaction:
+                with mock_parse_ip_registered_event():
+                    result = ip_asset.mint_and_register_ip_and_make_derivative_with_license_tokens(
+                        spg_nft_contract=ADDRESS,
+                        license_token_ids=[1, 2],
+                        max_rts=100,
+                    )
+            assert mock_build_transaction.call_args[0][:7] == (
+                ADDRESS,
+                [1, 2],
+                ZERO_ADDRESS,
+                100,
+                IPMetadata.from_input().get_validated_data(),
+                ACCOUNT_ADDRESS,
+                True,
+            )
+            assert result["tx_hash"] == TX_HASH.hex()
+            assert result["ip_id"] == IP_ID
+            assert result["token_id"] == 3
+
+    def test_with_custom_value(
+        self,
+        ip_asset: IPAsset,
+        mock_owner_of,
+        mock_parse_ip_registered_event,
+    ):
+        with mock_owner_of():
+            with patch.object(
+                ip_asset.derivative_workflows_client,
+                "build_mintAndRegisterIpAndMakeDerivativeWithLicenseTokens_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_transaction:
+                with mock_parse_ip_registered_event():
+                    result = ip_asset.mint_and_register_ip_and_make_derivative_with_license_tokens(
+                        spg_nft_contract=ADDRESS,
+                        license_token_ids=[1, 2, 3],
+                        max_rts=100,
+                        ip_metadata=IPMetadataInput(
+                            ip_metadata_uri="https://example.com/metadata/custom-value.json",
+                            ip_metadata_hash=HexStr("ip_metadata_hash"),
+                            nft_metadata_uri="https://example.com/metadata/custom-value.json",
+                            nft_metadata_hash=HexStr("nft_metadata_hash"),
+                        ),
+                        recipient=ADDRESS,
+                        allow_duplicates=False,
+                    )
+                    assert mock_build_transaction.call_args[0][:7] == (
+                        ADDRESS,
+                        [1, 2, 3],
+                        ZERO_ADDRESS,
+                        100,
+                        IPMetadata.from_input(
+                            IPMetadataInput(
+                                ip_metadata_uri="https://example.com/metadata/custom-value.json",
+                                ip_metadata_hash=HexStr("ip_metadata_hash"),
+                                nft_metadata_uri="https://example.com/metadata/custom-value.json",
+                                nft_metadata_hash=HexStr("nft_metadata_hash"),
+                            ),
+                        ).get_validated_data(),
+                        ADDRESS,
+                        False,
+                    )
+                    assert result["tx_hash"] == TX_HASH.hex()
+                    assert result["ip_id"] == IP_ID
+                    assert result["token_id"] == 3
+
+    def test_throw_error_when_transaction_failed(
+        self,
+        ip_asset: IPAsset,
+        mock_owner_of,
+    ):
+        with mock_owner_of():
+            with patch.object(
+                ip_asset.derivative_workflows_client,
+                "build_mintAndRegisterIpAndMakeDerivativeWithLicenseTokens_transaction",
+                side_effect=Exception("Transaction failed."),
+            ):
+                with pytest.raises(Exception, match="Transaction failed."):
+                    ip_asset.mint_and_register_ip_and_make_derivative_with_license_tokens(
+                        spg_nft_contract=ADDRESS,
+                        license_token_ids=[1, 2, 3],
+                        max_rts=100,
+                    )

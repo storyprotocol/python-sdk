@@ -34,3 +34,4 @@ LICENSING_CONFIG = {
     "expect_minimum_group_reward_share": 10,
     "expect_group_reward_pool": ADDRESS,
 }
+ACCOUNT_ADDRESS = "0xF60cBF0Ea1A61567F1dDaf79A6219D20d189155c"

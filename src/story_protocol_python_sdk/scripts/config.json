@@ -230,7 +230,8 @@
       "contract_address": "0x9e2d496f72C547C2C535B167e06ED8729B374a4f",
       "functions": [
         "registerIpAndMakeDerivative",
-        "mintAndRegisterIpAndMakeDerivative"
+        "mintAndRegisterIpAndMakeDerivative",
+        "mintAndRegisterIpAndMakeDerivativeWithLicenseTokens"
       ]
     }
   ]

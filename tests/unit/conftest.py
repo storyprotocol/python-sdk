@@ -4,14 +4,13 @@ import pytest
 from eth_account import Account
 from web3 import Web3
 
-from tests.unit.fixtures.data import ADDRESS, TX_HASH
+from tests.unit.fixtures.data import ACCOUNT_ADDRESS, ADDRESS, TX_HASH
 
 
 @pytest.fixture(scope="package")
 def mock_account():
     account = MagicMock()
-    account.address = "0xF60cBF0Ea1A61567F1dDaf79A6219D20d189155c"
-    # Create a mock signed transaction object with raw_transaction attribute
+    account.address = ACCOUNT_ADDRESS  # Create a mock signed transaction object with raw_transaction attribute
     mock_signed_txn = MagicMock()
     mock_signed_txn.raw_transaction = b"raw_transaction_bytes"
 

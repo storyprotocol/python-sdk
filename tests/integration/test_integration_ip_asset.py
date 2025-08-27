@@ -1,11 +1,17 @@
-# tests/integration/test_integration_ip_asset.py
-
 import pytest
 
+from story_protocol_python_sdk.abi.DerivativeWorkflows.DerivativeWorkflows_client import (
+    DerivativeWorkflowsClient,
+)
+from story_protocol_python_sdk.abi.LicenseToken.LicenseToken_client import (
+    LicenseTokenClient,
+)
 from story_protocol_python_sdk.story_client import StoryClient
+from story_protocol_python_sdk.utils.constants import ROYALTY_POLICY_LAP_ADDRESS
 from story_protocol_python_sdk.utils.derivative_data import DerivativeDataInput
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadataInput
 from tests.integration.config.test_config import account_2
+from tests.integration.config.utils import approve
 
 from .setup_for_integration import (
     PIL_LICENSE_TEMPLATE,
@@ -668,6 +674,114 @@ class TestMintAndRegisterIpAndMakeDerivative:
                 max_rts=10,
                 max_revenue_share=100,
             ),
+            ip_metadata=IPMetadataInput(
+                ip_metadata_uri="https://example.com/metadata/custom-value.json",
+                ip_metadata_hash=web3.keccak(text="custom-value-metadata"),
+                nft_metadata_uri="https://example.com/metadata/custom-value.json",
+                nft_metadata_hash=web3.keccak(text="custom-value-metadata"),
+            ),
+            recipient=account_2.address,
+            allow_duplicates=False,
+        )
+        assert response is not None
+        assert isinstance(response["tx_hash"], str)
+        assert isinstance(response["ip_id"], str)
+        assert isinstance(response["token_id"], int)
+
+
+class TestMintAndRegisterIpAndMakeDerivativeWithLicenseTokens:
+    def test_default_value(
+        self,
+        story_client: StoryClient,
+        nft_collection,
+        mint_and_approve_license_token,
+    ):
+        # Get second parent ip and license terms
+        second_parent_ip_and_license_terms = (
+            story_client.IPAsset.mint_and_register_ip_asset_with_pil_terms(
+                spg_nft_contract=nft_collection,
+                terms=[
+                    {
+                        "terms": {
+                            "transferable": True,
+                            "royalty_policy": ROYALTY_POLICY_LAP_ADDRESS,
+                            "default_minting_fee": 0,
+                            "expiration": 0,
+                            "commercial_use": True,
+                            "commercial_attribution": False,
+                            "commercializer_checker": ZERO_ADDRESS,
+                            "commercializer_checker_data": ZERO_ADDRESS,
+                            "commercial_rev_share": 50,
+                            "commercial_rev_ceiling": 0,
+                            "derivatives_allowed": True,
+                            "derivatives_attribution": True,
+                            "derivatives_approval": False,
+                            "derivatives_reciprocal": True,
+                            "derivative_rev_ceiling": 0,
+                            "currency": MockERC20,
+                            "uri": "",
+                        },
+                        "licensing_config": {
+                            "is_set": True,
+                            "minting_fee": 0,
+                            "hook_data": ZERO_ADDRESS,
+                            "licensing_hook": ZERO_ADDRESS,
+                            "commercial_rev_share": 0,
+                            "disabled": False,
+                            "expect_minimum_group_reward_share": 0,
+                            "expect_group_reward_pool": ZERO_ADDRESS,
+                        },
+                    }
+                ],
+                allow_duplicates=True,
+            )
+        )
+        # Mint license tokens for second parent ip
+        second_license_token_ids = story_client.License.mint_license_tokens(
+            licensor_ip_id=second_parent_ip_and_license_terms["ip_id"],
+            license_template=PIL_LICENSE_TEMPLATE,
+            license_terms_id=second_parent_ip_and_license_terms["license_terms_ids"][0],
+            amount=1,
+            receiver=account.address,
+            max_revenue_share=100,
+        )
+        # Approve license tokens for derivative workflows
+        approve(
+            erc20_contract_address=LicenseTokenClient(
+                story_client.web3
+            ).contract.address,
+            web3=story_client.web3,
+            account=account,
+            spender_address=DerivativeWorkflowsClient(
+                story_client.web3
+            ).contract.address,
+            amount=second_license_token_ids["license_token_ids"][0],
+        )
+        # Mint and register ip and make derivative with license tokens
+        response = story_client.IPAsset.mint_and_register_ip_and_make_derivative_with_license_tokens(
+            spg_nft_contract=nft_collection,
+            license_token_ids=[
+                mint_and_approve_license_token[0],
+                second_license_token_ids["license_token_ids"][0],
+            ],
+            max_rts=100000000,
+        )
+        assert response is not None
+        assert isinstance(response["tx_hash"], str)
+        assert isinstance(response["ip_id"], str)
+        assert isinstance(response["token_id"], int)
+
+    def test_with_custom_value(
+        self,
+        story_client: StoryClient,
+        nft_collection,
+        mint_and_approve_license_token,
+    ):
+        license_token_ids = mint_and_approve_license_token
+        response = story_client.IPAsset.mint_and_register_ip_and_make_derivative_with_license_tokens(
+            spg_nft_contract=nft_collection,
+            license_token_ids=[license_token_ids[1]],
+            max_rts=100000000,
             ip_metadata=IPMetadataInput(
                 ip_metadata_uri="https://example.com/metadata/custom-value.json",
                 ip_metadata_hash=web3.keccak(text="custom-value-metadata"),

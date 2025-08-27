@@ -31,3 +31,14 @@ def get_revenue_share(
         raise ValueError(f"The {type.value} must be between 0 and 100.")
 
     return revShare * 10**6
+
+
+def validate_max_rts(max_rts: int):
+    """
+    Validates the maximum number of royalty tokens.
+
+    :param max_rts int: The maximum number of royalty tokens
+    :raises ValueError: If max_rts is invalid
+    """
+    if max_rts < 0 or max_rts > 100_000_000:
+        raise ValueError("The maxRts must be greater than 0 and less than 100,000,000.")

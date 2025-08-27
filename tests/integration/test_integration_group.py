@@ -525,8 +525,6 @@ class TestCollectRoyaltyAndClaimReward:
             group_ip_id=group_ip_id, currency_tokens=[MockERC20], member_ip_ids=ip_ids
         )
 
-        print("response is ", response)
-
         assert "tx_hash" in response
         assert isinstance(response["tx_hash"], str)
         assert len(response["tx_hash"]) > 0

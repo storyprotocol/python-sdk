@@ -56,6 +56,51 @@ class DerivativeWorkflowsClient:
             spgNftContract, derivData, ipMetadata, recipient, allowDuplicates
         ).build_transaction(tx_params)
 
+    def mintAndRegisterIpAndMakeDerivativeWithLicenseTokens(
+        self,
+        spgNftContract,
+        licenseTokenIds,
+        royaltyContext,
+        maxRts,
+        ipMetadata,
+        recipient,
+        allowDuplicates,
+    ):
+        return (
+            self.contract.functions.mintAndRegisterIpAndMakeDerivativeWithLicenseTokens(
+                spgNftContract,
+                licenseTokenIds,
+                royaltyContext,
+                maxRts,
+                ipMetadata,
+                recipient,
+                allowDuplicates,
+            ).transact()
+        )
+
+    def build_mintAndRegisterIpAndMakeDerivativeWithLicenseTokens_transaction(
+        self,
+        spgNftContract,
+        licenseTokenIds,
+        royaltyContext,
+        maxRts,
+        ipMetadata,
+        recipient,
+        allowDuplicates,
+        tx_params,
+    ):
+        return (
+            self.contract.functions.mintAndRegisterIpAndMakeDerivativeWithLicenseTokens(
+                spgNftContract,
+                licenseTokenIds,
+                royaltyContext,
+                maxRts,
+                ipMetadata,
+                recipient,
+                allowDuplicates,
+            ).build_transaction(tx_params)
+        )
+
     def registerIpAndMakeDerivative(
         self, nftContract, tokenId, derivData, ipMetadata, sigMetadataAndRegister
     ):

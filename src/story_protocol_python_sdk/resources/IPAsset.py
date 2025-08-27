@@ -50,7 +50,10 @@ from story_protocol_python_sdk.utils.ip_metadata import IPMetadata, IPMetadataIn
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
 from story_protocol_python_sdk.utils.sign import Sign
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
-from story_protocol_python_sdk.utils.validation import validate_address
+from story_protocol_python_sdk.utils.validation import (
+    validate_address,
+    validate_max_rts,
+)
 
 
 class IPAsset:
@@ -317,7 +320,7 @@ class IPAsset:
         """
         try:
             # Validate max_rts
-            self._validate_max_rts(max_rts)
+            validate_max_rts(max_rts)
 
             # Validate child IP registration
             if not self._is_registered(child_ip_id):
@@ -817,27 +820,66 @@ class IPAsset:
                 tx_options=tx_options,
             )
             ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])
-            return {
-                "tx_hash": response["tx_hash"],
-                "ip_id": ip_registered["ip_id"],
-                "token_id": ip_registered["token_id"],
-            }
+            return RegistrationResponse(
+                tx_hash=response["tx_hash"],
+                ip_id=ip_registered["ip_id"],
+                token_id=ip_registered["token_id"],
+            )
         except Exception as e:
             raise e
 
-    def _validate_max_rts(self, max_rts: int):
+    def mint_and_register_ip_and_make_derivative_with_license_tokens(
+        self,
+        spg_nft_contract: Address,
+        license_token_ids: list[int],
+        max_rts: int,
+        recipient: Address | None = None,
+        allow_duplicates: bool = True,
+        ip_metadata: IPMetadataInput | None = None,
+        tx_options: dict | None = None,
+    ) -> RegistrationResponse:
         """
-        Validates the maximum number of royalty tokens.
+        Mint an NFT from a collection and register it as a derivative IP with license tokens.
 
-        :param max_rts int: The maximum number of royalty tokens
-        :raises ValueError: If max_rts is invalid
+        :param spg_nft_contract Address: The address of the `SPGNFT` collection.
+        :param license_token_ids list[int]: The IDs of the license tokens to be burned for linking the IP to parent IPs.
+        :param max_rts int: The maximum number of royalty tokens that can be distributed to the external royalty policies (max: 100,000,000).
+        :param recipient Address: [Optional] The address to receive the minted NFT. If not provided, the client's own wallet address will be used.
+        :param allow_duplicates bool: [Optional] Set to true to allow minting an NFT with a duplicate metadata hash. (default: True)
+        :param ip_metadata IPMetadataInput: [Optional] The desired metadata for the newly minted NFT and newly registered IP.
+        :param tx_options dict: [Optional] Transaction options.
+        :return RegistrationResponse: Dictionary with the tx hash, IP ID and token ID.
         """
-        if not isinstance(max_rts, int):
-            raise ValueError("The maxRts must be a number.")
-        if max_rts < 0 or max_rts > 100_000_000:
-            raise ValueError(
-                "The maxRts must be greater than 0 and less than 100,000,000."
+        try:
+            validated_license_token_ids = self._validate_license_token_ids(
+                license_token_ids
             )
+            validate_max_rts(max_rts)
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.derivative_workflows_client.build_mintAndRegisterIpAndMakeDerivativeWithLicenseTokens_transaction,
+                validate_address(spg_nft_contract),
+                validated_license_token_ids,
+                ZERO_ADDRESS,
+                max_rts,
+                IPMetadata.from_input(ip_metadata).get_validated_data(),
+                (
+                    validate_address(recipient)
+                    if recipient is not None
+                    else self.account.address
+                ),
+                allow_duplicates,
+                tx_options=tx_options,
+            )
+            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])
+            return RegistrationResponse(
+                tx_hash=response["tx_hash"],
+                ip_id=ip_registered["ip_id"],
+                token_id=ip_registered["token_id"],
+            )
+        except Exception as e:
+            raise e
 
     def _validate_derivative_data(self, derivative_data: dict) -> dict:
         """
@@ -876,7 +918,7 @@ class IPAsset:
         if internal_data["maxMintingFee"] < 0:
             raise ValueError("The maxMintingFee must be greater than 0.")
 
-        self._validate_max_rts(internal_data["maxRts"])
+        validate_max_rts(internal_data["maxRts"])
 
         for parent_id, terms_id in zip(
             internal_data["parentIpIds"], internal_data["licenseTermsIds"]

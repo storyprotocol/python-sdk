@@ -12,6 +12,9 @@ from story_protocol_python_sdk.abi.CoreMetadataModule.CoreMetadataModule_client 
 from story_protocol_python_sdk.abi.DerivativeWorkflows.DerivativeWorkflows_client import (
     DerivativeWorkflowsClient,
 )
+from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
+    IPAccountImplClient,
+)
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import (
     IPAssetRegistryClient,
 )
@@ -35,7 +38,10 @@ from story_protocol_python_sdk.abi.RegistrationWorkflows.RegistrationWorkflows_c
 )
 from story_protocol_python_sdk.abi.SPGNFTImpl.SPGNFTImpl_client import SPGNFTImplClient
 from story_protocol_python_sdk.types.common import AccessPermission
-from story_protocol_python_sdk.types.resource.IPAsset import RegistrationResponse
+from story_protocol_python_sdk.types.resource.IPAsset import (
+    RegisterPILTermsAndAttachResponse,
+    RegistrationResponse,
+)
 from story_protocol_python_sdk.utils.constants import (
     MAX_ROYALTY_TOKEN,
     ZERO_ADDRESS,
@@ -881,6 +887,90 @@ class IPAsset:
         except Exception as e:
             raise e
 
+    def register_pil_terms_and_attach(
+        self,
+        ip_id: Address,
+        license_terms_data: list,
+        deadline: int | None = None,
+        tx_options: dict | None = None,
+    ) -> RegisterPILTermsAndAttachResponse:
+        """
+        Register Programmable IP License Terms (if unregistered) and attach it to IP.
+
+         :param ip_id Address: The IP ID.
+         :param license_terms_data list: The data of the license and its configuration to be attached to the IP.
+         :param deadline int: [Optional] Signature deadline in milliseconds. If not provided, the current time + 1000ms will be used.
+         :param tx_options dict: [Optional] Transaction options.
+         :return RegisterPILTermsAndAttachResponse: Dictionary with the tx hash and license terms IDs.
+        """
+        try:
+            if not self._is_registered(ip_id):
+                raise ValueError(f"The IP with id {ip_id} is not registered.")
+            calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
+            ip_account_impl_client = IPAccountImplClient(self.web3, ip_id)
+            state = ip_account_impl_client.state()
+            license_terms = []
+            for term in license_terms_data:
+                license_terms.append(
+                    {
+                        "terms": self.license_terms_util.validate_license_terms(
+                            term["terms"]
+                        ),
+                        "licensingConfig": self.license_terms_util.validate_licensing_config(
+                            term["licensing_config"]
+                        ),
+                    }
+                )
+            signature_response = self.sign_util.get_permission_signature(
+                ip_id=ip_id,
+                deadline=calculated_deadline,
+                state=state,
+                permissions=[
+                    {
+                        "ipId": ip_id,
+                        "signer": self.license_attachment_workflows_client.contract.address,
+                        "to": self.licensing_module_client.contract.address,
+                        "permission": AccessPermission.ALLOW,
+                        "func": get_function_signature(
+                            self.licensing_module_client.contract.abi,
+                            "attachLicenseTerms",
+                        ),
+                    },
+                    {
+                        "ipId": ip_id,
+                        "signer": self.license_attachment_workflows_client.contract.address,
+                        "to": self.licensing_module_client.contract.address,
+                        "permission": AccessPermission.ALLOW,
+                        "func": get_function_signature(
+                            self.licensing_module_client.contract.abi,
+                            "setLicensingConfig",
+                        ),
+                    },
+                ],
+            )
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.license_attachment_workflows_client.build_registerPILTermsAndAttach_transaction,
+                ip_id,
+                license_terms,
+                {
+                    "signer": self.web3.to_checksum_address(self.account.address),
+                    "deadline": calculated_deadline,
+                    "signature": signature_response["signature"],
+                },
+                tx_options=tx_options,
+            )
+            license_terms_ids = self._parse_tx_license_terms_attached_event(
+                response["tx_receipt"]
+            )
+            return RegisterPILTermsAndAttachResponse(
+                tx_hash=response["tx_hash"],
+                license_terms_ids=license_terms_ids,
+            )
+        except Exception as e:
+            raise e
+
     def _validate_derivative_data(self, derivative_data: dict) -> dict:
         """
         Validates the derivative data and returns processed internal data.
@@ -1034,7 +1124,7 @@ class IPAsset:
                 return license_terms_id
         return None
 
-    def _parse_tx_license_terms_attached_event(self, tx_receipt: dict) -> list | None:
+    def _parse_tx_license_terms_attached_event(self, tx_receipt: dict) -> list[int]:
         """
         Parse the LicenseTermsAttached events from a transaction receipt.
 
@@ -1052,4 +1142,4 @@ class IPAsset:
                 license_terms_id = int.from_bytes(data[-32:], byteorder="big")
                 license_terms_ids.append(license_terms_id)
 
-        return license_terms_ids if license_terms_ids else None
+        return license_terms_ids

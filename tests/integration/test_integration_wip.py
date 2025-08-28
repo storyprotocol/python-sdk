@@ -16,7 +16,7 @@ wallet_address_2_str: str = wallet_address_2
 class TestWIPDeposit:
     def test_deposit(self, story_client: StoryClient):
         """Test depositing IP to WIP"""
-        ip_amt = web3.to_wei(1, "ether")  # or Web3.to_wei("0.01", 'ether')
+        ip_amt = web3.to_wei(0.000001, "ether")
 
         # Get balances before deposit
         balance_before = story_client.get_wallet_balance()

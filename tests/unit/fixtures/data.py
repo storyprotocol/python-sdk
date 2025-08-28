@@ -21,7 +21,6 @@ LICENSE_TERMS = {
     "derivative_rev_ceiling": 100,
     "uri": "https://example.com",
     "transferable": True,
-    "expect_minimum_group_reward_share": 10,
 }
 
 LICENSING_CONFIG = {

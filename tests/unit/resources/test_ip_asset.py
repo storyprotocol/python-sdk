@@ -3,6 +3,9 @@ from unittest.mock import patch
 import pytest
 from ens.ens import HexStr
 
+from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
+    IPAccountImplClient,
+)
 from story_protocol_python_sdk.resources.IPAsset import IPAsset
 from story_protocol_python_sdk.utils.constants import ZERO_HASH
 from story_protocol_python_sdk.utils.derivative_data import DerivativeDataInput
@@ -76,6 +79,18 @@ def mock_parse_tx_license_terms_attached_event(ip_asset):
             ip_asset,
             "_parse_tx_license_terms_attached_event",
             return_value=[1, 2],
+        )
+
+    return _mock
+
+
+@pytest.fixture
+def mock_ip_account_impl_client(ip_asset):
+    def _mock():
+        return patch.object(
+            IPAccountImplClient,
+            "state",
+            return_value=ip_asset.web3.to_bytes(),
         )
 
     return _mock
@@ -678,4 +693,129 @@ class TestMintAndRegisterIpAndMakeDerivativeWithLicenseTokens:
                         spg_nft_contract=ADDRESS,
                         license_token_ids=[1, 2, 3],
                         max_rts=100,
+                    )
+
+
+class TestRegisterPilTermsAndAttach:
+
+    def test_throw_error_when_ip_is_not_registered(
+        self,
+        ip_asset: IPAsset,
+        mock_is_registered,
+    ):
+        with mock_is_registered(False):
+            with pytest.raises(
+                ValueError,
+                match=f"The IP with id {IP_ID} is not registered.",
+            ):
+                ip_asset.register_pil_terms_and_attach(
+                    ip_id=IP_ID,
+                    license_terms_data=[
+                        {
+                            "terms": LICENSE_TERMS,
+                            "licensing_config": LICENSING_CONFIG,
+                        },
+                        {
+                            "terms": {
+                                **LICENSE_TERMS,
+                                "commercial_rev_share": 10,
+                            },
+                            "licensing_config": {
+                                **LICENSING_CONFIG,
+                                "commercial_rev_share": 10,
+                            },
+                        },
+                    ],
+                )
+
+    def test_successful_registration(
+        self,
+        ip_asset: IPAsset,
+        mock_is_registered,
+        mock_get_function_signature,
+        mock_signature_related_methods,
+        mock_parse_tx_license_terms_attached_event,
+        mock_ip_account_impl_client,
+    ):
+        with mock_is_registered(
+            True
+        ), mock_get_function_signature(), mock_signature_related_methods(), mock_parse_tx_license_terms_attached_event(), mock_ip_account_impl_client():
+            with patch.object(
+                ip_asset.license_attachment_workflows_client,
+                "build_registerPILTermsAndAttach_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_transaction:
+                result = ip_asset.register_pil_terms_and_attach(
+                    ip_id=IP_ID,
+                    license_terms_data=[
+                        {
+                            "terms": LICENSE_TERMS,
+                            "licensing_config": LICENSING_CONFIG,
+                        },
+                        {
+                            "terms": LICENSE_TERMS,
+                            "licensing_config": LICENSING_CONFIG,
+                        },
+                    ],
+                )
+            assert mock_build_transaction.call_args[0][1][0] == {
+                "terms": {
+                    "transferable": True,
+                    "royaltyPolicy": "0x1234567890123456789012345678901234567890",
+                    "defaultMintingFee": 10,
+                    "expiration": 100,
+                    "commercialUse": True,
+                    "commercialAttribution": True,
+                    "commercializerChecker": True,
+                    "commercializerCheckerData": b"mock_bytes",
+                    "commercialRevShare": 19000000,
+                    "commercialRevCeiling": 0,
+                    "derivativesAllowed": True,
+                    "derivativesAttribution": True,
+                    "derivativesApproval": True,
+                    "derivativesReciprocal": True,
+                    "derivativeRevCeiling": 100,
+                    "currency": "0x1234567890123456789012345678901234567890",
+                    "uri": "https://example.com",
+                },
+                "licensingConfig": {
+                    "isSet": True,
+                    "mintingFee": 10,
+                    "hookData": b"mock_bytes",
+                    "licensingHook": "0x1234567890123456789012345678901234567890",
+                    "commercialRevShare": 10000000,
+                    "disabled": False,
+                    "expectMinimumGroupRewardShare": 10000000,
+                    "expectGroupRewardPool": "0x1234567890123456789012345678901234567890",
+                },
+            }
+            assert result["tx_hash"] == TX_HASH.hex()
+            assert result["license_terms_ids"] == [1, 2]
+
+    def test_registration_with_transaction_failed(
+        self,
+        ip_asset: IPAsset,
+        mock_is_registered,
+        mock_get_function_signature,
+        mock_signature_related_methods,
+        mock_parse_tx_license_terms_attached_event,
+        mock_ip_account_impl_client,
+    ):
+        with mock_is_registered(
+            True
+        ), mock_get_function_signature(), mock_signature_related_methods(), mock_parse_tx_license_terms_attached_event(), mock_ip_account_impl_client():
+            with patch.object(
+                ip_asset.license_attachment_workflows_client,
+                "build_registerPILTermsAndAttach_transaction",
+                side_effect=Exception("Transaction failed."),
+            ):
+                with pytest.raises(Exception, match="Transaction failed."):
+                    ip_asset.register_pil_terms_and_attach(
+                        ip_id=IP_ID,
+                        license_terms_data=[
+                            {
+                                "terms": LICENSE_TERMS,
+                                "licensing_config": LICENSING_CONFIG,
+                            },
+                        ],
                     )

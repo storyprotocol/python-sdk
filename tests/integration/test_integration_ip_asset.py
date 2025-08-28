@@ -795,3 +795,82 @@ class TestMintAndRegisterIpAndMakeDerivativeWithLicenseTokens:
         assert isinstance(response["tx_hash"], str)
         assert isinstance(response["ip_id"], str)
         assert isinstance(response["token_id"], int)
+
+
+class TestRegisterPilTermsAndAttach:
+    def test_successful_registration(
+        self,
+        story_client: StoryClient,
+        parent_ip_and_license_terms,
+    ):
+        response = story_client.IPAsset.register_pil_terms_and_attach(
+            ip_id=parent_ip_and_license_terms["parent_ip_id"],
+            license_terms_data=[
+                {
+                    "terms": {
+                        "transferable": True,
+                        "royalty_policy": ROYALTY_POLICY,
+                        "default_minting_fee": 1,
+                        "expiration": 0,
+                        "commercial_use": True,
+                        "commercial_attribution": False,
+                        "commercializer_checker": ZERO_ADDRESS,
+                        "commercializer_checker_data": ZERO_ADDRESS,
+                        "commercial_rev_share": 90,
+                        "commercial_rev_ceiling": 0,
+                        "derivatives_allowed": True,
+                        "derivatives_attribution": True,
+                        "derivatives_approval": False,
+                        "derivatives_reciprocal": True,
+                        "derivative_rev_ceiling": 0,
+                        "currency": MockERC20,
+                        "uri": "",
+                    },
+                    "licensing_config": {
+                        "is_set": True,
+                        "minting_fee": 1,
+                        "hook_data": "",
+                        "licensing_hook": ZERO_ADDRESS,
+                        "commercial_rev_share": 90,
+                        "disabled": False,
+                        "expect_minimum_group_reward_share": 0,
+                        "expect_group_reward_pool": ZERO_ADDRESS,
+                    },
+                },
+                {
+                    "terms": {
+                        "transferable": True,
+                        "royalty_policy": ROYALTY_POLICY,
+                        "default_minting_fee": 10,
+                        "expiration": 0,
+                        "commercial_use": True,
+                        "commercial_attribution": False,
+                        "commercializer_checker": ZERO_ADDRESS,
+                        "commercializer_checker_data": ZERO_ADDRESS,
+                        "commercial_rev_share": 10,
+                        "commercial_rev_ceiling": 0,
+                        "derivatives_allowed": True,
+                        "derivatives_attribution": True,
+                        "derivatives_approval": False,
+                        "derivatives_reciprocal": True,
+                        "derivative_rev_ceiling": 0,
+                        "currency": MockERC20,
+                        "uri": "",
+                    },
+                    "licensing_config": {
+                        "is_set": False,
+                        "minting_fee": 1,
+                        "hook_data": "",
+                        "licensing_hook": ZERO_ADDRESS,
+                        "commercial_rev_share": 90,
+                        "disabled": False,
+                        "expect_minimum_group_reward_share": 0,
+                        "expect_group_reward_pool": ZERO_ADDRESS,
+                    },
+                },
+            ],
+            deadline=10000,
+        )
+        assert response is not None
+        assert isinstance(response["tx_hash"], str)
+        assert len(response["license_terms_ids"]) == 2

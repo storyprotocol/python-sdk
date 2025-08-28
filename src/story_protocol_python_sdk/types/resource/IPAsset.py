@@ -16,3 +16,16 @@ class RegistrationResponse(TypedDict):
     ip_id: Address
     tx_hash: HexStr
     token_id: Optional[int]
+
+
+class RegisterPILTermsAndAttachResponse(TypedDict):
+    """
+    Response structure for Programmable IP License Terms registration and attachment operations.
+
+    Attributes:
+        tx_hash: The transaction hash of the registration transaction
+        license_terms_ids: The IDs of the registered license terms
+    """
+
+    tx_hash: HexStr
+    license_terms_ids: list[int]

@@ -789,7 +789,7 @@ class TestMintAndRegisterIpAndMakeDerivativeWithLicenseTokens:
                 nft_metadata_hash=web3.keccak(text="custom-value-metadata"),
             ),
             recipient=account_2.address,
-            allow_duplicates=False,
+            allow_duplicates=True,
         )
         assert response is not None
         assert isinstance(response["tx_hash"], str)

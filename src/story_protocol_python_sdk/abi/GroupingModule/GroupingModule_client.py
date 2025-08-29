@@ -43,6 +43,14 @@ class GroupingModuleClient:
             groupIpId, ipIds, maxAllowedRewardShare
         ).build_transaction(tx_params)
 
+    def claimReward(self, groupId, token, ipIds):
+        return self.contract.functions.claimReward(groupId, token, ipIds).transact()
+
+    def build_claimReward_transaction(self, groupId, token, ipIds, tx_params):
+        return self.contract.functions.claimReward(
+            groupId, token, ipIds
+        ).build_transaction(tx_params)
+
     def registerGroup(self, groupPool):
         return self.contract.functions.registerGroup(groupPool).transact()
 

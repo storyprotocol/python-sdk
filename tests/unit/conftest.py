@@ -149,3 +149,11 @@ def mock_license_registry_client():
         return MockContext()
 
     return _mock
+
+
+@pytest.fixture(scope="module")
+def mock_web3_is_address(mock_web3):
+    def _mock(is_address: bool = True):
+        return patch.object(mock_web3, "is_address", return_value=is_address)
+
+    return _mock

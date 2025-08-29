@@ -4,6 +4,8 @@ import copy
 
 import pytest
 
+from story_protocol_python_sdk.story_client import StoryClient
+
 from .setup_for_integration import (
     EVEN_SPLIT_GROUP_POOL,
     PIL_LICENSE_TEMPLATE,
@@ -538,3 +540,34 @@ class TestCollectRoyaltyAndClaimReward:
         assert len(response["royalties_distributed"]) == 2
         assert response["royalties_distributed"][0]["amount"] == 10
         assert response["royalties_distributed"][1]["amount"] == 10
+
+    def test_claim_rewards(self, story_client: StoryClient, setup_royalty_collection):
+        """Test claiming rewards for group members."""
+        group_ip_id = setup_royalty_collection["group_ip_id"]
+        ip_ids = setup_royalty_collection["ip_ids"]
+        print("group_ip_id", group_ip_id)
+        print("ip_ids", ip_ids)
+        # First, collect and distribute royalties to set up rewards for claiming
+        story_client.Group.collect_and_distribute_group_royalties(
+            group_ip_id=group_ip_id, currency_tokens=[MockERC20], member_ip_ids=ip_ids
+        )
+
+        # Test claiming rewards for specific members
+        response = story_client.Group.claim_rewards(
+            group_ip_id=group_ip_id,
+            currency_token=MockERC20,
+            member_ip_ids=ip_ids,
+        )
+        print("response", response)
+        # Verify response structure
+        assert "tx_hash" in response
+        assert isinstance(response["tx_hash"], str)
+        assert len(response["tx_hash"]) > 0
+
+        # Verify claimed rewards details if any are present
+        if response["claimed_rewards"]:
+            for reward in response["claimed_rewards"]:
+                assert "amount" in reward
+                assert isinstance(reward["amount"], int)
+                assert "token" in reward
+                assert story_client.web3.is_address(reward["token"])

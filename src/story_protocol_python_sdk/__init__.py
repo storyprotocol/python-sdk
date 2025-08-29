@@ -8,7 +8,11 @@ from .resources.Royalty import Royalty
 from .resources.WIP import WIP
 from .story_client import StoryClient
 from .types.common import AccessPermission
-from .types.resource.IPAsset import RegistrationResponse
+from .types.resource.Group import ClaimReward, ClaimRewardsResponse
+from .types.resource.IPAsset import (
+    RegisterPILTermsAndAttachResponse,
+    RegistrationResponse,
+)
 from .utils.constants import (
     DEFAULT_FUNCTION_SELECTOR,
     MAX_ROYALTY_TOKEN,
@@ -34,6 +38,9 @@ __all__ = [
     "DerivativeDataInput",
     "IPMetadataInput",
     "RegistrationResponse",
+    "ClaimRewardsResponse",
+    "ClaimReward",
+    "RegisterPILTermsAndAttachResponse",
     # Constants
     "ZERO_ADDRESS",
     "ZERO_HASH",

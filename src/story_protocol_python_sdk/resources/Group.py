@@ -1,6 +1,4 @@
-# src/story_protocol_python_sdk/resources/Group.py
-
-from ens.ens import HexStr
+from ens.ens import Address, HexStr
 from web3 import Web3
 
 from story_protocol_python_sdk.abi.CoreMetadataModule.CoreMetadataModule_client import (
@@ -28,6 +26,10 @@ from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client im
     PILicenseTemplateClient,
 )
 from story_protocol_python_sdk.types.common import RevShareType
+from story_protocol_python_sdk.types.resource.Group import (
+    ClaimReward,
+    ClaimRewardsResponse,
+)
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
 from story_protocol_python_sdk.utils.sign import Sign
@@ -531,6 +533,58 @@ class Group:
                 f"Failed to collect and distribute group royalties: {str(e)}"
             )
 
+    def claim_rewards(
+        self,
+        group_ip_id: Address,
+        currency_token: Address,
+        member_ip_ids: list[Address],
+        tx_options: dict | None = None,
+    ) -> ClaimRewardsResponse:
+        """
+        Claim rewards for the entire group.
+
+        :param group_ip_id str: The ID of the group IP.
+        :param currency_token str: The address of the currency (revenue) token to claim..
+        :param member_ip_ids list: The IDs of the member IPs to distribute the rewards to.
+        :param tx_options dict: [Optional] The transaction options.
+        :return ClaimRewardsResponse: A response object with the transaction hash and claimed rewards.
+        """
+        try:
+            if not self.web3.is_address(group_ip_id):
+                raise ValueError(f"Invalid group IP ID: {group_ip_id}")
+            if not self.web3.is_address(currency_token):
+                raise ValueError(f"Invalid currency token: {currency_token}")
+            for ip_id in member_ip_ids:
+                if not self.web3.is_address(ip_id):
+                    print("ip_id", ip_id)
+                    raise ValueError(f"Invalid member IP ID: {ip_id}")
+
+            claim_reward_param = {
+                "groupIpId": group_ip_id,
+                "token": currency_token,
+                "memberIpIds": member_ip_ids,
+            }
+
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.grouping_module_client.build_claimReward_transaction,
+                *claim_reward_param.values(),
+                tx_options=tx_options,
+            )
+
+            claimed_rewards = self._parse_tx_claimed_reward_event(
+                response["tx_receipt"]
+            )
+
+            return ClaimRewardsResponse(
+                tx_hash=response["tx_hash"],
+                claimed_rewards=claimed_rewards,
+            )
+
+        except Exception as e:
+            raise ValueError(f"Failed to claim rewards: {str(e)}")
+
     def _get_license_data(self, license_data: list) -> list:
         """
         Process license data into the format expected by the contracts.
@@ -695,3 +749,31 @@ class Group:
                 )
 
         return royalties_distributed
+
+    def _parse_tx_claimed_reward_event(self, tx_receipt: dict) -> list[ClaimReward]:
+        """
+        Parse the ClaimedReward event from a transaction receipt.
+
+        :param tx_receipt dict: The transaction receipt.
+        :return list: List of claimed rewards.
+        """
+        event_signature = self.web3.keccak(
+            text="ClaimedReward(address,address,address,uint256)"
+        ).hex()
+        claimed_rewards = []
+
+        for log in tx_receipt["logs"]:
+            if log["topics"][0].hex() == event_signature:
+                ip_id = "0x" + log["topics"][0].hex()[24:]
+                amount = int(log["data"][:66].hex(), 16)
+                token = "0x" + log["topics"][2].hex()[24:]
+
+                claimed_rewards.append(
+                    ClaimReward(
+                        ip_id=ip_id,
+                        amount=amount,
+                        token=token,
+                    )
+                )
+
+        return claimed_rewards

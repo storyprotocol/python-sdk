@@ -179,7 +179,12 @@
     {
       "contract_name": "GroupingModule",
       "contract_address": "0x69D3a7aa9edb72Bc226E745A7cCdd50D947b69Ac",
-      "functions": ["registerGroup", "addIp", "IPGroupRegistered"]
+      "functions": [
+        "registerGroup",
+        "addIp",
+        "IPGroupRegistered",
+        "claimReward"
+      ]
     },
     {
       "contract_name": "LicenseRegistry",

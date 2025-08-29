@@ -545,9 +545,7 @@ class TestCollectRoyaltyAndClaimReward:
         """Test claiming rewards for group members."""
         group_ip_id = setup_royalty_collection["group_ip_id"]
         ip_ids = setup_royalty_collection["ip_ids"]
-        print("group_ip_id", group_ip_id)
-        print("ip_ids", ip_ids)
-        # First, collect and distribute royalties to set up rewards for claiming
+        # Collect and distribute royalties to set up rewards for claiming
         story_client.Group.collect_and_distribute_group_royalties(
             group_ip_id=group_ip_id, currency_tokens=[MockERC20], member_ip_ids=ip_ids
         )
@@ -558,7 +556,6 @@ class TestCollectRoyaltyAndClaimReward:
             currency_token=MockERC20,
             member_ip_ids=ip_ids,
         )
-        print("response", response)
         # Verify response structure
         assert "tx_hash" in response
         assert isinstance(response["tx_hash"], str)

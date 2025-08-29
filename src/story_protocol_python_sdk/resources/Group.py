@@ -556,7 +556,6 @@ class Group:
                 raise ValueError(f"Invalid currency token: {currency_token}")
             for ip_id in member_ip_ids:
                 if not self.web3.is_address(ip_id):
-                    print("ip_id", ip_id)
                     raise ValueError(f"Invalid member IP ID: {ip_id}")
 
             claim_reward_param = {

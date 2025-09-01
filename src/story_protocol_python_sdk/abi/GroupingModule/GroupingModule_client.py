@@ -51,6 +51,14 @@ class GroupingModuleClient:
             groupId, token, ipIds
         ).build_transaction(tx_params)
 
+    def collectRoyalties(self, groupId, token):
+        return self.contract.functions.collectRoyalties(groupId, token).transact()
+
+    def build_collectRoyalties_transaction(self, groupId, token, tx_params):
+        return self.contract.functions.collectRoyalties(
+            groupId, token
+        ).build_transaction(tx_params)
+
     def registerGroup(self, groupPool):
         return self.contract.functions.registerGroup(groupPool).transact()
 

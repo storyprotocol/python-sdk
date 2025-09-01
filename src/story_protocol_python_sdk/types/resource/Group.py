@@ -21,3 +21,12 @@ class ClaimRewardsResponse(TypedDict):
 
     tx_hash: HexBytes
     claimed_rewards: ClaimReward
+
+
+class CollectRoyaltiesResponse(TypedDict):
+    """
+    Response structure for Group.collect_royalties method.
+    """
+
+    tx_hash: HexBytes
+    collected_royalties: int

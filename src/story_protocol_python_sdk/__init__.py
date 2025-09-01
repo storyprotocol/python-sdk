@@ -8,7 +8,11 @@ from .resources.Royalty import Royalty
 from .resources.WIP import WIP
 from .story_client import StoryClient
 from .types.common import AccessPermission
-from .types.resource.Group import ClaimReward, ClaimRewardsResponse
+from .types.resource.Group import (
+    ClaimReward,
+    ClaimRewardsResponse,
+    CollectRoyaltiesResponse,
+)
 from .types.resource.IPAsset import (
     RegisterPILTermsAndAttachResponse,
     RegistrationResponse,
@@ -40,6 +44,7 @@ __all__ = [
     "RegistrationResponse",
     "ClaimRewardsResponse",
     "ClaimReward",
+    "CollectRoyaltiesResponse",
     "RegisterPILTermsAndAttachResponse",
     # Constants
     "ZERO_ADDRESS",

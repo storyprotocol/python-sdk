@@ -183,7 +183,8 @@
         "registerGroup",
         "addIp",
         "IPGroupRegistered",
-        "claimReward"
+        "claimReward",
+        "collectRoyalties"
       ]
     },
     {

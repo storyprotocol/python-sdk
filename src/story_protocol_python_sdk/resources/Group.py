@@ -29,6 +29,7 @@ from story_protocol_python_sdk.types.common import RevShareType
 from story_protocol_python_sdk.types.resource.Group import (
     ClaimReward,
     ClaimRewardsResponse,
+    CollectRoyaltiesResponse,
 )
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
@@ -596,6 +597,48 @@ class Group:
 
         except Exception as e:
             raise ValueError(f"Failed to claim rewards: {str(e)}")
+
+    def collect_royalties(
+        self,
+        group_ip_id: Address,
+        currency_token: Address,
+        tx_options: dict | None = None,
+    ) -> CollectRoyaltiesResponse:
+        """
+        Collects royalties into the pool, making them claimable by group member IPs.
+
+        :param group_ip_id Address: The ID of the group IP.
+        :param currency_token Address: The address of the currency (revenue) token to collect.
+        :param tx_options dict: [Optional] The transaction options.
+        :return CollectRoyaltiesResponse: A response object with the transaction hash and collected royalties.
+        """
+        try:
+            if not self.web3.is_address(group_ip_id):
+                raise ValueError(f"Invalid group IP ID: {group_ip_id}")
+            if not self.web3.is_address(currency_token):
+                raise ValueError(f"Invalid currency token: {currency_token}")
+
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.grouping_module_client.build_collectRoyalties_transaction,
+                group_ip_id,
+                currency_token,
+                tx_options=tx_options,
+            )
+            collected_royalties = self.grouping_module_client.contract.events.CollectedRoyaltiesToGroupPool.process_receipt(
+                response["tx_receipt"]
+            )[
+                0
+            ][
+                "args"
+            ]
+            return CollectRoyaltiesResponse(
+                tx_hash=response["tx_hash"],
+                collected_royalties=collected_royalties["amount"],
+            )
+        except Exception as e:
+            raise ValueError(f"Failed to collect royalties: {str(e)}")
 
     def _get_license_data(self, license_data: list) -> list:
         """

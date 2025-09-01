@@ -1,6 +1,6 @@
 from typing import TypedDict
 
-from ens.ens import Address, HexStr
+from ens.ens import Address, HexBytes
 
 
 class ClaimReward(TypedDict):
@@ -8,9 +8,10 @@ class ClaimReward(TypedDict):
     Structure for a claimed reward.
     """
 
-    ip_id: Address
-    amount: int
+    ip_ids: list[Address]
+    amounts: list[int]
     token: Address
+    group_id: Address
 
 
 class ClaimRewardsResponse(TypedDict):
@@ -18,5 +19,5 @@ class ClaimRewardsResponse(TypedDict):
     Response structure for Group.claim_rewards method.
     """
 
-    tx_hash: HexStr
-    claimed_rewards: list[ClaimReward]
+    tx_hash: HexBytes
+    claimed_rewards: ClaimReward

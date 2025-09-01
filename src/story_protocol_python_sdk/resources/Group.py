@@ -543,9 +543,9 @@ class Group:
         """
         Claim rewards for the entire group.
 
-        :param group_ip_id str: The ID of the group IP.
-        :param currency_token str: The address of the currency (revenue) token to claim..
-        :param member_ip_ids list: The IDs of the member IPs to distribute the rewards to.
+        :param group_ip_id Address: The ID of the group IP.
+        :param currency_token Address: The address of the currency (revenue) token to claim.
+        :param member_ip_ids list[Address]: The IDs of the member IPs to distribute the rewards to.
         :param tx_options dict: [Optional] The transaction options.
         :return ClaimRewardsResponse: A response object with the transaction hash and claimed rewards.
         """
@@ -571,14 +571,21 @@ class Group:
                 *claim_reward_param.values(),
                 tx_options=tx_options,
             )
-
-            claimed_rewards = self._parse_tx_claimed_reward_event(
+            claimed_rewards = self.grouping_module_client.contract.events.ClaimedReward.process_receipt(
                 response["tx_receipt"]
-            )
-
+            )[
+                0
+            ][
+                "args"
+            ]
             return ClaimRewardsResponse(
                 tx_hash=response["tx_hash"],
-                claimed_rewards=claimed_rewards,
+                claimed_rewards=ClaimReward(
+                    ip_ids=claimed_rewards["ipId"],
+                    amounts=claimed_rewards["amount"],
+                    token=claimed_rewards["token"],
+                    group_id=claimed_rewards["groupId"],
+                ),
             )
 
         except Exception as e:
@@ -748,31 +755,3 @@ class Group:
                 )
 
         return royalties_distributed
-
-    def _parse_tx_claimed_reward_event(self, tx_receipt: dict) -> list[ClaimReward]:
-        """
-        Parse the ClaimedReward event from a transaction receipt.
-
-        :param tx_receipt dict: The transaction receipt.
-        :return list: List of claimed rewards.
-        """
-        event_signature = self.web3.keccak(
-            text="ClaimedReward(address,address,address,uint256)"
-        ).hex()
-        claimed_rewards = []
-
-        for log in tx_receipt["logs"]:
-            if log["topics"][0].hex() == event_signature:
-                ip_id = "0x" + log["topics"][0].hex()[24:]
-                amount = int(log["data"][:66].hex(), 16)
-                token = "0x" + log["topics"][2].hex()[24:]
-
-                claimed_rewards.append(
-                    ClaimReward(
-                        ip_id=ip_id,
-                        amount=amount,
-                        token=token,
-                    )
-                )
-
-        return claimed_rewards

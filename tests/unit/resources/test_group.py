@@ -1,52 +1,15 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
 from story_protocol_python_sdk.resources.Group import Group
+from story_protocol_python_sdk.types.resource.Group import ClaimReward
 from tests.unit.fixtures.data import ADDRESS, CHAIN_ID, IP_ID, TX_HASH
 
 
 @pytest.fixture(scope="class")
 def group(mock_web3, mock_account):
     return Group(mock_web3, mock_account, CHAIN_ID)
-
-
-@pytest.fixture(scope="class")
-def mock_grouping_module_client(group):
-    def _mock():
-        return patch.object(
-            group.grouping_module_client,
-            "build_claimReward_transaction",
-            return_value=MagicMock(),
-        )
-
-    return _mock
-
-
-@pytest.fixture(scope="class")
-def mock_build_and_send_transaction():
-    def _mock():
-        return patch(
-            "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
-            return_value={
-                "tx_hash": TX_HASH,
-                "tx_receipt": {"status": 1, "logs": []},
-            },
-        )
-
-    return _mock
-
-
-@pytest.fixture(scope="class")
-def mock_parse_tx_claimed_reward_event(group):
-    def _mock():
-        return patch.object(
-            group,
-            "_parse_tx_claimed_reward_event",
-            return_value=[{"amount": 100, "token": ADDRESS}],
-        )
-
-    return _mock
 
 
 class TestGroupClaimRewards:
@@ -119,30 +82,41 @@ class TestGroupClaimRewards:
     def test_claim_rewards_success(
         self,
         group: Group,
-        mock_grouping_module_client,
-        mock_build_and_send_transaction,
-        mock_parse_tx_claimed_reward_event,
         mock_web3_is_address,
     ):
         """Test successful claim_rewards operation."""
 
-        with (
-            mock_grouping_module_client(),
-            mock_build_and_send_transaction(),
-            mock_parse_tx_claimed_reward_event(),
-            mock_web3_is_address(),
-        ):
-            result = group.claim_rewards(
-                group_ip_id=IP_ID,
-                currency_token=ADDRESS,
-                member_ip_ids=[IP_ID, ADDRESS],
-            )
+        with mock_web3_is_address():
+            with patch.object(
+                group.grouping_module_client.contract.events.ClaimedReward,
+                "process_receipt",
+                return_value=[
+                    {
+                        "args": {
+                            "ipId": [IP_ID, ADDRESS],
+                            "amount": [100, 200],
+                            "token": ADDRESS,
+                            "groupId": IP_ID,
+                        },
+                    }
+                ],
+            ):
+                result = group.claim_rewards(
+                    group_ip_id=IP_ID,
+                    currency_token=ADDRESS,
+                    member_ip_ids=[IP_ID, ADDRESS],
+                )
 
-            # Verify response structure
-            assert "tx_hash" in result
-            assert result["tx_hash"] == TX_HASH
-            assert "claimed_rewards" in result
-            assert result["claimed_rewards"] == [{"amount": 100, "token": ADDRESS}]
+                # Verify response structure
+                assert "tx_hash" in result
+                assert result["tx_hash"] == TX_HASH.hex()
+                assert "claimed_rewards" in result
+                assert result["claimed_rewards"] == ClaimReward(
+                    ip_ids=[IP_ID, ADDRESS],
+                    amounts=[100, 200],
+                    token=ADDRESS,
+                    group_id=IP_ID,
+                )
 
     def test_claim_rewards_transaction_build_failure(
         self, group: Group, mock_web3_is_address

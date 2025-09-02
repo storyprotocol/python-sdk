@@ -1,4 +1,5 @@
 import time
+from typing import Any
 
 from ens.ens import Address
 
@@ -20,7 +21,7 @@ class GroupTestHelper:
     @staticmethod
     def mint_and_register_ip_asset_with_pil_terms(
         story_client: StoryClient, nft_collection: Address
-    ) -> dict[str, any]:
+    ) -> dict[str, Any]:
         """Helper to mint and register an IP asset with PIL terms."""
         license_terms_data = [
             {

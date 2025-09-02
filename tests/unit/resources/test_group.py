@@ -3,7 +3,10 @@ from unittest.mock import patch
 import pytest
 
 from story_protocol_python_sdk.resources.Group import Group
-from story_protocol_python_sdk.types.resource.Group import ClaimReward
+from story_protocol_python_sdk.types.resource.Group import (
+    ClaimReward,
+    ClaimRewardsResponse,
+)
 from tests.unit.fixtures.data import ADDRESS, CHAIN_ID, IP_ID, TX_HASH
 
 
@@ -85,22 +88,36 @@ class TestGroupClaimRewards:
         mock_web3_is_address,
     ):
         """Test successful claim_rewards operation."""
-
         with mock_web3_is_address():
-            with patch.object(
+            with patch(
+                "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
+                return_value={
+                    "tx_hash": TX_HASH,
+                    "tx_receipt": {
+                        "logs": [
+                            {
+                                "topics": [
+                                    group.web3.keccak(
+                                        text="ClaimedReward(address,address,address[],uint256[])"
+                                    )
+                                ]
+                            }
+                        ]
+                    },
+                },
+            ), patch.object(
                 group.grouping_module_client.contract.events.ClaimedReward,
-                "process_receipt",
-                return_value=[
-                    {
-                        "args": {
-                            "ipId": [IP_ID, ADDRESS],
-                            "amount": [100, 200],
-                            "token": ADDRESS,
-                            "groupId": IP_ID,
-                        },
+                "process_log",
+                return_value={
+                    "args": {
+                        "ipId": [IP_ID, ADDRESS],
+                        "amount": [100, 200],
+                        "token": ADDRESS,
+                        "groupId": IP_ID,
                     }
-                ],
+                },
             ):
+                # Test without tx_options
                 result = group.claim_rewards(
                     group_ip_id=IP_ID,
                     currency_token=ADDRESS,
@@ -109,11 +126,161 @@ class TestGroupClaimRewards:
 
                 # Verify response structure
                 assert "tx_hash" in result
-                assert result["tx_hash"] == TX_HASH.hex()
+                assert result["tx_hash"] == TX_HASH
                 assert "claimed_rewards" in result
                 assert result["claimed_rewards"] == ClaimReward(
                     ip_ids=[IP_ID, ADDRESS],
                     amounts=[100, 200],
+                    token=ADDRESS,
+                    group_id=IP_ID,
+                )
+                assert result == ClaimRewardsResponse(
+                    tx_hash=TX_HASH,
+                    claimed_rewards=ClaimReward(
+                        ip_ids=[IP_ID, ADDRESS],
+                        amounts=[100, 200],
+                        token=ADDRESS,
+                        group_id=IP_ID,
+                    ),
+                )
+
+    def test_claim_rewards_with_tx_options(
+        self,
+        group: Group,
+        mock_web3_is_address,
+    ):
+        """Test claim_rewards with transaction options."""
+        with mock_web3_is_address():
+            with patch(
+                "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
+                return_value={
+                    "tx_hash": TX_HASH,
+                    "tx_receipt": {
+                        "logs": [
+                            {
+                                "topics": [
+                                    group.web3.keccak(
+                                        text="ClaimedReward(address,address,address[],uint256[])"
+                                    )
+                                ]
+                            }
+                        ]
+                    },
+                },
+            ) as mock_build_and_send, patch.object(
+                group.grouping_module_client.contract.events.ClaimedReward,
+                "process_log",
+                return_value={
+                    "args": {
+                        "ipId": [IP_ID, ADDRESS],
+                        "amount": [100, 200],
+                        "token": ADDRESS,
+                        "groupId": IP_ID,
+                    }
+                },
+            ):
+                tx_options = {"gas": 200000, "gasPrice": 20000000000}
+                result = group.claim_rewards(
+                    group_ip_id=IP_ID,
+                    currency_token=ADDRESS,
+                    member_ip_ids=[IP_ID, ADDRESS],
+                    tx_options=tx_options,
+                )
+
+                # Verify tx_options were passed to build_and_send_transaction
+                mock_build_and_send.assert_called_once()
+                call_args = mock_build_and_send.call_args
+                assert call_args[1]["tx_options"] == tx_options
+
+                # Verify response with tx_options
+                assert result["tx_hash"] == TX_HASH
+                assert result["claimed_rewards"] == ClaimReward(
+                    ip_ids=[IP_ID, ADDRESS],
+                    amounts=[100, 200],
+                    token=ADDRESS,
+                    group_id=IP_ID,
+                )
+
+    def test_claim_rewards_no_event_found(
+        self,
+        group: Group,
+        mock_web3_is_address,
+    ):
+        """Test claim_rewards when no ClaimedReward event is found."""
+        with mock_web3_is_address():
+            with patch(
+                "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
+                return_value={
+                    "tx_hash": TX_HASH,
+                    "tx_receipt": {
+                        "logs": [
+                            {"topics": [group.web3.keccak(text="DifferentEvent()")]}
+                        ]
+                    },
+                },
+            ), patch.object(
+                group.grouping_module_client.contract.events.ClaimedReward,
+                "process_log",
+                return_value={"args": {}},
+            ):
+                with pytest.raises(
+                    ValueError,
+                    match="Failed to claim rewards: Not found ClaimedReward event in transaction logs.",
+                ):
+                    group.claim_rewards(
+                        group_ip_id=IP_ID,
+                        currency_token=ADDRESS,
+                        member_ip_ids=[IP_ID],
+                    )
+
+    def test_claim_rewards_empty_member_ip_ids(
+        self,
+        group: Group,
+        mock_web3_is_address,
+    ):
+        """Test claim_rewards with empty member IP IDs list."""
+        with mock_web3_is_address():
+            with patch(
+                "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
+                return_value={
+                    "tx_hash": TX_HASH,
+                    "tx_receipt": {
+                        "logs": [
+                            {
+                                "topics": [
+                                    group.web3.keccak(
+                                        text="ClaimedReward(address,address,address[],uint256[])"
+                                    )
+                                ]
+                            }
+                        ]
+                    },
+                },
+            ), patch.object(
+                group.grouping_module_client.contract.events.ClaimedReward,
+                "process_log",
+                return_value={
+                    "args": {
+                        "ipId": [],
+                        "amount": [],
+                        "token": ADDRESS,
+                        "groupId": IP_ID,
+                    }
+                },
+            ):
+                result = group.claim_rewards(
+                    group_ip_id=IP_ID,
+                    currency_token=ADDRESS,
+                    member_ip_ids=[],
+                )
+
+                # Verify response structure
+                assert "tx_hash" in result
+                assert result["tx_hash"] == TX_HASH
+                assert "claimed_rewards" in result
+                assert result["claimed_rewards"] == ClaimReward(
+                    ip_ids=[],
+                    amounts=[],
                     token=ADDRESS,
                     group_id=IP_ID,
                 )

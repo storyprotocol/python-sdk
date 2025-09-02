@@ -571,13 +571,19 @@ class Group:
                 *claim_reward_param.values(),
                 tx_options=tx_options,
             )
-            claimed_rewards = self.grouping_module_client.contract.events.ClaimedReward.process_receipt(
-                response["tx_receipt"]
-            )[
-                0
-            ][
-                "args"
-            ]
+            event_signature = self.web3.keccak(
+                text="ClaimedReward(address,address,address[],uint256[])"
+            ).hex()
+            claimed_rewards = None
+            for log in response["tx_receipt"]["logs"]:
+                if log["topics"][0].hex() == event_signature:
+                    event_result = self.grouping_module_client.contract.events.ClaimedReward.process_log(
+                        log
+                    )
+                    claimed_rewards = event_result["args"]
+                    break
+            if not claimed_rewards:
+                raise ValueError("Not found ClaimedReward event in transaction logs.")
             return ClaimRewardsResponse(
                 tx_hash=response["tx_hash"],
                 claimed_rewards=ClaimReward(

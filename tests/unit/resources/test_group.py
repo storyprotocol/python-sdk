@@ -117,23 +117,12 @@ class TestGroupClaimRewards:
                     }
                 },
             ):
-                # Test without tx_options
                 result = group.claim_rewards(
                     group_ip_id=IP_ID,
                     currency_token=ADDRESS,
                     member_ip_ids=[IP_ID, ADDRESS],
                 )
 
-                # Verify response structure
-                assert "tx_hash" in result
-                assert result["tx_hash"] == TX_HASH
-                assert "claimed_rewards" in result
-                assert result["claimed_rewards"] == ClaimReward(
-                    ip_ids=[IP_ID, ADDRESS],
-                    amounts=[100, 200],
-                    token=ADDRESS,
-                    group_id=IP_ID,
-                )
                 assert result == ClaimRewardsResponse(
                     tx_hash=TX_HASH,
                     claimed_rewards=ClaimReward(

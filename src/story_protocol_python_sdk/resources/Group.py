@@ -626,16 +626,23 @@ class Group:
                 currency_token,
                 tx_options=tx_options,
             )
-            collected_royalties = self.grouping_module_client.contract.events.CollectedRoyaltiesToGroupPool.process_receipt(
-                response["tx_receipt"]
-            )[
-                0
-            ][
-                "args"
-            ]
+
+            event_signature = self.web3.keccak(
+                text="CollectedRoyaltiesToGroupPool(address,address,address,uint256)"
+            ).hex()
+
+            collected_royalties = 0
+            for log in response["tx_receipt"]["logs"]:
+                if log["topics"][0].hex() == event_signature:
+                    event_results = self.grouping_module_client.contract.events.CollectedRoyaltiesToGroupPool.process_log(
+                        log
+                    )
+                    collected_royalties = event_results["args"]["amount"]
+                    break
+
             return CollectRoyaltiesResponse(
                 tx_hash=response["tx_hash"],
-                collected_royalties=collected_royalties["amount"],
+                collected_royalties=collected_royalties,
             )
         except Exception as e:
             raise ValueError(f"Failed to collect royalties: {str(e)}")

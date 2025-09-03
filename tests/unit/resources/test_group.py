@@ -6,6 +6,7 @@ from story_protocol_python_sdk.resources.Group import Group
 from story_protocol_python_sdk.types.resource.Group import (
     ClaimReward,
     ClaimRewardsResponse,
+    CollectRoyaltiesResponse,
 )
 from tests.unit.fixtures.data import ADDRESS, CHAIN_ID, IP_ID, TX_HASH
 
@@ -13,6 +14,135 @@ from tests.unit.fixtures.data import ADDRESS, CHAIN_ID, IP_ID, TX_HASH
 @pytest.fixture(scope="class")
 def group(mock_web3, mock_account):
     return Group(mock_web3, mock_account, CHAIN_ID)
+
+
+class TestGroupCollectRoyalties:
+    """Test class for Group.collect_royalties method"""
+
+    def test_collect_royalties_invalid_group_ip_id(
+        self, group: Group, mock_web3_is_address
+    ):
+        """Test collect_royalties with invalid group IP ID."""
+        invalid_group_ip_id = "invalid_group_ip_id"
+        with mock_web3_is_address(False):
+            with pytest.raises(
+                ValueError,
+                match=f"Failed to collect royalties: Invalid group IP ID: {invalid_group_ip_id}",
+            ):
+                group.collect_royalties(
+                    group_ip_id=invalid_group_ip_id,
+                    currency_token=ADDRESS,
+                )
+
+    def test_collect_royalties_invalid_currency_token(self, group: Group, mock_web3):
+        """Test collect_royalties with invalid currency token."""
+        invalid_currency_token = "invalid_currency_token"
+        with patch.object(mock_web3, "is_address") as mock_is_address:
+            # group_ip_id=True, currency_token=False
+            mock_is_address.side_effect = [True, False]
+            with pytest.raises(
+                ValueError,
+                match=f"Failed to collect royalties: Invalid currency token: {invalid_currency_token}",
+            ):
+                group.collect_royalties(
+                    group_ip_id=IP_ID,
+                    currency_token=invalid_currency_token,
+                )
+
+    def test_collect_royalties_success(
+        self,
+        group: Group,
+        mock_web3_is_address,
+    ):
+        """Test successful collect_royalties operation."""
+        collected_amount = 100
+
+        with mock_web3_is_address():
+            with patch(
+                "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
+                return_value={
+                    "tx_hash": TX_HASH,
+                    "tx_receipt": {
+                        "logs": [
+                            {
+                                "topics": [
+                                    group.web3.keccak(
+                                        text="CollectedRoyaltiesToGroupPool(address,address,address,uint256)"
+                                    )
+                                ]
+                            }
+                        ]
+                    },
+                },
+            ), patch.object(
+                group.grouping_module_client.contract.events.CollectedRoyaltiesToGroupPool,
+                "process_log",
+                return_value={"args": {"amount": collected_amount}},
+            ):
+                result = group.collect_royalties(
+                    group_ip_id=IP_ID,
+                    currency_token=ADDRESS,
+                )
+
+                assert "tx_hash" in result
+                assert result["tx_hash"] == TX_HASH
+                assert "collected_royalties" in result
+                assert result["collected_royalties"] == collected_amount
+                assert result == CollectRoyaltiesResponse(
+                    tx_hash=TX_HASH,
+                    collected_royalties=collected_amount,
+                )
+
+    def test_collect_royalties_no_event_found(
+        self,
+        group: Group,
+        mock_web3_is_address,
+    ):
+        """Test collect_royalties when no CollectedRoyaltiesToGroupPool event is found."""
+        with mock_web3_is_address():
+            with patch(
+                "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
+                return_value={
+                    "tx_hash": TX_HASH,
+                    "tx_receipt": {
+                        "logs": [
+                            {"topics": [group.web3.keccak(text="DifferentEvent()")]}
+                        ]
+                    },
+                },
+            ), patch.object(
+                group.grouping_module_client.contract.events.CollectedRoyaltiesToGroupPool,
+                "process_log",
+                return_value={"args": {"amount": 0}},
+            ):
+                result = group.collect_royalties(
+                    group_ip_id=IP_ID,
+                    currency_token=ADDRESS,
+                )
+
+                # Should return 0 collected royalties when no event is found
+                assert "tx_hash" in result
+                assert result["tx_hash"] == TX_HASH
+                assert "collected_royalties" in result
+                assert result["collected_royalties"] == 0
+
+    def test_collect_royalties_transaction_build_failure(
+        self, group: Group, mock_web3_is_address
+    ):
+        """Test collect_royalties when transaction building fails."""
+        with mock_web3_is_address(True):
+            with patch(
+                "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
+                side_effect=Exception("Transaction build failed"),
+            ):
+                with pytest.raises(
+                    ValueError,
+                    match="Failed to collect royalties: Transaction build failed",
+                ):
+                    group.collect_royalties(
+                        group_ip_id=IP_ID,
+                        currency_token=ADDRESS,
+                    )
 
 
 class TestGroupClaimRewards:

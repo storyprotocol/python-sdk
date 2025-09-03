@@ -422,3 +422,136 @@ class TestGroupClaimRewards:
                         currency_token=ADDRESS,
                         member_ip_ids=[IP_ID],
                     )
+
+
+class TestGroupGetClaimableReward:
+    """Test class for Group.get_claimable_reward method"""
+
+    def test_get_claimable_reward_invalid_group_ip_id(
+        self, group: Group, mock_web3_is_address
+    ):
+        """Test get_claimable_reward with invalid group IP ID."""
+        invalid_group_ip_id = "invalid_group_ip_id"
+        with mock_web3_is_address(False):
+            with pytest.raises(
+                ValueError,
+                match=f"Failed to get claimable rewards: Invalid group IP ID: {invalid_group_ip_id}",
+            ):
+                group.get_claimable_reward(
+                    group_ip_id=invalid_group_ip_id,
+                    currency_token=ADDRESS,
+                    member_ip_ids=[IP_ID],
+                )
+
+    def test_get_claimable_reward_invalid_currency_token(self, group: Group, mock_web3):
+        """Test get_claimable_reward with invalid currency token."""
+        invalid_currency_token = "invalid_currency_token"
+        with patch.object(mock_web3, "is_address") as mock_is_address:
+            # group_ip_id=True, currency_token=False, member_ip_ids=True
+            mock_is_address.side_effect = [True, False]
+            with pytest.raises(
+                ValueError,
+                match=f"Failed to get claimable rewards: Invalid currency token: {invalid_currency_token}",
+            ):
+                group.get_claimable_reward(
+                    group_ip_id=IP_ID,
+                    currency_token=invalid_currency_token,
+                    member_ip_ids=[IP_ID],
+                )
+
+    def test_get_claimable_reward_invalid_member_ip_id(self, group: Group, mock_web3):
+        """Test get_claimable_reward with invalid member IP ID."""
+        invalid_member_ip_id = "invalid_member_ip_id"
+        with patch.object(mock_web3, "is_address") as mock_is_address:
+            # group_ip_id=True, currency_token=True, first_member=True, second_member=False
+            mock_is_address.side_effect = [True, True, True, False]
+            with pytest.raises(
+                ValueError,
+                match=f"Failed to get claimable rewards: Invalid member IP ID: {invalid_member_ip_id}",
+            ):
+                group.get_claimable_reward(
+                    group_ip_id=IP_ID,
+                    currency_token=ADDRESS,
+                    member_ip_ids=[ADDRESS, invalid_member_ip_id],
+                )
+
+    def test_get_claimable_reward_success(
+        self,
+        group: Group,
+        mock_web3_is_address,
+    ):
+        """Test successful get_claimable_reward operation."""
+        expected_claimable_rewards = [100, 200, 300]
+        member_ip_ids = [IP_ID, ADDRESS, ADDRESS]
+
+        with mock_web3_is_address():
+            with patch.object(
+                group.grouping_module_client,
+                "getClaimableReward",
+                return_value=expected_claimable_rewards,
+            ) as mock_get_claimable_reward:
+                result = group.get_claimable_reward(
+                    group_ip_id=IP_ID,
+                    currency_token=ADDRESS,
+                    member_ip_ids=member_ip_ids,
+                )
+
+                # Verify the result
+                assert result == expected_claimable_rewards
+                assert len(result) == len(member_ip_ids)
+                mock_get_claimable_reward.assert_called_once_with(
+                    groupId=IP_ID,
+                    token=ADDRESS,
+                    ipIds=member_ip_ids,
+                )
+
+    def test_get_claimable_reward_empty_member_ip_ids(
+        self,
+        group: Group,
+        mock_web3_is_address,
+    ):
+        """Test get_claimable_reward with empty member IP IDs list."""
+        expected_claimable_rewards: list[int] = []
+
+        with mock_web3_is_address():
+            with patch.object(
+                group.grouping_module_client,
+                "getClaimableReward",
+                return_value=expected_claimable_rewards,
+            ) as mock_get_claimable_reward:
+                result = group.get_claimable_reward(
+                    group_ip_id=IP_ID,
+                    currency_token=ADDRESS,
+                    member_ip_ids=[],
+                )
+
+                # Verify the result
+                assert result == expected_claimable_rewards
+                assert len(result) == 0
+
+                # Verify the client method was called with correct parameters
+                mock_get_claimable_reward.assert_called_once_with(
+                    groupId=IP_ID,
+                    token=ADDRESS,
+                    ipIds=[],
+                )
+
+    def test_get_claimable_reward_client_call_failure(
+        self, group: Group, mock_web3_is_address
+    ):
+        """Test get_claimable_reward when client call fails."""
+        with mock_web3_is_address():
+            with patch.object(
+                group.grouping_module_client,
+                "getClaimableReward",
+                side_effect=Exception("Client call failed"),
+            ):
+                with pytest.raises(
+                    ValueError,
+                    match="Failed to get claimable rewards: Client call failed",
+                ):
+                    group.get_claimable_reward(
+                        group_ip_id=IP_ID,
+                        currency_token=ADDRESS,
+                        member_ip_ids=[IP_ID],
+                    )

@@ -184,7 +184,8 @@
         "addIp",
         "IPGroupRegistered",
         "claimReward",
-        "collectRoyalties"
+        "collectRoyalties",
+        "getClaimableReward"
       ]
     },
     {

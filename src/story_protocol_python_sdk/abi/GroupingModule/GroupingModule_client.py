@@ -66,3 +66,6 @@ class GroupingModuleClient:
         return self.contract.functions.registerGroup(groupPool).build_transaction(
             tx_params
         )
+
+    def getClaimableReward(self, groupId, token, ipIds):
+        return self.contract.functions.getClaimableReward(groupId, token, ipIds).call()

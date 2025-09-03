@@ -307,3 +307,56 @@ class TestCollectRoyaltyAndClaimReward:
         assert len(response["royalties_distributed"]) == 2
         assert response["royalties_distributed"][0]["amount"] == 10
         assert response["royalties_distributed"][1]["amount"] == 10
+
+    def test_get_claimable_reward(
+        self, story_client: StoryClient, nft_collection: Address
+    ):
+        """Test getting claimable rewards for group members."""
+        # Register IP id
+        result1 = GroupTestHelper.mint_and_register_ip_asset_with_pil_terms(
+            story_client, nft_collection
+        )
+        ip_id1 = result1["ip_id"]
+        license_terms_id1 = result1["license_terms_id"]
+        result2 = GroupTestHelper.mint_and_register_ip_asset_with_pil_terms(
+            story_client, nft_collection
+        )
+        ip_id2 = result2["ip_id"]
+        license_terms_id2 = result2["license_terms_id"]
+
+        # Register group id
+        group_ip_id = GroupTestHelper.register_group_and_attach_license(
+            story_client, license_terms_id1, [ip_id1, ip_id2]
+        )
+        # Create a derivative IP and pay royalties
+        child_ip_id = GroupTestHelper.mint_and_register_ip_and_make_derivative(
+            story_client, nft_collection, group_ip_id, license_terms_id1
+        )
+        child_ip_id2 = GroupTestHelper.mint_and_register_ip_and_make_derivative(
+            story_client, nft_collection, group_ip_id, license_terms_id2
+        )
+
+        # Pay royalties from group IP id to child IP id
+        GroupTestHelper.pay_royalty_and_transfer_to_vault(
+            story_client, child_ip_id, group_ip_id, MockERC20, 100
+        )
+        GroupTestHelper.pay_royalty_and_transfer_to_vault(
+            story_client, child_ip_id2, group_ip_id, MockERC20, 100
+        )
+
+        # Collect royalties
+        story_client.Group.collect_royalties(
+            group_ip_id=group_ip_id,
+            currency_token=MockERC20,
+        )
+        # Get claimable rewards after royalties are collected
+        claimable_rewards = story_client.Group.get_claimable_reward(
+            group_ip_id=group_ip_id,
+            currency_token=MockERC20,
+            member_ip_ids=[ip_id1, ip_id2],
+        )
+
+        assert isinstance(claimable_rewards, list)
+        assert len(claimable_rewards) == 2
+        assert claimable_rewards[0] == 10
+        assert claimable_rewards[1] == 10

@@ -647,6 +647,40 @@ class Group:
         except Exception as e:
             raise ValueError(f"Failed to collect royalties: {str(e)}")
 
+    def get_claimable_reward(
+        self,
+        group_ip_id: Address,
+        currency_token: Address,
+        member_ip_ids: list[Address],
+    ) -> list[int]:
+        """
+        Returns the available reward for each IP in the group.
+
+         :param group_ip_id Address: The ID of the group IP.
+         :param currency_token Address: The address of the currency (revenue) token to check.
+         :param member_ip_ids list[Address]: The IDs of the member IPs to check claimable rewards for.
+         :return list[int]: A list of claimable reward amounts corresponding to each member IP ID.
+        """
+        try:
+            if not self.web3.is_address(group_ip_id):
+                raise ValueError(f"Invalid group IP ID: {group_ip_id}")
+            if not self.web3.is_address(currency_token):
+                raise ValueError(f"Invalid currency token: {currency_token}")
+            for ip_id in member_ip_ids:
+                if not self.web3.is_address(ip_id):
+                    raise ValueError(f"Invalid member IP ID: {ip_id}")
+
+            claimable_rewards = self.grouping_module_client.getClaimableReward(
+                groupId=group_ip_id,
+                token=currency_token,
+                ipIds=member_ip_ids,
+            )
+
+            return claimable_rewards
+
+        except Exception as e:
+            raise ValueError(f"Failed to get claimable rewards: {str(e)}")
+
     def _get_license_data(self, license_data: list) -> list:
         """
         Process license data into the format expected by the contracts.

@@ -549,22 +549,16 @@ class TestCollectRoyaltyAndClaimReward:
         story_client.Group.collect_and_distribute_group_royalties(
             group_ip_id=group_ip_id, currency_tokens=[MockERC20], member_ip_ids=ip_ids
         )
-
         # Test claiming rewards for specific members
         response = story_client.Group.claim_rewards(
             group_ip_id=group_ip_id,
             currency_token=MockERC20,
             member_ip_ids=ip_ids,
         )
-        # Verify response structure
         assert "tx_hash" in response
         assert isinstance(response["tx_hash"], str)
-        assert len(response["tx_hash"]) > 0
-
-        # Verify claimed rewards details if any are present
-        if response["claimed_rewards"]:
-            for reward in response["claimed_rewards"]:
-                assert "amount" in reward
-                assert isinstance(reward["amount"], int)
-                assert "token" in reward
-                assert story_client.web3.is_address(reward["token"])
+        assert "claimed_rewards" in response
+        assert len(response["claimed_rewards"]["ip_ids"]) == 2
+        assert len(response["claimed_rewards"]["amounts"]) == 2
+        assert response["claimed_rewards"]["token"] == MockERC20
+        assert response["claimed_rewards"]["group_id"] == group_ip_id

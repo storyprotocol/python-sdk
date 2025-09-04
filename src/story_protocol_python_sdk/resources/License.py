@@ -1,6 +1,4 @@
-# src/story_protcol_python_sdk/resources/License.py
-
-from ens.ens import HexStr
+from ens.ens import Address, HexStr
 from web3 import Web3
 
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import (
@@ -21,8 +19,15 @@ from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client im
 from story_protocol_python_sdk.types.common import RevShareType
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
+from story_protocol_python_sdk.utils.licensing_config_data import (
+    LicensingConfig,
+    LicensingConfigData,
+)
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
-from story_protocol_python_sdk.utils.validation import get_revenue_share
+from story_protocol_python_sdk.utils.validation import (
+    get_revenue_share,
+    validate_address,
+)
 
 
 class License:
@@ -522,7 +527,7 @@ class License:
         self,
         ip_id: str,
         license_terms_id: int,
-        licensing_config: dict,
+        licensing_config: LicensingConfig,
         license_template: str | None = None,
         tx_options: dict | None = None,
     ) -> dict:
@@ -531,85 +536,35 @@ class License:
 
         :param ip_id str: The address of the IP for which the configuration is being set.
         :param license_terms_id int: The ID of the license terms within the license template.
-        :param licensing_config dict: The licensing configuration for the license.
-            :param isSet bool: Whether the configuration is set or not.
-            :param mintingFee int: The minting fee to be paid when minting license tokens.
-            :param hookData str: The data to be used by the licensing hook.
-            :param licensingHook str: The hook contract address for the licensing module, or address(0) if none.
-            :param commercialRevShare int: The commercial revenue share percentage.
-            :param disabled bool: Whether the license is disabled or not.
-            :param expectMinimumGroupRewardShare int: The minimum percentage of the group's reward share (0-100%, as 100 * 10^6).
-            :param expectGroupRewardPool str: The address of the expected group reward pool.
+        :param licensing_config `LicensingConfig`: The licensing configuration for the license.
         :param license_template str: [Optional] The address of the license template used. If not specified, config applies to all licenses.
         :param tx_options dict: [Optional] Transaction options.
         :return dict: A dictionary containing the transaction hash and success status.
         """
         try:
-            # Input validation
-            required_params = {
-                "isSet",
-                "mintingFee",
-                "hookData",
-                "licensingHook",
-                "commercialRevShare",
-                "disabled",
-                "expectMinimumGroupRewardShare",
-                "expectGroupRewardPool",
-            }
-
-            # Check for missing parameters
-            missing_params = required_params - set(licensing_config.keys())
-            if missing_params:
-                raise ValueError(
-                    f"Missing required licensing_config parameters: {', '.join(missing_params)}. "
-                    f"All parameters must be explicitly provided."
-                )
-
-            licensing_config["commercialRevShare"] = (
-                self.license_terms_util.get_revenue_share(
-                    licensing_config["commercialRevShare"]
-                )
+            validated_licensing_config = LicensingConfigData.validate_license_config(
+                self.module_registry_client, licensing_config
             )
-
-            if licensing_config["mintingFee"] < 0:
-                raise ValueError("The minting fee must be greater than 0.")
-
-            if not license_template:
-                license_template = ZERO_ADDRESS
+            if license_template is None:
+                license_template = self.license_template_client.contract.address
+            else:
+                validate_address(license_template)
 
             if (
                 license_template == ZERO_ADDRESS
-                and licensing_config["commercialRevShare"] != 0
+                and validated_licensing_config["commercialRevShare"] != 0
             ):
                 raise ValueError(
                     "The license template cannot be zero address if commercial revenue share is not zero."
                 )
 
-            # Convert addresses to checksum format
-            ip_id = self.web3.to_checksum_address(ip_id)
-            if license_template:
-                license_template = self.web3.to_checksum_address(license_template)
-            licensing_config["licensingHook"] = self.web3.to_checksum_address(
-                licensing_config["licensingHook"]
-            )
-            licensing_config["expectGroupRewardPool"] = self.web3.to_checksum_address(
-                licensing_config["expectGroupRewardPool"]
-            )
-
             # Check if IP is registered
-            if not self.ip_asset_registry_client.isRegistered(ip_id):
+            if not self.ip_asset_registry_client.isRegistered(validate_address(ip_id)):
                 raise ValueError(f"The licensor IP with id {ip_id} is not registered.")
 
             # Check if license terms exist
             if not self.license_template_client.exists(license_terms_id):
                 raise ValueError(f"License terms id {license_terms_id} does not exist.")
-
-            # Check if licensing hook is registered if provided
-            if licensing_config["licensingHook"] != ZERO_ADDRESS:
-                if not self.module_registry_client.isRegistered(
-                    licensing_config["licensingHook"]
-                ):
-                    raise ValueError("The licensing hook is not registered.")
 
             if license_template == ZERO_ADDRESS and license_terms_id != 0:
                 raise ValueError(
@@ -623,7 +578,7 @@ class License:
                 ip_id,
                 license_template,
                 license_terms_id,
-                licensing_config,
+                validated_licensing_config,
                 tx_options=tx_options,
             )
 
@@ -634,3 +589,36 @@ class License:
 
         except Exception as e:
             raise ValueError(f"Failed to set licensing config: {str(e)}")
+
+    def get_licensing_config(
+        self,
+        ip_id: Address,
+        license_terms_id: int,
+        license_template: Address | None = None,
+    ) -> LicensingConfig:
+        """
+        Gets the licensing configuration for a specific license terms of an IP.
+
+        :param ip_id Address: The address of the IP for which the configuration is being retrieved.
+        :param license_terms_id int: The ID of the license terms within the license template.
+        :param license_template Address: [Optional] The address of the license template.
+            Defaults to visit https://docs.story.foundation/docs/programmable-ip-license for more information if not provided.
+        :return LicensingConfig: A dictionary containing the licensing configuration.
+        """
+        try:
+            if not self.web3.is_address(ip_id):
+                raise ValueError(f"Invalid IP id address: {ip_id}")
+
+            if license_template is None:
+                license_template = self.license_template_client.contract.address
+            else:
+                validate_address(license_template)
+
+            licensing_config = self.license_registry_client.getLicensingConfig(
+                ip_id, license_template, license_terms_id
+            )
+
+            return LicensingConfigData.from_tuple(licensing_config)
+
+        except Exception as e:
+            raise ValueError(f"Failed to get licensing config: {str(e)}")

@@ -3,6 +3,9 @@ from typing import TypedDict
 
 from ens.ens import Address, HexStr
 
+from story_protocol_python_sdk.abi.ModuleRegistry.ModuleRegistry_client import (
+    ModuleRegistryClient,
+)
 from story_protocol_python_sdk.types.common import RevShareType
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
 from story_protocol_python_sdk.utils.validation import (
@@ -86,7 +89,9 @@ class LicensingConfigData:
 
     @classmethod
     def validate_license_config(
-        cls, licensing_config: LicensingConfig | None = None
+        cls,
+        module_registry_client: ModuleRegistryClient,
+        licensing_config: LicensingConfig | None = None,
     ) -> ValidatedLicensingConfig:
         """
         Validates and normalizes licensing configuration.
@@ -115,7 +120,12 @@ class LicensingConfigData:
             )
 
         if licensing_config["minting_fee"] < 0:
-            raise ValueError("The minting_fee must be greater than 0.")
+            raise ValueError("The minting fee must be greater than 0.")
+        if licensing_config["licensing_hook"] != ZERO_ADDRESS:
+            if not module_registry_client.isRegistered(
+                licensing_config["licensing_hook"]
+            ):
+                raise ValueError("The licensing hook is not registered.")
 
         return ValidatedLicensingConfig(
             isSet=licensing_config["is_set"],

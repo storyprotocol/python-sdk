@@ -41,6 +41,21 @@ class LicensingConfig(TypedDict):
     expect_group_reward_pool: Address
 
 
+class ValidatedLicensingConfig(TypedDict):
+    """
+    Validated licensing configuration.
+    """
+
+    isSet: bool
+    mintingFee: int
+    licensingHook: Address
+    hookData: HexStr
+    commercialRevShare: int
+    disabled: bool
+    expectMinimumGroupRewardShare: int
+    expectGroupRewardPool: Address
+
+
 @dataclass
 class LicensingConfigData:
     """
@@ -72,7 +87,7 @@ class LicensingConfigData:
     @classmethod
     def validate_license_config(
         cls, licensing_config: LicensingConfig | None = None
-    ) -> LicensingConfig:
+    ) -> ValidatedLicensingConfig:
         """
         Validates and normalizes licensing configuration.
 
@@ -88,34 +103,34 @@ class LicensingConfigData:
             ValueError: If validation fails for any field
         """
         if licensing_config is None:
-            return LicensingConfig(
-                is_set=False,
-                minting_fee=0,
-                licensing_hook=ZERO_ADDRESS,
-                hook_data=ZERO_HASH,
-                commercial_rev_share=0,
+            return ValidatedLicensingConfig(
+                isSet=False,
+                mintingFee=0,
+                licensingHook=ZERO_ADDRESS,
+                hookData=ZERO_HASH,
+                commercialRevShare=0,
                 disabled=False,
-                expect_minimum_group_reward_share=0,
-                expect_group_reward_pool=ZERO_ADDRESS,
+                expectMinimumGroupRewardShare=0,
+                expectGroupRewardPool=ZERO_ADDRESS,
             )
 
         if licensing_config["minting_fee"] < 0:
             raise ValueError("The minting_fee must be greater than 0.")
 
-        return LicensingConfig(
-            is_set=licensing_config["is_set"],
-            minting_fee=licensing_config["minting_fee"],
-            licensing_hook=validate_address(licensing_config["licensing_hook"]),
-            hook_data=licensing_config["hook_data"],
-            commercial_rev_share=get_revenue_share(
+        return ValidatedLicensingConfig(
+            isSet=licensing_config["is_set"],
+            mintingFee=licensing_config["minting_fee"],
+            licensingHook=validate_address(licensing_config["licensing_hook"]),
+            hookData=licensing_config["hook_data"],
+            commercialRevShare=get_revenue_share(
                 licensing_config["commercial_rev_share"]
             ),
             disabled=licensing_config["disabled"],
-            expect_minimum_group_reward_share=get_revenue_share(
+            expectMinimumGroupRewardShare=get_revenue_share(
                 licensing_config["expect_minimum_group_reward_share"],
                 RevShareType.EXPECT_MINIMUM_GROUP_REWARD_SHARE,
             ),
-            expect_group_reward_pool=validate_address(
+            expectGroupRewardPool=validate_address(
                 licensing_config["expect_group_reward_pool"]
             ),
         )

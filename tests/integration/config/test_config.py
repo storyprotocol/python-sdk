@@ -7,11 +7,9 @@ from web3 import Web3
 load_dotenv(override=True)
 private_key = os.getenv("WALLET_PRIVATE_KEY")
 private_key_2 = os.getenv("WALLET_PRIVATE_KEY_2")
-private_key_3 = os.getenv("WALLET_PRIVATE_KEY_3")
 rpc_url = os.getenv("RPC_PROVIDER_URL")
 wallet_address = os.getenv("WALLET_ADDRESS")
 wallet_address_2 = os.getenv("WALLET_ADDRESS_2")
-wallet_address_3 = os.getenv("WALLET_ADDRESS_3")
 
 if not private_key:
     raise ValueError("WALLET_PRIVATE_KEY environment variable is not set")
@@ -26,7 +24,6 @@ if not web3.is_connected():
 # Set up the account with the private key
 account = web3.eth.account.from_key(private_key)
 account_2 = web3.eth.account.from_key(private_key_2)
-account_3 = web3.eth.account.from_key(private_key_3)
 
 # Export all configuration
 __all__ = [
@@ -35,8 +32,6 @@ __all__ = [
     "account_2",
     "wallet_address",
     "wallet_address_2",
-    "wallet_address_3",
     "private_key",
     "private_key_2",
-    "private_key_3",
 ]

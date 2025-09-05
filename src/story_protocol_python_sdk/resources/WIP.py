@@ -55,7 +55,7 @@ class WIP:
             return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
-            raise ValueError(str(e))
+            raise ValueError(f"Failed to deposit IP for WIP: {str(e)}")
 
     def withdraw(self, amount: int, tx_options: dict | None = None) -> dict:
         """
@@ -80,7 +80,7 @@ class WIP:
             return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
-            raise ValueError(str(e))
+            raise ValueError(f"Failed to withdraw WIP: {str(e)}")
 
     def approve(
         self, spender: str, amount: int, tx_options: dict | None = None
@@ -116,7 +116,7 @@ class WIP:
             return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
-            raise ValueError(str(e))
+            raise ValueError(f"Failed to approve WIP: {str(e)}")
 
     def balance_of(self, address: str) -> int:
         """
@@ -133,7 +133,7 @@ class WIP:
             return self.wip_client.balanceOf(address)
 
         except Exception as e:
-            raise ValueError(str(e))
+            raise ValueError(f"Failed to get WIP balance: {str(e)}")
 
     def transfer(self, to: str, amount: int, tx_options: dict | None = None) -> dict:
         """
@@ -168,7 +168,7 @@ class WIP:
             return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
-            raise ValueError(str(e))
+            raise ValueError(f"Failed to transfer WIP: {str(e)}")
 
     def transfer_from(
         self, from_address: str, to: str, amount: int, tx_options: dict | None = None
@@ -211,7 +211,7 @@ class WIP:
             return {"tx_hash": response["tx_hash"]}
 
         except Exception as e:
-            raise ValueError(str(e))
+            raise ValueError(f"Failed to transfer WIP from another address: {str(e)}")
 
     def allowance(self, owner: str, spender: str) -> int:
         """
@@ -234,4 +234,4 @@ class WIP:
             return self.wip_client.allowance(owner, spender)
 
         except Exception as e:
-            raise ValueError(str(e))
+            raise ValueError(f"Failed to get allowance: {str(e)}")

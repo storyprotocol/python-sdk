@@ -14,8 +14,6 @@ from story_protocol_python_sdk.utils.constants import (
 from tests.integration.config.test_config import account, account_2, web3
 from tests.integration.config.utils import MockERC20, approve, get_story_client
 from tests.integration.setup_for_integration import PIL_LICENSE_TEMPLATE
-from tests.integration.config.test_config import account, account_2, account_3, web3
-from tests.integration.config.utils import get_story_client
 
 
 @pytest.fixture(scope="session")
@@ -126,9 +124,3 @@ def mint_and_approve_license_token(
         )
 
     return license_token_ids
-
-
-@pytest.fixture(scope="session")
-def story_client_3() -> StoryClient:
-    """Fixture to provide the secondary story client"""
-    return get_story_client(web3, account_3)

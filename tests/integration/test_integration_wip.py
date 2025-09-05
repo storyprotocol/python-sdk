@@ -52,7 +52,7 @@ class TestWIPTransfer:
 
     def test_transfer(self, story_client: StoryClient):
         """Test transferring WIP"""
-        transfer_amount = web3.to_wei("0.01", "ether")
+        transfer_amount = web3.to_wei(1, "wei")
 
         # Get balances before transfer
         sender_wip_before = story_client.WIP.balance_of(wallet_address_str)
@@ -62,7 +62,6 @@ class TestWIPTransfer:
         if sender_wip_before < transfer_amount:
             story_client.WIP.deposit(
                 amount=transfer_amount - sender_wip_before,
-                tx_options={"waitForTransaction": True},
             )
 
         sender_wip_before = story_client.WIP.balance_of(wallet_address_str)

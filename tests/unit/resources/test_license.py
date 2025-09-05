@@ -1,3 +1,4 @@
+from typing import Callable
 from unittest.mock import patch
 
 import pytest
@@ -12,7 +13,7 @@ from tests.unit.resources.test_ip_account import ZERO_HASH
 
 
 @fixture
-def license(mock_web3, mock_account):
+def license(mock_web3, mock_account) -> License:
     return License(web3=mock_web3, account=mock_account, chain_id=CHAIN_ID)
 
 
@@ -54,7 +55,7 @@ class TestPILTermsRegistration:
             assert response["license_terms_id"] == 1
             assert "tx_hash" not in response
 
-    def test_register_pil_terms_success(self, license):
+    def test_register_pil_terms_success(self, license: License):
         with patch.object(
             license.license_template_client, "getLicenseTermsId", return_value=0
         ), patch.object(
@@ -100,7 +101,9 @@ class TestPILTermsRegistration:
             assert response["tx_hash"] == TX_HASH.hex()
             assert isinstance(response["tx_hash"], str)
 
-    def test_register_pil_terms_commercial_rev_share_error_more_than_100(self, license):
+    def test_register_pil_terms_commercial_rev_share_error_more_than_100(
+        self, license: License
+    ):
         with patch.object(
             license.license_template_client, "getLicenseTermsId", return_value=0
         ), patch.object(
@@ -136,7 +139,9 @@ class TestPILTermsRegistration:
                     uri="",
                 )
 
-    def test_register_pil_terms_commercial_rev_share_error_less_than_0(self, license):
+    def test_register_pil_terms_commercial_rev_share_error_less_than_0(
+        self, license: License
+    ):
         with patch.object(
             license.license_template_client, "getLicenseTermsId", return_value=0
         ), patch.object(
@@ -177,7 +182,7 @@ class TestNonComSocialRemixingPIL:
     """Tests for non-commercial social remixing PIL functionality."""
 
     def test_register_non_com_social_remixing_pil_license_terms_id_registered(
-        self, license
+        self, license: License
     ):
         with patch.object(
             license.license_template_client, "getLicenseTermsId", return_value=1
@@ -186,7 +191,7 @@ class TestNonComSocialRemixingPIL:
             assert response["license_terms_id"] == 1
             assert "tx_hash" not in response
 
-    def test_register_non_com_social_remixing_pil_success(self, license):
+    def test_register_non_com_social_remixing_pil_success(self, license: License):
         with patch.object(
             license.license_template_client, "getLicenseTermsId", return_value=0
         ), patch.object(
@@ -209,7 +214,7 @@ class TestNonComSocialRemixingPIL:
             assert "license_terms_id" in response
             assert response["license_terms_id"] == 1
 
-    def test_register_non_com_social_remixing_pil_error(self, license):
+    def test_register_non_com_social_remixing_pil_error(self, license: License):
         with patch.object(
             license.license_template_client, "getLicenseTermsId", return_value=0
         ), patch.object(
@@ -229,7 +234,9 @@ class TestNonComSocialRemixingPIL:
 class TestCommercialUsePIL:
     """Tests for commercial use PIL functionality."""
 
-    def test_register_commercial_use_pil_license_terms_id_registered(self, license):
+    def test_register_commercial_use_pil_license_terms_id_registered(
+        self, license: License
+    ):
         with patch.object(
             license.license_template_client, "getLicenseTermsId", return_value=1
         ):
@@ -267,7 +274,7 @@ class TestCommercialUsePIL:
             assert response["tx_hash"] == TX_HASH.hex()
             assert isinstance(response["tx_hash"], str)
 
-    def test_register_commercial_use_pil_error(self, license):
+    def test_register_commercial_use_pil_error(self, license: License):
         with patch.object(
             license.license_template_client, "getLicenseTermsId", return_value=0
         ), patch.object(
@@ -288,7 +295,9 @@ class TestCommercialUsePIL:
 class TestCommercialRemixPIL:
     """Tests for commercial remix PIL functionality."""
 
-    def test_register_commercial_remix_pil_license_terms_id_registered(self, license):
+    def test_register_commercial_remix_pil_license_terms_id_registered(
+        self, license: License
+    ):
         with patch.object(
             license.license_template_client, "getLicenseTermsId", return_value=1
         ), patch.object(
@@ -340,7 +349,7 @@ class TestCommercialRemixPIL:
 class TestLicenseAttachment:
     """Tests for license attachment functionality."""
 
-    def test_attach_license_terms_ip_not_registered(self, license):
+    def test_attach_license_terms_ip_not_registered(self, license: License):
         with patch.object(
             license.ip_asset_registry_client, "isRegistered", return_value=False
         ):
@@ -353,7 +362,7 @@ class TestLicenseAttachment:
                     license_terms_id=1,
                 )
 
-    def test_attach_license_terms_license_terms_not_exist(self, license):
+    def test_attach_license_terms_license_terms_not_exist(self, license: License):
         with patch.object(
             license.ip_asset_registry_client, "isRegistered", return_value=True
         ), patch.object(license.license_registry_client, "exists", return_value=False):
@@ -384,7 +393,7 @@ class TestLicenseAttachment:
                     license_terms_id=1,
                 )
 
-    def test_attach_license_terms_success(self, license):
+    def test_attach_license_terms_success(self, license: License):
         with patch.object(
             license.ip_asset_registry_client, "isRegistered", return_value=True
         ), patch.object(
@@ -418,7 +427,7 @@ class TestLicenseAttachment:
 class TestLicenseTokens:
     """Tests for license token minting functionality."""
 
-    def test_mint_license_tokens_licensor_ip_not_registered(self, license):
+    def test_mint_license_tokens_licensor_ip_not_registered(self, license: License):
         with patch.object(
             license.ip_asset_registry_client, "isRegistered", return_value=False
         ):
@@ -434,7 +443,7 @@ class TestLicenseTokens:
                     receiver=ZERO_ADDRESS,
                 )
 
-    def test_mint_license_tokens_license_terms_not_exist(self, license):
+    def test_mint_license_tokens_license_terms_not_exist(self, license: License):
         with patch.object(
             license.ip_asset_registry_client, "isRegistered", return_value=True
         ), patch.object(license.license_template_client, "exists", return_value=False):
@@ -447,7 +456,7 @@ class TestLicenseTokens:
                     receiver=ZERO_ADDRESS,
                 )
 
-    def test_mint_license_tokens_not_attached(self, license):
+    def test_mint_license_tokens_not_attached(self, license: License):
         with patch.object(
             license.ip_asset_registry_client, "isRegistered", return_value=True
         ), patch.object(
@@ -469,7 +478,7 @@ class TestLicenseTokens:
                     receiver=ZERO_ADDRESS,
                 )
 
-    def test_mint_license_tokens_invalid_template(self, license):
+    def test_mint_license_tokens_invalid_template(self, license: License):
         with patch.object(
             license.ip_asset_registry_client, "isRegistered", return_value=True
         ):
@@ -495,7 +504,7 @@ class TestLicenseTokens:
                     receiver="invalid address",
                 )
 
-    def test_mint_license_tokens_success(self, license):
+    def test_mint_license_tokens_success(self, license: License):
         with patch.object(
             license.ip_asset_registry_client, "isRegistered", return_value=True
         ), patch.object(
@@ -533,7 +542,7 @@ class TestLicenseTokens:
 class TestLicenseTerms:
     """Tests for retrieving license terms."""
 
-    def test_get_license_terms_success(self, license):
+    def test_get_license_terms_success(self, license: License):
         mock_response = {
             "terms": {
                 "transferable": True,
@@ -563,7 +572,7 @@ class TestLicenseTerms:
             response = license.get_license_terms(1)
             assert response == mock_response
 
-    def test_get_license_terms_not_exist(self, license):
+    def test_get_license_terms_not_exist(self, license: License):
         with patch.object(
             license.license_template_client,
             "getLicenseTerms",
@@ -577,8 +586,8 @@ class TestLicenseTerms:
 
 
 @fixture
-def patch_is_registered(license):
-    def _patch(is_registered=True):
+def patch_is_registered(license: License) -> Callable:
+    def _patch(is_registered: bool = True):
         return patch.object(
             license.ip_asset_registry_client, "isRegistered", return_value=is_registered
         )
@@ -587,8 +596,8 @@ def patch_is_registered(license):
 
 
 @fixture
-def patch_exists(license):
-    def _patch(exists=True):
+def patch_exists(license: License) -> Callable:
+    def _patch(exists: bool = True):
         return patch.object(
             license.license_template_client, "exists", return_value=exists
         )
@@ -597,8 +606,8 @@ def patch_exists(license):
 
 
 @fixture
-def patch_has_ip_attached_license_terms(license):
-    def _patch(has_ip_attached_license_terms=True):
+def patch_has_ip_attached_license_terms(license: License) -> Callable:
+    def _patch(has_ip_attached_license_terms: bool = True):
         return patch.object(
             license.license_registry_client,
             "hasIpAttachedLicenseTerms",
@@ -835,7 +844,7 @@ class TestSetLicensingConfig:
 
     def test_set_licensing_config_zero_address_template_with_non_zero_rev_share(
         self,
-        license: License,
+        license,
         default_licensing_config: LicensingConfig,
     ):
         """Test validation error when license template is zero address but commercial revenue share is not zero."""
@@ -1043,3 +1052,139 @@ class TestSetLicensingConfig:
                 "gasPrice": 1,
                 "nonce": 3,
             }
+
+
+class TestGetLicensingConfig:
+    """Tests for getLicensingConfig functionality."""
+
+    def test_get_licensing_config_invalid_ip_id_address(self, license: License):
+        """Test validation error when IP ID is not a valid address."""
+        with pytest.raises(
+            ValueError,
+            match="Failed to get licensing config: Invalid address: invalid_address.",
+        ):
+            license.get_licensing_config(
+                ip_id="invalid_address",
+                license_terms_id=1,
+            )
+
+    def test_get_licensing_config_invalid_license_template_address(
+        self, license: License
+    ):
+        """Test validation error when license template is not a valid address."""
+        with pytest.raises(
+            ValueError,
+            match="Failed to get licensing config: Invalid address: invalid_template",
+        ):
+            license.get_licensing_config(
+                ip_id=ZERO_ADDRESS,
+                license_terms_id=1,
+                license_template="invalid_template",
+            )
+
+    def test_get_licensing_config_success_with_default_template(self, license: License):
+        """Test successful licensing config retrieval with default license template."""
+        mock_tuple_data = (
+            True,  # is_set
+            100,  # minting_fee
+            ZERO_ADDRESS,  # licensing_hook
+            ZERO_HASH,  # hook_data
+            10 * 10**6,  # commercial_rev_share (converted to raw value)
+            False,  # disabled
+            50 * 10**6,  # expect_minimum_group_reward_share (converted to raw value)
+            ZERO_ADDRESS,  # expect_group_reward_pool
+        )
+
+        with patch.object(
+            license.license_registry_client,
+            "getLicensingConfig",
+            return_value=mock_tuple_data,
+        ) as mock_get_licensing_config:
+            result = license.get_licensing_config(
+                ip_id=ZERO_ADDRESS,
+                license_terms_id=1,
+            )
+
+            # Verify the correct parameters were passed to the contract call
+            mock_get_licensing_config.assert_called_once_with(
+                ZERO_ADDRESS, license.license_template_client.contract.address, 1
+            )
+
+            # Verify the returned LicensingConfig structure
+            expected_config = {
+                "is_set": True,
+                "minting_fee": 100,
+                "licensing_hook": ZERO_ADDRESS,
+                "hook_data": ZERO_HASH,
+                "commercial_rev_share": 10 * 10**6,
+                "disabled": False,
+                "expect_minimum_group_reward_share": 50 * 10**6,
+                "expect_group_reward_pool": ZERO_ADDRESS,
+            }
+
+            assert result == expected_config
+            assert isinstance(result, dict)
+            assert len(result) == 8
+
+    def test_get_licensing_config_success_with_custom_template(self, license: License):
+        """Test successful licensing config retrieval with custom license template."""
+        custom_template = "0x1234567890123456789012345678901234567890"
+        mock_tuple_data = (
+            False,  # is_set
+            0,  # minting_fee
+            ZERO_ADDRESS,  # licensing_hook
+            "0x",  # hook_data
+            0,  # commercial_rev_share
+            True,  # disabled
+            0,  # expect_minimum_group_reward_share
+            ZERO_ADDRESS,  # expect_group_reward_pool
+        )
+
+        with patch.object(
+            license.license_registry_client,
+            "getLicensingConfig",
+            return_value=mock_tuple_data,
+        ) as mock_get_licensing_config:
+            result = license.get_licensing_config(
+                ip_id=ZERO_ADDRESS,
+                license_terms_id=1,
+                license_template=custom_template,
+            )
+
+            # Verify the correct template was passed to the contract call
+            mock_get_licensing_config.assert_called_once_with(
+                ZERO_ADDRESS, custom_template, 1
+            )
+
+            # Verify the returned LicensingConfig structure
+            expected_config = {
+                "is_set": False,
+                "minting_fee": 0,
+                "licensing_hook": ZERO_ADDRESS,
+                "hook_data": "0x",
+                "commercial_rev_share": 0,
+                "disabled": True,
+                "expect_minimum_group_reward_share": 0,
+                "expect_group_reward_pool": ZERO_ADDRESS,
+            }
+
+            assert result == expected_config
+            assert isinstance(result, dict)
+            assert result["disabled"] is True
+            assert result["is_set"] is False
+
+    def test_get_licensing_config_contract_call_failure(self, license: License):
+        """Test error handling when contract call fails."""
+        with patch.object(
+            license.license_registry_client,
+            "getLicensingConfig",
+            side_effect=Exception("Contract call failed"),
+        ):
+            with pytest.raises(
+                ValueError,
+                match="Failed to get licensing config: Contract call failed",
+            ):
+                license.get_licensing_config(
+                    ip_id=ZERO_ADDRESS,
+                    license_terms_id=1,
+                )

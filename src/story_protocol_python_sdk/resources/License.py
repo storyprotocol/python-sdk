@@ -602,8 +602,7 @@ class License:
         :return LicensingConfig: A dictionary containing the licensing configuration.
         """
         try:
-            if not self.web3.is_address(ip_id):
-                raise ValueError(f"Invalid IP id address: {ip_id}")
+            validate_address(ip_id)
 
             if license_template is None:
                 license_template = self.license_template_client.contract.address

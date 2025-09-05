@@ -28,6 +28,7 @@ from .utils.constants import (
 )
 from .utils.derivative_data import DerivativeDataInput
 from .utils.ip_metadata import IPMetadataInput
+from .utils.licensing_config_data import LicensingConfig
 
 __all__ = [
     "StoryClient",
@@ -45,6 +46,7 @@ __all__ = [
     "ClaimRewardsResponse",
     "ClaimReward",
     "CollectRoyaltiesResponse",
+    "LicensingConfig",
     "RegisterPILTermsAndAttachResponse",
     # Constants
     "ZERO_ADDRESS",

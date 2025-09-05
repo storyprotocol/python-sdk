@@ -44,6 +44,7 @@ def mock_web3():
     mock_web3.eth.wait_for_transaction_receipt = MagicMock(
         return_value={"status": 1, "logs": []}
     )
+    mock_web3.to_wei = MagicMock(return_value=1)
     return mock_web3
 
 

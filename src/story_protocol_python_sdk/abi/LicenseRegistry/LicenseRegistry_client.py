@@ -39,6 +39,11 @@ class LicenseRegistryClient:
     def exists(self, licenseTemplate, licenseTermsId):
         return self.contract.functions.exists(licenseTemplate, licenseTermsId).call()
 
+    def getLicensingConfig(self, ipId, licenseTemplate, licenseTermsId):
+        return self.contract.functions.getLicensingConfig(
+            ipId, licenseTemplate, licenseTermsId
+        ).call()
+
     def getRoyaltyPercent(self, ipId, licenseTemplate, licenseTermsId):
         return self.contract.functions.getRoyaltyPercent(
             ipId, licenseTemplate, licenseTermsId

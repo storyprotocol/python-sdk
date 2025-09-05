@@ -1,8 +1,8 @@
-# tests/integration/test_integration_license.py
-
 import pytest
 
 from story_protocol_python_sdk.story_client import StoryClient
+from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
+from story_protocol_python_sdk.utils.licensing_config_data import LicensingConfig
 
 from .setup_for_integration import (
     PIL_LICENSE_TEMPLATE,
@@ -217,38 +217,6 @@ def test_predict_minting_license_fee(
     assert isinstance(response["amount"], int), "'amount' is not an integer."
 
 
-def test_set_licensing_config(
-    story_client: StoryClient, ip_id, register_commercial_remix_pil
-):
-    licensing_config = {
-        "mintingFee": 1,
-        "isSet": True,
-        "licensingHook": "0x0000000000000000000000000000000000000000",
-        "hookData": "0xFcd3243590d29B131a26B1554B0b21a5B43e622e",
-        "commercialRevShare": 0,
-        "disabled": False,
-        "expectMinimumGroupRewardShare": 1,
-        "expectGroupRewardPool": "0x0000000000000000000000000000000000000000",
-    }
-
-    response = story_client.License.set_licensing_config(
-        ip_id=ip_id,
-        license_terms_id=register_commercial_remix_pil,
-        licensing_config=licensing_config,
-        license_template=PIL_LICENSE_TEMPLATE,
-    )
-
-    assert (
-        response is not None
-    ), "Response is None, indicating the contract interaction failed."
-    assert "tx_hash" in response, "Response does not contain 'tx_hash'"
-    assert response["tx_hash"] is not None, "'tx_hash' is None"
-    assert isinstance(response["tx_hash"], str), "'tx_hash' is not a string"
-    assert len(response["tx_hash"]) > 0, "'tx_hash' is empty"
-    assert "success" in response, "Response does not contain 'success'"
-    assert response["success"] is True, "'success' is not True"
-
-
 def test_register_pil_terms_with_no_minting_fee(story_client: StoryClient):
     """Test registering PIL terms with no minting fee."""
     response = story_client.License.register_pil_terms(
@@ -334,37 +302,6 @@ def test_multi_token_minting(story_client: StoryClient, ip_id, setup_license_ter
     assert len(response["license_token_ids"]) > 0
 
 
-def test_set_licensing_config_with_hooks(
-    story_client: StoryClient, ip_id, register_commercial_remix_pil
-):
-    """Test setting licensing configuration with hooks enabled."""
-    licensing_config = {
-        "mintingFee": 100,
-        "isSet": True,
-        "licensingHook": "0x0000000000000000000000000000000000000000",
-        "hookData": "0x1234567890",  # Different hook data
-        "commercialRevShare": 100,  # 50% revenue share
-        "disabled": False,
-        "expectMinimumGroupRewardShare": 10,  # 10% minimum group reward
-        "expectGroupRewardPool": "0x0000000000000000000000000000000000000000",
-    }
-
-    response = story_client.License.set_licensing_config(
-        ip_id=ip_id,
-        license_terms_id=register_commercial_remix_pil,
-        licensing_config=licensing_config,
-        license_template=PIL_LICENSE_TEMPLATE,
-    )
-
-    assert response is not None
-    assert "tx_hash" in response
-    assert response["tx_hash"] is not None
-    assert isinstance(response["tx_hash"], str)
-    assert len(response["tx_hash"]) > 0
-    assert "success" in response
-    assert response["success"] is True
-
-
 def test_predict_minting_fee_with_multiple_tokens(
     story_client: StoryClient, ip_id, setup_license_terms
 ):
@@ -384,3 +321,49 @@ def test_predict_minting_fee_with_multiple_tokens(
     assert response["amount"] is not None
     assert isinstance(response["amount"], int)
     assert response["amount"] > 0  # Amount should be positive for multiple tokens
+
+
+class TestLicensingConfig:
+    def test_set_licensing_config(
+        self, story_client: StoryClient, ip_id, register_commercial_remix_pil
+    ):
+        """Test setting licensing configuration."""
+
+        response = story_client.License.set_licensing_config(
+            ip_id=ip_id,
+            license_terms_id=register_commercial_remix_pil,
+            licensing_config=LicensingConfig(
+                minting_fee=100,
+                is_set=True,
+                licensing_hook=ZERO_ADDRESS,
+                hook_data=b"",
+                commercial_rev_share=100,
+                disabled=False,
+                expect_minimum_group_reward_share=10,
+                expect_group_reward_pool=ZERO_ADDRESS,
+            ),
+            license_template=PIL_LICENSE_TEMPLATE,
+        )
+
+        assert response["tx_hash"] is not None
+        assert response["success"] is True
+
+    def test_get_licensing_config(
+        self, story_client: StoryClient, ip_id, register_commercial_remix_pil
+    ):
+        """Test getting licensing configuration."""
+        response = story_client.License.get_licensing_config(
+            ip_id=ip_id,
+            license_terms_id=register_commercial_remix_pil,
+            license_template=PIL_LICENSE_TEMPLATE,
+        )
+        assert response == LicensingConfig(
+            is_set=True,
+            minting_fee=100,
+            licensing_hook=ZERO_ADDRESS,
+            hook_data=b"",
+            disabled=False,
+            expect_minimum_group_reward_share=10 * 10**6,
+            expect_group_reward_pool=ZERO_ADDRESS,
+            commercial_rev_share=100 * 10**6,
+        )

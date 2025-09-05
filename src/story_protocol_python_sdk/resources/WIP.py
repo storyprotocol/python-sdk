@@ -102,8 +102,6 @@ class WIP:
 
             spender = self.web3.to_checksum_address(spender)
 
-            # Note: Contract handles self-approval validation with custom error ERC20InvalidSpender
-
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -153,9 +151,6 @@ class WIP:
 
             to = self.web3.to_checksum_address(to)
 
-            # Note: Contract handles zero address and contract address validation
-            # with custom errors ERC20InvalidReceiver
-
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -194,9 +189,6 @@ class WIP:
 
             from_address = self.web3.to_checksum_address(from_address)
             to = self.web3.to_checksum_address(to)
-
-            # Note: Contract handles zero address and contract address validation
-            # with custom errors ERC20InvalidReceiver
 
             response = build_and_send_transaction(
                 self.web3,

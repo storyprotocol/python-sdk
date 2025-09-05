@@ -188,7 +188,7 @@ class License:
         currency: str,
         royalty_policy: str | None = None,
         tx_options: dict | None = None,
-    ) -> dict | None:
+    ) -> dict:
         """
         Convenient function to register a PIL commercial use license to the registry.
 
@@ -220,8 +220,8 @@ class License:
                 tx_options=tx_options,
             )
 
-            if not response["tx_receipt"].logs:
-                return None
+            if not response["tx_receipt"]["logs"]:
+                return {"tx_hash": response["tx_hash"]}
 
             target_logs = self._parse_tx_license_terms_registered_event(
                 response["tx_receipt"]
@@ -238,7 +238,7 @@ class License:
         commercial_rev_share: int,
         royalty_policy: str,
         tx_options: dict | None = None,
-    ) -> dict | None:
+    ) -> dict:
         """
         Convenient function to register a PIL commercial remix license to the registry.
 
@@ -272,8 +272,8 @@ class License:
                 tx_options=tx_options,
             )
 
-            if not response["tx_receipt"].logs:
-                return None
+            if not response["tx_receipt"]["logs"]:
+                return {"tx_hash": response["tx_hash"]}
 
             target_logs = self._parse_tx_license_terms_registered_event(
                 response["tx_receipt"]
@@ -380,12 +380,8 @@ class License:
         :return dict: A dictionary with the transaction hash and the license token IDs.
         """
         try:
-            if not self.web3.is_address(license_template):
-                raise ValueError(f'Address "{license_template}" is invalid.')
-
-            if not self.web3.is_address(receiver):
-                raise ValueError(f'Address "{receiver}" is invalid.')
-
+            validate_address(license_template)
+            validate_address(receiver)
             is_registered = self.ip_asset_registry_client.isRegistered(licensor_ip_id)
             if not is_registered:
                 raise ValueError(

@@ -1,3 +1,5 @@
+# tests/integration/test_integration_wip.py
+
 from eth_typing import Hash32
 
 from story_protocol_python_sdk.story_client import StoryClient
@@ -46,13 +48,23 @@ class TestWIPDeposit:
 
 
 class TestWIPTransfer:
+    """Test WIP transfer functionality"""
+
     def test_transfer(self, story_client: StoryClient):
         """Test transferring WIP"""
-        transfer_amount = web3.to_wei("0.01", "ether")
+        transfer_amount = web3.to_wei(1, "wei")
 
         # Get balances before transfer
         sender_wip_before = story_client.WIP.balance_of(wallet_address_str)
         receiver_wip_before = story_client.WIP.balance_of(wallet_address_2_str)
+
+        # Ensure sender has enough WIP balance
+        if sender_wip_before < transfer_amount:
+            story_client.WIP.deposit(
+                amount=transfer_amount - sender_wip_before,
+            )
+
+        sender_wip_before = story_client.WIP.balance_of(wallet_address_str)
 
         # Transfer WIP to wallet_address_2
         response = story_client.WIP.transfer(
@@ -75,6 +87,74 @@ class TestWIPTransfer:
         assert receiver_wip_after == receiver_wip_before + transfer_amount
         # Note: We're not testing transferFrom here as it requires approval
         # and the TypeScript test also skips this test for the same reason
+
+
+class TestWIPApprove:
+    """Test WIP approval functionality"""
+
+    def test_approve(self, story_client: StoryClient):
+        """Test basic approve functionality"""
+        approve_amount = web3.to_wei(1, "wei")
+
+        response = story_client.WIP.approve(
+            spender=wallet_address_2_str,
+            amount=approve_amount,
+        )
+
+        assert response is not None
+        assert "tx_hash" in response
+        assert isinstance(response["tx_hash"], str)
+
+        # Verify allowance was set correctly
+        final_allowance = story_client.WIP.allowance(
+            owner=wallet_address_str, spender=wallet_address_2_str
+        )
+        assert final_allowance == approve_amount
+
+
+class TestWIPTransferFrom:
+    """Test WIP transferFrom functionality"""
+
+    def test_transfer_from(
+        self, story_client: StoryClient, story_client_2: StoryClient
+    ):
+        """Test basic transferFrom functionality"""
+        transfer_amount = web3.to_wei("1", "wei")
+
+        # Ensure wallet_address has enough WIP balance
+        owner_balance = story_client.WIP.balance_of(wallet_address_str)
+        if owner_balance < transfer_amount:
+            deposit_amount = transfer_amount - owner_balance + web3.to_wei("1", "wei")
+            story_client.WIP.deposit(amount=deposit_amount)
+
+        # Get initial balances
+        owner_wip_before = story_client.WIP.balance_of(wallet_address_str)
+        spender_wip_before = story_client.WIP.balance_of(wallet_address_2_str)
+
+        # Approve spender to transfer from owner
+        story_client.WIP.approve(
+            spender=wallet_address_2_str,
+            amount=transfer_amount,
+        )
+
+        # Execute transferFrom using spender's account
+        response = story_client_2.WIP.transfer_from(
+            from_address=wallet_address_str,
+            to=wallet_address_2_str,
+            amount=transfer_amount,
+        )
+
+        assert response is not None
+        assert "tx_hash" in response
+        assert isinstance(response["tx_hash"], str)
+
+        # Get final balances
+        owner_wip_after = story_client.WIP.balance_of(wallet_address_str)
+        spender_wip_after = story_client.WIP.balance_of(wallet_address_2_str)
+
+        # Verify balances
+        assert owner_wip_after == owner_wip_before - transfer_amount
+        assert spender_wip_after == spender_wip_before + transfer_amount
 
 
 class TestWIPWithdraw:

@@ -25,7 +25,7 @@ class LicensingConfig(TypedDict):
             This contract's `beforeMintLicenseTokens` function is executed before a user mints a License Token,
             allowing for custom validation or business logic to be enforced during the minting process.
             For detailed documentation on licensing hook, visit https://docs.story.foundation/concepts/hooks#licensing-hooks
-        hook_data: The data to be used by the licensing hook. Set to a `zeroHash` if no data is provided. For detailed documentation on hook data, visit https://docs.story.foundation/concepts/hooks#hook-data
+        hook_data: The data to be used by the licensing hook. For detailed documentation on hook data, visit https://docs.story.foundation/concepts/hooks#hook-data
         commercial_rev_share: Percentage of revenue that must be shared with the licensor. Must be between 0 and 100 (where 100% represents 100_000_000).
         disabled: Whether the licensing is disabled or not. If this is true, then no licenses can be minted and no more derivatives can be attached at all.
         expect_minimum_group_reward_share: The minimum percentage of the group’s reward share (from 0 to 100%, represented as 100_000_000) that can be allocated to the IP when it is added to the group.

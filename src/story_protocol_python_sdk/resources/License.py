@@ -219,14 +219,14 @@ class License:
                 complete_license_terms,
                 tx_options=tx_options,
             )
-
+            tx_hash = response["tx_hash"]
             if not response["tx_receipt"]["logs"]:
-                return {"tx_hash": response["tx_hash"]}
+                return {"tx_hash": tx_hash}
 
             target_logs = self._parse_tx_license_terms_registered_event(
                 response["tx_receipt"]
             )
-            return {"tx_hash": response["tx_hash"], "license_terms_id": target_logs}
+            return {"tx_hash": tx_hash, "license_terms_id": target_logs}
 
         except Exception as e:
             raise e
@@ -272,13 +272,14 @@ class License:
                 tx_options=tx_options,
             )
 
+            tx_hash = response["tx_hash"]
             if not response["tx_receipt"]["logs"]:
-                return {"tx_hash": response["tx_hash"]}
+                return {"tx_hash": tx_hash}
 
             target_logs = self._parse_tx_license_terms_registered_event(
                 response["tx_receipt"]
             )
-            return {"tx_hash": response["tx_hash"], "license_terms_id": target_logs}
+            return {"tx_hash": tx_hash, "license_terms_id": target_logs}
 
         except Exception as e:
             raise e

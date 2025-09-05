@@ -946,7 +946,7 @@ class TestSetLicensingConfig:
             with patch.object(
                 license.licensing_module_client,
                 "build_setLicensingConfig_transaction",
-                return_value=TX_HASH,
+                return_value={"nonce": 1},
             ) as mock_build_setLicensingConfig_transaction:
 
                 result = license.set_licensing_config(
@@ -995,7 +995,7 @@ class TestSetLicensingConfig:
             with patch.object(
                 license.licensing_module_client,
                 "build_setLicensingConfig_transaction",
-                return_value={"tx_hash": TX_HASH},
+                return_value={"nonce": 1},
             ) as mock_build_setLicensingConfig_transaction:
                 result = license.set_licensing_config(
                     ip_id=ZERO_ADDRESS,
@@ -1029,7 +1029,7 @@ class TestSetLicensingConfig:
         patch_exists,
     ):
         """Test successful licensing config setting with transaction options."""
-        tx_options = {"gasPrice": 20000000000, "nonce": 3}
+        tx_options = {"gasPrice": 1, "nonce": 3}
 
         with patch_is_registered(is_registered=True), patch_exists(exists=True):
             with patch.object(
@@ -1049,7 +1049,7 @@ class TestSetLicensingConfig:
 
             assert mock_build_setLicensingConfig_transaction.call_args[0][4] == {
                 "from": "0xF60cBF0Ea1A61567F1dDaf79A6219D20d189155c",
-                "gasPrice": 1,
+                "gasPrice": 1,  #  mock_web3.to_wei return 1
                 "nonce": 3,
             }
 

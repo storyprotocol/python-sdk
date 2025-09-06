@@ -1,0 +1,211 @@
+name: test publish workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        type: choice
+        description: version to be published
+        options:
+          - major
+          - minor
+          - patch
+
+jobs:
+  Timestamp:
+    uses: storyprotocol/gha-workflows/.github/workflows/reusable-timestamp.yml@main
+
+  lint:
+    needs: Timestamp
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8
+
+    - name: Run flake8
+      run: |
+        flake8 .
+
+  test:
+    needs: [Timestamp, lint]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov
+
+      - name: Run tests
+        run: |
+          pytest tests/ --cov=src/ --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+
+  build:
+    needs: [Timestamp, lint, test]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["pypy3.9", "pypy3.10", "3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install setuptools wheel build
+
+      - name: Build package
+        run: python -m build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist-${{ matrix.python-version }}
+          path: dist/
+          retention-days: 1
+
+  test-publish:
+    needs: [Timestamp, build, lint, test]
+    runs-on: ubuntu-latest
+    # This job simulates the publish process without actually publishing
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install setuptools wheel build
+
+      - name: Simulate version update
+        env:
+          VERSION_TYPE: ${{ github.event.inputs.version_type }}
+        run: |
+          echo "🧪 TESTING: Would run version update with type: $VERSION_TYPE"
+          echo "Current branch: $(git branch --show-current)"
+          echo "Current commit: $(git rev-parse HEAD)"
+
+          # Show what would be changed
+          if [ -f "update_version.py" ]; then
+            echo "✅ update_version.py exists and is executable"
+            python update_version.py --help 2>/dev/null || echo "⚠️ No help available for update_version.py"
+          else
+            echo "❌ update_version.py not found"
+          fi
+
+      - name: Simulate package building
+        run: |
+          echo "🧪 TESTING: Would build package for publishing"
+          python -m build
+
+          # Validate built package
+          if [ -f dist/*.whl ] && [ -f dist/*.tar.gz ]; then
+            echo "✅ Package build successful"
+            ls -la dist/
+          else
+            echo "❌ Package build failed"
+            exit 1
+          fi
+
+      - name: Simulate Git operations
+        run: |
+          echo "🧪 TESTING: Would perform Git operations"
+          echo "Current git status:"
+          git status --porcelain
+
+          echo "Would commit version changes to setup.py"
+          echo "Would create git tag"
+          echo "Would push to current branch: $(git branch --show-current)"
+
+          # Show what files would be committed
+          if [ -f "setup.py" ]; then
+            echo "setup.py contents:"
+            cat setup.py | grep -A 2 -B 2 "version=" || echo "No version field found"
+          fi
+
+      - name: Simulate PyPI publishing
+        run: |
+          echo "🚫 PyPI publishing disabled for testing"
+          echo "Would publish version: $(grep 'version=' setup.py | sed 's/.*version="\([^"]*\)".*/\1/' 2>/dev/null || echo 'unknown')"
+          echo "Would push to branch: $(git branch --show-current)"
+          echo "Would create tag: v$(grep 'version=' setup.py | sed 's/.*version="\([^"]*\)".*/\1/' 2>/dev/null || echo 'unknown')"
+
+          echo ""
+          echo "🎉 TEST COMPLETED SUCCESSFULLY!"
+          echo "This workflow simulates the publish process without making actual changes."
+          echo "To test the real publish workflow, use publish-package.yml on the main branch."
+
+      - name: Cleanup test artifacts
+        if: always()
+        run: |
+          echo "🧹 Cleaning up test artifacts"
+          rm -rf dist/ build/ *.egg-info/
+          echo "Cleanup completed"

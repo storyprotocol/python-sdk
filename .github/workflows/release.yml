@@ -1,0 +1,186 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install build wheel setuptools twine
+
+      - name: Run tests
+        run: |
+          pytest tests/ --cov=src/ --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+
+      - name: Build package
+        run: |
+          python -m build
+
+      - name: Verify package
+        run: |
+          # Check if package files were created
+          if [ ! -f "dist/*.whl" ] || [ ! -f "dist/*.tar.gz" ]; then
+            echo "❌ Package build failed - missing distribution files"
+            exit 1
+          fi
+
+          echo "✅ Package built successfully:"
+          ls -la dist/
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          # Remove 'v' prefix from tag
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "version_without_v=${VERSION#v}" >> $GITHUB_OUTPUT
+          echo "Extracted version: ${VERSION} (${VERSION#v})"
+
+      - name: Verify version consistency
+        run: |
+          # Check if setup.py version matches tag
+          SETUP_VERSION=$(grep 'version=' setup.py | sed 's/.*version="\([^"]*\)".*/\1/')
+          INIT_VERSION=$(grep '__version__' src/story_protocol_python_sdk/__init__.py | sed "s/.*__version__ = \"\([^']*\)\".*/\1/")
+          TAG_VERSION="${{ steps.version.outputs.version_without_v }}"
+
+          echo "Setup.py version: $SETUP_VERSION"
+          echo "Init.py version: $INIT_VERSION"
+          echo "Tag version: $TAG_VERSION"
+
+          if [ "$SETUP_VERSION" != "$TAG_VERSION" ]; then
+            echo "❌ Setup.py version ($SETUP_VERSION) doesn't match tag version ($TAG_VERSION)"
+            exit 1
+          fi
+
+          if [ "$INIT_VERSION" != "$TAG_VERSION" ]; then
+            echo "❌ Init.py version ($INIT_VERSION) doesn't match tag version ($TAG_VERSION)"
+            exit 1
+          fi
+
+          echo "✅ Version consistency verified"
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          release_name: Release ${{ steps.version.outputs.version }}
+          body: |
+            ## What's Changed
+            This release implements enhancements to improve the functionality of the WIP Module and overall testing coverage.
+
+            ## Features & Enhancements
+
+            ### WIP Module
+            - Enhanced test coverage for WIP token approval and transferFrom functionality
+            - Added comprehensive negative test cases for WIP transfers
+            - Implemented testing with multiple wallet configurations
+            - Added validation for transfer to zero address and contract address scenarios
+
+            ### Testing Improvements
+            - Extended integration test coverage
+            - Added edge case testing for token operations
+            - Improved error handling validation
+            - Enhanced test reliability across multiple wallet scenarios
+
+            ## Breaking Changes
+            None
+
+            ## Installation
+            ```bash
+            pip install story_protocol_python_sdk==${{ steps.version.outputs.version_without_v }}
+            ```
+
+            ## Development
+            ```bash
+            git clone https://github.com/${{ github.repository }}.git
+            cd python-sdk
+            git checkout ${{ steps.version.outputs.version }}
+            pip install -e .
+            ```
+
+            ## Changelog
+            - [Full Changelog](https://github.com/${{ github.repository }}/compare/v0.3.14...${{ steps.version.outputs.version }})
+
+            ## Assets
+            This release includes:
+            - Source distribution (.tar.gz)
+            - Wheel distribution (.whl)
+            - Full source code
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.version, 'rc') || contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') }}
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/story_protocol_python_sdk-${{ steps.version.outputs.version_without_v }}-py3-none-any.whl
+          asset_name: story_protocol_python_sdk-${{ steps.version.outputs.version_without_v }}-py3-none-any.whl
+          asset_content_type: application/zip
+
+      - name: Upload Source Distribution
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/story_protocol_python_sdk-${{ steps.version.outputs.version_without_v }}.tar.gz
+          asset_name: story_protocol_python_sdk-${{ steps.version.outputs.version_without_v }}.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload Source Code (ZIP)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/story_protocol_python_sdk-${{ steps.version.outputs.version_without_v }}.tar.gz
+          asset_name: Source code (tar.gz)
+          asset_content_type: application/gzip
+
+      - name: Success Message
+        run: |
+          echo "🎉 Release ${{ steps.version.outputs.version }} created successfully!"
+          echo "📦 Package built and uploaded"
+          echo "🏷️ GitHub release created"
+          echo "📋 Assets uploaded"
+          echo ""
+          echo "View release at: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.version }}"

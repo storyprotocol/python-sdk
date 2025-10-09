@@ -243,7 +243,8 @@
       "functions": [
         "registerIpAndMakeDerivative",
         "mintAndRegisterIpAndMakeDerivative",
-        "mintAndRegisterIpAndMakeDerivativeWithLicenseTokens"
+        "mintAndRegisterIpAndMakeDerivativeWithLicenseTokens",
+        "registerIpAndMakeDerivativeWithLicenseTokens"
       ]
     }
   ]

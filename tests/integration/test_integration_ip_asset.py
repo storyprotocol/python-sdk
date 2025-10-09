@@ -166,6 +166,120 @@ class TestIPAssetDerivatives:
         assert isinstance(response["tx_hash"], str)
         assert len(response["tx_hash"]) > 0
 
+    def test_register_ip_and_make_derivative_with_license_tokens(
+        self, story_client: StoryClient, parent_ip_id, non_commercial_license
+    ):
+        """Test registering an NFT as IP and making it derivative with license tokens."""
+        # Mint a new NFT that will be registered as derivative IP
+        token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+
+        # Mint license tokens from the parent IP
+        license_token_response = story_client.License.mint_license_tokens(
+            licensor_ip_id=parent_ip_id,
+            license_template=PIL_LICENSE_TEMPLATE,
+            license_terms_id=non_commercial_license,
+            amount=1,
+            receiver=account.address,
+            max_minting_fee=0,
+            max_revenue_share=1,
+        )
+        license_token_ids = license_token_response["license_token_ids"]
+
+        # approve license tokens
+        approve(
+            erc20_contract_address=LicenseTokenClient(
+                story_client.web3
+            ).contract.address,
+            web3=story_client.web3,
+            account=account,
+            spender_address=DerivativeWorkflowsClient(
+                story_client.web3
+            ).contract.address,
+            amount=license_token_ids[0],
+        )
+
+        response = (
+            story_client.IPAsset.register_ip_and_make_derivative_with_license_tokens(
+                nft_contract=MockERC721,
+                token_id=token_id,
+                license_token_ids=license_token_ids,
+            )
+        )
+
+        assert response is not None
+        assert "tx_hash" in response
+        assert response["tx_hash"] is not None
+
+        assert "ip_id" in response
+        assert response["ip_id"] is not None
+
+        assert "token_id" in response
+        assert response["token_id"] == token_id
+
+    def test_register_ip_and_make_derivative_with_license_tokens_with_metadata(
+        self, story_client: StoryClient, parent_ip_id, non_commercial_license
+    ):
+        """Test registering an NFT as IP and making it derivative with license tokens and metadata."""
+        # Mint a new NFT that will be registered as derivative IP
+        token_id = get_token_id(MockERC721, story_client.web3, story_client.account)
+
+        # Mint license tokens from the parent IP
+        license_token_response = story_client.License.mint_license_tokens(
+            licensor_ip_id=parent_ip_id,
+            license_template=PIL_LICENSE_TEMPLATE,
+            license_terms_id=non_commercial_license,
+            amount=1,
+            receiver=account.address,
+            max_minting_fee=0,
+            max_revenue_share=1,
+        )
+        license_token_ids = license_token_response["license_token_ids"]
+
+        # Create metadata for the derivative IP
+        metadata = IPMetadataInput(
+            ip_metadata_uri="https://ipfs.io/ipfs/derivative-test",
+            ip_metadata_hash=web3.to_hex(web3.keccak(text="derivative-metadata-hash")),
+            nft_metadata_uri="https://ipfs.io/ipfs/derivative-nft-test",
+            nft_metadata_hash=web3.to_hex(
+                web3.keccak(text="derivative-nft-metadata-hash")
+            ),
+        )
+        # approve license tokens
+        approve(
+            erc20_contract_address=LicenseTokenClient(
+                story_client.web3
+            ).contract.address,
+            web3=story_client.web3,
+            account=account,
+            spender_address=DerivativeWorkflowsClient(
+                story_client.web3
+            ).contract.address,
+            amount=license_token_ids[0],
+        )
+        # Test the new method with metadata
+        response = (
+            story_client.IPAsset.register_ip_and_make_derivative_with_license_tokens(
+                nft_contract=MockERC721,
+                token_id=token_id,
+                license_token_ids=license_token_ids,
+                max_rts=10 * 10**6,
+                ip_metadata=metadata,
+                deadline=2000,
+            )
+        )
+
+        # Verify response structure
+        assert response is not None
+        assert "tx_hash" in response
+        assert response["tx_hash"] is not None
+
+        assert "ip_id" in response
+        assert response["ip_id"] is not None
+
+        assert "token_id" in response
+        assert response["token_id"] is not None
+        assert response["token_id"] == token_id
+
 
 class TestIPAssetMinting:
     @pytest.fixture(scope="module")

@@ -567,6 +567,175 @@ def mock_owner_of(ip_asset: IPAsset):
     return _mock
 
 
+class TestRegisterIpAndMakeDerivativeWithLicenseTokens:
+    def test_nft_already_registered(
+        self, ip_asset: IPAsset, mock_get_ip_id, mock_is_registered
+    ):
+        """Test error when NFT is already registered as IP."""
+        with mock_get_ip_id(), mock_is_registered(True):
+            with pytest.raises(
+                ValueError, match="The NFT with id 3 is already registered as IP."
+            ):
+                ip_asset.register_ip_and_make_derivative_with_license_tokens(
+                    nft_contract=ADDRESS,
+                    token_id=3,
+                    license_token_ids=[1, 2, 3],
+                )
+
+    def test_empty_license_token_ids(
+        self, ip_asset: IPAsset, mock_get_ip_id, mock_is_registered
+    ):
+        """Test error when license token IDs list is empty."""
+        with mock_get_ip_id(), mock_is_registered(False):
+            with pytest.raises(ValueError, match="License token IDs must be provided."):
+                ip_asset.register_ip_and_make_derivative_with_license_tokens(
+                    nft_contract=ADDRESS,
+                    token_id=3,
+                    license_token_ids=[],
+                )
+
+    def test_license_token_not_owned_by_caller(
+        self, ip_asset: IPAsset, mock_get_ip_id, mock_is_registered, mock_owner_of
+    ):
+        """Test error when license token is not owned by caller."""
+        with mock_get_ip_id(), mock_is_registered(False), mock_owner_of(
+            "0x1234567890123456789012345678901234567890"
+        ):
+            with pytest.raises(
+                ValueError, match="License token id 1 must be owned by the caller."
+            ):
+                ip_asset.register_ip_and_make_derivative_with_license_tokens(
+                    nft_contract=ADDRESS,
+                    token_id=3,
+                    license_token_ids=[1, 2, 3],
+                )
+
+    def test_invalid_max_rts(
+        self, ip_asset: IPAsset, mock_get_ip_id, mock_is_registered, mock_owner_of
+    ):
+        """Test error when max_rts is invalid."""
+        with mock_get_ip_id(), mock_is_registered(False), mock_owner_of():
+            with pytest.raises(
+                ValueError,
+                match="The maxRts must be greater than 0 and less than 100,000,000.",
+            ):
+                ip_asset.register_ip_and_make_derivative_with_license_tokens(
+                    nft_contract=ADDRESS,
+                    token_id=3,
+                    license_token_ids=[1, 2, 3],
+                    max_rts=1000000000000000000,
+                )
+
+    def test_success_with_default_values(
+        self,
+        ip_asset: IPAsset,
+        mock_get_ip_id,
+        mock_is_registered,
+        mock_owner_of,
+        mock_parse_ip_registered_event,
+        mock_signature_related_methods,
+        mock_get_function_signature,
+    ):
+        """Test successful registration with default values."""
+        with mock_get_ip_id(), mock_is_registered(
+            False
+        ), mock_owner_of(), mock_parse_ip_registered_event(), mock_signature_related_methods(), mock_get_function_signature():
+            with patch.object(
+                ip_asset.derivative_workflows_client,
+                "build_registerIpAndMakeDerivativeWithLicenseTokens_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_transaction:
+                result = ip_asset.register_ip_and_make_derivative_with_license_tokens(
+                    nft_contract=ADDRESS,
+                    token_id=3,
+                    license_token_ids=[1, 2, 3],
+                )
+
+                # Verify the method was called with correct parameters
+                call_args = mock_build_transaction.call_args[0]
+                assert call_args[0] == ADDRESS  # nft_contract
+                assert call_args[1] == 3  # token_id
+                assert call_args[2] == [1, 2, 3]  # license_token_ids
+                assert call_args[3] == ZERO_ADDRESS  # royaltyContext
+                assert call_args[4] == 100_000_000  # max_rts (default)
+                assert (
+                    call_args[5] == IPMetadata.from_input().get_validated_data()
+                )  # ip_metadata
+
+                # Verify response
+                assert result["tx_hash"] == TX_HASH.hex()
+                assert result["ip_id"] == IP_ID
+                assert result["token_id"] == 3
+
+    def test_success_with_custom_values(
+        self,
+        ip_asset: IPAsset,
+        mock_get_ip_id,
+        mock_is_registered,
+        mock_owner_of,
+        mock_parse_ip_registered_event,
+        mock_signature_related_methods,
+        mock_get_function_signature,
+    ):
+        """Test successful registration with custom values."""
+        with mock_get_ip_id(), mock_is_registered(
+            False
+        ), mock_owner_of(), mock_parse_ip_registered_event(), mock_signature_related_methods(), mock_get_function_signature():
+            with patch.object(
+                ip_asset.derivative_workflows_client,
+                "build_registerIpAndMakeDerivativeWithLicenseTokens_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_transaction:
+                result = ip_asset.register_ip_and_make_derivative_with_license_tokens(
+                    nft_contract=ADDRESS,
+                    token_id=3,
+                    license_token_ids=[1, 2, 3],
+                    max_rts=50_000_000,
+                    deadline=2000,
+                    ip_metadata=IPMetadataInput(
+                        ip_metadata_uri="https://example.com/metadata.json",
+                        ip_metadata_hash=HexStr("0x1234567890abcdef"),
+                        nft_metadata_uri="https://example.com/nft.json",
+                        nft_metadata_hash=HexStr("0xabcdef1234567890"),
+                    ),
+                )
+
+                # Verify the method was called with correct parameters
+                call_args = mock_build_transaction.call_args[0]
+                assert call_args[0] == ADDRESS  # nft_contract
+                assert call_args[1] == 3  # token_id
+                assert call_args[2] == [1, 2, 3]  # license_token_ids
+                assert call_args[3] == ZERO_ADDRESS  # royaltyContext
+                assert call_args[4] == 50_000_000  # max_rts (custom)
+                assert (
+                    call_args[5]
+                    == IPMetadata.from_input(
+                        IPMetadataInput(
+                            ip_metadata_uri="https://example.com/metadata.json",
+                            ip_metadata_hash=HexStr("0x1234567890abcdef"),
+                            nft_metadata_uri="https://example.com/nft.json",
+                            nft_metadata_hash=HexStr("0xabcdef1234567890"),
+                        )
+                    ).get_validated_data()
+                )  # ip_metadata
+
+                # Verify metadata was processed correctly
+                metadata = call_args[5]
+                assert metadata["ipMetadataURI"] == "https://example.com/metadata.json"
+                assert metadata["nftMetadataURI"] == "https://example.com/nft.json"
+
+                # Verify signature data
+                sig_data = call_args[6]
+                assert "signer" in sig_data
+                assert "deadline" in sig_data
+                assert "signature" in sig_data
+
+                # Verify response
+                assert result["tx_hash"] == TX_HASH.hex()
+                assert result["ip_id"] == IP_ID
+                assert result["token_id"] == 3
+
+
 class TestMintAndRegisterIpAndMakeDerivativeWithLicenseTokens:
 
     def test_throw_error_when_license_token_ids_is_not_owned_by_caller(

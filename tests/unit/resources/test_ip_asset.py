@@ -10,6 +10,10 @@ from story_protocol_python_sdk.resources.IPAsset import IPAsset
 from story_protocol_python_sdk.utils.constants import ZERO_HASH
 from story_protocol_python_sdk.utils.derivative_data import DerivativeDataInput
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadata, IPMetadataInput
+from story_protocol_python_sdk.utils.royalty_shares import (
+    RoyaltyShare,
+    RoyaltyShareInput,
+)
 from tests.integration.config.utils import ZERO_ADDRESS
 from tests.unit.fixtures.data import (
     ACCOUNT_ADDRESS,
@@ -986,5 +990,146 @@ class TestRegisterPilTermsAndAttach:
                                 "terms": LICENSE_TERMS,
                                 "licensing_config": LICENSING_CONFIG,
                             },
+                        ],
+                    )
+
+
+class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
+    def test_throw_error_when_royalty_shares_empty(self, ip_asset: IPAsset):
+        with pytest.raises(ValueError, match="Royalty shares must be provided."):
+            ip_asset.mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
+                spg_nft_contract=ADDRESS,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[IP_ID],
+                    license_terms_ids=[1],
+                ),
+                royalty_shares=[],
+            )
+
+    def test_throw_error_when_deriv_data_is_invalid(self, ip_asset: IPAsset):
+        with pytest.raises(ValueError, match="The parent IP IDs must be provided."):
+            ip_asset.mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
+                spg_nft_contract=ADDRESS,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[],
+                    license_terms_ids=[1],
+                ),
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0)
+                ],
+            )
+
+    def test_success_with_default_values(
+        self,
+        ip_asset: IPAsset,
+        mock_license_registry_client,
+        mock_parse_ip_registered_event,
+    ):
+        royalty_shares = [
+            RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0),
+            RoyaltyShareInput(recipient=ADDRESS, percentage=30.0),
+        ]
+
+        with mock_parse_ip_registered_event(), mock_license_registry_client():
+            with patch.object(
+                ip_asset.royalty_token_distribution_workflows_client,
+                "build_mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_transaction:
+                result = ip_asset.mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
+                    spg_nft_contract=ADDRESS,
+                    deriv_data=DerivativeDataInput(
+                        parent_ip_ids=[IP_ID, IP_ID],
+                        license_terms_ids=[1, 2],
+                    ),
+                    royalty_shares=royalty_shares,
+                )
+            called_args = mock_build_transaction.call_args[0]
+            assert called_args[2] == IPMetadata.from_input().get_validated_data()
+            assert (
+                called_args[4]
+                == RoyaltyShare.get_royalty_shares(royalty_shares)["royalty_shares"]
+            )
+            assert called_args[5] is True
+
+            assert result["tx_hash"] == TX_HASH.hex()
+            assert result["ip_id"] == IP_ID
+            assert result["token_id"] == 3
+
+    def test_success_with_custom_values(
+        self,
+        ip_asset: IPAsset,
+        mock_license_registry_client,
+        mock_parse_ip_registered_event,
+    ):
+        royalty_shares = [
+            RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=60.0),
+        ]
+        ip_metadata = IPMetadataInput(
+            ip_metadata_uri="https://example.com/ip-metadata",
+            ip_metadata_hash="0x1234567890abcdef",
+            nft_metadata_uri="https://example.com/nft-metadata",
+            nft_metadata_hash="0xabcdef1234567890",
+        )
+        with mock_parse_ip_registered_event(), mock_license_registry_client():
+            with patch.object(
+                ip_asset.royalty_token_distribution_workflows_client,
+                "build_mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_transaction:
+
+                result = ip_asset.mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
+                    spg_nft_contract=ADDRESS,
+                    deriv_data=DerivativeDataInput(
+                        parent_ip_ids=[IP_ID],
+                        license_terms_ids=[1],
+                        max_minting_fee=10000,
+                        max_rts=10,
+                        max_revenue_share=100,
+                    ),
+                    royalty_shares=royalty_shares,
+                    ip_metadata=ip_metadata,
+                    recipient=ACCOUNT_ADDRESS,
+                    allow_duplicates=False,
+                )
+
+            called_args = mock_build_transaction.call_args[0]
+            assert (
+                called_args[2]
+                == IPMetadata.from_input(ip_metadata).get_validated_data()
+            )
+            assert (
+                called_args[4]
+                == RoyaltyShare.get_royalty_shares(royalty_shares)["royalty_shares"]
+            )
+            assert called_args[5] is False
+
+            assert result["tx_hash"] == TX_HASH.hex()
+            assert result["ip_id"] == IP_ID
+            assert result["token_id"] == 3
+
+    def test_throw_error_when_transaction_failed(
+        self,
+        ip_asset: IPAsset,
+        mock_license_registry_client,
+        mock_parse_ip_registered_event,
+    ):
+        with mock_parse_ip_registered_event(), mock_license_registry_client():
+            with patch.object(
+                ip_asset.royalty_token_distribution_workflows_client,
+                "build_mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens_transaction",
+                side_effect=Exception("Transaction failed."),
+            ):
+                with pytest.raises(Exception, match="Transaction failed."):
+                    ip_asset.mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
+                        spg_nft_contract=ADDRESS,
+                        deriv_data=DerivativeDataInput(
+                            parent_ip_ids=[IP_ID],
+                            license_terms_ids=[1],
+                        ),
+                        royalty_shares=[
+                            RoyaltyShareInput(
+                                recipient=ACCOUNT_ADDRESS, percentage=50.0
+                            )
                         ],
                     )

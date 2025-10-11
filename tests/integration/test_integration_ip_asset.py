@@ -10,6 +10,7 @@ from story_protocol_python_sdk.story_client import StoryClient
 from story_protocol_python_sdk.utils.constants import ROYALTY_POLICY_LAP_ADDRESS
 from story_protocol_python_sdk.utils.derivative_data import DerivativeDataInput
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadataInput
+from story_protocol_python_sdk.utils.royalty_shares import RoyaltyShareInput
 from tests.integration.config.test_config import account_2
 from tests.integration.config.utils import approve
 
@@ -988,3 +989,52 @@ class TestRegisterPilTermsAndAttach:
         assert response is not None
         assert isinstance(response["tx_hash"], str)
         assert len(response["license_terms_ids"]) == 2
+
+
+class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
+    def test_mint_register_ip_make_derivative_distribute_royalty_tokens_default_value(
+        self, story_client: StoryClient, nft_collection, parent_ip_and_license_terms
+    ):
+        response = story_client.IPAsset.mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
+            spg_nft_contract=nft_collection,
+            deriv_data=DerivativeDataInput(
+                parent_ip_ids=[parent_ip_and_license_terms["parent_ip_id"]],
+                license_terms_ids=[parent_ip_and_license_terms["license_terms_id"]],
+            ),
+            royalty_shares=[
+                RoyaltyShareInput(recipient=account.address, percentage=50.000032222),
+                RoyaltyShareInput(recipient=account_2.address, percentage=30.000032222),
+            ],
+        )
+        assert isinstance(response["tx_hash"], str)
+        assert isinstance(response["ip_id"], str)
+        assert isinstance(response["token_id"], int)
+
+    def test_mint_register_ip_make_derivative_distribute_royalty_tokens_with_custom_values(
+        self, story_client: StoryClient, nft_collection, parent_ip_and_license_terms
+    ):
+        response = story_client.IPAsset.mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
+            spg_nft_contract=nft_collection,
+            deriv_data=DerivativeDataInput(
+                parent_ip_ids=[parent_ip_and_license_terms["parent_ip_id"]],
+                license_terms_ids=[parent_ip_and_license_terms["license_terms_id"]],
+                max_minting_fee=10000,
+                max_rts=10,
+                max_revenue_share=100,
+            ),
+            royalty_shares=[
+                RoyaltyShareInput(recipient=account.address, percentage=60),
+                RoyaltyShareInput(recipient=account_2.address, percentage=40),
+            ],
+            ip_metadata=IPMetadataInput(
+                ip_metadata_uri="https://example.com/ip-metadata",
+                ip_metadata_hash=web3.keccak(text="ip_metadata_hash"),
+                nft_metadata_uri="https://example.com/nft-metadata",
+                nft_metadata_hash=web3.keccak(text="nft_metadata_hash"),
+            ),
+            recipient=account_2.address,
+            allow_duplicates=False,
+        )
+        assert isinstance(response["tx_hash"], str)
+        assert isinstance(response["ip_id"], str)
+        assert isinstance(response["token_id"], int)

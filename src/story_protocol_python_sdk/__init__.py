@@ -29,6 +29,7 @@ from .utils.constants import (
 from .utils.derivative_data import DerivativeDataInput
 from .utils.ip_metadata import IPMetadataInput
 from .utils.licensing_config_data import LicensingConfig
+from .utils.royalty_shares import RoyaltyShareInput
 
 __all__ = [
     "StoryClient",
@@ -48,6 +49,7 @@ __all__ = [
     "CollectRoyaltiesResponse",
     "LicensingConfig",
     "RegisterPILTermsAndAttachResponse",
+    "RoyaltyShareInput",
     # Constants
     "ZERO_ADDRESS",
     "ZERO_HASH",

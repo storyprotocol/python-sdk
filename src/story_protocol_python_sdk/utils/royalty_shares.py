@@ -44,7 +44,7 @@ class RoyaltyShare:
             recipient = validate_address(share_dict.recipient)
             percentage = share_dict.percentage
 
-            if percentage <= 0:
+            if percentage < 0:
                 raise ValueError(
                     "The percentage of the royalty shares must be greater than 0."
                 )

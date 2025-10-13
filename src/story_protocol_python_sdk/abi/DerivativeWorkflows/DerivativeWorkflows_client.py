@@ -120,3 +120,44 @@ class DerivativeWorkflowsClient:
         return self.contract.functions.registerIpAndMakeDerivative(
             nftContract, tokenId, derivData, ipMetadata, sigMetadataAndRegister
         ).build_transaction(tx_params)
+
+    def registerIpAndMakeDerivativeWithLicenseTokens(
+        self,
+        nftContract,
+        tokenId,
+        licenseTokenIds,
+        royaltyContext,
+        maxRts,
+        ipMetadata,
+        sigMetadataAndRegister,
+    ):
+        return self.contract.functions.registerIpAndMakeDerivativeWithLicenseTokens(
+            nftContract,
+            tokenId,
+            licenseTokenIds,
+            royaltyContext,
+            maxRts,
+            ipMetadata,
+            sigMetadataAndRegister,
+        ).transact()
+
+    def build_registerIpAndMakeDerivativeWithLicenseTokens_transaction(
+        self,
+        nftContract,
+        tokenId,
+        licenseTokenIds,
+        royaltyContext,
+        maxRts,
+        ipMetadata,
+        sigMetadataAndRegister,
+        tx_params,
+    ):
+        return self.contract.functions.registerIpAndMakeDerivativeWithLicenseTokens(
+            nftContract,
+            tokenId,
+            licenseTokenIds,
+            royaltyContext,
+            maxRts,
+            ipMetadata,
+            sigMetadataAndRegister,
+        ).build_transaction(tx_params)

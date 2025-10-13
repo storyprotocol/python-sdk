@@ -887,6 +887,107 @@ class IPAsset:
         except Exception as e:
             raise e
 
+    def register_ip_and_make_derivative_with_license_tokens(
+        self,
+        nft_contract: str,
+        token_id: int,
+        license_token_ids: list[int],
+        max_rts: int = 100_000_000,
+        deadline: int = 1000,
+        ip_metadata: IPMetadataInput | None = None,
+        tx_options: dict | None = None,
+    ) -> RegistrationResponse:
+        """
+        Register the given NFT as a derivative IP using license tokens.
+
+        :param nft_contract str: The address of the NFT collection.
+        :param token_id int: The ID of the NFT.
+        :param license_token_ids list[int]: The IDs of the license tokens to be burned for linking the IP to parent IPs.
+        :param max_rts int: [Optional] The maximum number of royalty tokens that can be distributed to the external royalty policies (max: 100,000,000). (default: 100,000,000)
+        :param deadline int: [Optional] Signature deadline in milliseconds. (default: 1000)
+        :param ip_metadata IPMetadataInput: [Optional] The desired metadata for the newly registered IP.
+        :param tx_options dict: [Optional] Transaction options.
+        :return RegistrationResponse: Dictionary with the tx hash, IP ID and token ID.
+        """
+        try:
+            ip_id = self._get_ip_id(nft_contract, token_id)
+            if self._is_registered(ip_id):
+                raise ValueError(
+                    f"The NFT with id {token_id} is already registered as IP."
+                )
+
+            # Validate license token IDs and ownership
+            validated_license_token_ids = self._validate_license_token_ids(
+                license_token_ids
+            )
+
+            # Validate max_rts
+            validate_max_rts(max_rts)
+
+            calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
+
+            # Get permission signature for registration and derivative
+            signature_response = self.sign_util.get_permission_signature(
+                ip_id=ip_id,
+                deadline=calculated_deadline,
+                state=Web3.to_bytes(0),
+                permissions=[
+                    {
+                        "ipId": ip_id,
+                        "signer": self.derivative_workflows_client.contract.address,
+                        "to": self.core_metadata_module_client.contract.address,
+                        "permission": AccessPermission.ALLOW,
+                        "func": get_function_signature(
+                            self.core_metadata_module_client.contract.abi,
+                            "setAll",
+                        ),
+                    },
+                    {
+                        "ipId": ip_id,
+                        "signer": self.derivative_workflows_client.contract.address,
+                        "to": self.licensing_module_client.contract.address,
+                        "permission": AccessPermission.ALLOW,
+                        "func": get_function_signature(
+                            self.licensing_module_client.contract.abi,
+                            "registerDerivativeWithLicenseTokens",
+                        ),
+                    },
+                ],
+            )
+
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.derivative_workflows_client.build_registerIpAndMakeDerivativeWithLicenseTokens_transaction,
+                validate_address(nft_contract),
+                token_id,
+                validated_license_token_ids,
+                ZERO_ADDRESS,  # royaltyContext
+                max_rts,
+                IPMetadata.from_input(ip_metadata).get_validated_data(),
+                {
+                    "signer": self.web3.to_checksum_address(self.account.address),
+                    "deadline": calculated_deadline,
+                    "signature": self.web3.to_bytes(
+                        hexstr=signature_response["signature"]
+                    ),
+                },
+                tx_options=tx_options,
+            )
+
+            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])
+
+            return RegistrationResponse(
+                tx_hash=response["tx_hash"],
+                ip_id=ip_registered["ip_id"],
+                token_id=ip_registered["token_id"],
+            )
+
+        except Exception as e:
+            raise ValueError(
+                f"Failed to register IP and make derivative with license tokens: {str(e)}"
+            ) from e
+
     def register_pil_terms_and_attach(
         self,
         ip_id: Address,

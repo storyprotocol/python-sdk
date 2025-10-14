@@ -146,7 +146,7 @@ class IPAsset:
             :param ip_metadata_hash str: [Optional] Metadata hash for the IP.
             :param nft_metadata_uri str: [Optional] Metadata URI for the NFT.
             :param nft_metadata_hash str: [Optional] Metadata hash for the NFT.
-        :param deadline int: [Optional] Signature deadline in milliseconds.
+        :param deadline int: [Optional] Signature deadline in seconds. (default: 1000 seconds)
         :param tx_options dict: [Optional] Transaction options.
         :return dict: Dictionary with the transaction hash and IP ID.
         """
@@ -595,7 +595,7 @@ class IPAsset:
             :param ip_metadata_hash str: [Optional] The hash of the metadata for the IP.
             :param nft_metadata_uri str: [Optional] The URI of the metadata for the NFT.
             :param nft_metadata_hash str: [Optional] The hash of the metadata for the IP NFT.
-        :param deadline int: [Optional] The deadline for the signature in milliseconds.
+        :param deadline int: [Optional] The deadline for the signature in seconds. (default: 1000 seconds)
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash, license terms ID, and IP ID.
         """
@@ -721,7 +721,7 @@ class IPAsset:
         :param token_id int: The ID of the NFT.
         :param deriv_data `DerivativeDataInput`: The derivative data for registerDerivative.
         :param metadata `IPMetadataInput`: [Optional] Desired IP metadata.
-        :param deadline int: [Optional] Signature deadline in milliseconds.
+        :param deadline int: [Optional] Signature deadline in seconds. (default: 1000 seconds)
         :param tx_options dict: [Optional] Transaction options.
         :return dict: Dictionary with the tx hash and IP ID.
         """
@@ -904,7 +904,7 @@ class IPAsset:
         :param token_id int: The ID of the NFT.
         :param license_token_ids list[int]: The IDs of the license tokens to be burned for linking the IP to parent IPs.
         :param max_rts int: [Optional] The maximum number of royalty tokens that can be distributed to the external royalty policies (max: 100,000,000). (default: 100,000,000)
-        :param deadline int: [Optional] Signature deadline in milliseconds. (default: 1000)
+        :param deadline int: [Optional] Signature deadline in seconds. (default: 1000 seconds)
         :param ip_metadata IPMetadataInput: [Optional] The desired metadata for the newly registered IP.
         :param tx_options dict: [Optional] Transaction options.
         :return RegistrationResponse: Dictionary with the tx hash, IP ID and token ID.
@@ -1000,7 +1000,7 @@ class IPAsset:
 
          :param ip_id Address: The IP ID.
          :param license_terms_data list: The data of the license and its configuration to be attached to the IP.
-         :param deadline int: [Optional] Signature deadline in milliseconds. If not provided, the current time + 1000ms will be used.
+         :param deadline int: [Optional] Signature deadline in seconds. (default: 1000 seconds)
          :param tx_options dict: [Optional] Transaction options.
          :return RegisterPILTermsAndAttachResponse: Dictionary with the tx hash and license terms IDs.
         """

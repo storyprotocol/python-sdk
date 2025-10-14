@@ -155,7 +155,7 @@ class Permission:
         :param to str: The address that can be called by the `signer`.
         :param permission `AccessPermission`: The new permission level.
         :param func str: [Optional] The function selector string.
-        :param deadline int: [Optional] The deadline for the signature validity.
+        :param deadline int: [Optional] The deadline for the signature in seconds. (default: 1000 seconds)
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash and success status if waiting for transaction.
         """

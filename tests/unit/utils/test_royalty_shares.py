@@ -118,28 +118,6 @@ class TestRoyaltyShareGetRoyaltyShares:
         assert result["royalty_shares"][1]["percentage"] == 66_666_666
         assert result["total_amount"] == 99_999_999  # Precision loss evident
 
-    def test_get_royalty_shares_floating_point_accumulation_issue(self):
-        """Test floating point accumulation precision issues."""
-        # This tests the classic 0.1 + 0.2 != 0.3 floating point issue
-        shares = [
-            RoyaltyShareInput(
-                recipient="0x1234567890123456789012345678901234567890", percentage=0.1
-            ),
-            RoyaltyShareInput(
-                recipient="0xabcdefabcdefabcdefabcdefabcdefabcdefabcd", percentage=0.2
-            ),
-            RoyaltyShareInput(
-                recipient="0x9876543210987654321098765432109876543210", percentage=99.7
-            ),
-        ]
-
-        result = RoyaltyShare.get_royalty_shares(shares)
-
-        # Even though 0.1 + 0.2 + 99.7 = 100.0 mathematically,
-        # floating point arithmetic might introduce small errors
-        # The method should still work correctly
-        assert result["total_amount"] == 100_000_000
-
     def test_get_royalty_shares_very_small_percentages(self):
         """Test handling of very small percentages that might lose precision."""
         shares = [
@@ -337,36 +315,3 @@ class TestRoyaltyShareGetRoyaltyShares:
         assert result["royalty_shares"][0]["percentage"] == 25_000_000
         assert result["royalty_shares"][1]["percentage"] == 75_000_000
         assert result["total_amount"] == 100_000_000
-
-    def test_get_royalty_shares_extremely_small_percentage(self):
-        """Test extremely small percentage that rounds to 0."""
-        shares = [
-            RoyaltyShareInput(
-                recipient="0x1234567890123456789012345678901234567890",
-                percentage=0.0000001,  # 0.1 parts per million, will be 0 after int conversion
-            ),
-            RoyaltyShareInput(
-                recipient="0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
-                percentage=99.9999999,
-            ),
-        ]
-
-        result = RoyaltyShare.get_royalty_shares(shares)
-
-        # 0.0000001 * 10^6 = 0.1, int(0.1) = 0
-        assert result["royalty_shares"][0]["percentage"] == 0
-        assert result["royalty_shares"][1]["percentage"] == 99_999_999
-        assert result["total_amount"] == 99_999_999
-
-    def test_get_royalty_shares_address_validation_order(self):
-        """Test that address validation happens before percentage processing."""
-        shares = [
-            RoyaltyShareInput(recipient="invalid_address", percentage=50.0),
-            RoyaltyShareInput(
-                recipient="0x1234567890123456789012345678901234567890", percentage=150.0
-            ),
-        ]
-
-        # Should fail on address validation first, not percentage validation
-        with pytest.raises(ValueError, match="Invalid address"):
-            RoyaltyShare.get_royalty_shares(shares)

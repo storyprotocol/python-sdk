@@ -467,7 +467,7 @@ class IPAsset:
                 self.account,
                 self.license_attachment_workflows_client.build_mintAndRegisterIpAndAttachPILTerms_transaction,
                 spg_nft_contract,
-                recipient if recipient else self.account.address,
+                self._validate_recipient(recipient),
                 metadata,
                 license_terms,
                 allow_duplicates,
@@ -541,7 +541,7 @@ class IPAsset:
                 self.account,
                 self.registration_workflows_client.build_mintAndRegisterIp_transaction,
                 spg_nft_contract,
-                recipient if recipient else self.account.address,
+                self._validate_recipient(recipient),
                 metadata,
                 allow_duplicates,
                 tx_options=tx_options,
@@ -827,11 +827,7 @@ class IPAsset:
                 validate_address(spg_nft_contract),
                 validated_deriv_data,
                 IPMetadata.from_input(ip_metadata).get_validated_data(),
-                (
-                    validate_address(recipient)
-                    if recipient is not None
-                    else self.account.address
-                ),
+                self._validate_recipient(recipient),
                 allow_duplicates,
                 tx_options=tx_options,
             )
@@ -880,11 +876,7 @@ class IPAsset:
                 ZERO_ADDRESS,
                 max_rts,
                 IPMetadata.from_input(ip_metadata).get_validated_data(),
-                (
-                    validate_address(recipient)
-                    if recipient is not None
-                    else self.account.address
-                ),
+                self._validate_recipient(recipient),
                 allow_duplicates,
                 tx_options=tx_options,
             )

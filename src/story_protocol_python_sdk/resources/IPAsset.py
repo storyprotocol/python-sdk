@@ -1316,7 +1316,6 @@ class IPAsset:
         :param recipient Address: The recipient address to validate.
         :return Address: The validated recipient address.
         """
-        print(recipient)
         if recipient is None:
             return self.account.address
         return validate_address(recipient)

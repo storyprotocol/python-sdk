@@ -14,7 +14,7 @@ class RoyaltyShareInput:
 
     Attributes:
         recipient: The address of the recipient.
-        percentage: The percentage of the total royalty share. Only support decimal at most 6 precision. For example, a value of 10 represents 10% of max royalty shares, which is 10,000,000.
+        percentage: The percentage of the total royalty share. Supports up to 6 decimal places precision. For example, a value of 10 represents 10% of max royalty shares, which is 10,000,000.
     """
 
     recipient: Address
@@ -46,7 +46,7 @@ class RoyaltyShare:
 
             if percentage < 0:
                 raise ValueError(
-                    "The percentage of the royalty shares must be greater than 0."
+                    "The percentage of the royalty shares must be greater than or equal to 0."
                 )
 
             if percentage > 100:

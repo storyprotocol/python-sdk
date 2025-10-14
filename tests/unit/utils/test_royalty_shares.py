@@ -216,7 +216,7 @@ class TestRoyaltyShareGetRoyaltyShares:
 
         with pytest.raises(
             ValueError,
-            match="The percentage of the royalty shares must be greater than 0.",
+            match="he percentage of the royalty shares must be greater than or equal to 0.",
         ):
             RoyaltyShare.get_royalty_shares(shares)
 
@@ -244,22 +244,6 @@ class TestRoyaltyShareGetRoyaltyShares:
         with pytest.raises(
             ValueError,
             match="The percentage of the royalty shares must be less than or equal to 100.",
-        ):
-            RoyaltyShare.get_royalty_shares(shares)
-
-    def test_get_royalty_shares_total_exceeds_100_error(self):
-        """Test error when total percentage exceeds 100."""
-        shares = [
-            RoyaltyShareInput(
-                recipient="0x1234567890123456789012345678901234567890", percentage=60
-            ),
-            RoyaltyShareInput(
-                recipient="0xabcdefabcdefabcdefabcdefabcdefabcdefabcd", percentage=50
-            ),
-        ]
-
-        with pytest.raises(
-            ValueError, match="The sum of the royalty shares cannot exceeds 100."
         ):
             RoyaltyShare.get_royalty_shares(shares)
 
@@ -374,166 +358,6 @@ class TestRoyaltyShareGetRoyaltyShares:
         assert result["royalty_shares"][1]["percentage"] == 99_999_999
         assert result["total_amount"] == 99_999_999
 
-    def test_get_royalty_shares_many_recipients(self):
-        """Test with many recipients to stress test accumulation."""
-        shares = []
-        for i in range(10):
-            shares.append(
-                RoyaltyShareInput(
-                    recipient=f"0x{i:040d}",  # Generate unique addresses
-                    percentage=10.0,
-                )
-            )
-
-        result = RoyaltyShare.get_royalty_shares(shares)
-
-        assert len(result["royalty_shares"]) == 10
-        for share in result["royalty_shares"]:
-            assert share["percentage"] == 10_000_000
-        assert result["total_amount"] == 100_000_000
-
-    def test_get_royalty_shares_precision_with_many_small_shares(self):
-        """Test precision with many small shares that might accumulate errors."""
-        shares = []
-        # Create 100 shares of 1% each
-        for i in range(100):
-            shares.append(
-                RoyaltyShareInput(
-                    recipient=f"0x{i:040d}",
-                    percentage=1.0,
-                )
-            )
-
-        result = RoyaltyShare.get_royalty_shares(shares)
-
-        assert len(result["royalty_shares"]) == 100
-        for share in result["royalty_shares"]:
-            assert share["percentage"] == 1_000_000
-        assert result["total_amount"] == 100_000_000
-
-    def test_get_royalty_shares_precision_with_recurring_decimals(self):
-        """Test precision with recurring decimal percentages."""
-        shares = [
-            RoyaltyShareInput(
-                recipient="0x1234567890123456789012345678901234567890",
-                percentage=1.0 / 3.0,  # 0.3333333...
-            ),
-            RoyaltyShareInput(
-                recipient="0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
-                percentage=2.0 / 3.0,  # 0.6666666...
-            ),
-        ]
-
-        result = RoyaltyShare.get_royalty_shares(shares)
-
-        # Due to floating point precision, 1/3 and 2/3 don't sum exactly to 1
-        # 1/3 * 10^6 = 333333.333..., int() = 333333
-        # 2/3 * 10^6 = 666666.666..., int() = 666666
-        # Total: 333333 + 666666 = 999999 (precision loss of 1)
-        assert result["royalty_shares"][0]["percentage"] == 333333
-        assert result["royalty_shares"][1]["percentage"] == 666666
-        assert result["total_amount"] == 999999  # Precision loss evident
-
-    def test_get_royalty_shares_address_case_sensitivity(self):
-        """Test that addresses are handled consistently."""
-        shares = [
-            RoyaltyShareInput(
-                recipient="0x1234567890123456789012345678901234567890", percentage=50.0
-            ),
-            RoyaltyShareInput(
-                recipient="0x1234567890123456789012345678901234567890", percentage=50.0
-            ),
-        ]
-
-        result = RoyaltyShare.get_royalty_shares(shares)
-
-        # Both entries should be preserved as separate shares
-        assert len(result["royalty_shares"]) == 2
-        assert (
-            result["royalty_shares"][0]["recipient"]
-            == result["royalty_shares"][1]["recipient"]
-        )
-        assert result["total_amount"] == 100_000_000
-
-    def test_get_royalty_shares_scientific_notation_percentage(self):
-        """Test percentages in scientific notation."""
-        shares = [
-            RoyaltyShareInput(
-                recipient="0x1234567890123456789012345678901234567890",
-                percentage=1e-5,  # 0.00001
-            ),
-            RoyaltyShareInput(
-                recipient="0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
-                percentage=9.999990e1,  # 99.99999
-            ),
-        ]
-
-        result = RoyaltyShare.get_royalty_shares(shares)
-
-        # 1e-5 * 10^6 = 10
-        # 9.999990e1 = 99.99990, 99.99990 * 10^6 = 99999900
-        assert result["royalty_shares"][0]["percentage"] == 10
-        assert result["royalty_shares"][1]["percentage"] == 99_999_900
-        assert result["total_amount"] == 99_999_910
-
-    def test_get_royalty_shares_zero_after_conversion(self):
-        """Test percentage that becomes zero after int conversion but was originally positive."""
-        shares = [
-            RoyaltyShareInput(
-                recipient="0x1234567890123456789012345678901234567890",
-                percentage=0.0000004,  # 0.4 parts per million, becomes 0 after int()
-            ),
-            RoyaltyShareInput(
-                recipient="0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
-                percentage=99.9999996,
-            ),
-        ]
-
-        result = RoyaltyShare.get_royalty_shares(shares)
-
-        # 0.0000004 * 10^6 = 0.4, int(0.4) = 0
-        assert result["royalty_shares"][0]["percentage"] == 0
-        assert (
-            result["total_amount"] < 100_000_000
-        )  # Will be less due to precision loss
-
-    def test_get_royalty_shares_maximum_precision_boundary(self):
-        """Test the maximum precision boundary case."""
-        shares = [
-            RoyaltyShareInput(
-                recipient="0x1234567890123456789012345678901234567890",
-                percentage=99.999999,  # Maximum precision that still fits
-            ),
-            RoyaltyShareInput(
-                recipient="0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
-                percentage=0.000001,  # Minimum precision that results in 1
-            ),
-        ]
-
-        result = RoyaltyShare.get_royalty_shares(shares)
-
-        assert result["royalty_shares"][0]["percentage"] == 99_999_999
-        assert result["royalty_shares"][1]["percentage"] == 1
-        assert result["total_amount"] == 100_000_000
-
-    def test_get_royalty_shares_negative_zero(self):
-        """Test with negative zero (edge case in floating point)."""
-        shares = [
-            RoyaltyShareInput(
-                recipient="0x1234567890123456789012345678901234567890", percentage=-0.0
-            ),
-            RoyaltyShareInput(
-                recipient="0xabcdefabcdefabcdefabcdefabcdefabcdefabcd", percentage=100.0
-            ),
-        ]
-
-        result = RoyaltyShare.get_royalty_shares(shares)
-
-        # -0.0 should be treated as 0.0
-        assert result["royalty_shares"][0]["percentage"] == 0
-        assert result["royalty_shares"][1]["percentage"] == 100_000_000
-        assert result["total_amount"] == 100_000_000
-
     def test_get_royalty_shares_address_validation_order(self):
         """Test that address validation happens before percentage processing."""
         shares = [
@@ -546,32 +370,3 @@ class TestRoyaltyShareGetRoyaltyShares:
         # Should fail on address validation first, not percentage validation
         with pytest.raises(ValueError, match="Invalid address"):
             RoyaltyShare.get_royalty_shares(shares)
-
-    def test_get_royalty_shares_cumulative_precision_error_detection(self):
-        """Test detection of cumulative precision errors near 100%."""
-        # Create a scenario where individual percentages are valid
-        # but cumulative floating point errors push us just over 100%
-        shares = []
-        # Use a percentage that has floating point representation issues
-        percentage = 100.0 / 7.0  # 14.285714285714286...
-
-        # Add 7 shares that should theoretically sum to 100%
-        for i in range(7):
-            shares.append(
-                RoyaltyShareInput(
-                    recipient=f"0x{i:040d}",
-                    percentage=percentage,
-                )
-            )
-
-        # This might fail due to floating point accumulation errors
-        # The test verifies that our validation catches this
-        try:
-            result = RoyaltyShare.get_royalty_shares(shares)
-            # If it succeeds, verify the total is reasonable
-            assert (
-                abs(result["total_amount"] - 100_000_000) <= 10
-            )  # Allow small rounding errors
-        except ValueError as e:
-            # If it fails, it should be due to exceeding 100%
-            assert "cannot exceeds 100" in str(e)

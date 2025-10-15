@@ -1,4 +1,4 @@
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 from ens.ens import Address, HexStr
 
@@ -15,7 +15,24 @@ class RegistrationResponse(TypedDict):
 
     ip_id: Address
     tx_hash: HexStr
-    token_id: Optional[int]
+    token_id: int
+
+
+class RegistrationWithRoyaltyVaultResponse(TypedDict):
+    """
+    Response structure for IP asset registration operations with royalty vault.
+
+    Attributes:
+        tx_hash: The transaction hash of the registration transaction
+        ip_id: The IP ID of the registered IP asset
+        token_id: The token ID of the registered IP asset
+        royalty_vault: The royalty vault address of the registered IP asset
+    """
+
+    tx_hash: HexStr
+    ip_id: Address
+    token_id: int
+    royalty_vault: Address
 
 
 class RegisterPILTermsAndAttachResponse(TypedDict):

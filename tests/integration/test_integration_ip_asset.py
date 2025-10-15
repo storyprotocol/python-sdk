@@ -1009,6 +1009,7 @@ class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
         assert isinstance(response["tx_hash"], str)
         assert isinstance(response["ip_id"], str)
         assert isinstance(response["token_id"], int)
+        assert isinstance(response["royalty_vault"], str)
 
     def test_mint_register_ip_make_derivative_distribute_royalty_tokens_with_custom_values(
         self, story_client: StoryClient, nft_collection, parent_ip_and_license_terms
@@ -1038,3 +1039,4 @@ class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
         assert isinstance(response["tx_hash"], str)
         assert isinstance(response["ip_id"], str)
         assert isinstance(response["token_id"], int)
+        assert isinstance(response["royalty_vault"], str)

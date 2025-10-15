@@ -100,6 +100,18 @@ def mock_ip_account_impl_client(ip_asset):
     return _mock
 
 
+@pytest.fixture
+def mock_get_royalty_vault_address_by_ip_id(ip_asset):
+    def _mock():
+        return patch.object(
+            ip_asset,
+            "get_royalty_vault_address_by_ip_id",
+            return_value=ADDRESS,
+        )
+
+    return _mock
+
+
 class TestIPAssetRegister:
     def test_register_invalid_deadline_type(
         self, ip_asset, mock_get_ip_id, mock_is_registered
@@ -1024,13 +1036,14 @@ class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
         ip_asset: IPAsset,
         mock_license_registry_client,
         mock_parse_ip_registered_event,
+        mock_get_royalty_vault_address_by_ip_id,
     ):
         royalty_shares = [
             RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0),
             RoyaltyShareInput(recipient=ADDRESS, percentage=30.0),
         ]
 
-        with mock_parse_ip_registered_event(), mock_license_registry_client():
+        with mock_parse_ip_registered_event(), mock_license_registry_client(), mock_get_royalty_vault_address_by_ip_id():
             with patch.object(
                 ip_asset.royalty_token_distribution_workflows_client,
                 "build_mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens_transaction",
@@ -1055,12 +1068,55 @@ class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
             assert result["tx_hash"] == TX_HASH.hex()
             assert result["ip_id"] == IP_ID
             assert result["token_id"] == 3
+            assert result["royalty_vault"] == ADDRESS
+
+    def test_royalty_vault_address(
+        self,
+        ip_asset: IPAsset,
+        mock_license_registry_client,
+        mock_parse_ip_registered_event,
+        mock_get_royalty_vault_address_by_ip_id,
+    ):
+        royalty_shares = [
+            RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0),
+            RoyaltyShareInput(recipient=ADDRESS, percentage=30.0),
+        ]
+
+        with mock_parse_ip_registered_event(), mock_license_registry_client(), mock_get_royalty_vault_address_by_ip_id():
+            with patch(
+                "story_protocol_python_sdk.resources.IPAsset.build_and_send_transaction",
+                return_value={
+                    "tx_hash": TX_HASH,
+                    "tx_receipt": {
+                        "logs": [
+                            {
+                                "topics": [
+                                    ip_asset.web3.keccak(
+                                        text="IpRoyaltyVaultDeployed(address,address)"
+                                    )
+                                ],
+                                "data": IP_ID + ADDRESS,
+                            }
+                        ]
+                    },
+                },
+            ):
+                result = ip_asset.mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
+                    spg_nft_contract=ADDRESS,
+                    deriv_data=DerivativeDataInput(
+                        parent_ip_ids=[IP_ID, IP_ID],
+                        license_terms_ids=[1, 2],
+                    ),
+                    royalty_shares=royalty_shares,
+                )
+            assert result["royalty_vault"] == ADDRESS
 
     def test_success_with_custom_values(
         self,
         ip_asset: IPAsset,
         mock_license_registry_client,
         mock_parse_ip_registered_event,
+        mock_get_royalty_vault_address_by_ip_id,
     ):
         royalty_shares = [
             RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=60.0),
@@ -1071,7 +1127,7 @@ class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
             nft_metadata_uri="https://example.com/nft-metadata",
             nft_metadata_hash="0xabcdef1234567890",
         )
-        with mock_parse_ip_registered_event(), mock_license_registry_client():
+        with mock_parse_ip_registered_event(), mock_license_registry_client(), mock_get_royalty_vault_address_by_ip_id():
             with patch.object(
                 ip_asset.royalty_token_distribution_workflows_client,
                 "build_mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens_transaction",
@@ -1107,6 +1163,7 @@ class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
             assert result["tx_hash"] == TX_HASH.hex()
             assert result["ip_id"] == IP_ID
             assert result["token_id"] == 3
+            assert result["royalty_vault"] == ADDRESS
 
     def test_throw_error_when_transaction_failed(
         self,

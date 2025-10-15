@@ -36,6 +36,9 @@ from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client im
 from story_protocol_python_sdk.abi.RegistrationWorkflows.RegistrationWorkflows_client import (
     RegistrationWorkflowsClient,
 )
+from story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client import (
+    RoyaltyModuleClient,
+)
 from story_protocol_python_sdk.abi.RoyaltyTokenDistributionWorkflows.RoyaltyTokenDistributionWorkflows_client import (
     RoyaltyTokenDistributionWorkflowsClient,
 )
@@ -44,6 +47,7 @@ from story_protocol_python_sdk.types.common import AccessPermission
 from story_protocol_python_sdk.types.resource.IPAsset import (
     RegisterPILTermsAndAttachResponse,
     RegistrationResponse,
+    RegistrationWithRoyaltyVaultResponse,
 )
 from story_protocol_python_sdk.utils.constants import (
     MAX_ROYALTY_TOKEN,
@@ -99,6 +103,7 @@ class IPAsset:
         self.royalty_token_distribution_workflows_client = (
             RoyaltyTokenDistributionWorkflowsClient(web3)
         )
+        self.royalty_module_client = RoyaltyModuleClient(web3)
 
         self.license_terms_util = LicenseTerms(web3)
         self.sign_util = Sign(web3, self.chain_id, self.account)
@@ -992,25 +997,25 @@ class IPAsset:
 
     def mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
         self,
-        spg_nft_contract: str,
+        spg_nft_contract: Address,
         deriv_data: DerivativeDataInput,
         royalty_shares: list[RoyaltyShareInput],
         ip_metadata: IPMetadataInput | None = None,
-        recipient: str | None = None,
+        recipient: Address | None = None,
         allow_duplicates: bool = True,
         tx_options: dict | None = None,
-    ) -> RegistrationResponse:
+    ) -> RegistrationWithRoyaltyVaultResponse:
         """
         Mint an NFT and register the IP, make a derivative, and distribute royalty tokens.
 
-         :param spg_nft_contract str: The address of the SPGNFT collection.
+         :param spg_nft_contract Address: The address of the SPGNFT collection.
          :param deriv_data `DerivativeDataInput`: The derivative data to be used for register derivative.
          :param royalty_shares `list[RoyaltyShareInput]`: The royalty shares to be distributed.
          :param ip_metadata `IPMetadataInput`: [Optional] The desired metadata for the newly minted NFT and newly registered IP.
-         :param recipient str: [Optional] The address to receive the minted NFT. If not provided, the client's own wallet address will be used.
+         :param recipient Address: [Optional] The address to receive the minted NFT. If not provided, the client's own wallet address will be used.
          :param allow_duplicates bool: [Optional] Set to true to allow minting an NFT with a duplicate metadata hash. (default: True)
          :param tx_options dict: [Optional] Transaction options.
-         :return `RegistrationResponse`: Dictionary with the tx hash, IP ID and token ID.
+         :return `RegistrationWithRoyaltyVaultResponse`: Dictionary with the tx hash, IP ID and token ID, royalty vault.
         """
         try:
             validated_royalty_shares_obj = RoyaltyShare.get_royalty_shares(
@@ -1034,10 +1039,16 @@ class IPAsset:
             )
 
             ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])
-            return RegistrationResponse(
+            royalty_vault = self.get_royalty_vault_address_by_ip_id(
+                response["tx_receipt"],
+                ip_registered["ip_id"],
+            )
+
+            return RegistrationWithRoyaltyVaultResponse(
                 tx_hash=response["tx_hash"],
                 ip_id=ip_registered["ip_id"],
                 token_id=ip_registered["token_id"],
+                royalty_vault=royalty_vault,
             )
         except Exception as e:
             raise ValueError(
@@ -1300,6 +1311,29 @@ class IPAsset:
                 license_terms_ids.append(license_terms_id)
 
         return license_terms_ids
+
+    def get_royalty_vault_address_by_ip_id(
+        self, tx_receipt: dict, ipId: Address
+    ) -> Address:
+        """
+        Parse the RoyaltyVaultDeployed event from a transaction receipt and return the royalty vault address for a given IP ID.
+
+        :param tx_receipt dict: The transaction receipt.
+        :param ipId Address: The IP ID.
+        :return Address: The royalty vault address.
+        """
+        event_signature = self.web3.keccak(
+            text="IpRoyaltyVaultDeployed(address,address)"
+        ).hex()
+        for log in tx_receipt["logs"]:
+            if log["topics"][0].hex() == event_signature:
+                event_result = self.royalty_module_client.contract.events.IpRoyaltyVaultDeployed.process_log(
+                    log
+                )
+                if event_result["args"]["ipId"] == ipId:
+                    return event_result["args"]["ipRoyaltyVault"]
+
+        raise ValueError("RoyaltyVaultDeployed event not found in transaction receipt.")
 
     def _validate_recipient(self, recipient: Address | None) -> Address:
         """

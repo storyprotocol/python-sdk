@@ -22,7 +22,7 @@ class RegistrationWithRoyaltyVaultResponse(RegistrationResponse):
     """
     Response structure for IP asset registration operations with royalty vault.
 
-    Extends RegistrationResponse with royalty vault information.
+    Extends `RegistrationResponse` with royalty vault information.
 
     Attributes:
         royalty_vault: The royalty vault address of the registered IP asset

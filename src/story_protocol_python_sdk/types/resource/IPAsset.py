@@ -18,20 +18,16 @@ class RegistrationResponse(TypedDict):
     token_id: int
 
 
-class RegistrationWithRoyaltyVaultResponse(TypedDict):
+class RegistrationWithRoyaltyVaultResponse(RegistrationResponse):
     """
     Response structure for IP asset registration operations with royalty vault.
 
+    Extends RegistrationResponse with royalty vault information.
+
     Attributes:
-        tx_hash: The transaction hash of the registration transaction
-        ip_id: The IP ID of the registered IP asset
-        token_id: The token ID of the registered IP asset
         royalty_vault: The royalty vault address of the registered IP asset
     """
 
-    tx_hash: HexStr
-    ip_id: Address
-    token_id: int
     royalty_vault: Address
 
 

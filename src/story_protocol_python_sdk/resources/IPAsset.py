@@ -1316,7 +1316,7 @@ class IPAsset:
         self, tx_receipt: dict, ipId: Address
     ) -> Address:
         """
-        Parse the RoyaltyVaultDeployed event from a transaction receipt and return the royalty vault address for a given IP ID.
+        Parse the IpRoyaltyVaultDeployed event from a transaction receipt and return the royalty vault address for a given IP ID.
 
         :param tx_receipt dict: The transaction receipt.
         :param ipId Address: The IP ID.

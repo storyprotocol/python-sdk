@@ -16,6 +16,7 @@ from .types.resource.Group import (
 from .types.resource.IPAsset import (
     RegisterPILTermsAndAttachResponse,
     RegistrationResponse,
+    RegistrationWithRoyaltyVaultResponse,
 )
 from .utils.constants import (
     DEFAULT_FUNCTION_SELECTOR,
@@ -44,6 +45,7 @@ __all__ = [
     "DerivativeDataInput",
     "IPMetadataInput",
     "RegistrationResponse",
+    "RegistrationWithRoyaltyVaultResponse",
     "ClaimRewardsResponse",
     "ClaimReward",
     "CollectRoyaltiesResponse",

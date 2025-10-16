@@ -16,6 +16,7 @@ from .types.resource.Group import (
 from .types.resource.IPAsset import (
     RegisterPILTermsAndAttachResponse,
     RegistrationResponse,
+    RegistrationWithRoyaltyVaultResponse,
 )
 from .utils.constants import (
     DEFAULT_FUNCTION_SELECTOR,
@@ -29,6 +30,7 @@ from .utils.constants import (
 from .utils.derivative_data import DerivativeDataInput
 from .utils.ip_metadata import IPMetadataInput
 from .utils.licensing_config_data import LicensingConfig
+from .utils.royalty_shares import RoyaltyShareInput
 
 __all__ = [
     "StoryClient",
@@ -43,11 +45,13 @@ __all__ = [
     "DerivativeDataInput",
     "IPMetadataInput",
     "RegistrationResponse",
+    "RegistrationWithRoyaltyVaultResponse",
     "ClaimRewardsResponse",
     "ClaimReward",
     "CollectRoyaltiesResponse",
     "LicensingConfig",
     "RegisterPILTermsAndAttachResponse",
+    "RoyaltyShareInput",
     # Constants
     "ZERO_ADDRESS",
     "ZERO_HASH",

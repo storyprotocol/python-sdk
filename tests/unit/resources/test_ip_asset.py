@@ -3,24 +3,25 @@ from unittest.mock import patch
 import pytest
 from ens.ens import HexStr
 
+from story_protocol_python_sdk import RoyaltyShareInput
 from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
     IPAccountImplClient,
 )
 from story_protocol_python_sdk.resources.IPAsset import IPAsset
-from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
-from story_protocol_python_sdk.utils.constants import ZERO_HASH
 from story_protocol_python_sdk.utils.derivative_data import DerivativeDataInput
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadata, IPMetadataInput
 from story_protocol_python_sdk.utils.royalty import get_royalty_shares
-from tests.integration.config.utils import ZERO_ADDRESS
 from tests.unit.fixtures.data import (
     ACCOUNT_ADDRESS,
     ADDRESS,
     CHAIN_ID,
     IP_ID,
     LICENSE_TERMS,
+    LICENSE_TERMS_DATA,
     LICENSING_CONFIG,
     TX_HASH,
+    ZERO_ADDRESS,
+    ZERO_HASH,
 )
 
 
@@ -1186,3 +1187,158 @@ class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
                             )
                         ],
                     )
+
+
+class TestMintAndRegisterIpAndAttachPilTermsAndDistributeRoyaltyTokens:
+    def test_throw_error_when_royalty_shares_empty(self, ip_asset: IPAsset):
+        with pytest.raises(
+            ValueError,
+            match="Failed to mint, register IP, attach PIL terms and distribute royalty tokens: Royalty shares must be provided.",
+        ):
+            ip_asset.mint_and_register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+                spg_nft_contract=ADDRESS,
+                license_terms_data=LICENSE_TERMS_DATA,
+                royalty_shares=[],
+            )
+
+    def test_success_with_default_values(
+        self,
+        ip_asset: IPAsset,
+        mock_license_registry_client,
+        mock_parse_ip_registered_event,
+        mock_parse_tx_license_terms_attached_event,
+        mock_get_royalty_vault_address_by_ip_id,
+    ):
+        royalty_shares = [
+            RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0),
+            RoyaltyShareInput(recipient=ADDRESS, percentage=30.0),
+        ]
+
+        with (
+            mock_parse_ip_registered_event(),
+            mock_parse_tx_license_terms_attached_event(),
+            mock_license_registry_client(),
+            mock_get_royalty_vault_address_by_ip_id(),
+        ):
+            with patch.object(
+                ip_asset.royalty_token_distribution_workflows_client,
+                "build_mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_transaction:
+                result = ip_asset.mint_and_register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+                    spg_nft_contract=ADDRESS,
+                    license_terms_data=LICENSE_TERMS_DATA,
+                    royalty_shares=royalty_shares,
+                )
+            called_args = mock_build_transaction.call_args[0]
+            assert called_args[2] == IPMetadata.from_input().get_validated_data()
+            assert (
+                called_args[4] == get_royalty_shares(royalty_shares)["royalty_shares"]
+            )
+            assert called_args[5] is True
+
+            assert result["tx_hash"] == TX_HASH.hex()
+            assert result["ip_id"] == IP_ID
+            assert result["token_id"] == 3
+            assert result["license_terms_ids"] == [1, 2]
+            assert result["royalty_vault"] == ADDRESS
+
+    def test_success_with_custom_values(
+        self,
+        ip_asset: IPAsset,
+        mock_license_registry_client,
+        mock_parse_ip_registered_event,
+        mock_parse_tx_license_terms_attached_event,
+        mock_get_royalty_vault_address_by_ip_id,
+    ):
+        royalty_shares = [
+            RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0),
+            RoyaltyShareInput(recipient=ADDRESS, percentage=30.0),
+        ]
+        custom_metadata = IPMetadataInput(
+            ip_metadata_uri="https://example.com/ip-metadata.json",
+            ip_metadata_hash=HexStr("0x" + "a" * 64),
+            nft_metadata_uri="https://example.com/nft-metadata.json",
+            nft_metadata_hash=HexStr("0x" + "b" * 64),
+        )
+        custom_recipient = ACCOUNT_ADDRESS
+
+        with (
+            mock_parse_ip_registered_event(),
+            mock_parse_tx_license_terms_attached_event(),
+            mock_license_registry_client(),
+            mock_get_royalty_vault_address_by_ip_id(),
+        ):
+            with patch.object(
+                ip_asset.royalty_token_distribution_workflows_client,
+                "build_mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_transaction:
+                result = ip_asset.mint_and_register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+                    spg_nft_contract=ADDRESS,
+                    license_terms_data=LICENSE_TERMS_DATA,
+                    royalty_shares=royalty_shares,
+                    ip_metadata=custom_metadata,
+                    recipient=custom_recipient,
+                    allow_duplicates=False,
+                )
+            called_args = mock_build_transaction.call_args[0]
+            assert called_args[0] == ADDRESS
+            assert called_args[1] == custom_recipient
+            assert (
+                called_args[2]
+                == IPMetadata.from_input(custom_metadata).get_validated_data()
+            )
+            assert (
+                called_args[4] == get_royalty_shares(royalty_shares)["royalty_shares"]
+            )
+            assert called_args[5] is False
+
+            assert result["tx_hash"] == TX_HASH.hex()
+            assert result["ip_id"] == IP_ID
+            assert result["token_id"] == 3
+            assert result["license_terms_ids"] == [1, 2]
+            assert result["royalty_vault"] == ADDRESS
+
+    def test_success_with_tx_options(
+        self,
+        ip_asset: IPAsset,
+        mock_license_registry_client,
+        mock_parse_ip_registered_event,
+        mock_parse_tx_license_terms_attached_event,
+        mock_get_royalty_vault_address_by_ip_id,
+    ):
+        royalty_shares = [
+            RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0),
+            RoyaltyShareInput(recipient=ADDRESS, percentage=30.0),
+        ]
+        tx_options = {"gas": 500000, "gasPrice": 1000000000}
+
+        with (
+            mock_parse_ip_registered_event(),
+            mock_parse_tx_license_terms_attached_event(),
+            mock_license_registry_client(),
+            mock_get_royalty_vault_address_by_ip_id(),
+        ):
+            with patch(
+                "story_protocol_python_sdk.resources.IPAsset.build_and_send_transaction"
+            ) as mock_build_and_send:
+                mock_build_and_send.return_value = {
+                    "tx_hash": TX_HASH.hex(),
+                    "tx_receipt": "mock_receipt",
+                }
+                result = ip_asset.mint_and_register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+                    spg_nft_contract=ADDRESS,
+                    license_terms_data=LICENSE_TERMS_DATA,
+                    royalty_shares=royalty_shares,
+                    tx_options=tx_options,
+                )
+
+            called_kwargs = mock_build_and_send.call_args[1]
+            assert called_kwargs["tx_options"] == tx_options
+
+            assert result["tx_hash"] == TX_HASH.hex()
+            assert result["ip_id"] == IP_ID
+            assert result["token_id"] == 3
+            assert result["license_terms_ids"] == [1, 2]
+            assert result["royalty_vault"] == ADDRESS

@@ -1,6 +1,6 @@
 """Module for handling IP Account operations and transactions."""
 
-from dataclasses import asdict
+from dataclasses import asdict, is_dataclass
 
 from ens.ens import Address, HexStr
 from web3 import Web3
@@ -1376,24 +1376,29 @@ class IPAsset:
         return validate_address(recipient)
 
     def _validate_license_terms_data(
-        self, license_terms_data: list[LicenseTermsDataInput]
+        self, license_terms_data: list[LicenseTermsDataInput] | list[dict]
     ) -> list:
         """
         Validate the license terms data.
 
-        :param license_terms_data `list[LicenseTermsDataInput]`: The license terms data to validate.
+        :param license_terms_data `list[LicenseTermsDataInput]` or `list[dict]`: The license terms data to validate.
         :return list: The validated license terms data.
         """
 
         validated_license_terms_data = []
         for term in license_terms_data:
-            # Convert dataclass to dict for validation
-            terms_dict = asdict(term.terms)
+            if is_dataclass(term):
+                terms_dict = asdict(term.terms)
+                licensing_config_dict = term.licensing_config
+            else:
+                terms_dict = term["terms"]
+                licensing_config_dict = term["licensing_config"]
+
             validated_license_terms_data.append(
                 {
                     "terms": self.license_terms_util.validate_license_terms(terms_dict),
                     "licensingConfig": self.license_terms_util.validate_licensing_config(
-                        term.licensing_config
+                        licensing_config_dict
                     ),
                 }
             )

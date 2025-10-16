@@ -431,18 +431,7 @@ class IPAsset:
                 raise ValueError(
                     f"The NFT contract address {spg_nft_contract} is not valid."
                 )
-            license_terms = []
-            for term in terms:
-                license_terms.append(
-                    {
-                        "terms": self.license_terms_util.validate_license_terms(
-                            term["terms"]
-                        ),
-                        "licensingConfig": self.license_terms_util.validate_licensing_config(
-                            term["licensing_config"]
-                        ),
-                    }
-                )
+            license_terms = self._validate_license_terms_data(terms)
 
             metadata = {
                 "ipMetadataURI": "",
@@ -618,18 +607,7 @@ class IPAsset:
                 raise ValueError(
                     f"The NFT with id {token_id} is already registered as IP."
                 )
-            license_terms = []
-            for term in license_terms_data:
-                license_terms.append(
-                    {
-                        "terms": self.license_terms_util.validate_license_terms(
-                            term["terms"]
-                        ),
-                        "licensingConfig": self.license_terms_util.validate_licensing_config(
-                            term["licensing_config"]
-                        ),
-                    }
-                )
+            license_terms = self._validate_license_terms_data(license_terms_data)
 
             calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
 
@@ -1073,18 +1051,7 @@ class IPAsset:
             calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
             ip_account_impl_client = IPAccountImplClient(self.web3, ip_id)
             state = ip_account_impl_client.state()
-            license_terms = []
-            for term in license_terms_data:
-                license_terms.append(
-                    {
-                        "terms": self.license_terms_util.validate_license_terms(
-                            term["terms"]
-                        ),
-                        "licensingConfig": self.license_terms_util.validate_licensing_config(
-                            term["licensing_config"]
-                        ),
-                    }
-                )
+            license_terms = self._validate_license_terms_data(license_terms_data)
             signature_response = self.sign_util.get_permission_signature(
                 ip_id=ip_id,
                 deadline=calculated_deadline,
@@ -1341,3 +1308,24 @@ class IPAsset:
         if recipient is None:
             return self.account.address
         return validate_address(recipient)
+
+    def _validate_license_terms_data(self, license_terms_data: list) -> list:
+        """
+        Validate the license terms data.
+
+        :param license_terms_data list: The license terms data to validate.
+        :return list: The validated license terms data.
+        """
+        validated_license_terms_data = []
+        for term in license_terms_data:
+            validated_license_terms_data.append(
+                {
+                    "terms": self.license_terms_util.validate_license_terms(
+                        term["terms"]
+                    ),
+                    "licensingConfig": self.license_terms_util.validate_licensing_config(
+                        term["licensing_config"]
+                    ),
+                }
+            )
+        return validated_license_terms_data

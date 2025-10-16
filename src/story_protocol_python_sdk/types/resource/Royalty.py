@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import IntEnum
 
 from ens.ens import Address
@@ -26,6 +27,7 @@ class NativeRoyaltyPolicy(IntEnum):
 RoyaltyPolicyInput = Address | NativeRoyaltyPolicy
 
 
+@dataclass
 class RoyaltyShareInput:
     """Input data structure for a single royalty share.
 

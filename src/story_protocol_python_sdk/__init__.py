@@ -14,10 +14,13 @@ from .types.resource.Group import (
     CollectRoyaltiesResponse,
 )
 from .types.resource.IPAsset import (
+    LicenseTermsDataInput,
     RegisterPILTermsAndAttachResponse,
     RegistrationResponse,
+    RegistrationWithRoyaltyVaultAndLicenseTermsResponse,
     RegistrationWithRoyaltyVaultResponse,
 )
+from .types.resource.License import LicenseTermsInput
 from .types.resource.Royalty import RoyaltyShareInput
 from .utils.constants import (
     DEFAULT_FUNCTION_SELECTOR,
@@ -46,12 +49,15 @@ __all__ = [
     "IPMetadataInput",
     "RegistrationResponse",
     "RegistrationWithRoyaltyVaultResponse",
+    "RegistrationWithRoyaltyVaultAndLicenseTermsResponse",
+    "LicenseTermsDataInput",
     "ClaimRewardsResponse",
     "ClaimReward",
     "CollectRoyaltiesResponse",
     "LicensingConfig",
     "RegisterPILTermsAndAttachResponse",
     "RoyaltyShareInput",
+    "LicenseTermsInput",
     # Constants
     "ZERO_ADDRESS",
     "ZERO_HASH",

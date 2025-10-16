@@ -1,5 +1,7 @@
 """Module for handling IP Account operations and transactions."""
 
+from dataclasses import asdict
+
 from ens.ens import Address, HexStr
 from web3 import Web3
 
@@ -45,8 +47,10 @@ from story_protocol_python_sdk.abi.RoyaltyTokenDistributionWorkflows.RoyaltyToke
 from story_protocol_python_sdk.abi.SPGNFTImpl.SPGNFTImpl_client import SPGNFTImplClient
 from story_protocol_python_sdk.types.common import AccessPermission
 from story_protocol_python_sdk.types.resource.IPAsset import (
+    LicenseTermsDataInput,
     RegisterPILTermsAndAttachResponse,
     RegistrationResponse,
+    RegistrationWithRoyaltyVaultAndLicenseTermsResponse,
     RegistrationWithRoyaltyVaultResponse,
 )
 from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
@@ -971,6 +975,68 @@ class IPAsset:
                 f"Failed to register IP and make derivative with license tokens: {str(e)}"
             ) from e
 
+    def mint_and_register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+        self,
+        spg_nft_contract: Address,
+        license_terms_data: list[LicenseTermsDataInput],
+        royalty_shares: list[RoyaltyShareInput],
+        ip_metadata: IPMetadataInput | None = None,
+        recipient: Address | None = None,
+        allow_duplicates: bool = True,
+        tx_options: dict | None = None,
+    ) -> RegistrationWithRoyaltyVaultAndLicenseTermsResponse:
+        """
+        Mint an NFT and register the IP, attach PIL terms, and distribute royalty tokens.
+
+        :param spg_nft_contract Address: The address of the SPGNFT collection.
+        :param license_terms_data `list[LicenseTermsDataInput]`: The PIL terms and licensing configuration data to be attached to the IP.
+        :param royalty_shares `list[RoyaltyShareInput]`: The royalty shares to be distributed.
+        :param ip_metadata `IPMetadataInput`: [Optional] The desired metadata for the newly minted NFT and newly registered IP.
+        :param recipient Address: [Optional] The address to receive the minted NFT. If not provided, the client's own wallet address will be used.
+        :param allow_duplicates bool: [Optional] Set to false to prevent minting an NFT with a duplicate metadata hash. (default: True)
+        :param tx_options dict: [Optional] Transaction options.
+        :return `RegistrationWithRoyaltyVaultAndLicenseTermsResponse`: Response with tx hash, IP ID, token ID, license terms IDs, and royalty vault address.
+        """
+        try:
+            validated_royalty_shares = get_royalty_shares(royalty_shares)[
+                "royalty_shares"
+            ]
+            license_terms = self._validate_license_terms_data(license_terms_data)
+
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.royalty_token_distribution_workflows_client.build_mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens_transaction,
+                validate_address(spg_nft_contract),
+                self._validate_recipient(recipient),
+                IPMetadata.from_input(ip_metadata).get_validated_data(),
+                license_terms,
+                validated_royalty_shares,
+                allow_duplicates,
+                tx_options=tx_options,
+            )
+
+            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])
+            license_terms_ids = self._parse_tx_license_terms_attached_event(
+                response["tx_receipt"]
+            )
+            royalty_vault = self.get_royalty_vault_address_by_ip_id(
+                response["tx_receipt"],
+                ip_registered["ip_id"],
+            )
+
+            return RegistrationWithRoyaltyVaultAndLicenseTermsResponse(
+                tx_hash=response["tx_hash"],
+                ip_id=ip_registered["ip_id"],
+                token_id=ip_registered["token_id"],
+                license_terms_ids=license_terms_ids,
+                royalty_vault=royalty_vault,
+            )
+        except Exception as e:
+            raise ValueError(
+                f"Failed to mint, register IP, attach PIL terms and distribute royalty tokens: {str(e)}"
+            ) from e
+
     def mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
         self,
         spg_nft_contract: Address,
@@ -1309,22 +1375,25 @@ class IPAsset:
             return self.account.address
         return validate_address(recipient)
 
-    def _validate_license_terms_data(self, license_terms_data: list) -> list:
+    def _validate_license_terms_data(
+        self, license_terms_data: list[LicenseTermsDataInput]
+    ) -> list:
         """
         Validate the license terms data.
 
-        :param license_terms_data list: The license terms data to validate.
+        :param license_terms_data `list[LicenseTermsDataInput]`: The license terms data to validate.
         :return list: The validated license terms data.
         """
+
         validated_license_terms_data = []
         for term in license_terms_data:
+            # Convert dataclass to dict for validation
+            terms_dict = asdict(term.terms)
             validated_license_terms_data.append(
                 {
-                    "terms": self.license_terms_util.validate_license_terms(
-                        term["terms"]
-                    ),
+                    "terms": self.license_terms_util.validate_license_terms(terms_dict),
                     "licensingConfig": self.license_terms_util.validate_licensing_config(
-                        term["licensing_config"]
+                        term.licensing_config
                     ),
                 }
             )

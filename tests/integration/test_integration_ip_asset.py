@@ -1,16 +1,22 @@
 import pytest
 
+from story_protocol_python_sdk import (
+    ROYALTY_POLICY_LAP_ADDRESS,
+    ZERO_ADDRESS,
+    ZERO_HASH,
+    DerivativeDataInput,
+    IPMetadataInput,
+    LicenseTermsDataInput,
+    LicenseTermsInput,
+    RoyaltyShareInput,
+    StoryClient,
+)
 from story_protocol_python_sdk.abi.DerivativeWorkflows.DerivativeWorkflows_client import (
     DerivativeWorkflowsClient,
 )
 from story_protocol_python_sdk.abi.LicenseToken.LicenseToken_client import (
     LicenseTokenClient,
 )
-from story_protocol_python_sdk.story_client import StoryClient
-from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
-from story_protocol_python_sdk.utils.constants import ROYALTY_POLICY_LAP_ADDRESS
-from story_protocol_python_sdk.utils.derivative_data import DerivativeDataInput
-from story_protocol_python_sdk.utils.ip_metadata import IPMetadataInput
 from tests.integration.config.test_config import account_2
 from tests.integration.config.utils import approve
 
@@ -18,7 +24,6 @@ from .setup_for_integration import (
     PIL_LICENSE_TEMPLATE,
     ROYALTY_POLICY,
     WIP_TOKEN_ADDRESS,
-    ZERO_ADDRESS,
     MockERC20,
     MockERC721,
     account,
@@ -548,6 +553,70 @@ class TestSPGNFTOperations:
             isinstance(result["license_terms_ids"], list)
             and result["license_terms_ids"]
         )
+
+    def test_mint_and_register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+        self, story_client: StoryClient, nft_collection
+    ):
+        """Test minting NFT, registering IP, attaching PIL terms and distributing royalty tokens with all optional parameters"""
+        license_terms_data = [
+            LicenseTermsDataInput(
+                terms=LicenseTermsInput(
+                    transferable=True,
+                    royalty_policy=ROYALTY_POLICY,
+                    default_minting_fee=10000,
+                    expiration=1000,
+                    commercial_use=True,
+                    commercial_attribution=False,
+                    commercializer_checker=ZERO_ADDRESS,
+                    commercializer_checker_data=ZERO_HASH,
+                    commercial_rev_share=10,
+                    commercial_rev_ceiling=0,
+                    derivatives_allowed=True,
+                    derivatives_attribution=True,
+                    derivatives_approval=False,
+                    derivatives_reciprocal=True,
+                    derivative_rev_ceiling=0,
+                    currency=WIP_TOKEN_ADDRESS,
+                    uri="test case with custom values",
+                ),
+                licensing_config={
+                    "is_set": True,
+                    "minting_fee": 10000,
+                    "licensing_hook": ZERO_ADDRESS,
+                    "hook_data": ZERO_HASH,
+                    "commercial_rev_share": 10,
+                    "disabled": False,
+                    "expect_minimum_group_reward_share": 0,
+                    "expect_group_reward_pool": ZERO_ADDRESS,
+                },
+            )
+        ]
+        royalty_shares = [
+            RoyaltyShareInput(recipient=account_2.address, percentage=50.0)
+        ]
+
+        response = story_client.IPAsset.mint_and_register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+            spg_nft_contract=nft_collection,
+            license_terms_data=license_terms_data,
+            royalty_shares=royalty_shares,
+            ip_metadata=IPMetadataInput(
+                ip_metadata_uri="https://example.com/metadata/custom-value.json",
+                ip_metadata_hash=web3.keccak(text="custom-value-metadata"),
+                nft_metadata_uri="https://example.com/metadata/custom-value-nft.json",
+                nft_metadata_hash=web3.keccak(text="custom-value-nft-metadata"),
+            ),
+            recipient=account_2.address,
+            allow_duplicates=False,
+        )
+
+        assert isinstance(response["tx_hash"], str) and response["tx_hash"]
+        assert isinstance(response["ip_id"], str) and response["ip_id"]
+        assert isinstance(response["token_id"], int)
+        assert (
+            isinstance(response["license_terms_ids"], list)
+            and len(response["license_terms_ids"]) > 0
+        )
+        assert isinstance(response["royalty_vault"], str) and response["royalty_vault"]
 
 
 # Add this test class to your existing test_integration_ip_asset.py file

@@ -267,7 +267,7 @@ class TestRegisterIpAndAttachPilTerms:
                 )
 
     def test_royalty_policy_commercial_rev_share_is_less_than_0(
-        self, ip_asset, mock_get_ip_id, mock_is_registered
+        self, ip_asset: IPAsset, mock_get_ip_id, mock_is_registered
     ):
         with mock_get_ip_id(), mock_is_registered():
             with pytest.raises(
@@ -282,6 +282,7 @@ class TestRegisterIpAndAttachPilTerms:
                                 **LICENSE_TERMS,
                                 "commercial_rev_share": -1,
                             },
+                            "licensing_config": LICENSING_CONFIG,
                         }
                     ],
                 )

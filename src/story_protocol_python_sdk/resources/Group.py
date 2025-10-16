@@ -147,7 +147,7 @@ class Group:
         :param ip_metadata dict: [Optional] The metadata for the IP.
         :param recipient str: [Optional] The recipient of the NFT (defaults to caller).
         :param allow_duplicates bool: [Optional] Whether to allow duplicate IPs.
-        :param deadline int: [Optional] The deadline for the signature in milliseconds.
+        :param deadline int: [Optional] The deadline for the signature in seconds. (default: 1000 seconds)
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash, IP ID, and token ID.
         """
@@ -257,7 +257,7 @@ class Group:
         :param license_data list: List of license data objects with terms and config.
         :param max_allowed_reward_share int: Maximum allowed reward share percentage. Must be between 0 and 100 (where 100% represents 100,000,000).
         :param ip_metadata dict: [Optional] The metadata for the IP.
-        :param deadline int: [Optional] The deadline for the signature in milliseconds.
+        :param deadline int: [Optional] The deadline for the signature in seconds. (default: 1000 seconds)
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash, IP ID, and token ID.
         """

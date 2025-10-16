@@ -1,5 +1,3 @@
-# src/story_protcol_python_sdk/utils/sign.py
-
 from datetime import datetime
 
 from eth_abi.abi import encode
@@ -39,7 +37,7 @@ class Sign:
         :param to str: The recipient address.
         :param encode_data bytes: The encoded data.
         :param verifying_contract str: The verifying contract address.
-        :param deadline int: The deadline for the signature in milliseconds.
+        :param deadline int: The deadline for the signature in seconds. (default: 1000 seconds)
         :return dict: A dictionary containing the signature and nonce.
         """
         try:
@@ -101,10 +99,10 @@ class Sign:
         """
         Calculate the deadline for a transaction.
 
-        :param deadline int: [Optional] The deadline value in milliseconds.
-        :return int: The calculated deadline in milliseconds.
+        :param deadline int: [Optional] The deadline value in seconds.
+        :return int: The calculated deadline in seconds.
         """
-        current_timestamp = int(datetime.now().timestamp() * 1000)
+        current_timestamp = int(datetime.now().timestamp())
 
         if deadline is not None:
             if not isinstance(deadline, int) or deadline < 0:

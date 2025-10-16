@@ -24,3 +24,15 @@ class NativeRoyaltyPolicy(IntEnum):
 # Allow custom royalty policy address or use a native royalty policy enum.
 # For custom royalty policy, see https://docs.story.foundation/concepts/royalty-module/external-royalty-policies
 RoyaltyPolicyInput = Address | NativeRoyaltyPolicy
+
+
+class RoyaltyShareInput:
+    """Input data structure for a single royalty share.
+
+    Attributes:
+        recipient: The address of the recipient.
+        percentage: The percentage of the total royalty share. Supports up to 6 decimal places precision. For example, a value of 10 represents 10% of max royalty shares, which is 10,000,000.
+    """
+
+    recipient: Address
+    percentage: float | int

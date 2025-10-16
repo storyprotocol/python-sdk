@@ -49,6 +49,7 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
     RegistrationResponse,
     RegistrationWithRoyaltyVaultResponse,
 )
+from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
 from story_protocol_python_sdk.utils.constants import (
     MAX_ROYALTY_TOKEN,
     ZERO_ADDRESS,
@@ -61,10 +62,7 @@ from story_protocol_python_sdk.utils.derivative_data import (
 from story_protocol_python_sdk.utils.function_signature import get_function_signature
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadata, IPMetadataInput
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
-from story_protocol_python_sdk.utils.royalty_shares import (
-    RoyaltyShare,
-    RoyaltyShareInput,
-)
+from story_protocol_python_sdk.utils.royalty import get_royalty_shares
 from story_protocol_python_sdk.utils.sign import Sign
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 from story_protocol_python_sdk.utils.validation import (
@@ -1018,9 +1016,7 @@ class IPAsset:
          :return `RegistrationWithRoyaltyVaultResponse`: Dictionary with the tx hash, IP ID and token ID, royalty vault.
         """
         try:
-            validated_royalty_shares_obj = RoyaltyShare.get_royalty_shares(
-                royalty_shares
-            )
+            validated_royalty_shares_obj = get_royalty_shares(royalty_shares)
             validated_deriv_data = DerivativeData.from_input(
                 web3=self.web3, input_data=deriv_data
             ).get_validated_data()

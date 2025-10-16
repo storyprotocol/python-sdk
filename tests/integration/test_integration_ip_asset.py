@@ -7,10 +7,10 @@ from story_protocol_python_sdk.abi.LicenseToken.LicenseToken_client import (
     LicenseTokenClient,
 )
 from story_protocol_python_sdk.story_client import StoryClient
+from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
 from story_protocol_python_sdk.utils.constants import ROYALTY_POLICY_LAP_ADDRESS
 from story_protocol_python_sdk.utils.derivative_data import DerivativeDataInput
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadataInput
-from story_protocol_python_sdk.utils.royalty_shares import RoyaltyShareInput
 from tests.integration.config.test_config import account_2
 from tests.integration.config.utils import approve
 

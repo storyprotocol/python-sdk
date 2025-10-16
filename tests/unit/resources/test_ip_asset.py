@@ -7,13 +7,11 @@ from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
     IPAccountImplClient,
 )
 from story_protocol_python_sdk.resources.IPAsset import IPAsset
+from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
 from story_protocol_python_sdk.utils.constants import ZERO_HASH
 from story_protocol_python_sdk.utils.derivative_data import DerivativeDataInput
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadata, IPMetadataInput
-from story_protocol_python_sdk.utils.royalty_shares import (
-    RoyaltyShare,
-    RoyaltyShareInput,
-)
+from story_protocol_python_sdk.utils.royalty import get_royalty_shares
 from tests.integration.config.utils import ZERO_ADDRESS
 from tests.unit.fixtures.data import (
     ACCOUNT_ADDRESS,
@@ -1060,8 +1058,7 @@ class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
             called_args = mock_build_transaction.call_args[0]
             assert called_args[2] == IPMetadata.from_input().get_validated_data()
             assert (
-                called_args[4]
-                == RoyaltyShare.get_royalty_shares(royalty_shares)["royalty_shares"]
+                called_args[4] == get_royalty_shares(royalty_shares)["royalty_shares"]
             )
             assert called_args[5] is True
 
@@ -1155,8 +1152,7 @@ class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
                 == IPMetadata.from_input(ip_metadata).get_validated_data()
             )
             assert (
-                called_args[4]
-                == RoyaltyShare.get_royalty_shares(royalty_shares)["royalty_shares"]
+                called_args[4] == get_royalty_shares(royalty_shares)["royalty_shares"]
             )
             assert called_args[5] is False
 

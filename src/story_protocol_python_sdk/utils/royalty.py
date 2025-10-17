@@ -19,8 +19,8 @@ def get_royalty_shares(royalty_shares: list[RoyaltyShareInput]) -> dict:
     """
     Validate and convert royalty shares.
 
-    :param royalty_shares: List of `RoyaltyShareInput`
-    :return: Dictionary with validated royalty_shares and total_amount
+    :param royalty_shares: List of `RoyaltyShareInput`.
+    :return: Dictionary with validated royalty_shares and total_amount.
     """
     if len(royalty_shares) == 0:
         raise ValueError("Royalty shares must be provided.")
@@ -77,7 +77,7 @@ def royalty_policy_input_to_address(
             - If NativeRoyaltyPolicy.LRP (1), returns the LRP policy address
 
     Raises:
-        ValueError: If the custom address is invalid
+        ValueError: If the custom address is invalid.
     """
     if input is None:
         return ROYALTY_POLICY_LAP_ADDRESS

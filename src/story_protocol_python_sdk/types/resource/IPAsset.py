@@ -44,7 +44,7 @@ class RegistrationWithRoyaltyVaultAndLicenseTermsResponse(
     Extends `RegistrationWithRoyaltyVaultResponse` with license terms information.
 
     Attributes:
-        license_terms_ids: The IDs of the license terms attached to the IP asset
+        license_terms_ids: The IDs of the license terms attached to the IP asset.
     """
 
     license_terms_ids: list[int]

@@ -16,6 +16,7 @@ from story_protocol_python_sdk.abi.DerivativeWorkflows.DerivativeWorkflows_clien
 from story_protocol_python_sdk.abi.LicenseToken.LicenseToken_client import (
     LicenseTokenClient,
 )
+from story_protocol_python_sdk.utils.licensing_config_data import LicensingConfig
 from tests.integration.config.test_config import account_2
 from tests.integration.config.utils import approve
 
@@ -691,6 +692,75 @@ class TestSPGNFTOperations:
         assert response is not None
         assert isinstance(response["tx_hash"], str)
         assert len(response["license_terms_ids"]) == 2
+
+    def test_register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+        self, story_client: StoryClient, nft_collection
+    ):
+        """Test registering an existing NFT as IP, attaching PIL terms and distributing royalty tokens with all optional parameters"""
+        # Mint an NFT first
+        token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account)
+
+        royalty_shares = [
+            RoyaltyShareInput(recipient=account.address, percentage=30.0),
+            RoyaltyShareInput(recipient=account_2.address, percentage=70.0),
+        ]
+
+        response = story_client.IPAsset.register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+            nft_contract=nft_collection,
+            token_id=token_id,
+            license_terms_data=[
+                LicenseTermsDataInput(
+                    terms=LicenseTermsInput(
+                        transferable=True,
+                        royalty_policy=ROYALTY_POLICY,
+                        default_minting_fee=10000,
+                        expiration=1000,
+                        commercial_use=True,
+                        commercial_attribution=False,
+                        commercializer_checker=ZERO_ADDRESS,
+                        commercializer_checker_data=ZERO_HASH,
+                        commercial_rev_share=10,
+                        commercial_rev_ceiling=0,
+                        derivatives_allowed=True,
+                        derivatives_attribution=True,
+                        derivatives_approval=False,
+                        derivatives_reciprocal=True,
+                        derivative_rev_ceiling=0,
+                        currency=WIP_TOKEN_ADDRESS,
+                        uri="test case with custom values",
+                    ),
+                    licensing_config=LicensingConfig(
+                        is_set=True,
+                        minting_fee=10000,
+                        licensing_hook=ZERO_ADDRESS,
+                        hook_data=ZERO_HASH,
+                        commercial_rev_share=10,
+                        disabled=False,
+                        expect_minimum_group_reward_share=0,
+                        expect_group_reward_pool=ZERO_ADDRESS,
+                    ),
+                )
+            ],
+            royalty_shares=royalty_shares,
+            ip_metadata=COMMON_IP_METADATA,
+            deadline=1000,
+        )
+
+        # Verify all response fields
+        assert isinstance(response["tx_hash"], str) and response["tx_hash"]
+        assert isinstance(response["ip_id"], str) and response["ip_id"]
+        assert (
+            isinstance(response["token_id"], int) and response["token_id"] == token_id
+        )
+        assert (
+            isinstance(response["license_terms_ids"], list)
+            and len(response["license_terms_ids"]) > 0
+        )
+        assert isinstance(response["royalty_vault"], str) and response["royalty_vault"]
+        assert (
+            isinstance(response["distribute_royalty_tokens_tx_hash"], str)
+            and response["distribute_royalty_tokens_tx_hash"]
+        )
 
 
 class TestIPAssetMint:

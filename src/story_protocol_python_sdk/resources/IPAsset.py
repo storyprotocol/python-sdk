@@ -52,6 +52,7 @@ from story_protocol_python_sdk.types.common import AccessPermission
 from story_protocol_python_sdk.types.resource.IPAsset import (
     LicenseTermsDataInput,
     RegisterAndAttachAndDistributeRoyaltyTokensResponse,
+    RegisterDerivativeIPAndAttachAndDistributeRoyaltyTokensResponse,
     RegisterPILTermsAndAttachResponse,
     RegistrationResponse,
     RegistrationWithRoyaltyVaultAndLicenseTermsResponse,
@@ -222,12 +223,10 @@ class IPAsset:
                     ],
                 )
 
-                signature = self.web3.to_bytes(hexstr=signature_response["signature"])
-
                 req_object["sigMetadata"] = {
                     "signer": self.web3.to_checksum_address(self.account.address),
                     "deadline": calculated_deadline,
-                    "signature": signature,
+                    "signature": signature_response["signature"],
                 }
 
                 response = build_and_send_transaction(
@@ -681,9 +680,7 @@ class IPAsset:
                 {
                     "signer": self.web3.to_checksum_address(self.account.address),
                     "deadline": calculated_deadline,
-                    "signature": self.web3.to_bytes(
-                        hexstr=signature_response["signature"]
-                    ),
+                    "signature": signature_response["signature"],
                 },
                 tx_options=tx_options,
             )
@@ -959,9 +956,7 @@ class IPAsset:
                 {
                     "signer": self.web3.to_checksum_address(self.account.address),
                     "deadline": calculated_deadline,
-                    "signature": self.web3.to_bytes(
-                        hexstr=signature_response["signature"]
-                    ),
+                    "signature": signature_response["signature"],
                 },
                 tx_options=tx_options,
             )
@@ -1099,6 +1094,109 @@ class IPAsset:
                 f"Failed to mint, register IP, make derivative and distribute royalty tokens: {str(e)}"
             ) from e
 
+    def register_derivative_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+        self,
+        nft_contract: Address,
+        token_id: int,
+        deriv_data: DerivativeDataInput,
+        royalty_shares: list[RoyaltyShareInput],
+        ip_metadata: IPMetadataInput | None = None,
+        deadline: int = 1000,
+        tx_options: dict | None = None,
+    ) -> RegisterDerivativeIPAndAttachAndDistributeRoyaltyTokensResponse:
+        """
+        Register the given NFT as a derivative IP, attach license terms from parent IPs, and distribute royalty tokens.
+        In order to successfully distribute royalty tokens, the first license terms attached to the IP must be a commercial license.
+
+         :param nft_contract Address: The address of the NFT collection.
+         :param token_id int: The ID of the NFT.
+         :param deriv_data `DerivativeDataInput`: The derivative data to be used for register derivative.
+         :param royalty_shares `list[RoyaltyShareInput]`: Authors of the IP and their shares of the royalty tokens.
+         :param ip_metadata `IPMetadataInput`: [Optional] The metadata for the newly registered IP.
+         :param deadline int: [Optional] The deadline for the signature in seconds. (default: 1000 seconds)
+         :param tx_options dict: [Optional] Transaction options.
+         :return `RegisterAndAttachAndDistributeRoyaltyTokensResponse`: Response with tx hash, license terms IDs, royalty vault address, and distribute royalty tokens transaction hash.
+        """
+        try:
+            nft_contract = validate_address(nft_contract)
+            ip_id = self._get_ip_id(nft_contract, token_id)
+            if self._is_registered(ip_id):
+                raise ValueError(
+                    f"The NFT with id {token_id} is already registered as IP."
+                )
+
+            validated_deriv_data = DerivativeData.from_input(
+                web3=self.web3, input_data=deriv_data
+            ).get_validated_data()
+            calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
+            royalty_shares_obj = get_royalty_shares(royalty_shares)
+
+            signature_response = self.sign_util.get_permission_signature(
+                ip_id=ip_id,
+                deadline=calculated_deadline,
+                state=self.web3.to_bytes(hexstr=HexStr(ZERO_HASH)),
+                permissions=[
+                    {
+                        "ipId": ip_id,
+                        "signer": self.royalty_token_distribution_workflows_client.contract.address,
+                        "to": self.core_metadata_module_client.contract.address,
+                        "permission": AccessPermission.ALLOW,
+                        "func": "setAll(address,string,bytes32,bytes32)",
+                    },
+                    {
+                        "ipId": ip_id,
+                        "signer": self.royalty_token_distribution_workflows_client.contract.address,
+                        "to": self.licensing_module_client.contract.address,
+                        "permission": AccessPermission.ALLOW,
+                        "func": "registerDerivative(address,address[],uint256[],address,bytes,uint256,uint32,uint32)",
+                    },
+                ],
+            )
+
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.royalty_token_distribution_workflows_client.build_registerIpAndMakeDerivativeAndDeployRoyaltyVault_transaction,
+                nft_contract,
+                token_id,
+                IPMetadata.from_input(ip_metadata).get_validated_data(),
+                validated_deriv_data,
+                {
+                    "signer": self.web3.to_checksum_address(self.account.address),
+                    "deadline": calculated_deadline,
+                    "signature": signature_response["signature"],
+                },
+                tx_options=tx_options,
+            )
+
+            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])
+            royalty_vault = self.get_royalty_vault_address_by_ip_id(
+                response["tx_receipt"],
+                ip_registered["ip_id"],
+            )
+
+            # Distribute royalty tokens
+            distribute_tx_hash = self._distribute_royalty_tokens(
+                ip_id=ip_registered["ip_id"],
+                royalty_shares=royalty_shares_obj["royalty_shares"],
+                royalty_vault=royalty_vault,
+                total_amount=royalty_shares_obj["total_amount"],
+                tx_options=tx_options,
+                deadline=calculated_deadline,
+            )
+
+            return RegisterDerivativeIPAndAttachAndDistributeRoyaltyTokensResponse(
+                tx_hash=response["tx_hash"],
+                ip_id=ip_registered["ip_id"],
+                token_id=ip_registered["token_id"],
+                royalty_vault=royalty_vault,
+                distribute_royalty_tokens_tx_hash=distribute_tx_hash,
+            )
+        except Exception as e:
+            raise ValueError(
+                f"Failed to register derivative IP and distribute royalty tokens: {str(e)}"
+            ) from e
+
     def register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
         self,
         nft_contract: Address,
@@ -1175,9 +1273,7 @@ class IPAsset:
                 {
                     "signer": self.web3.to_checksum_address(self.account.address),
                     "deadline": calculated_deadline,
-                    "signature": self.web3.to_bytes(
-                        hexstr=signature_response["signature"]
-                    ),
+                    "signature": signature_response["signature"],
                 },
                 tx_options=tx_options,
             )
@@ -1431,9 +1527,7 @@ class IPAsset:
                 {
                     "signer": self.web3.to_checksum_address(self.account.address),
                     "deadline": deadline,
-                    "signature": self.web3.to_bytes(
-                        hexstr=signature_response["signature"]
-                    ),
+                    "signature": signature_response["signature"],
                 },
                 tx_options=tx_options,
             )

@@ -762,6 +762,43 @@ class TestSPGNFTOperations:
             and response["distribute_royalty_tokens_tx_hash"]
         )
 
+    def test_register_derivative_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+        self, story_client: StoryClient, nft_collection, parent_ip_and_license_terms
+    ):
+        """Test registering an existing NFT as derivative IP and distributing royalty tokens with all optional parameters"""
+        # Mint an NFT first
+        token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account)
+
+        royalty_shares = [
+            RoyaltyShareInput(recipient=account.address, percentage=40.0),
+            RoyaltyShareInput(recipient=account_2.address, percentage=60.0),
+        ]
+
+        response = story_client.IPAsset.register_derivative_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+            nft_contract=nft_collection,
+            token_id=token_id,
+            deriv_data=DerivativeDataInput(
+                parent_ip_ids=[parent_ip_and_license_terms["parent_ip_id"]],
+                license_terms_ids=[parent_ip_and_license_terms["license_terms_id"]],
+                max_minting_fee=10000,
+                max_rts=10,
+                max_revenue_share=100,
+            ),
+            royalty_shares=royalty_shares,
+            ip_metadata=COMMON_IP_METADATA,
+            deadline=1000,
+        )
+        assert isinstance(response["tx_hash"], str) and response["tx_hash"]
+        assert isinstance(response["ip_id"], str) and response["ip_id"]
+        assert (
+            isinstance(response["token_id"], int) and response["token_id"] == token_id
+        )
+        assert isinstance(response["royalty_vault"], str) and response["royalty_vault"]
+        assert (
+            isinstance(response["distribute_royalty_tokens_tx_hash"], str)
+            and response["distribute_royalty_tokens_tx_hash"]
+        )
+
 
 class TestIPAssetMint:
     @pytest.fixture(scope="module")

@@ -1,15 +1,54 @@
-"""Tests for royalty_shares module."""
+"""Tests for royalty module."""
 
 import pytest
 
-from story_protocol_python_sdk.utils.royalty_shares import (
-    RoyaltyShare,
+from story_protocol_python_sdk.types.resource.Royalty import (
+    NativeRoyaltyPolicy,
     RoyaltyShareInput,
+)
+from story_protocol_python_sdk.utils.constants import (
+    ROYALTY_POLICY_LAP_ADDRESS,
+    ROYALTY_POLICY_LRP_ADDRESS,
+)
+from story_protocol_python_sdk.utils.royalty import (
+    get_royalty_shares,
+    royalty_policy_input_to_address,
 )
 
 
-class TestRoyaltyShareGetRoyaltyShares:
-    """Test RoyaltyShare.get_royalty_shares method."""
+class TestRoyaltyPolicyInputToAddress:
+    """Test royalty_policy_input_to_address function."""
+
+    def test_none_input_returns_lap_address(self):
+        """Test that None input returns LAP address"""
+        result = royalty_policy_input_to_address(None)
+        assert result == ROYALTY_POLICY_LAP_ADDRESS
+
+    def test_lap_enum_returns_lap_address(self):
+        """Test that NativeRoyaltyPolicy.LAP returns LAP address"""
+        result = royalty_policy_input_to_address(NativeRoyaltyPolicy.LAP)
+        assert result == ROYALTY_POLICY_LAP_ADDRESS
+
+    def test_lrp_enum_returns_lrp_address(self):
+        """Test that NativeRoyaltyPolicy.LRP returns LRP address"""
+        result = royalty_policy_input_to_address(NativeRoyaltyPolicy.LRP)
+        assert result == ROYALTY_POLICY_LRP_ADDRESS
+
+    def test_valid_custom_address_returns_checksum_address(self):
+        """Test that valid custom address returns checksum format address"""
+        custom_address = "0x1234567890123456789012345678901234567890"
+        result = royalty_policy_input_to_address(custom_address)
+        assert result == "0x1234567890123456789012345678901234567890"
+
+    def test_invalid_custom_address_raises_error(self):
+        """Test that invalid custom address raises ValueError"""
+        invalid_address = "invalid_address"
+        with pytest.raises(ValueError):
+            royalty_policy_input_to_address(invalid_address)
+
+
+class TestGetRoyaltyShares:
+    """Test get_royalty_shares function."""
 
     def test_get_royalty_shares_success(self):
         """Test successful processing of valid royalty shares."""
@@ -22,7 +61,7 @@ class TestRoyaltyShareGetRoyaltyShares:
             ),
         ]
 
-        result = RoyaltyShare.get_royalty_shares(shares)
+        result = get_royalty_shares(shares)
 
         expected_shares = [
             {
@@ -49,7 +88,7 @@ class TestRoyaltyShareGetRoyaltyShares:
             ),
         ]
 
-        result = RoyaltyShare.get_royalty_shares(shares)
+        result = get_royalty_shares(shares)
         expected_shares = [
             {
                 "recipient": "0x1234567890123456789012345678901234567890",
@@ -76,7 +115,7 @@ class TestRoyaltyShareGetRoyaltyShares:
             ),
         ]
 
-        result = RoyaltyShare.get_royalty_shares(shares)
+        result = get_royalty_shares(shares)
 
         # 33.333333 * 10^6 = 33333333
         # 66.666667 * 10^6 = 66666667
@@ -107,7 +146,7 @@ class TestRoyaltyShareGetRoyaltyShares:
             ),
         ]
 
-        result = RoyaltyShare.get_royalty_shares(shares)
+        result = get_royalty_shares(shares)
 
         # Due to floating point precision and int() truncation:
         # 33.3333333333 * 10^6 = 33333333.3333, int() = 33333333
@@ -131,7 +170,7 @@ class TestRoyaltyShareGetRoyaltyShares:
             ),
         ]
 
-        result = RoyaltyShare.get_royalty_shares(shares)
+        result = get_royalty_shares(shares)
 
         # 0.000001 * 10^6 = 1
         # 99.999999 * 10^6 = 99999999
@@ -147,7 +186,7 @@ class TestRoyaltyShareGetRoyaltyShares:
             )
         ]
 
-        result = RoyaltyShare.get_royalty_shares(shares)
+        result = get_royalty_shares(shares)
 
         assert result["royalty_shares"][0]["percentage"] == 100_000_000
         assert result["total_amount"] == 100_000_000
@@ -161,7 +200,7 @@ class TestRoyaltyShareGetRoyaltyShares:
             )
         ]
 
-        result = RoyaltyShare.get_royalty_shares(shares)
+        result = get_royalty_shares(shares)
 
         assert result["royalty_shares"][0]["percentage"] == 1
         assert result["total_amount"] == 1
@@ -169,7 +208,7 @@ class TestRoyaltyShareGetRoyaltyShares:
     def test_get_royalty_shares_empty_list_error(self):
         """Test error when providing empty royalty shares list."""
         with pytest.raises(ValueError, match="Royalty shares must be provided."):
-            RoyaltyShare.get_royalty_shares([])
+            get_royalty_shares([])
 
     def test_get_royalty_shares_zero_percentage(self):
         """Test error when percentage is zero."""
@@ -179,7 +218,7 @@ class TestRoyaltyShareGetRoyaltyShares:
             )
         ]
 
-        result = RoyaltyShare.get_royalty_shares(shares)
+        result = get_royalty_shares(shares)
 
         assert result["royalty_shares"][0]["percentage"] == 0
         assert result["total_amount"] == 0
@@ -196,7 +235,7 @@ class TestRoyaltyShareGetRoyaltyShares:
             ValueError,
             match="he percentage of the royalty shares must be greater than or equal to 0.",
         ):
-            RoyaltyShare.get_royalty_shares(shares)
+            get_royalty_shares(shares)
 
     def test_get_royalty_shares_percentage_100(self):
         """Test when percentage is 100."""
@@ -206,7 +245,7 @@ class TestRoyaltyShareGetRoyaltyShares:
             )
         ]
 
-        result = RoyaltyShare.get_royalty_shares(shares)
+        result = get_royalty_shares(shares)
 
         assert result["royalty_shares"][0]["percentage"] == 100_000_000
         assert result["total_amount"] == 100_000_000
@@ -223,14 +262,14 @@ class TestRoyaltyShareGetRoyaltyShares:
             ValueError,
             match="The percentage of the royalty shares must be less than or equal to 100.",
         ):
-            RoyaltyShare.get_royalty_shares(shares)
+            get_royalty_shares(shares)
 
     def test_get_royalty_shares_invalid_address_error(self):
         """Test error when address is invalid."""
         shares = [RoyaltyShareInput(recipient="invalid_address", percentage=50)]
 
         with pytest.raises(ValueError, match="Invalid address"):
-            RoyaltyShare.get_royalty_shares(shares)
+            get_royalty_shares(shares)
 
     def test_get_royalty_shares_cumulative_precision_boundary(self):
         """Test cumulative precision at the boundary of 100%."""
@@ -252,7 +291,7 @@ class TestRoyaltyShareGetRoyaltyShares:
         ]
 
         # This should work because 33.333333 + 33.333333 + 33.333334 = 100.0
-        result = RoyaltyShare.get_royalty_shares(shares)
+        result = get_royalty_shares(shares)
 
         assert len(result["royalty_shares"]) == 3
         assert result["total_amount"] == 100_000_000
@@ -274,7 +313,7 @@ class TestRoyaltyShareGetRoyaltyShares:
         with pytest.raises(
             ValueError, match="The sum of the royalty shares cannot exceeds 100."
         ):
-            RoyaltyShare.get_royalty_shares(shares)
+            get_royalty_shares(shares)
 
     def test_get_royalty_shares_single_recipient_multiple_entries(self):
         """Test multiple entries for the same recipient."""
@@ -290,7 +329,7 @@ class TestRoyaltyShareGetRoyaltyShares:
             ),
         ]
 
-        result = RoyaltyShare.get_royalty_shares(shares)
+        result = get_royalty_shares(shares)
 
         # Should treat each entry separately, not merge them
         assert len(result["royalty_shares"]) == 3
@@ -310,7 +349,7 @@ class TestRoyaltyShareGetRoyaltyShares:
             ),  # float
         ]
 
-        result = RoyaltyShare.get_royalty_shares(shares)
+        result = get_royalty_shares(shares)
 
         assert result["royalty_shares"][0]["percentage"] == 25_000_000
         assert result["royalty_shares"][1]["percentage"] == 75_000_000

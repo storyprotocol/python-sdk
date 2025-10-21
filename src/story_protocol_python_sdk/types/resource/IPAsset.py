@@ -1,6 +1,10 @@
+from dataclasses import dataclass
 from typing import TypedDict
 
 from ens.ens import Address, HexStr
+
+from story_protocol_python_sdk.types.resource.License import LicenseTermsInput
+from story_protocol_python_sdk.utils.licensing_config_data import LicensingConfig
 
 
 class RegistrationResponse(TypedDict):
@@ -31,6 +35,21 @@ class RegistrationWithRoyaltyVaultResponse(RegistrationResponse):
     royalty_vault: Address
 
 
+class RegistrationWithRoyaltyVaultAndLicenseTermsResponse(
+    RegistrationWithRoyaltyVaultResponse
+):
+    """
+    Response structure for IP asset registration operations with royalty vault and license terms.
+
+    Extends `RegistrationWithRoyaltyVaultResponse` with license terms information.
+
+    Attributes:
+        license_terms_ids: The IDs of the license terms attached to the IP asset.
+    """
+
+    license_terms_ids: list[int]
+
+
 class RegisterPILTermsAndAttachResponse(TypedDict):
     """
     Response structure for Programmable IP License Terms registration and attachment operations.
@@ -42,3 +61,32 @@ class RegisterPILTermsAndAttachResponse(TypedDict):
 
     tx_hash: HexStr
     license_terms_ids: list[int]
+
+
+class RegisterAndAttachAndDistributeRoyaltyTokensResponse(
+    RegistrationWithRoyaltyVaultAndLicenseTermsResponse
+):
+    """
+    Response structure for IP asset registration operations with royalty vault, license terms and distribute royalty tokens.
+
+    Extends `RegistrationWithRoyaltyVaultAndLicenseTermsResponse` with distribute royalty tokens transaction hash.
+
+    Attributes:
+        distribute_royalty_tokens_tx_hash: The transaction hash of the distribute royalty tokens transaction.
+    """
+
+    distribute_royalty_tokens_tx_hash: HexStr
+
+
+@dataclass
+class LicenseTermsDataInput:
+    """
+    Data structure for license terms.
+
+    Attributes:
+        terms: The terms of the license.
+        licensing_config: The licensing configuration of the license.
+    """
+
+    terms: LicenseTermsInput
+    licensing_config: LicensingConfig

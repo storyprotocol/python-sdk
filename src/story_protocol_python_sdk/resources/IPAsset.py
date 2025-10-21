@@ -1,5 +1,7 @@
 """Module for handling IP Account operations and transactions."""
 
+from dataclasses import asdict, is_dataclass
+
 from ens.ens import Address, HexStr
 from web3 import Web3
 
@@ -17,6 +19,9 @@ from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
 )
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import (
     IPAssetRegistryClient,
+)
+from story_protocol_python_sdk.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client import (
+    IpRoyaltyVaultImplClient,
 )
 from story_protocol_python_sdk.abi.LicenseAttachmentWorkflows.LicenseAttachmentWorkflows_client import (
     LicenseAttachmentWorkflowsClient,
@@ -45,10 +50,14 @@ from story_protocol_python_sdk.abi.RoyaltyTokenDistributionWorkflows.RoyaltyToke
 from story_protocol_python_sdk.abi.SPGNFTImpl.SPGNFTImpl_client import SPGNFTImplClient
 from story_protocol_python_sdk.types.common import AccessPermission
 from story_protocol_python_sdk.types.resource.IPAsset import (
+    LicenseTermsDataInput,
+    RegisterAndAttachAndDistributeRoyaltyTokensResponse,
     RegisterPILTermsAndAttachResponse,
     RegistrationResponse,
+    RegistrationWithRoyaltyVaultAndLicenseTermsResponse,
     RegistrationWithRoyaltyVaultResponse,
 )
+from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
 from story_protocol_python_sdk.utils.constants import (
     MAX_ROYALTY_TOKEN,
     ZERO_ADDRESS,
@@ -61,10 +70,7 @@ from story_protocol_python_sdk.utils.derivative_data import (
 from story_protocol_python_sdk.utils.function_signature import get_function_signature
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadata, IPMetadataInput
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
-from story_protocol_python_sdk.utils.royalty_shares import (
-    RoyaltyShare,
-    RoyaltyShareInput,
-)
+from story_protocol_python_sdk.utils.royalty import get_royalty_shares
 from story_protocol_python_sdk.utils.sign import Sign
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 from story_protocol_python_sdk.utils.validation import (
@@ -433,18 +439,7 @@ class IPAsset:
                 raise ValueError(
                     f"The NFT contract address {spg_nft_contract} is not valid."
                 )
-            license_terms = []
-            for term in terms:
-                license_terms.append(
-                    {
-                        "terms": self.license_terms_util.validate_license_terms(
-                            term["terms"]
-                        ),
-                        "licensingConfig": self.license_terms_util.validate_licensing_config(
-                            term["licensing_config"]
-                        ),
-                    }
-                )
+            license_terms = self._validate_license_terms_data(terms)
 
             metadata = {
                 "ipMetadataURI": "",
@@ -620,18 +615,7 @@ class IPAsset:
                 raise ValueError(
                     f"The NFT with id {token_id} is already registered as IP."
                 )
-            license_terms = []
-            for term in license_terms_data:
-                license_terms.append(
-                    {
-                        "terms": self.license_terms_util.validate_license_terms(
-                            term["terms"]
-                        ),
-                        "licensingConfig": self.license_terms_util.validate_licensing_config(
-                            term["licensing_config"]
-                        ),
-                    }
-                )
+            license_terms = self._validate_license_terms_data(license_terms_data)
 
             calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
 
@@ -995,6 +979,68 @@ class IPAsset:
                 f"Failed to register IP and make derivative with license tokens: {str(e)}"
             ) from e
 
+    def mint_and_register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+        self,
+        spg_nft_contract: Address,
+        license_terms_data: list[LicenseTermsDataInput],
+        royalty_shares: list[RoyaltyShareInput],
+        ip_metadata: IPMetadataInput | None = None,
+        recipient: Address | None = None,
+        allow_duplicates: bool = True,
+        tx_options: dict | None = None,
+    ) -> RegistrationWithRoyaltyVaultAndLicenseTermsResponse:
+        """
+        Mint an NFT and register the IP, attach PIL terms, and distribute royalty tokens.
+
+        :param spg_nft_contract Address: The address of the SPGNFT collection.
+        :param license_terms_data `list[LicenseTermsDataInput]`: The PIL terms and licensing configuration data to be attached to the IP.
+        :param royalty_shares `list[RoyaltyShareInput]`: The royalty shares to be distributed.
+        :param ip_metadata `IPMetadataInput`: [Optional] The desired metadata for the newly minted NFT and newly registered IP.
+        :param recipient Address: [Optional] The address to receive the minted NFT. If not provided, the client's own wallet address will be used.
+        :param allow_duplicates bool: [Optional] Set to false to prevent minting an NFT with a duplicate metadata hash. (default: True)
+        :param tx_options dict: [Optional] Transaction options.
+        :return `RegistrationWithRoyaltyVaultAndLicenseTermsResponse`: Response with tx hash, IP ID, token ID, license terms IDs, and royalty vault address.
+        """
+        try:
+            validated_royalty_shares = get_royalty_shares(royalty_shares)[
+                "royalty_shares"
+            ]
+            license_terms = self._validate_license_terms_data(license_terms_data)
+
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.royalty_token_distribution_workflows_client.build_mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens_transaction,
+                validate_address(spg_nft_contract),
+                self._validate_recipient(recipient),
+                IPMetadata.from_input(ip_metadata).get_validated_data(),
+                license_terms,
+                validated_royalty_shares,
+                allow_duplicates,
+                tx_options=tx_options,
+            )
+
+            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])
+            license_terms_ids = self._parse_tx_license_terms_attached_event(
+                response["tx_receipt"]
+            )
+            royalty_vault = self.get_royalty_vault_address_by_ip_id(
+                response["tx_receipt"],
+                ip_registered["ip_id"],
+            )
+
+            return RegistrationWithRoyaltyVaultAndLicenseTermsResponse(
+                tx_hash=response["tx_hash"],
+                ip_id=ip_registered["ip_id"],
+                token_id=ip_registered["token_id"],
+                license_terms_ids=license_terms_ids,
+                royalty_vault=royalty_vault,
+            )
+        except Exception as e:
+            raise ValueError(
+                f"Failed to mint, register IP, attach PIL terms and distribute royalty tokens: {str(e)}"
+            ) from e
+
     def mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
         self,
         spg_nft_contract: Address,
@@ -1018,9 +1064,7 @@ class IPAsset:
          :return `RegistrationWithRoyaltyVaultResponse`: Dictionary with the tx hash, IP ID and token ID, royalty vault.
         """
         try:
-            validated_royalty_shares_obj = RoyaltyShare.get_royalty_shares(
-                royalty_shares
-            )
+            validated_royalty_shares_obj = get_royalty_shares(royalty_shares)
             validated_deriv_data = DerivativeData.from_input(
                 web3=self.web3, input_data=deriv_data
             ).get_validated_data()
@@ -1055,6 +1099,120 @@ class IPAsset:
                 f"Failed to mint, register IP, make derivative and distribute royalty tokens: {str(e)}"
             ) from e
 
+    def register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+        self,
+        nft_contract: Address,
+        token_id: int,
+        license_terms_data: list[LicenseTermsDataInput],
+        royalty_shares: list[RoyaltyShareInput],
+        ip_metadata: IPMetadataInput | None = None,
+        deadline: int | None = None,
+        tx_options: dict | None = None,
+    ) -> RegisterAndAttachAndDistributeRoyaltyTokensResponse:
+        """
+        Register the given NFT and attach license terms and distribute royalty
+        tokens. In order to successfully distribute royalty tokens, the first license terms
+        attached to the IP must be a commercial license.
+
+         :param nft_contract Address: The address of the NFT collection.
+         :param token_id int: The ID of the NFT.
+         :param license_terms_data `list[LicenseTermsDataInput]`: The data of the license and its configuration to be attached to the new group IP.
+         :param royalty_shares `list[RoyaltyShareInput]`: Authors of the IP and their shares of the royalty tokens.
+         :param ip_metadata `IPMetadataInput`: [Optional] The metadata for the newly registered IP.
+         :param deadline int: [Optional] The deadline for the signature in seconds. (default: 1000 seconds)
+         :param tx_options dict: [Optional] Transaction options.
+         :return `RegisterAndAttachAndDistributeRoyaltyTokensResponse`: Response with tx hash, license terms IDs, royalty vault address, and distribute royalty tokens transaction hash.
+        """
+        try:
+            nft_contract = validate_address(nft_contract)
+            ip_id = self._get_ip_id(nft_contract, token_id)
+            if self._is_registered(ip_id):
+                raise ValueError(
+                    f"The NFT with id {token_id} is already registered as IP."
+                )
+
+            license_terms = self._validate_license_terms_data(license_terms_data)
+            calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
+            royalty_shares_obj = get_royalty_shares(royalty_shares)
+
+            signature_response = self.sign_util.get_permission_signature(
+                ip_id=ip_id,
+                deadline=calculated_deadline,
+                state=self.web3.to_bytes(hexstr=HexStr(ZERO_HASH)),
+                permissions=[
+                    {
+                        "ipId": ip_id,
+                        "signer": self.royalty_token_distribution_workflows_client.contract.address,
+                        "to": self.core_metadata_module_client.contract.address,
+                        "permission": AccessPermission.ALLOW,
+                        "func": "setAll(address,string,bytes32,bytes32)",
+                    },
+                    {
+                        "ipId": ip_id,
+                        "signer": self.royalty_token_distribution_workflows_client.contract.address,
+                        "to": self.licensing_module_client.contract.address,
+                        "permission": AccessPermission.ALLOW,
+                        "func": "attachLicenseTerms(address,address,uint256)",
+                    },
+                    {
+                        "ipId": ip_id,
+                        "signer": self.royalty_token_distribution_workflows_client.contract.address,
+                        "to": self.licensing_module_client.contract.address,
+                        "permission": AccessPermission.ALLOW,
+                        "func": "setLicensingConfig(address,address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))",
+                    },
+                ],
+            )
+
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.royalty_token_distribution_workflows_client.build_registerIpAndAttachPILTermsAndDeployRoyaltyVault_transaction,
+                nft_contract,
+                token_id,
+                IPMetadata.from_input(ip_metadata).get_validated_data(),
+                license_terms,
+                {
+                    "signer": self.web3.to_checksum_address(self.account.address),
+                    "deadline": calculated_deadline,
+                    "signature": self.web3.to_bytes(
+                        hexstr=signature_response["signature"]
+                    ),
+                },
+                tx_options=tx_options,
+            )
+            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])
+            license_terms_ids = self._parse_tx_license_terms_attached_event(
+                response["tx_receipt"]
+            )
+            royalty_vault = self.get_royalty_vault_address_by_ip_id(
+                response["tx_receipt"],
+                ip_registered["ip_id"],
+            )
+
+            # Distribute royalty tokens
+            distribute_tx_hash = self._distribute_royalty_tokens(
+                ip_id=ip_registered["ip_id"],
+                royalty_shares=royalty_shares_obj["royalty_shares"],
+                royalty_vault=royalty_vault,
+                total_amount=royalty_shares_obj["total_amount"],
+                tx_options=tx_options,
+                deadline=calculated_deadline,
+            )
+
+            return RegisterAndAttachAndDistributeRoyaltyTokensResponse(
+                tx_hash=response["tx_hash"],
+                license_terms_ids=license_terms_ids,
+                royalty_vault=royalty_vault,
+                distribute_royalty_tokens_tx_hash=distribute_tx_hash,
+                ip_id=ip_registered["ip_id"],
+                token_id=ip_registered["token_id"],
+            )
+        except Exception as e:
+            raise ValueError(
+                f"Failed to register IP, attach PIL terms and distribute royalty tokens: {str(e)}"
+            ) from e
+
     def register_pil_terms_and_attach(
         self,
         ip_id: Address,
@@ -1077,18 +1235,7 @@ class IPAsset:
             calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
             ip_account_impl_client = IPAccountImplClient(self.web3, ip_id)
             state = ip_account_impl_client.state()
-            license_terms = []
-            for term in license_terms_data:
-                license_terms.append(
-                    {
-                        "terms": self.license_terms_util.validate_license_terms(
-                            term["terms"]
-                        ),
-                        "licensingConfig": self.license_terms_util.validate_licensing_config(
-                            term["licensing_config"]
-                        ),
-                    }
-                )
+            license_terms = self._validate_license_terms_data(license_terms_data)
             signature_response = self.sign_util.get_permission_signature(
                 ip_id=ip_id,
                 deadline=calculated_deadline,
@@ -1232,6 +1379,70 @@ class IPAsset:
 
         return license_token_ids
 
+    def _distribute_royalty_tokens(
+        self,
+        ip_id: Address,
+        royalty_shares: list[RoyaltyShareInput],
+        deadline: int,
+        royalty_vault: Address,
+        total_amount: int,
+        tx_options: dict | None = None,
+    ) -> HexStr:
+        """
+        Distribute royalty tokens to specified recipients.
+
+        This is an internal method that handles the distribution of royalty tokens
+        from an IP's royalty vault to the specified recipients.
+
+        :param ip_id Address: The IP ID.
+        :param royalty_shares list[RoyaltyShareInput]: The validated royalty shares with recipient and percentage.
+        :param deadline int: The deadline for the signature.
+        :param royalty_vault Address: The address of the royalty vault.
+        :param total_amount int: The total amount of royalty tokens to distribute.
+        :param tx_options dict: [Optional] Transaction options.
+        :return HexStr: The transaction hash.
+        """
+        try:
+            ip_account_impl_client = IPAccountImplClient(self.web3, ip_id)
+            state = ip_account_impl_client.state()
+
+            ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, royalty_vault)
+
+            signature_response = self.sign_util.get_signature(
+                state=state,
+                to=royalty_vault,
+                encode_data=ip_royalty_vault_client.contract.encode_abi(
+                    abi_element_identifier="approve",
+                    args=[
+                        self.royalty_token_distribution_workflows_client.contract.address,
+                        total_amount,
+                    ],
+                ),
+                verifying_contract=ip_id,
+                deadline=deadline,
+            )
+
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.royalty_token_distribution_workflows_client.build_distributeRoyaltyTokens_transaction,
+                ip_id,
+                royalty_shares,
+                {
+                    "signer": self.web3.to_checksum_address(self.account.address),
+                    "deadline": deadline,
+                    "signature": self.web3.to_bytes(
+                        hexstr=signature_response["signature"]
+                    ),
+                },
+                tx_options=tx_options,
+            )
+
+            return response["tx_hash"]
+
+        except Exception as e:
+            raise ValueError(f"Failed to distribute royalty tokens: {str(e)}") from e
+
     def _get_ip_id(self, token_contract: str, token_id: int) -> str:
         """
         Get the IP ID for a given token.
@@ -1345,3 +1556,32 @@ class IPAsset:
         if recipient is None:
             return self.account.address
         return validate_address(recipient)
+
+    def _validate_license_terms_data(
+        self, license_terms_data: list[LicenseTermsDataInput] | list[dict]
+    ) -> list:
+        """
+        Validate the license terms data.
+
+        :param license_terms_data `list[LicenseTermsDataInput]` or `list[dict]`: The license terms data to validate.
+        :return list: The validated license terms data.
+        """
+
+        validated_license_terms_data = []
+        for term in license_terms_data:
+            if is_dataclass(term):
+                terms_dict = asdict(term.terms)
+                licensing_config_dict = term.licensing_config
+            else:
+                terms_dict = term["terms"]
+                licensing_config_dict = term["licensing_config"]
+
+            validated_license_terms_data.append(
+                {
+                    "terms": self.license_terms_util.validate_license_terms(terms_dict),
+                    "licensingConfig": self.license_terms_util.validate_licensing_config(
+                        licensing_config_dict
+                    ),
+                }
+            )
+        return validated_license_terms_data

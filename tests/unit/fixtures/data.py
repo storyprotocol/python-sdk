@@ -1,3 +1,12 @@
+from ens.ens import HexStr
+
+from story_protocol_python_sdk import (
+    IPMetadataInput,
+    LicenseTermsDataInput,
+    LicenseTermsInput,
+)
+from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
+
 CHAIN_ID = 1315
 ADDRESS = "0x1234567890123456789012345678901234567890"
 TX_HASH = b"tx_hash_bytes"
@@ -34,3 +43,43 @@ LICENSING_CONFIG = {
     "expect_group_reward_pool": ADDRESS,
 }
 ACCOUNT_ADDRESS = "0xF60cBF0Ea1A61567F1dDaf79A6219D20d189155c"
+
+LICENSE_TERMS_DATA = [
+    LicenseTermsDataInput(
+        terms=LicenseTermsInput(
+            transferable=True,
+            royalty_policy=ADDRESS,
+            default_minting_fee=10000,
+            expiration=1000,
+            commercial_use=True,
+            commercial_attribution=False,
+            commercializer_checker=ZERO_ADDRESS,
+            commercializer_checker_data=ZERO_HASH,
+            commercial_rev_share=10,
+            commercial_rev_ceiling=0,
+            derivatives_allowed=True,
+            derivatives_attribution=True,
+            derivatives_approval=False,
+            derivatives_reciprocal=True,
+            derivative_rev_ceiling=0,
+            currency=ADDRESS,
+            uri="test-uri",
+        ),
+        licensing_config={
+            "is_set": True,
+            "minting_fee": 10,
+            "licensing_hook": ADDRESS,
+            "hook_data": ZERO_HASH,
+            "commercial_rev_share": 10,
+            "disabled": False,
+            "expect_minimum_group_reward_share": 0,
+            "expect_group_reward_pool": ZERO_ADDRESS,
+        },
+    )
+]
+IP_METADATA = IPMetadataInput(
+    ip_metadata_uri="https://example.com/ip-metadata.json",
+    ip_metadata_hash=HexStr("0x" + "a" * 64),
+    nft_metadata_uri="https://example.com/nft-metadata.json",
+    nft_metadata_hash=HexStr("0x" + "b" * 64),
+)

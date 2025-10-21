@@ -1821,3 +1821,53 @@ class TestRegisterDerivativeIpAndAttachPilTermsAndDistributeRoyaltyTokens:
                             )
                         ],
                     )
+
+    def test_success_with_tx_options(
+        self,
+        ip_asset: IPAsset,
+        mock_get_ip_id,
+        mock_is_registered,
+        mock_parse_ip_registered_event,
+        mock_signature_related_methods,
+        mock_get_royalty_vault_address_by_ip_id,
+        mock_ip_account_impl_client,
+        mock_license_registry_client,
+    ):
+        royalty_shares = [
+            RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=60.0),
+        ]
+        tx_options = {
+            "gas": 1000000,
+            "gasPrice": 10000000000,
+            "nonce": 1,
+            "chainId": 1,
+        }
+        with (
+            mock_get_ip_id(),
+            mock_is_registered(),
+            mock_parse_ip_registered_event(),
+            mock_signature_related_methods(),
+            mock_get_royalty_vault_address_by_ip_id(),
+            mock_ip_account_impl_client(),
+            mock_license_registry_client(),
+        ):
+            with patch(
+                "story_protocol_python_sdk.resources.IPAsset.build_and_send_transaction"
+            ) as mock_build_and_send:
+                mock_build_and_send.return_value = {
+                    "tx_hash": TX_HASH.hex(),
+                    "tx_receipt": "mock_receipt",
+                }
+                ip_asset.register_derivative_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+                    nft_contract=ADDRESS,
+                    token_id=3,
+                    deriv_data=DerivativeDataInput(
+                        parent_ip_ids=[IP_ID],
+                        license_terms_ids=[1],
+                    ),
+                    royalty_shares=royalty_shares,
+                    ip_metadata=IP_METADATA,
+                    deadline=100000,
+                    tx_options=tx_options,
+                )
+                assert mock_build_and_send.call_args[1]["tx_options"] == tx_options

@@ -1115,7 +1115,7 @@ class IPAsset:
          :param ip_metadata `IPMetadataInput`: [Optional] The metadata for the newly registered IP.
          :param deadline int: [Optional] The deadline for the signature in seconds. (default: 1000 seconds)
          :param tx_options dict: [Optional] Transaction options.
-         :return `RegisterAndAttachAndDistributeRoyaltyTokensResponse`: Response with tx hash, license terms IDs, royalty vault address, and distribute royalty tokens transaction hash.
+         :return `RegisterDerivativeIPAndAttachAndDistributeRoyaltyTokensResponse`: Response with tx hash, IP ID, token ID, royalty vault address, and distribute royalty tokens transaction hash.
         """
         try:
             nft_contract = validate_address(nft_contract)

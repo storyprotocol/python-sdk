@@ -1,4 +1,10 @@
-from story_protocol_python_sdk import LicenseTermsDataInput, LicenseTermsInput
+from ens.ens import HexStr
+
+from story_protocol_python_sdk import (
+    IPMetadataInput,
+    LicenseTermsDataInput,
+    LicenseTermsInput,
+)
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
 
 CHAIN_ID = 1315
@@ -71,3 +77,9 @@ LICENSE_TERMS_DATA = [
         },
     )
 ]
+IP_METADATA = IPMetadataInput(
+    ip_metadata_uri="https://example.com/ip-metadata.json",
+    ip_metadata_hash=HexStr("0x" + "a" * 64),
+    nft_metadata_uri="https://example.com/nft-metadata.json",
+    nft_metadata_hash=HexStr("0x" + "b" * 64),
+)

@@ -63,6 +63,21 @@ class RegisterPILTermsAndAttachResponse(TypedDict):
     license_terms_ids: list[int]
 
 
+class RegisterAndAttachAndDistributeRoyaltyTokensResponse(
+    RegistrationWithRoyaltyVaultAndLicenseTermsResponse
+):
+    """
+    Response structure for IP asset registration operations with royalty vault, license terms and distribute royalty tokens.
+
+    Extends `RegistrationWithRoyaltyVaultAndLicenseTermsResponse` with distribute royalty tokens transaction hash.
+
+    Attributes:
+        distribute_royalty_tokens_tx_hash: The transaction hash of the distribute royalty tokens transaction.
+    """
+
+    distribute_royalty_tokens_tx_hash: HexStr
+
+
 @dataclass
 class LicenseTermsDataInput:
     """

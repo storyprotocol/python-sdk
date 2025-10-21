@@ -1592,3 +1592,232 @@ class TestRegisterIpAndAttachPilTermsAndDistributeRoyaltyTokens:
                             )
                         ],
                     )
+
+
+class TestRegisterDerivativeIpAndAttachPilTermsAndDistributeRoyaltyTokens:
+    def test_token_id_is_already_registered(
+        self, ip_asset: IPAsset, mock_get_ip_id, mock_is_registered
+    ):
+        with (
+            mock_get_ip_id(),
+            mock_is_registered(True),
+        ):
+            with pytest.raises(
+                ValueError,
+                match="Failed to register derivative IP and distribute royalty tokens: The NFT with id 3 is already registered as IP.",
+            ):
+                ip_asset.register_derivative_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+                    nft_contract=ADDRESS,
+                    token_id=3,
+                    deriv_data=DerivativeDataInput(
+                        parent_ip_ids=[IP_ID],
+                        license_terms_ids=[1],
+                    ),
+                    royalty_shares=[
+                        RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0)
+                    ],
+                )
+
+    def test_throw_error_when_royalty_shares_empty(
+        self,
+        ip_asset: IPAsset,
+        mock_get_ip_id,
+        mock_is_registered,
+        mock_license_registry_client,
+    ):
+        with (
+            mock_get_ip_id(),
+            mock_is_registered(),
+            mock_license_registry_client(),
+        ):
+            with pytest.raises(
+                ValueError,
+                match="Failed to register derivative IP and distribute royalty tokens: Royalty shares must be provided.",
+            ):
+                ip_asset.register_derivative_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+                    nft_contract=ADDRESS,
+                    token_id=3,
+                    deriv_data=DerivativeDataInput(
+                        parent_ip_ids=[IP_ID],
+                        license_terms_ids=[1],
+                    ),
+                    royalty_shares=[],
+                )
+
+    def test_success_with_default_values(
+        self,
+        ip_asset: IPAsset,
+        mock_get_ip_id,
+        mock_is_registered,
+        mock_parse_ip_registered_event,
+        mock_signature_related_methods,
+        mock_get_royalty_vault_address_by_ip_id,
+        mock_ip_account_impl_client,
+        mock_license_registry_client,
+    ):
+        royalty_shares = [
+            RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0),
+            RoyaltyShareInput(recipient=ADDRESS, percentage=30.0),
+        ]
+
+        with (
+            mock_get_ip_id(),
+            mock_is_registered(),
+            mock_parse_ip_registered_event(),
+            mock_signature_related_methods(),
+            mock_get_royalty_vault_address_by_ip_id(),
+            mock_ip_account_impl_client(),
+            mock_license_registry_client(),
+        ):
+            with (
+                patch.object(
+                    ip_asset.royalty_token_distribution_workflows_client,
+                    "build_registerIpAndMakeDerivativeAndDeployRoyaltyVault_transaction",
+                    return_value={"tx_hash": TX_HASH.hex()},
+                ) as mock_build_transaction,
+                patch.object(
+                    ip_asset,
+                    "_distribute_royalty_tokens",
+                    return_value=TX_HASH.hex(),
+                ) as mock_distribute,
+            ):
+                result = ip_asset.register_derivative_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+                    nft_contract=ADDRESS,
+                    token_id=3,
+                    deriv_data=DerivativeDataInput(
+                        parent_ip_ids=[IP_ID],
+                        license_terms_ids=[1],
+                    ),
+                    royalty_shares=royalty_shares,
+                )
+
+                called_args = mock_build_transaction.call_args[0]
+                # assert registerIpAndMakeDerivativeAndDeployRoyaltyVault_transaction was called with correct arguments
+                assert called_args[0] == ADDRESS
+                assert called_args[1] == 3
+                assert called_args[2] == IPMetadata.from_input().get_validated_data()
+
+                # assert _distribute_royalty_tokens was called with correct arguments
+                called_kwargs = mock_distribute.call_args[1]
+                assert called_kwargs["ip_id"] == IP_ID
+                assert (
+                    called_kwargs["royalty_shares"]
+                    == get_royalty_shares(royalty_shares)["royalty_shares"]
+                )
+                assert called_kwargs["royalty_vault"] == ADDRESS
+
+                assert result["tx_hash"] == TX_HASH.hex()
+                assert result["ip_id"] == IP_ID
+                assert result["token_id"] == 3
+                assert result["royalty_vault"] == ADDRESS
+                assert result["distribute_royalty_tokens_tx_hash"] == TX_HASH.hex()
+
+    def test_success_with_custom_values(
+        self,
+        ip_asset: IPAsset,
+        mock_get_ip_id,
+        mock_is_registered,
+        mock_parse_ip_registered_event,
+        mock_signature_related_methods,
+        mock_get_royalty_vault_address_by_ip_id,
+        mock_ip_account_impl_client,
+        mock_license_registry_client,
+    ):
+        royalty_shares = [
+            RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=60.0),
+        ]
+
+        with (
+            mock_get_ip_id(),
+            mock_is_registered(),
+            mock_parse_ip_registered_event(),
+            mock_signature_related_methods(),
+            mock_get_royalty_vault_address_by_ip_id(),
+            mock_ip_account_impl_client(),
+            mock_license_registry_client(),
+        ):
+            with (
+                patch.object(
+                    ip_asset.royalty_token_distribution_workflows_client,
+                    "build_registerIpAndMakeDerivativeAndDeployRoyaltyVault_transaction",
+                    return_value={"tx_hash": TX_HASH.hex()},
+                ) as mock_build_transaction,
+                patch.object(
+                    ip_asset,
+                    "_distribute_royalty_tokens",
+                    return_value=TX_HASH.hex(),
+                ) as mock_distribute,
+            ):
+                result = ip_asset.register_derivative_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+                    nft_contract=ADDRESS,
+                    token_id=3,
+                    deriv_data=DerivativeDataInput(
+                        parent_ip_ids=[IP_ID, IP_ID],
+                        license_terms_ids=[1, 2],
+                        max_minting_fee=10000,
+                        max_rts=10,
+                        max_revenue_share=100,
+                    ),
+                    royalty_shares=royalty_shares,
+                    ip_metadata=IP_METADATA,
+                    deadline=100000,
+                )
+                # assert registerIpAndMakeDerivativeAndDeployRoyaltyVault_transaction was called with correct arguments
+                called_args = mock_build_transaction.call_args[0]
+                assert called_args[0] == ADDRESS
+                assert called_args[1] == 3
+                assert (
+                    called_args[2]
+                    == IPMetadata.from_input(IP_METADATA).get_validated_data()
+                )
+
+                # assert _distribute_royalty_tokens was called with correct arguments
+                called_kwargs = mock_distribute.call_args[1]
+                assert called_kwargs["ip_id"] == IP_ID
+                assert (
+                    called_kwargs["royalty_shares"]
+                    == get_royalty_shares(royalty_shares)["royalty_shares"]
+                )
+
+            assert result["tx_hash"] == TX_HASH.hex()
+            assert result["ip_id"] == IP_ID
+            assert result["token_id"] == 3
+            assert result["royalty_vault"] == ADDRESS
+            assert result["distribute_royalty_tokens_tx_hash"] == TX_HASH.hex()
+
+    def test_throw_error_when_transaction_failed(
+        self,
+        ip_asset: IPAsset,
+        mock_get_ip_id,
+        mock_is_registered,
+        mock_signature_related_methods,
+        mock_license_registry_client,
+    ):
+        with (
+            mock_get_ip_id(),
+            mock_is_registered(),
+            mock_signature_related_methods(),
+            mock_license_registry_client(),
+        ):
+            with patch.object(
+                ip_asset.royalty_token_distribution_workflows_client,
+                "build_registerIpAndMakeDerivativeAndDeployRoyaltyVault_transaction",
+                side_effect=Exception("Transaction failed."),
+            ):
+                with pytest.raises(
+                    ValueError,
+                    match="Failed to register derivative IP and distribute royalty tokens: Transaction failed.",
+                ):
+                    ip_asset.register_derivative_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+                        nft_contract=ADDRESS,
+                        token_id=3,
+                        deriv_data=DerivativeDataInput(
+                            parent_ip_ids=[IP_ID],
+                            license_terms_ids=[1],
+                        ),
+                        royalty_shares=[
+                            RoyaltyShareInput(
+                                recipient=ACCOUNT_ADDRESS, percentage=50.0
+                            )
+                        ],
+                    )

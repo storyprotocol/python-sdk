@@ -1382,7 +1382,7 @@ class IPAsset:
     def _distribute_royalty_tokens(
         self,
         ip_id: Address,
-        royalty_shares: list[dict],
+        royalty_shares: list[RoyaltyShareInput],
         deadline: int,
         royalty_vault: Address,
         total_amount: int,
@@ -1395,7 +1395,7 @@ class IPAsset:
         from an IP's royalty vault to the specified recipients.
 
         :param ip_id Address: The IP ID.
-        :param royalty_shares list[dict]: The validated royalty shares with recipient and percentage.
+        :param royalty_shares list[RoyaltyShareInput]: The validated royalty shares with recipient and percentage.
         :param deadline int: The deadline for the signature.
         :param royalty_vault Address: The address of the royalty vault.
         :param total_amount int: The total amount of royalty tokens to distribute.
@@ -1403,14 +1403,11 @@ class IPAsset:
         :return HexStr: The transaction hash.
         """
         try:
-            # Get IP account state for signature
             ip_account_impl_client = IPAccountImplClient(self.web3, ip_id)
             state = ip_account_impl_client.state()
 
-            # Create IpRoyaltyVaultImpl client instance
             ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, royalty_vault)
 
-            # Get signature for approving royalty token transfers
             signature_response = self.sign_util.get_signature(
                 state=state,
                 to=royalty_vault,
@@ -1425,7 +1422,6 @@ class IPAsset:
                 deadline=deadline,
             )
 
-            # Build and send the distribute transaction
             response = build_and_send_transaction(
                 self.web3,
                 self.account,

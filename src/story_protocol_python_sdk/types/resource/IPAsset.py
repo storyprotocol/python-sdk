@@ -78,6 +78,23 @@ class RegisterAndAttachAndDistributeRoyaltyTokensResponse(
     distribute_royalty_tokens_tx_hash: HexStr
 
 
+class RegisterDerivativeIPAndAttachAndDistributeRoyaltyTokensResponse(
+    RegistrationResponse
+):
+    """
+    Response structure for derivative IP and attach PIL terms and distribute royalty tokens.
+
+    Extends `RegistrationResponse` with distribute royalty tokens transaction hash.
+
+    Attributes:
+        distribute_royalty_tokens_tx_hash: The transaction hash of the distribute royalty tokens transaction.
+        royalty_vault: The royalty vault address of the registered IP asset.
+    """
+
+    distribute_royalty_tokens_tx_hash: HexStr
+    royalty_vault: Address
+
+
 @dataclass
 class LicenseTermsDataInput:
     """

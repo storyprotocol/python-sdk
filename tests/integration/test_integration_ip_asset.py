@@ -16,6 +16,7 @@ from story_protocol_python_sdk.abi.DerivativeWorkflows.DerivativeWorkflows_clien
 from story_protocol_python_sdk.abi.LicenseToken.LicenseToken_client import (
     LicenseTokenClient,
 )
+from story_protocol_python_sdk.types.resource.IPAsset import BatchMintAndRegisterIPInput
 from story_protocol_python_sdk.utils.licensing_config_data import LicensingConfig
 from tests.integration.config.test_config import account_2
 from tests.integration.config.utils import approve
@@ -1064,3 +1065,91 @@ class TestIPAssetMint:
             and len(response["license_terms_ids"]) > 0
         )
         assert isinstance(response["royalty_vault"], str) and response["royalty_vault"]
+
+
+class TestBatchMethods:
+    """Test suite for batch minting and registering IP assets"""
+
+    @pytest.fixture(scope="class")
+    def public_nft_collection(self, story_client: StoryClient):
+        """Fixture for public minting NFT collection"""
+        tx_data = story_client.NFTClient.create_nft_collection(
+            name="test-public-batch-collection",
+            symbol="PUBATCH",
+            max_supply=100,
+            is_public_minting=True,
+            mint_open=True,
+            contract_uri="test-public-batch-uri",
+            mint_fee_recipient=account.address,
+        )
+        return tx_data["nft_contract"]
+
+    @pytest.fixture(scope="class")
+    def private_nft_collection(self, story_client: StoryClient):
+        """Fixture for private minting NFT collection"""
+        tx_data = story_client.NFTClient.create_nft_collection(
+            name="test-private-batch-collection",
+            symbol="private-batch",
+            max_supply=100,
+            is_public_minting=False,
+            mint_open=True,
+            contract_uri="test-private-batch-uri",
+            mint_fee_recipient=account.address,
+        )
+        return tx_data["nft_contract"]
+
+    def test_batch_mint_and_register_ip(
+        self, story_client: StoryClient, public_nft_collection, private_nft_collection
+    ):
+        """Test batch minting and registering IP with mixed public and private minting contracts"""
+
+        requests = [
+            # Public minting contract - default values
+            BatchMintAndRegisterIPInput(
+                spg_nft_contract=public_nft_collection,
+            ),
+            # Public minting contract - custom recipient and allow_duplicates
+            BatchMintAndRegisterIPInput(
+                spg_nft_contract=public_nft_collection,
+                recipient=account_2.address,
+                allow_duplicates=True,
+            ),
+            # Public minting contract - custom metadata
+            BatchMintAndRegisterIPInput(
+                spg_nft_contract=public_nft_collection,
+                recipient=account_2.address,
+                ip_metadata=IPMetadataInput(
+                    nft_metadata_hash=web3.keccak(text="public-custom-nft-metadata"),
+                ),
+                allow_duplicates=False,
+            ),
+            # Private minting contract - default values
+            BatchMintAndRegisterIPInput(
+                spg_nft_contract=private_nft_collection,
+            ),
+            # Private minting contract - custom recipient
+            BatchMintAndRegisterIPInput(
+                spg_nft_contract=private_nft_collection,
+                recipient=account_2.address,
+                ip_metadata=IPMetadataInput(
+                    nft_metadata_hash=web3.keccak(text="private-custom-nft-metadata1"),
+                ),
+                allow_duplicates=False,
+            ),
+            # Private minting contract - custom metadata
+            BatchMintAndRegisterIPInput(
+                spg_nft_contract=private_nft_collection,
+                ip_metadata=IPMetadataInput(
+                    ip_metadata_hash=web3.keccak(text="private-custom-metadata2"),
+                    ip_metadata_uri="https://example.com/private-metadata.json",
+                ),
+            ),
+        ]
+        response = story_client.IPAsset.batch_mint_and_register_ip(requests)
+        assert isinstance(response["tx_hash"], str) and response["tx_hash"]
+        assert isinstance(response["registered_ips"], list) and len(
+            response["registered_ips"]
+        ) == len(requests)
+        for ip_registered in response["registered_ips"]:
+            assert isinstance(ip_registered["ip_id"], str) and ip_registered["ip_id"]
+            assert isinstance(ip_registered["token_id"], int)

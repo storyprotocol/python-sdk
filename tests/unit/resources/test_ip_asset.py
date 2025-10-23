@@ -1878,7 +1878,7 @@ class TestRegisterDerivativeIpAndAttachPilTermsAndDistributeRoyaltyTokens:
 
 
 class TestBatchMintAndRegisterIP:
-    """Test batch_mint_and_register_ip method with focus on encode_abi usage."""
+    """Test batch_mint_and_register_ip method."""
 
     def test_batch_mint_with_default_values(
         self, ip_asset: IPAsset, mock_parse_ip_registered_event

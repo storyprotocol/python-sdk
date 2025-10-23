@@ -144,7 +144,7 @@ class BatchMintAndRegisterIPResponse(TypedDict):
 
     Attributes:
         tx_hash: The transaction hash of the batch mint and register IP transaction.
-        registered_ips: The list of registered IP.
+        registered_ips: The list of `RegisteredIP` which includes IP ID and token ID.
     """
 
     tx_hash: HexStr

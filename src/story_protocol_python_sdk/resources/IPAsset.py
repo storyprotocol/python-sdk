@@ -571,14 +571,14 @@ class IPAsset:
         self,
         requests: list[BatchMintAndRegisterIPInput],
         tx_options: dict | None = None,
-    ):
+    ) -> BatchMintAndRegisterIPResponse:
         """
         Batch mints NFTs from SPGNFT collections and registers them as IP assets.
         Optimizes transaction processing by grouping requests and  Uses `RegistrationWorkflows's multicall` for minting contracts.
 
           :param requests list[BatchMintAndRegisterIPInput]: The list of batch mint and register IP requests.
           :param tx_options: [Optional] The transaction options.
-          :return BatchMintAndRegisterIPResponse: A response with transaction hash and list of IP registered.
+          :return `BatchMintAndRegisterIPResponse`: A response with transaction hash and list of `RegisteredIP` which includes IP ID and token ID.
         """
         try:
             encoded_data = []

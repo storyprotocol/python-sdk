@@ -3,10 +3,12 @@ import pytest
 from story_protocol_python_sdk import (
     ZERO_ADDRESS,
     ZERO_HASH,
+    BatchMintAndRegisterIPInput,
     DerivativeDataInput,
     IPMetadataInput,
     LicenseTermsDataInput,
     LicenseTermsInput,
+    LicensingConfig,
     RoyaltyShareInput,
     StoryClient,
 )
@@ -16,8 +18,6 @@ from story_protocol_python_sdk.abi.DerivativeWorkflows.DerivativeWorkflows_clien
 from story_protocol_python_sdk.abi.LicenseToken.LicenseToken_client import (
     LicenseTokenClient,
 )
-from story_protocol_python_sdk.types.resource.IPAsset import BatchMintAndRegisterIPInput
-from story_protocol_python_sdk.utils.licensing_config_data import LicensingConfig
 from tests.integration.config.test_config import account_2
 from tests.integration.config.utils import approve
 
@@ -1068,7 +1068,7 @@ class TestIPAssetMint:
 
 
 class TestBatchMethods:
-    """Test suite for batch minting and registering IP assets"""
+    """Test suite for batch methods"""
 
     @pytest.fixture(scope="class")
     def public_nft_collection(self, story_client: StoryClient):

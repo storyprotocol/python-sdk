@@ -8,6 +8,7 @@ from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
     IPAccountImplClient,
 )
 from story_protocol_python_sdk.resources.IPAsset import IPAsset
+from story_protocol_python_sdk.types.resource.IPAsset import BatchMintAndRegisterIPInput
 from story_protocol_python_sdk.utils.derivative_data import DerivativeDataInput
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadata, IPMetadataInput
 from story_protocol_python_sdk.utils.royalty import get_royalty_shares
@@ -59,7 +60,10 @@ def mock_parse_ip_registered_event(ip_asset):
         return patch.object(
             ip_asset,
             "_parse_tx_ip_registered_event",
-            return_value={"ip_id": IP_ID, "token_id": 3},
+            return_value=[
+                {"ip_id": IP_ID, "token_id": 3},
+                {"ip_id": ADDRESS, "token_id": 4},
+            ],
         )
 
     return _mock
@@ -1871,3 +1875,194 @@ class TestRegisterDerivativeIpAndAttachPilTermsAndDistributeRoyaltyTokens:
                     tx_options=tx_options,
                 )
                 assert mock_build_and_send.call_args[1]["tx_options"] == tx_options
+
+
+class TestBatchMintAndRegisterIP:
+    """Test batch_mint_and_register_ip method."""
+
+    def test_batch_mint_with_default_values(
+        self, ip_asset: IPAsset, mock_parse_ip_registered_event
+    ):
+        """Test batch mint with default values - verify encode_abi is called with correct default parameters."""
+        requests = [
+            BatchMintAndRegisterIPInput(spg_nft_contract=ADDRESS),
+            BatchMintAndRegisterIPInput(spg_nft_contract=ADDRESS),
+        ]
+
+        with mock_parse_ip_registered_event():
+            with patch.object(
+                ip_asset.registration_workflows_client.contract,
+                "encode_abi",
+                return_value=b"encoded_data",
+            ) as mock_encode_abi:
+                result = ip_asset.batch_mint_and_register_ip(requests=requests)
+
+                # Verify encode_abi was called twice (once per request)
+                assert mock_encode_abi.call_count == 2
+
+                # Verify first call with default values
+                first_call_args = mock_encode_abi.call_args_list[0]
+                assert (
+                    first_call_args[1]["abi_element_identifier"] == "mintAndRegisterIp"
+                )
+                args = first_call_args[1]["args"]
+                assert args[0] == ADDRESS  # spg_nft_contract
+                assert args[1] == ACCOUNT_ADDRESS  # recipient (default)
+                assert (
+                    args[2] == IPMetadata.from_input().get_validated_data()
+                )  # metadata (default)
+                assert args[3] is True  # allow_duplicates (default)
+
+                # Verify result
+                assert result["tx_hash"] == TX_HASH.hex()
+                assert len(result["registered_ips"]) == 2
+                assert result["registered_ips"][0]["ip_id"] == IP_ID
+                assert result["registered_ips"][0]["token_id"] == 3
+                assert result["registered_ips"][1]["ip_id"] == ADDRESS
+                assert result["registered_ips"][1]["token_id"] == 4
+
+    def test_batch_mint_with_custom_values(
+        self, ip_asset: IPAsset, mock_parse_ip_registered_event
+    ):
+        """Test batch mint with custom values - verify encode_abi is called with custom parameters."""
+        custom_recipient = "0x9876543210987654321098765432109876543210"
+
+        requests = [
+            BatchMintAndRegisterIPInput(
+                spg_nft_contract=ADDRESS,
+                ip_metadata=IP_METADATA,
+                recipient=custom_recipient,
+                allow_duplicates=True,
+            ),
+            BatchMintAndRegisterIPInput(
+                spg_nft_contract=ADDRESS,
+                ip_metadata=IP_METADATA,
+                recipient=ADDRESS,
+                allow_duplicates=False,
+            ),
+        ]
+
+        with mock_parse_ip_registered_event():
+            with patch.object(
+                ip_asset.registration_workflows_client.contract,
+                "encode_abi",
+                return_value=b"encoded_data",
+            ) as mock_encode_abi:
+                result = ip_asset.batch_mint_and_register_ip(requests=requests)
+
+                # Verify encode_abi was called twice
+                assert mock_encode_abi.call_count == 2
+                second_call_args = mock_encode_abi.call_args_list[1]
+                assert (
+                    second_call_args[1]["abi_element_identifier"] == "mintAndRegisterIp"
+                )
+                args = second_call_args[1]["args"]
+                assert args[0] == ADDRESS  # spg_nft_contract
+                assert args[1] == ADDRESS  # recipient
+                assert (
+                    args[2] == IPMetadata.from_input(IP_METADATA).get_validated_data()
+                )  # metadata
+                assert args[3] is False  # allow_duplicates
+
+                # Verify result
+                assert result["tx_hash"] == TX_HASH.hex()
+                assert len(result["registered_ips"]) == 2
+
+    def test_batch_mint_with_tx_options(
+        self, ip_asset: IPAsset, mock_parse_ip_registered_event
+    ):
+        """Test batch mint with transaction options."""
+        tx_options = {"gas": 500000, "gasPrice": 1000000000}
+        requests = [
+            BatchMintAndRegisterIPInput(spg_nft_contract=ADDRESS),
+        ]
+
+        with mock_parse_ip_registered_event():
+            with patch(
+                "story_protocol_python_sdk.resources.IPAsset.build_and_send_transaction"
+            ) as mock_build_and_send:
+                mock_build_and_send.return_value = {
+                    "tx_hash": TX_HASH.hex(),
+                    "tx_receipt": {"status": 1, "logs": []},
+                }
+                result = ip_asset.batch_mint_and_register_ip(
+                    requests=requests, tx_options=tx_options
+                )
+
+                # Verify tx_options were passed
+                assert mock_build_and_send.call_args[1]["tx_options"] == tx_options
+                assert result["tx_hash"] == TX_HASH.hex()
+
+    def test_batch_mint_empty_requests(self, ip_asset: IPAsset):
+        """Test batch mint with empty requests list."""
+        with patch.object(
+            ip_asset.registration_workflows_client.contract,
+            "encode_abi",
+        ) as mock_encode_abi:
+            with patch(
+                "story_protocol_python_sdk.resources.IPAsset.build_and_send_transaction",
+                return_value={
+                    "tx_hash": TX_HASH.hex(),
+                    "tx_receipt": {"status": 1, "logs": []},
+                },
+            ):
+                result = ip_asset.batch_mint_and_register_ip(requests=[])
+
+                # encode_abi should not be called for empty requests
+                mock_encode_abi.assert_not_called()
+                assert result["tx_hash"] == TX_HASH.hex()
+                assert result["registered_ips"] == []
+
+    def test_batch_mint_transaction_failed(self, ip_asset: IPAsset):
+        """Test batch mint when transaction fails."""
+        requests = [
+            BatchMintAndRegisterIPInput(spg_nft_contract=ADDRESS),
+        ]
+
+        with patch.object(
+            ip_asset.registration_workflows_client.contract,
+            "encode_abi",
+            return_value=b"encoded_data",
+        ):
+            with patch(
+                "story_protocol_python_sdk.resources.IPAsset.build_and_send_transaction",
+                side_effect=Exception("Transaction failed"),
+            ):
+                with pytest.raises(
+                    ValueError,
+                    match="Failed to batch mint and register IP: Transaction failed",
+                ):
+                    ip_asset.batch_mint_and_register_ip(requests=requests)
+
+    def test_batch_mint_transaction_success(
+        self, ip_asset: IPAsset, mock_parse_ip_registered_event
+    ):
+        """Test batch mint transaction success."""
+        requests = [
+            BatchMintAndRegisterIPInput(spg_nft_contract=ADDRESS),
+            BatchMintAndRegisterIPInput(spg_nft_contract=ADDRESS),
+        ]
+
+        with mock_parse_ip_registered_event():
+            with patch.object(
+                ip_asset.registration_workflows_client.contract,
+                "encode_abi",
+                return_value=b"encoded_data",
+            ):
+                with patch.object(
+                    ip_asset.registration_workflows_client,
+                    "build_multicall_transaction",
+                    return_value={"tx_hash": TX_HASH.hex()},
+                ) as mock_build_multicall_transaction:
+                    result = ip_asset.batch_mint_and_register_ip(requests=requests)
+
+                print(mock_build_multicall_transaction.call_args[0][0])
+                assert mock_build_multicall_transaction.call_args[0][0] == [
+                    b"encoded_data",
+                    b"encoded_data",
+                ]
+                assert result["tx_hash"] == TX_HASH.hex()
+                assert len(result["registered_ips"]) == 2
+                assert result["registered_ips"][0]["ip_id"] == IP_ID
+                assert result["registered_ips"][0]["token_id"] == 3
+                assert result["registered_ips"][1]["ip_id"] == ADDRESS

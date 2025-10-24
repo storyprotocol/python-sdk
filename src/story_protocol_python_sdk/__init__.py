@@ -14,9 +14,12 @@ from .types.resource.Group import (
     CollectRoyaltiesResponse,
 )
 from .types.resource.IPAsset import (
+    BatchMintAndRegisterIPInput,
+    BatchMintAndRegisterIPResponse,
     LicenseTermsDataInput,
     RegisterAndAttachAndDistributeRoyaltyTokensResponse,
     RegisterDerivativeIPAndAttachAndDistributeRoyaltyTokensResponse,
+    RegisteredIP,
     RegisterPILTermsAndAttachResponse,
     RegistrationResponse,
     RegistrationWithRoyaltyVaultAndLicenseTermsResponse,
@@ -55,6 +58,9 @@ __all__ = [
     "RegisterAndAttachAndDistributeRoyaltyTokensResponse",
     "RegisterDerivativeIPAndAttachAndDistributeRoyaltyTokensResponse",
     "LicenseTermsDataInput",
+    "BatchMintAndRegisterIPInput",
+    "BatchMintAndRegisterIPResponse",
+    "RegisteredIP",
     "ClaimRewardsResponse",
     "ClaimReward",
     "CollectRoyaltiesResponse",

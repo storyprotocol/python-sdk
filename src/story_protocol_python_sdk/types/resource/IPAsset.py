@@ -4,22 +4,33 @@ from typing import TypedDict
 from ens.ens import Address, HexStr
 
 from story_protocol_python_sdk.types.resource.License import LicenseTermsInput
+from story_protocol_python_sdk.utils.ip_metadata import IPMetadataInput
 from story_protocol_python_sdk.utils.licensing_config_data import LicensingConfig
 
 
-class RegistrationResponse(TypedDict):
+class RegisteredIP(TypedDict):
     """
-    Response structure for IP asset registration operations.
+    Data structure for IP and token ID.
 
     Attributes:
-        ip_id: The IP ID of the registered IP asset
-        tx_hash: The transaction hash of the registration transaction
-        token_id: [Optional] The token ID of the registered IP asset
+        ip_id: The IP ID of the registered IP asset.
+        token_id: The token ID of the registered IP asset
     """
 
     ip_id: Address
-    tx_hash: HexStr
     token_id: int
+
+
+class RegistrationResponse(RegisteredIP):
+    """
+    Response structure for IP asset registration operations.
+    Extends `RegisteredIP` with transaction hash.
+
+    Attributes:
+        tx_hash: The transaction hash of the registration transaction
+    """
+
+    tx_hash: HexStr
 
 
 class RegistrationWithRoyaltyVaultResponse(RegistrationResponse):
@@ -107,3 +118,34 @@ class LicenseTermsDataInput:
 
     terms: LicenseTermsInput
     licensing_config: LicensingConfig
+
+
+@dataclass
+class BatchMintAndRegisterIPInput:
+    """
+    Data structure for batch mint and register IP.
+
+    Attributes:
+        spg_nft_contract: The address of the SPGNFT collection.
+        recipient: [Optional] The address of the recipient of the minted NFT,
+        ip_metadata: [Optional] The desired metadata for the newly minted NFT and newly registered IP.
+        allow_duplicates: [Optional] Set to true to allow minting an NFT with a duplicate metadata hash. (default: True)
+    """
+
+    spg_nft_contract: Address
+    ip_metadata: IPMetadataInput | None = None
+    allow_duplicates: bool = True
+    recipient: Address | None = None
+
+
+class BatchMintAndRegisterIPResponse(TypedDict):
+    """
+    Response structure for batch mint and register IP.
+
+    Attributes:
+        tx_hash: The transaction hash of the batch mint and register IP transaction.
+        registered_ips: The list of `RegisteredIP` which includes IP ID and token ID.
+    """
+
+    tx_hash: HexStr
+    registered_ips: list[RegisteredIP]

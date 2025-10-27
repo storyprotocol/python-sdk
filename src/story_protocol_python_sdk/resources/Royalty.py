@@ -158,7 +158,7 @@ class Royalty:
         tx_options: dict | None = None,
     ) -> dict:
         """
-        Claims all revenue from the child IPs of an ancestor IP, then transfer all claimed tokens to the wallet if the wallet owns the IP or is the claimer. If claimed token is WIP, it will also be converted back to native tokens.
+        Claims all revenue from the child IPs of an ancestor IP, then transfer all claimed tokens to the wallet if the wallet owns the IP or is the claimer. If claimed token is `WIP(Wrapped IP)`, it will also be converted back to native tokens.
 
         Even if there are no child IPs, you must still populate `currency_tokens` with the token addresses you wish to claim. This is required for the claim operation to know which token balances to process.
              :param ancestor_ip_id str: The IP ID of the ancestor.
@@ -166,7 +166,7 @@ class Royalty:
              :param child_ip_ids list: List of child IP IDs.
              :param royalty_policies list: List of royalty policy addresses.
              :param currency_tokens list: List of currency token addresses.
-             :param claim_options dict: [Optional] Options for auto_transfer_all_claimed_tokens_from_ip and auto_unwrap_ip_tokens. Default values are True.
+             :param claim_options dict: [Optional] Options for `auto_transfer_all_claimed_tokens_from_ip` and `auto_unwrap_ip_tokens`. Default values are True.
              :param tx_options dict: [Optional] The transaction options.
              :return dict: A dictionary with transaction details and claimed tokens.
         """
@@ -359,13 +359,7 @@ class Royalty:
                 )[
                     "args"
                 ]
-                claimed_tokens.append(
-                    {
-                        "claimer": event_result["claimer"],
-                        "token": event_result["token"],
-                        "amount": event_result["amount"],
-                    }
-                )
+                claimed_tokens.append(event_result)
 
         return claimed_tokens
 

@@ -278,7 +278,6 @@ class TestClaimAllRevenue:
                 assert len(response["claimed_tokens"]) == 1
                 assert response["claimed_tokens"][0]["amount"] == 120
 
-    # Need to change it
     def test_claim_all_revenue_with_default_claim_options_and_claimer_is_ip_and_owns_claimer_and_token_is_not_wip(
         self,
         royalty_client: Royalty,
@@ -355,7 +354,8 @@ class TestClaimAllRevenue:
                 ],
             ):
                 with pytest.raises(
-                    ValueError, match="Multiple WIP tokens found in the claimed tokens."
+                    ValueError,
+                    match="Failed to claim all revenue: Multiple WIP tokens found in the claimed tokens.",
                 ):
                     royalty_client.claim_all_revenue(
                         ancestor_ip_id="0xA34611b0E11Bba2b11c69864f7D36aC83D862A9c",

@@ -27,6 +27,10 @@ from story_protocol_python_sdk.abi.RoyaltyWorkflows.RoyaltyWorkflows_client impo
 from story_protocol_python_sdk.abi.WrappedIP.WrappedIP_client import WrappedIPClient
 from story_protocol_python_sdk.utils.constants import WIP_TOKEN_ADDRESS
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
+from story_protocol_python_sdk.utils.validation import (
+    validate_address,
+    validate_addresses,
+)
 
 
 class Royalty:
@@ -167,28 +171,16 @@ class Royalty:
              :return dict: A dictionary with transaction details and claimed tokens.
         """
         try:
-            # Validate addresses
-            if not self.web3.is_address(ancestor_ip_id):
-                raise ValueError("Invalid ancestor IP ID address")
-            if not self.web3.is_address(claimer):
-                raise ValueError("Invalid claimer address")
-            if not all(self.web3.is_address(addr) for addr in child_ip_ids):
-                raise ValueError("Invalid child IP ID address")
-            if not all(self.web3.is_address(addr) for addr in royalty_policies):
-                raise ValueError("Invalid royalty policy address")
-            if not all(self.web3.is_address(addr) for addr in currency_tokens):
-                raise ValueError("Invalid currency token address")
 
-            # Claim revenue
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.royalty_workflows_client.build_claimAllRevenue_transaction,
-                ancestor_ip_id,
-                claimer,
-                child_ip_ids,
-                royalty_policies,
-                currency_tokens,
+                validate_address(ancestor_ip_id),
+                validate_address(claimer),
+                validate_addresses(child_ip_ids),
+                validate_addresses(royalty_policies),
+                validate_addresses(currency_tokens),
                 tx_options=tx_options,
             )
 
@@ -213,7 +205,7 @@ class Royalty:
 
             if auto_transfer and is_claimer_ip and owns_claimer:
                 hashes = self._transfer_claimed_tokens_from_ip_to_wallet(
-                    ancestor_ip_id, ip_account, claimed_tokens
+                    ip_account, claimed_tokens
                 )
                 tx_hashes.extend(hashes)
 
@@ -299,7 +291,6 @@ class Royalty:
         """
         is_claimer_ip = self.ip_asset_registry_client.isRegistered(claimer)
         owns_claimer = claimer == self.account.address
-
         ip_account = None
         if is_claimer_ip:
             ip_account = IPAccountImplClient(self.web3, contract_address=claimer)
@@ -309,7 +300,7 @@ class Royalty:
         return owns_claimer, is_claimer_ip, ip_account
 
     def _transfer_claimed_tokens_from_ip_to_wallet(
-        self, ancestor_ip_id: str, ip_account, claimed_tokens: list
+        self, ip_account, claimed_tokens: list
     ) -> list:
         """
         Transfer claimed tokens from an IP account to the wallet.
@@ -319,7 +310,7 @@ class Royalty:
         :param claimed_tokens list: List of claimed tokens, each containing token address and amount
         :return list: List of transaction hashes
         """
-        tx_hashes = []
+        calls = []
 
         for claimed_token in claimed_tokens:
             token = claimed_token["token"]
@@ -332,20 +323,23 @@ class Royalty:
             transfer_data = self.mock_erc20_client.contract.encode_abi(
                 abi_element_identifier="transfer", args=[self.account.address, amount]
             )
-
-        # Execute transfer through IP account - use build_and_send_transaction to properly sign with account
-        response = build_and_send_transaction(
-            self.web3,
-            self.account,
-            ip_account.build_execute_transaction,
-            self.web3.to_checksum_address(token),
-            0,
-            transfer_data,
-            0,
-        )
-        tx_hashes.append(response["tx_hash"])
-
-        return tx_hashes
+            calls.append(
+                {
+                    "target": token,
+                    "value": 0,
+                    "data": transfer_data,
+                }
+            )
+        if len(calls) > 0:
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                ip_account.build_executeBatch_transaction,
+                calls,
+                0,
+            )
+            return [response["tx_hash"]]
+        return []
 
     def _parse_tx_revenue_token_claimed_event(self, tx_receipt: dict) -> list:
         """
@@ -354,37 +348,23 @@ class Royalty:
         :param tx_receipt dict: The transaction receipt.
         :return list: List of claimed tokens with claimer address, token address and amount.
         """
-        event_signature = self.web3.keccak(
+        event_signature = Web3.keccak(
             text="RevenueTokenClaimed(address,address,uint256)"
         ).hex()
         claimed_tokens = []
-
         for log in tx_receipt.get("logs", []):
             if log["topics"][0].hex() == event_signature:
-                data = log["data"]
-
-                # Convert HexBytes to hex string without '0x' prefix
-                data_hex = (
-                    data.hex()
-                    if hasattr(data, "hex")
-                    else (
-                        data[2:]
-                        if isinstance(data, str) and data.startswith("0x")
-                        else data
-                    )
-                )
-
-                # Each parameter is 32 bytes (64 hex chars)
-                claimer = (
-                    "0x" + data_hex[24:64]
-                )  # First 20 bytes of the first parameter
-                token = (
-                    "0x" + data_hex[88:128]
-                )  # First 20 bytes of the second parameter
-                amount = int(data_hex[128:], 16)  # Third parameter
-
+                event_result = self.ip_royalty_vault_client.contract.events.RevenueTokenClaimed.process_log(
+                    log
+                )[
+                    "args"
+                ]
                 claimed_tokens.append(
-                    {"claimer": claimer, "token": token, "amount": amount}
+                    {
+                        "claimer": event_result["claimer"],
+                        "token": event_result["token"],
+                        "amount": event_result["amount"],
+                    }
                 )
 
         return claimed_tokens

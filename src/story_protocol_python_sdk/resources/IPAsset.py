@@ -1703,7 +1703,7 @@ class IPAsset:
         :param ipId Address: The IP ID.
         :return Address: The royalty vault address.
         """
-        event_signature = self.web3.keccak(
+        event_signature = Web3.keccak(
             text="IpRoyaltyVaultDeployed(address,address)"
         ).hex()
         for log in tx_receipt["logs"]:
@@ -1713,8 +1713,6 @@ class IPAsset:
                 )
                 if event_result["args"]["ipId"] == ipId:
                     return event_result["args"]["ipRoyaltyVault"]
-
-        raise ValueError("RoyaltyVaultDeployed event not found in transaction receipt.")
 
     def _validate_recipient(self, recipient: Address | None) -> Address:
         """

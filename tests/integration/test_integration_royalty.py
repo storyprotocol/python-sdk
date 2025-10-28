@@ -1,10 +1,8 @@
-# tests/integration/test_integration_royalty.py
-
-import copy
-
 import pytest
 
 from story_protocol_python_sdk.story_client import StoryClient
+from story_protocol_python_sdk.utils.constants import WIP_TOKEN_ADDRESS
+from story_protocol_python_sdk.utils.derivative_data import DerivativeDataInput
 
 from .setup_for_integration import (
     PIL_LICENSE_TEMPLATE,
@@ -152,13 +150,24 @@ class TestRoyalty:
 
 
 class TestClaimAllRevenue:
-    @pytest.fixture(scope="module")
-    def setup_claim_all_revenue(self, story_client: StoryClient):
+    def test_claim_all_revenue(self, story_client: StoryClient):
+        """Test claiming all revenue with WIP tokens and automatic unwrapping
+
+        Test flow:
+        1. Create NFT collection
+        2. Set up derivative chain: A->B->C->D
+           - Each derivative pays 100 WIP tokens as minting fee
+           - 10% LAP royalty share is configured
+        3. IP A earns 120 WIP tokens total (100 + 10 + 10)
+        4. Claim revenue with default options (auto_transfer=True, auto_unwrap=True)
+        5. Verify WIP tokens are automatically unwrapped to native tokens
+
+        Expected: Wallet balance increases by 120 native tokens (WIP unwrapped)
+        """
         # Create NFT collection
         collection_response = story_client.NFTClient.create_nft_collection(
             name="free-collection",
-            symbol="FREE",
-            max_supply=100,
+            symbol="test-collection",
             is_public_minting=True,
             mint_open=True,
             contract_uri="test-uri",
@@ -166,7 +175,41 @@ class TestClaimAllRevenue:
         )
         spg_nft_contract = collection_response["nft_contract"]
 
-        # Define license terms data template
+        def wrapper_derivative_with_wip(parent_ip_id, license_terms_id):
+            """
+            Helper function to create a derivative IP using WIP tokens for minting fee.
+
+            Steps:
+            1. Predict the minting fee for the license
+            2. Deposit native tokens to get WIP tokens
+            3. Approve the SPG contract to spend WIP tokens
+            4. Mint and register IP as derivative
+            """
+            # Predict how much WIP tokens are needed for minting fee
+            minting_fee = story_client.License.predict_minting_license_fee(
+                licensor_ip_id=parent_ip_id,
+                license_terms_id=license_terms_id,
+                amount=1,
+            )
+            amount = minting_fee["amount"]
+
+            # Deposit native tokens to get WIP tokens
+            story_client.WIP.deposit(amount=amount)
+
+            # Approve SPG contract to spend WIP tokens
+            story_client.WIP.approve(spender=spg_nft_contract, amount=amount)
+
+            # Mint and register the derivative IP
+            response = story_client.IPAsset.mint_and_register_ip_and_make_derivative(
+                spg_nft_contract=spg_nft_contract,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[parent_ip_id],
+                    license_terms_ids=[license_terms_id],
+                ),
+            )
+            return response["ip_id"]
+
+        # Define license terms: 100 WIP minting fee + 10% royalty share
         license_terms_template = [
             {
                 "terms": {
@@ -178,19 +221,19 @@ class TestClaimAllRevenue:
                     "commercial_attribution": False,
                     "commercializer_checker": ZERO_ADDRESS,
                     "commercializer_checker_data": ZERO_ADDRESS,
-                    "commercial_rev_share": 10,
+                    "commercial_rev_share": 10,  # 10% royalty share
                     "commercial_rev_ceiling": 0,
                     "derivatives_allowed": True,
                     "derivatives_attribution": True,
                     "derivatives_approval": False,
                     "derivatives_reciprocal": True,
                     "derivative_rev_ceiling": 0,
-                    "currency": MockERC20,
+                    "currency": WIP_TOKEN_ADDRESS,  # Use WIP tokens for payments
                     "uri": "",
                 },
                 "licensing_config": {
                     "is_set": True,
-                    "minting_fee": 100,
+                    "minting_fee": 100,  # Base minting fee
                     "hook_data": ZERO_ADDRESS,
                     "licensing_hook": ZERO_ADDRESS,
                     "commercial_rev_share": 0,
@@ -201,243 +244,49 @@ class TestClaimAllRevenue:
             }
         ]
 
-        # Create unique metadata for each IP
-        metadata_a = {
-            "ip_metadata_uri": "test-uri-a",
-            "ip_metadata_hash": web3.to_hex(web3.keccak(text="test-metadata-hash-a")),
-            "nft_metadata_uri": "test-nft-uri-a",
-            "nft_metadata_hash": web3.to_hex(
-                web3.keccak(text="test-nft-metadata-hash-a")
-            ),
-        }
-
-        metadata_b = {
-            "ip_metadata_uri": "test-uri-b",
-            "ip_metadata_hash": web3.to_hex(web3.keccak(text="test-metadata-hash-b")),
-            "nft_metadata_uri": "test-nft-uri-b",
-            "nft_metadata_hash": web3.to_hex(
-                web3.keccak(text="test-nft-metadata-hash-b")
-            ),
-        }
-
-        metadata_c = {
-            "ip_metadata_uri": "test-uri-c",
-            "ip_metadata_hash": web3.to_hex(web3.keccak(text="test-metadata-hash-c")),
-            "nft_metadata_uri": "test-nft-uri-c",
-            "nft_metadata_hash": web3.to_hex(
-                web3.keccak(text="test-nft-metadata-hash-c")
-            ),
-        }
-
-        metadata_d = {
-            "ip_metadata_uri": "test-uri-d",
-            "ip_metadata_hash": web3.to_hex(web3.keccak(text="test-metadata-hash-d")),
-            "nft_metadata_uri": "test-nft-uri-d",
-            "nft_metadata_hash": web3.to_hex(
-                web3.keccak(text="test-nft-metadata-hash-d")
-            ),
-        }
-
-        # Register IP A with PIL terms
+        # Register IP A with PIL terms (root IP in derivative chain)
         ip_a_response = story_client.IPAsset.mint_and_register_ip_asset_with_pil_terms(
             spg_nft_contract=spg_nft_contract,
-            terms=copy.deepcopy(license_terms_template),
-            ip_metadata=metadata_a,
+            terms=license_terms_template,
         )
         ip_a = ip_a_response["ip_id"]
         license_terms_id = ip_a_response["license_terms_ids"][0]
 
-        # Register IP B as derivative of A
-        ip_b_response = story_client.IPAsset.mint_and_register_ip(
-            spg_nft_contract=spg_nft_contract, ip_metadata=metadata_b
-        )
-        ip_b = ip_b_response["ip_id"]
-        story_client.IPAsset.register_derivative(
-            child_ip_id=ip_b, parent_ip_ids=[ip_a], license_terms_ids=[license_terms_id]
-        )
+        # Build derivative chain: A -> B -> C -> D
+        # Each derivative mints with WIP tokens, generating revenue for ancestors
+        ip_b = wrapper_derivative_with_wip(ip_a, license_terms_id)  # B pays 100 WIP
+        ip_c = wrapper_derivative_with_wip(
+            ip_b, license_terms_id
+        )  # C pays 100 WIP (10 to A, 90 to B)
+        wrapper_derivative_with_wip(
+            ip_c, license_terms_id
+        )  # D pays 100 WIP (10 to A, 10 to B, 80 to C)
 
-        # Register IP C as derivative of B
-        ip_c_response = story_client.IPAsset.mint_and_register_ip(
-            spg_nft_contract=spg_nft_contract, ip_metadata=metadata_c
-        )
-        ip_c = ip_c_response["ip_id"]
-        story_client.IPAsset.register_derivative(
-            child_ip_id=ip_c, parent_ip_ids=[ip_b], license_terms_ids=[license_terms_id]
-        )
+        # Record wallet WIP balance before claiming
+        wip_token_balance_before = story_client.WIP.balance_of(address=account.address)
 
-        # Register IP D as derivative of C
-        ip_d_response = story_client.IPAsset.mint_and_register_ip(
-            spg_nft_contract=spg_nft_contract, ip_metadata=metadata_d
-        )
-        ip_d = ip_d_response["ip_id"]
-        story_client.IPAsset.register_derivative(
-            child_ip_id=ip_d, parent_ip_ids=[ip_c], license_terms_ids=[license_terms_id]
-        )
-
-        return {"ip_a": ip_a, "ip_b": ip_b, "ip_c": ip_c, "ip_d": ip_d}
-
-    def test_claim_all_revenue(
-        self, setup_claim_all_revenue, story_client: StoryClient
-    ):
+        # Claim all revenue from child IPs for ancestor IP A
+        # With default options: auto_transfer=True, auto_unwrap=True
+        # This will automatically unwrap WIP tokens to native tokens
         response = story_client.Royalty.claim_all_revenue(
-            ancestor_ip_id=setup_claim_all_revenue["ip_a"],
-            claimer=setup_claim_all_revenue["ip_a"],
-            child_ip_ids=[
-                setup_claim_all_revenue["ip_b"],
-                setup_claim_all_revenue["ip_c"],
-            ],
+            ancestor_ip_id=ip_a,
+            claimer=ip_a,
+            child_ip_ids=[ip_b, ip_c],
             royalty_policies=[ROYALTY_POLICY, ROYALTY_POLICY],
-            currency_tokens=[MockERC20, MockERC20],
+            currency_tokens=[WIP_TOKEN_ADDRESS, WIP_TOKEN_ADDRESS],
         )
 
+        # Record wallet WIP balance after claiming
+        wip_token_balance_after = story_client.WIP.balance_of(address=account.address)
+
+        # Verify the claim response
         assert response is not None
         assert "tx_hashes" in response
         assert isinstance(response["tx_hashes"], list)
         assert len(response["tx_hashes"]) > 0
+
+        # Verify IP A received 120 WIP tokens total (100 from B + 10 from C + 10 from D)
         assert response["claimed_tokens"][0]["amount"] == 120
 
-    @pytest.fixture(scope="module")
-    def setup_claim_all_revenue_claim_options(self, story_client: StoryClient):
-        # Create NFT collection
-        collection_response = story_client.NFTClient.create_nft_collection(
-            name="free-collection",
-            symbol="FREE",
-            max_supply=100,
-            is_public_minting=True,
-            mint_open=True,
-            contract_uri="test-uri",
-            mint_fee_recipient=ZERO_ADDRESS,
-        )
-        spg_nft_contract = collection_response["nft_contract"]
-
-        # Define license terms data template
-        license_terms_template = [
-            {
-                "terms": {
-                    "transferable": True,
-                    "royalty_policy": ROYALTY_POLICY,
-                    "default_minting_fee": 100,
-                    "expiration": 0,
-                    "commercial_use": True,
-                    "commercial_attribution": False,
-                    "commercializer_checker": ZERO_ADDRESS,
-                    "commercializer_checker_data": ZERO_ADDRESS,
-                    "commercial_rev_share": 10,
-                    "commercial_rev_ceiling": 0,
-                    "derivatives_allowed": True,
-                    "derivatives_attribution": True,
-                    "derivatives_approval": False,
-                    "derivatives_reciprocal": True,
-                    "derivative_rev_ceiling": 0,
-                    "currency": MockERC20,
-                    "uri": "",
-                },
-                "licensing_config": {
-                    "is_set": True,
-                    "minting_fee": 100,
-                    "hook_data": ZERO_ADDRESS,
-                    "licensing_hook": ZERO_ADDRESS,
-                    "commercial_rev_share": 0,
-                    "disabled": False,
-                    "expect_minimum_group_reward_share": 0,
-                    "expect_group_reward_pool": ZERO_ADDRESS,
-                },
-            }
-        ]
-
-        # Create unique metadata for each IP
-        metadata_a = {
-            "ip_metadata_uri": "test-uri-a",
-            "ip_metadata_hash": web3.to_hex(web3.keccak(text="test-metadata-hash-a")),
-            "nft_metadata_uri": "test-nft-uri-a",
-            "nft_metadata_hash": web3.to_hex(
-                web3.keccak(text="test-nft-metadata-hash-a")
-            ),
-        }
-
-        metadata_b = {
-            "ip_metadata_uri": "test-uri-b",
-            "ip_metadata_hash": web3.to_hex(web3.keccak(text="test-metadata-hash-b")),
-            "nft_metadata_uri": "test-nft-uri-b",
-            "nft_metadata_hash": web3.to_hex(
-                web3.keccak(text="test-nft-metadata-hash-b")
-            ),
-        }
-
-        metadata_c = {
-            "ip_metadata_uri": "test-uri-c",
-            "ip_metadata_hash": web3.to_hex(web3.keccak(text="test-metadata-hash-c")),
-            "nft_metadata_uri": "test-nft-uri-c",
-            "nft_metadata_hash": web3.to_hex(
-                web3.keccak(text="test-nft-metadata-hash-c")
-            ),
-        }
-
-        metadata_d = {
-            "ip_metadata_uri": "test-uri-d",
-            "ip_metadata_hash": web3.to_hex(web3.keccak(text="test-metadata-hash-d")),
-            "nft_metadata_uri": "test-nft-uri-d",
-            "nft_metadata_hash": web3.to_hex(
-                web3.keccak(text="test-nft-metadata-hash-d")
-            ),
-        }
-
-        # Register IP A with PIL terms
-        ip_a_response = story_client.IPAsset.mint_and_register_ip_asset_with_pil_terms(
-            spg_nft_contract=spg_nft_contract,
-            terms=copy.deepcopy(license_terms_template),
-            ip_metadata=metadata_a,
-        )
-        ip_a = ip_a_response["ip_id"]
-        license_terms_id = ip_a_response["license_terms_ids"][0]
-
-        # Register IP B as derivative of A
-        ip_b_response = story_client.IPAsset.mint_and_register_ip(
-            spg_nft_contract=spg_nft_contract, ip_metadata=metadata_b
-        )
-        ip_b = ip_b_response["ip_id"]
-        story_client.IPAsset.register_derivative(
-            child_ip_id=ip_b, parent_ip_ids=[ip_a], license_terms_ids=[license_terms_id]
-        )
-
-        # Register IP C as derivative of B
-        ip_c_response = story_client.IPAsset.mint_and_register_ip(
-            spg_nft_contract=spg_nft_contract, ip_metadata=metadata_c
-        )
-        ip_c = ip_c_response["ip_id"]
-        story_client.IPAsset.register_derivative(
-            child_ip_id=ip_c, parent_ip_ids=[ip_b], license_terms_ids=[license_terms_id]
-        )
-
-        # Register IP D as derivative of C
-        ip_d_response = story_client.IPAsset.mint_and_register_ip(
-            spg_nft_contract=spg_nft_contract, ip_metadata=metadata_d
-        )
-        ip_d = ip_d_response["ip_id"]
-        story_client.IPAsset.register_derivative(
-            child_ip_id=ip_d, parent_ip_ids=[ip_c], license_terms_ids=[license_terms_id]
-        )
-
-        return {"ip_a": ip_a, "ip_b": ip_b, "ip_c": ip_c, "ip_d": ip_d}
-
-    def test_claim_all_revenue_claim_options(
-        self, setup_claim_all_revenue_claim_options, story_client: StoryClient
-    ):
-        """Test claiming all revenue with specific claim options"""
-        response = story_client.Royalty.claim_all_revenue(
-            ancestor_ip_id=setup_claim_all_revenue_claim_options["ip_a"],
-            claimer=setup_claim_all_revenue_claim_options["ip_a"],
-            child_ip_ids=[
-                setup_claim_all_revenue_claim_options["ip_b"],
-                setup_claim_all_revenue_claim_options["ip_c"],
-            ],
-            royalty_policies=[ROYALTY_POLICY, ROYALTY_POLICY],
-            currency_tokens=[MockERC20, MockERC20],
-            claim_options={"auto_transfer_all_claimed_tokens_from_ip": True},
-        )
-
-        assert response is not None
-        assert "tx_hashes" in response
-        assert isinstance(response["tx_hashes"], list)
-        assert len(response["tx_hashes"]) > 0
-        assert response["claimed_tokens"][0]["amount"] == 120
+        # Verify WIP tokens were automatically unwrapped
+        assert wip_token_balance_after == wip_token_balance_before

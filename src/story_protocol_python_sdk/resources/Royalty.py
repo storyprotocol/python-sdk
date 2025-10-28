@@ -24,7 +24,13 @@ from story_protocol_python_sdk.abi.RoyaltyPolicyLRP.RoyaltyPolicyLRP_client impo
 from story_protocol_python_sdk.abi.RoyaltyWorkflows.RoyaltyWorkflows_client import (
     RoyaltyWorkflowsClient,
 )
+from story_protocol_python_sdk.abi.WrappedIP.WrappedIP_client import WrappedIPClient
+from story_protocol_python_sdk.utils.constants import WIP_TOKEN_ADDRESS
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
+from story_protocol_python_sdk.utils.validation import (
+    validate_address,
+    validate_addresses,
+)
 
 
 class Royalty:
@@ -49,6 +55,7 @@ class Royalty:
         self.ip_account_impl_client = IPAccountImplClient(web3)
         self.mock_erc20_client = MockERC20Client(web3)
         self.royalty_policy_lrp_client = RoyaltyPolicyLRPClient(web3)
+        self.wrapped_ip_client = WrappedIPClient(web3)
 
     def get_royalty_vault_address(self, ip_id: str) -> str:
         """
@@ -151,40 +158,29 @@ class Royalty:
         tx_options: dict | None = None,
     ) -> dict:
         """
-        Claims all revenue from the child IPs of an ancestor IP, then optionally transfers and unwraps tokens.
+        Claims all revenue from the child IPs of an ancestor IP, then transfer all claimed tokens to the wallet if the wallet owns the IP or is the claimer. If claimed token is `WIP(Wrapped IP)`, it will also be converted back to native tokens.
 
-        :param ancestor_ip_id str: The IP ID of the ancestor.
-        :param claimer str: The address of the claimer.
-        :param child_ip_ids list: List of child IP IDs.
-        :param royalty_policies list: List of royalty policy addresses.
-        :param currency_tokens list: List of currency token addresses.
-        :param claim_options dict: [Optional] Options for auto-transfer and unwrapping.
-        :param tx_options dict: [Optional] The transaction options.
-        :return dict: A dictionary with transaction details and claimed tokens.
+        Even if there are no child IPs, you must still populate `currency_tokens` with the token addresses you wish to claim. This is required for the claim operation to know which token balances to process.
+             :param ancestor_ip_id str: The IP ID of the ancestor.
+             :param claimer str: The address of the claimer.
+             :param child_ip_ids list: List of child IP IDs.
+             :param royalty_policies list: List of royalty policy addresses.
+             :param currency_tokens list: List of currency token addresses.
+             :param claim_options dict: [Optional] Options for `auto_transfer_all_claimed_tokens_from_ip` and `auto_unwrap_ip_tokens`. Default values are True.
+             :param tx_options dict: [Optional] The transaction options.
+             :return dict: A dictionary with transaction details and claimed tokens.
         """
         try:
-            # Validate addresses
-            if not self.web3.is_address(ancestor_ip_id):
-                raise ValueError("Invalid ancestor IP ID address")
-            if not self.web3.is_address(claimer):
-                raise ValueError("Invalid claimer address")
-            if not all(self.web3.is_address(addr) for addr in child_ip_ids):
-                raise ValueError("Invalid child IP ID address")
-            if not all(self.web3.is_address(addr) for addr in royalty_policies):
-                raise ValueError("Invalid royalty policy address")
-            if not all(self.web3.is_address(addr) for addr in currency_tokens):
-                raise ValueError("Invalid currency token address")
 
-            # Claim revenue
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.royalty_workflows_client.build_claimAllRevenue_transaction,
-                ancestor_ip_id,
-                claimer,
-                child_ip_ids,
-                royalty_policies,
-                currency_tokens,
+                validate_address(ancestor_ip_id),
+                validate_address(claimer),
+                validate_addresses(child_ip_ids),
+                validate_addresses(royalty_policies),
+                validate_addresses(currency_tokens),
                 tx_options=tx_options,
             )
 
@@ -192,12 +188,6 @@ class Royalty:
 
             # Determine if the claimer is an IP owned by the wallet.
             owns_claimer, is_claimer_ip, ip_account = self._get_claimer_info(claimer)
-
-            # If wallet does not own the claimer then we cannot auto claim.
-            # If owns_claimer is false, it means the claimer is neither an IP owned by the wallet nor the wallet address itself.
-            if not owns_claimer:
-                return {"receipt": response["tx_receipt"], "tx_hashes": tx_hashes}
-
             claimed_tokens = self._parse_tx_revenue_token_claimed_event(
                 response["tx_receipt"]
             )
@@ -207,13 +197,20 @@ class Royalty:
                 if claim_options
                 else True
             )
-            # auto_unwrap = claim_options['auto_unwrap_ip_tokens']
+            auto_unwrap = (
+                claim_options.get("auto_unwrap_ip_tokens", True)
+                if claim_options
+                else True
+            )
 
-            # transfer claimed tokens from IP to wallet if wallet owns IP
             if auto_transfer and is_claimer_ip and owns_claimer:
                 hashes = self._transfer_claimed_tokens_from_ip_to_wallet(
-                    ancestor_ip_id, ip_account, claimed_tokens
+                    ip_account, claimed_tokens
                 )
+                tx_hashes.extend(hashes)
+
+            if auto_unwrap and owns_claimer:
+                hashes = self._unwrap_claimed_tokens_from_ip_to_wallet(claimed_tokens)
                 tx_hashes.extend(hashes)
 
             return {
@@ -294,7 +291,6 @@ class Royalty:
         """
         is_claimer_ip = self.ip_asset_registry_client.isRegistered(claimer)
         owns_claimer = claimer == self.account.address
-
         ip_account = None
         if is_claimer_ip:
             ip_account = IPAccountImplClient(self.web3, contract_address=claimer)
@@ -304,7 +300,7 @@ class Royalty:
         return owns_claimer, is_claimer_ip, ip_account
 
     def _transfer_claimed_tokens_from_ip_to_wallet(
-        self, ancestor_ip_id: str, ip_account, claimed_tokens: list
+        self, ip_account, claimed_tokens: list
     ) -> list:
         """
         Transfer claimed tokens from an IP account to the wallet.
@@ -314,7 +310,7 @@ class Royalty:
         :param claimed_tokens list: List of claimed tokens, each containing token address and amount
         :return list: List of transaction hashes
         """
-        tx_hashes = []
+        calls = []
 
         for claimed_token in claimed_tokens:
             token = claimed_token["token"]
@@ -327,20 +323,23 @@ class Royalty:
             transfer_data = self.mock_erc20_client.contract.encode_abi(
                 abi_element_identifier="transfer", args=[self.account.address, amount]
             )
-
-        # Execute transfer through IP account - use build_and_send_transaction to properly sign with account
-        response = build_and_send_transaction(
-            self.web3,
-            self.account,
-            ip_account.build_execute_transaction,
-            self.web3.to_checksum_address(token),
-            0,
-            transfer_data,
-            0,
-        )
-        tx_hashes.append(response["tx_hash"])
-
-        return tx_hashes
+            calls.append(
+                {
+                    "target": token,
+                    "value": 0,
+                    "data": transfer_data,
+                }
+            )
+        if len(calls) > 0:
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                ip_account.build_executeBatch_transaction,
+                calls,
+                0,
+            )
+            return [response["tx_hash"]]
+        return []
 
     def _parse_tx_revenue_token_claimed_event(self, tx_receipt: dict) -> list:
         """
@@ -349,37 +348,52 @@ class Royalty:
         :param tx_receipt dict: The transaction receipt.
         :return list: List of claimed tokens with claimer address, token address and amount.
         """
-        event_signature = self.web3.keccak(
+        event_signature = Web3.keccak(
             text="RevenueTokenClaimed(address,address,uint256)"
         ).hex()
         claimed_tokens = []
-
         for log in tx_receipt.get("logs", []):
             if log["topics"][0].hex() == event_signature:
-                data = log["data"]
-
-                # Convert HexBytes to hex string without '0x' prefix
-                data_hex = (
-                    data.hex()
-                    if hasattr(data, "hex")
-                    else (
-                        data[2:]
-                        if isinstance(data, str) and data.startswith("0x")
-                        else data
-                    )
-                )
-
-                # Each parameter is 32 bytes (64 hex chars)
-                claimer = (
-                    "0x" + data_hex[24:64]
-                )  # First 20 bytes of the first parameter
-                token = (
-                    "0x" + data_hex[88:128]
-                )  # First 20 bytes of the second parameter
-                amount = int(data_hex[128:], 16)  # Third parameter
-
-                claimed_tokens.append(
-                    {"claimer": claimer, "token": token, "amount": amount}
-                )
+                event_result = self.ip_royalty_vault_client.contract.events.RevenueTokenClaimed.process_log(
+                    log
+                )[
+                    "args"
+                ]
+                claimed_tokens.append(event_result)
 
         return claimed_tokens
+
+    def _unwrap_claimed_tokens_from_ip_to_wallet(self, claimed_tokens: list) -> list:
+        """
+        Unwrap claimed tokens from an IP account to the wallet.
+
+        :param claimed_tokens list: List of claimed tokens, each containing token address and amount
+        :return list: List of transaction hashes
+        """
+        tx_hashes: list[str] = []
+
+        # Filter for WIP tokens
+        wip_tokens = [
+            token for token in claimed_tokens if token["token"] == WIP_TOKEN_ADDRESS
+        ]
+
+        if len(wip_tokens) > 1:
+            raise ValueError("Multiple WIP tokens found in the claimed tokens.")
+
+        if not wip_tokens:
+            return tx_hashes
+
+        wip_token = wip_tokens[0]
+        if wip_token["amount"] <= 0:
+            return tx_hashes
+
+        # Withdraw WIP tokens
+        response = build_and_send_transaction(
+            self.web3,
+            self.account,
+            self.wrapped_ip_client.build_withdraw_transaction,
+            wip_token["amount"],
+        )
+
+        tx_hashes.append(response["tx_hash"])
+        return tx_hashes

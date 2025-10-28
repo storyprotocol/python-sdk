@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import pytest
 from ens.ens import HexStr
+from web3 import Web3
 
 from story_protocol_python_sdk import RoyaltyShareInput
 from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
@@ -1127,7 +1128,6 @@ class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
         ip_asset: IPAsset,
         mock_license_registry_client,
         mock_parse_ip_registered_event,
-        mock_get_royalty_vault_address_by_ip_id,
     ):
         royalty_shares = [
             RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0),
@@ -1137,25 +1137,30 @@ class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
         with (
             mock_parse_ip_registered_event(),
             mock_license_registry_client(),
-            mock_get_royalty_vault_address_by_ip_id(),
         ):
-            with patch(
-                "story_protocol_python_sdk.resources.IPAsset.build_and_send_transaction",
-                return_value={
-                    "tx_hash": TX_HASH,
-                    "tx_receipt": {
-                        "logs": [
-                            {
-                                "topics": [
-                                    ip_asset.web3.keccak(
-                                        text="IpRoyaltyVaultDeployed(address,address)"
-                                    )
-                                ],
-                                "data": IP_ID + ADDRESS,
-                            }
-                        ]
+            with (
+                patch(
+                    "story_protocol_python_sdk.resources.IPAsset.build_and_send_transaction",
+                    return_value={
+                        "tx_hash": TX_HASH,
+                        "tx_receipt": {
+                            "logs": [
+                                {
+                                    "topics": [
+                                        Web3.keccak(
+                                            text="IpRoyaltyVaultDeployed(address,address)"
+                                        )
+                                    ]
+                                }
+                            ]
+                        },
                     },
-                },
+                ),
+                patch.object(
+                    ip_asset.royalty_module_client.contract.events.IpRoyaltyVaultDeployed,
+                    "process_log",
+                    return_value={"args": {"ipId": IP_ID, "ipRoyaltyVault": ADDRESS}},
+                ),
             ):
                 result = ip_asset.mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
                     spg_nft_contract=ADDRESS,

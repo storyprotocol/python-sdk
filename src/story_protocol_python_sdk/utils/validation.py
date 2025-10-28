@@ -16,6 +16,19 @@ def validate_address(address: str) -> str:
     return address
 
 
+def validate_addresses(addresses: list[str]) -> list[str]:
+    """
+    Validates if the provided list of strings are valid Ethereum addresses.
+
+    :param addresses list[str]: The list of addresses to validate.
+    :return list[str]: The validated list of addresses.
+    :raises ValueError: If any address is not valid.
+    """
+    if not all(Web3.is_address(address) for address in addresses):
+        raise ValueError(f"Invalid addresses: {addresses}.")
+    return addresses
+
+
 def get_revenue_share(
     revShare: int,
     type: RevShareType = RevShareType.COMMERCIAL_REVENUE_SHARE,

@@ -1,4 +1,5 @@
 import hashlib
+import hmac
 import os
 
 import base58
@@ -24,6 +25,44 @@ ARBITRATION_POLICY_UMA = "0xfFD98c3877B8789124f02C7E8239A4b0Ef11E936"
 EVEN_SPLIT_GROUP_POOL = "0xf96f2c30b41Cb6e0290de43C8528ae83d4f33F89"
 ROYALTY_POLICY_LRP = "0x9156e603C949481883B1d3355c6f1132D191fC41"
 CORE_METADATA_MODULE = "0x6E81a25C99C6e8430aeC7353325EB138aFE5DC16"
+
+
+def create_xprv_from_private_key(private_key: str) -> str:
+    """
+    Create an extended private key (xprv) using a private key as seed.
+
+    Args:
+        private_key: The private key (hex string with or without 0x prefix)
+
+    Returns:
+        xprv string in base58check format
+    """
+    seed = bytes.fromhex(private_key.removeprefix("0x"))
+    hmac_result = hmac.new(b"Bitcoin seed", seed, hashlib.sha512).digest()
+
+    xprv_bytes = (
+        bytes.fromhex("0488ADE4")
+        + bytes(9)
+        + hmac_result[32:]
+        + bytes([0])
+        + hmac_result[:32]
+    )
+    checksum = hashlib.sha256(hashlib.sha256(xprv_bytes).digest()).digest()[:4]
+    return base58.b58encode(xprv_bytes + checksum).decode()
+
+
+def get_private_key_from_xprv(xprv: str) -> str:
+    """
+    Extract the private key from an xprv.
+
+    Args:
+        xprv: Extended private key in base58check format
+
+    Returns:
+        Private key as hex string with 0x prefix
+    """
+    decoded = base58.b58decode(xprv)
+    return "0x" + decoded[46:78].hex()
 
 
 def get_story_client(web3: Web3, account) -> StoryClient:

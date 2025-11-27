@@ -302,4 +302,4 @@ class TestTransactionUtils:
                 tx_options={"wait_for_receipt": True, "timeout": 0.001},
             )
 
-        time.sleep(1)  # Wait for the transaction to be mined
+        time.sleep(5)  # Wait for the transaction to be mined

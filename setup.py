@@ -9,6 +9,18 @@ setup(
     packages=find_packages(where="src", exclude=["tests"]),
     package_dir={"": "src"},
     install_requires=["web3>=7.0.0", "pytest", "python-dotenv", "base58"],
+    extras_require={
+        "dev": [
+            "pytest",
+            "pytest-cov",
+            "black",
+            "isort",
+            "ruff",
+            "pre-commit",
+            "coverage",
+            "pytest-html",
+        ],
+    },
     include_package_data=True,  # Ensure package data is included
     package_data={"story_protocol_python_sdk": ["py.typed"]},
     url="https://github.com/storyprotocol/python-sdk",

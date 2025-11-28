@@ -1,4 +1,6 @@
 name: Workflow for Internal PRs with Unit & Integration Tests
+permissions:
+  contents: read
 
 on:
   pull_request:

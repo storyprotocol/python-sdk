@@ -17,7 +17,7 @@ jobs:
     needs: [Timestamp]
     uses: ./.github/workflows/build-test-workflow.yml
     with:
-      sha: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || (github.event_name == 'workflow_dispatch' && inputs.sha) || github.sha }}
+      sha: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       ENVIRONMENT: "aeneid"
     secrets:
       WALLET_ADDRESS: ${{ secrets.WALLET_ADDRESS }}

@@ -1,6 +1,6 @@
 name: Workflow for External PRs with Unit & Integration Tests
 permissions:
-  contents: read
+  contents: write
 
 on:
   pull_request_target:

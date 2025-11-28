@@ -68,7 +68,7 @@ class Group:
         Registers a Group IPA.
 
         :param group_pool str: The address of the group pool.
-        :param tx_options dict: [Optional] The transaction options.
+        :param tx_options dict: [xxxxOptional] The transaction options.
         :return dict: A dictionary with the transaction hash and group ID.
         """
         try:

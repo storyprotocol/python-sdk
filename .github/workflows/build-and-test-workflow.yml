@@ -1,4 +1,7 @@
-name: Build and Test
+name: Workflow for Building and Testing
+
+permissions:
+  contents: read
 
 on:
   workflow_call:

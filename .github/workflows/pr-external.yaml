@@ -1,6 +1,4 @@
 name: Workflow for External PRs with Unit & Integration Tests
-permissions:
-  contents: read
 
 on:
   pull_request_target:
@@ -16,7 +14,7 @@ jobs:
   authorize:
     if: github.event.pull_request.head.repo.full_name != github.repository
     needs: [Timestamp_PR_CREATED]
-    environment: "external"
+    environment: "aeneid"
     runs-on: ubuntu-latest
     steps:
       - run: true

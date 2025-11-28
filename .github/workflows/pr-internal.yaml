@@ -1,6 +1,4 @@
 name: Workflow for Internal PRs with Unit & Integration Tests
-permissions:
-  contents: read
 
 on:
   pull_request:
@@ -9,12 +7,6 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
-    inputs:
-      sha:
-        description: "Git commit SHA to test (leave empty to use current commit)"
-        required: false
-        type: string
 
 jobs:
   Timestamp:

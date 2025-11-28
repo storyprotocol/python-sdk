@@ -31,7 +31,6 @@ xprv = create_xprv_from_private_key(private_key)
 private_key_2 = get_private_key_from_xprv(xprv)
 account_2 = web3.eth.account.from_key(private_key_2)
 wallet_address_2 = account_2.address
-print("===")
 # Export all configuration
 __all__ = [
     "web3",

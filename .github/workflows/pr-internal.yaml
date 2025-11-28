@@ -1,0 +1,27 @@
+name: Workflow for Internal PRs with Unit & Integration Tests
+permissions:
+  contents: write
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  Timestamp:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch' }}
+    uses: storyprotocol/gha-workflows/.github/workflows/reusable-timestamp.yml@main
+
+  tests:
+    needs: [Timestamp]
+    uses: ./.github/workflows/build-and-test-workflow.yml
+    with:
+      sha: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      ENVIRONMENT: "aeneid"
+    secrets:
+      WALLET_ADDRESS: ${{ secrets.WALLET_ADDRESS }}
+      WALLET_PRIVATE_KEY: ${{ secrets.WALLET_PRIVATE_KEY }}
+      RPC_PROVIDER_URL: ${{ secrets.RPC_PROVIDER_URL }}

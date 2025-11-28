@@ -2061,7 +2061,6 @@ class TestBatchMintAndRegisterIP:
                 ) as mock_build_multicall_transaction:
                     result = ip_asset.batch_mint_and_register_ip(requests=requests)
 
-                print(mock_build_multicall_transaction.call_args[0][0])
                 assert mock_build_multicall_transaction.call_args[0][0] == [
                     b"encoded_data",
                     b"encoded_data",

@@ -20,6 +20,8 @@ on:
 jobs:
   build_and_test:
     name: Build and Test
+    permissions:
+      contents: write
     timeout-minutes: 60
     runs-on: ubuntu-latest
     environment: ${{ inputs.ENVIRONMENT }}

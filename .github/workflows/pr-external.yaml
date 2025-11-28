@@ -1,0 +1,36 @@
+name: Workflow for External PRs with Unit & Integration Tests
+
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+    branches:
+      - main
+
+jobs:
+  Timestamp_PR_CREATED:
+    uses: storyprotocol/gha-workflows/.github/workflows/reusable-timestamp.yml@main
+
+  authorize:
+    if: github.event.pull_request.head.repo.full_name != github.repository
+    needs: [Timestamp_PR_CREATED]
+    environment: "external"
+    runs-on: ubuntu-latest
+    steps:
+      - run: true
+
+  Timestamp_PR_APPROVED:
+    needs: [authorize]
+    uses: storyprotocol/gha-workflows/.github/workflows/reusable-timestamp.yml@main
+
+  tests:
+    needs: [authorize, Timestamp_PR_APPROVED]
+    uses: ./.github/workflows/build-test-workflow.yml
+    with:
+      sha: ${{ github.event.pull_request.head.sha }}
+      ENVIRONMENT: "aeneid"
+    secrets:
+        WALLET_ADDRESS: ${{ secrets.WALLET_ADDRESS }}
+        WALLET_PRIVATE_KEY: ${{ secrets.WALLET_PRIVATE_KEY }}
+        WALLET_ADDRESS_2: ${{ secrets.WALLET_ADDRESS_2 }}
+        WALLET_PRIVATE_KEY_2: ${{ secrets.WALLET_PRIVATE_KEY_2 }}
+        RPC_PROVIDER_URL: ${{ secrets.RPC_PROVIDER_URL }}

@@ -1,0 +1,88 @@
+name: Build and Test
+
+on:
+  workflow_call:
+    inputs:
+      sha:
+        required: true
+        type: string
+      ENVIRONMENT:
+        required: true
+        type: string
+    secrets:
+      WALLET_PRIVATE_KEY:
+        required: true
+      WALLET_ADDRESS:
+        required: true
+      WALLET_ADDRESS_2:
+        required: true
+      WALLET_PRIVATE_KEY_2:
+        required: true
+      RPC_PROVIDER_URL:
+        required: true
+
+jobs:
+  build_and_test:
+    name: Build and Test
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.ENVIRONMENT }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10"]
+    env:
+      WALLET_PRIVATE_KEY: ${{ secrets.WALLET_PRIVATE_KEY }}
+      WALLET_ADDRESS: ${{ secrets.WALLET_ADDRESS }}
+      WALLET_PRIVATE_KEY_2: ${{ secrets.WALLET_PRIVATE_KEY_2 }}
+      WALLET_ADDRESS_2: ${{ secrets.WALLET_ADDRESS_2 }}
+      RPC_PROVIDER_URL: ${{ secrets.RPC_PROVIDER_URL }}
+
+    steps:
+      - name: Set Timestamp
+        run: |
+          echo "TIMESTAMP=$(date +%Y%m%d%H%M%S)" >> $GITHUB_ENV
+
+      - name: Check out code
+        uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b # v4.1.5
+        with:
+          ref: ${{ inputs.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6.0.0
+        with:
+          version: "0.9.11"
+      - name: Install dependencies
+        run: uv pip install --system -e ".[dev]"
+
+      - name: Run unit tests
+        run: |
+          coverage run -m pytest tests/unit -v -ra -q
+          coverage report
+
+      - name: Run integration tests
+        run: |
+          pytest tests/integration/test_integration_license.py -v -ra --html=report.html --self-contained-html
+
+      - name: Rename Integration Test Report
+        run: |
+          mkdir -p report
+          mv -f report.html report/report-${{ env.TIMESTAMP }}.html
+
+      - name: Deploy Integration Test Report
+        uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e #v4.0.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: report
+          keep_files: true
+          allow_empty_commit: true
+
+      - name: Add Github Page Link to Summary
+        run: |
+          repo_name=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+          github_pages_url="https://${{ github.repository_owner }}.github.io/${repo_name}/report-${{ env.TIMESTAMP }}.html"
+          echo "## 📊Github Page Link: [View Test Report](${github_pages_url})" >> $GITHUB_STEP_SUMMARY

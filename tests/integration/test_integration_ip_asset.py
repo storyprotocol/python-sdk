@@ -9,6 +9,8 @@ from story_protocol_python_sdk import (
     LicenseTermsDataInput,
     LicenseTermsInput,
     LicensingConfig,
+    MintedNFT,
+    MintNFT,
     RoyaltyShareInput,
     StoryClient,
 )
@@ -1153,3 +1155,315 @@ class TestBatchMethods:
         for ip_registered in response["registered_ips"]:
             assert isinstance(ip_registered["ip_id"], str) and ip_registered["ip_id"]
             assert isinstance(ip_registered["token_id"], int)
+
+
+class TestRegisterIpAsset:
+    """Test suite for the unified register_ip_asset method that supports 6 different workflows"""
+
+    @pytest.fixture(scope="class")
+    def test_register_ip_asset_minted_basic(
+        self, story_client: StoryClient, nft_collection
+    ):
+        """Test basic registration for already minted NFT (uses register internally)"""
+        token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account)
+
+        response = story_client.IPAsset.register_ip_asset(
+            nft=MintedNFT(
+                type="minted",
+                nft_contract=nft_collection,
+                token_id=token_id,
+            ),
+            ip_metadata=COMMON_IP_METADATA,
+            deadline=1000,
+        )
+
+        assert isinstance(response["tx_hash"], str) and response["tx_hash"]
+        assert isinstance(response["ip_id"], str) and response["ip_id"]
+
+    def test_register_ip_asset_minted_with_license_terms(
+        self, story_client: StoryClient, nft_collection
+    ):
+        """Test registration with license terms for already minted NFT (uses register_ip_and_attach_pil_terms internally)"""
+        token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account)
+
+        response = story_client.IPAsset.register_ip_asset(
+            nft=MintedNFT(
+                type="minted",
+                nft_contract=nft_collection,
+                token_id=token_id,
+            ),
+            license_terms_data=[
+                LicenseTermsDataInput(
+                    terms=LicenseTermsInput(
+                        transferable=True,
+                        royalty_policy=ROYALTY_POLICY,
+                        default_minting_fee=10000,
+                        expiration=1000,
+                        commercial_use=True,
+                        commercial_attribution=False,
+                        commercializer_checker=ZERO_ADDRESS,
+                        commercializer_checker_data=ZERO_HASH,
+                        commercial_rev_share=10,
+                        commercial_rev_ceiling=0,
+                        derivatives_allowed=True,
+                        derivatives_attribution=True,
+                        derivatives_approval=False,
+                        derivatives_reciprocal=True,
+                        derivative_rev_ceiling=0,
+                        currency=WIP_TOKEN_ADDRESS,
+                        uri="test-minted-license-terms",
+                    ),
+                    licensing_config=LicensingConfig(
+                        is_set=True,
+                        minting_fee=10000,
+                        licensing_hook=ZERO_ADDRESS,
+                        hook_data=ZERO_HASH,
+                        commercial_rev_share=10,
+                        disabled=False,
+                        expect_minimum_group_reward_share=0,
+                        expect_group_reward_pool=ZERO_ADDRESS,
+                    ),
+                )
+            ],
+            ip_metadata=COMMON_IP_METADATA,
+            deadline=1000,
+        )
+
+        assert isinstance(response["tx_hash"], str) and response["tx_hash"]
+        assert isinstance(response["ip_id"], str) and response["ip_id"]
+        assert (
+            isinstance(response["token_id"], int) and response["token_id"] == token_id
+        )
+        assert (
+            isinstance(response["license_terms_ids"], list)
+            and len(response["license_terms_ids"]) > 0
+        )
+
+    def test_register_ip_asset_minted_with_license_terms_and_royalty_shares(
+        self, story_client: StoryClient, nft_collection
+    ):
+        """Test registration with license terms and royalty shares for already minted NFT
+        (uses register_ip_and_attach_pil_terms_and_distribute_royalty_tokens internally)
+        """
+        token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account)
+
+        royalty_shares = [
+            RoyaltyShareInput(recipient=account.address, percentage=40.0),
+            RoyaltyShareInput(recipient=account_2.address, percentage=60.0),
+        ]
+
+        response = story_client.IPAsset.register_ip_asset(
+            nft=MintedNFT(
+                type="minted",
+                nft_contract=nft_collection,
+                token_id=token_id,
+            ),
+            license_terms_data=[
+                LicenseTermsDataInput(
+                    terms=LicenseTermsInput(
+                        transferable=True,
+                        royalty_policy=ROYALTY_POLICY,
+                        default_minting_fee=10000,
+                        expiration=1000,
+                        commercial_use=True,
+                        commercial_attribution=False,
+                        commercializer_checker=ZERO_ADDRESS,
+                        commercializer_checker_data=ZERO_HASH,
+                        commercial_rev_share=10,
+                        commercial_rev_ceiling=0,
+                        derivatives_allowed=True,
+                        derivatives_attribution=True,
+                        derivatives_approval=False,
+                        derivatives_reciprocal=True,
+                        derivative_rev_ceiling=0,
+                        currency=WIP_TOKEN_ADDRESS,
+                        uri="test-minted-license-terms-with-royalty",
+                    ),
+                    licensing_config=LicensingConfig(
+                        is_set=True,
+                        minting_fee=10000,
+                        licensing_hook=ZERO_ADDRESS,
+                        hook_data=ZERO_HASH,
+                        commercial_rev_share=10,
+                        disabled=False,
+                        expect_minimum_group_reward_share=0,
+                        expect_group_reward_pool=ZERO_ADDRESS,
+                    ),
+                )
+            ],
+            royalty_shares=royalty_shares,
+            ip_metadata=COMMON_IP_METADATA,
+            deadline=1000,
+        )
+
+        assert isinstance(response["tx_hash"], str) and response["tx_hash"]
+        assert isinstance(response["ip_id"], str) and response["ip_id"]
+        assert (
+            isinstance(response["token_id"], int) and response["token_id"] == token_id
+        )
+        assert (
+            isinstance(response["license_terms_ids"], list)
+            and len(response["license_terms_ids"]) > 0
+        )
+        assert isinstance(response["royalty_vault"], str) and response["royalty_vault"]
+        assert (
+            isinstance(response["distribute_royalty_tokens_tx_hash"], str)
+            and response["distribute_royalty_tokens_tx_hash"]
+        )
+
+    def test_register_ip_asset_mint_basic(
+        self, story_client: StoryClient, nft_collection
+    ):
+        """Test basic registration with mint (uses mint_and_register_ip internally)"""
+        response = story_client.IPAsset.register_ip_asset(
+            nft=MintNFT(
+                type="mint",
+                spg_nft_contract=nft_collection,
+                recipient=account_2.address,
+                allow_duplicates=True,
+            ),
+            ip_metadata=COMMON_IP_METADATA,
+        )
+
+        assert isinstance(response["tx_hash"], str) and response["tx_hash"]
+        assert isinstance(response["ip_id"], str) and response["ip_id"]
+        assert isinstance(response["token_id"], int)
+
+    def test_register_ip_asset_mint_with_license_terms(
+        self, story_client: StoryClient, nft_collection
+    ):
+        """Test registration with mint and license terms (uses mint_and_register_ip_asset_with_pil_terms internally)"""
+        response = story_client.IPAsset.register_ip_asset(
+            nft=MintNFT(
+                type="mint",
+                spg_nft_contract=nft_collection,
+                recipient=account_2.address,
+                allow_duplicates=True,
+            ),
+            license_terms_data=[
+                LicenseTermsDataInput(
+                    terms=LicenseTermsInput(
+                        transferable=True,
+                        royalty_policy=ROYALTY_POLICY,
+                        default_minting_fee=10000,
+                        expiration=1000,
+                        commercial_use=True,
+                        commercial_attribution=False,
+                        commercializer_checker=ZERO_ADDRESS,
+                        commercializer_checker_data=ZERO_HASH,
+                        commercial_rev_share=10,
+                        commercial_rev_ceiling=0,
+                        derivatives_allowed=True,
+                        derivatives_attribution=True,
+                        derivatives_approval=False,
+                        derivatives_reciprocal=True,
+                        derivative_rev_ceiling=0,
+                        currency=WIP_TOKEN_ADDRESS,
+                        uri="test-mint-license-terms",
+                    ),
+                    licensing_config=LicensingConfig(
+                        is_set=True,
+                        minting_fee=10000,
+                        licensing_hook=ZERO_ADDRESS,
+                        hook_data=ZERO_HASH,
+                        commercial_rev_share=10,
+                        disabled=False,
+                        expect_minimum_group_reward_share=0,
+                        expect_group_reward_pool=ZERO_ADDRESS,
+                    ),
+                )
+            ],
+            ip_metadata=COMMON_IP_METADATA,
+        )
+
+        assert isinstance(response["tx_hash"], str) and response["tx_hash"]
+        assert isinstance(response["ip_id"], str) and response["ip_id"]
+        assert isinstance(response["token_id"], int)
+        assert (
+            isinstance(response["license_terms_ids"], list)
+            and len(response["license_terms_ids"]) > 0
+        )
+
+    def test_register_ip_asset_mint_with_license_terms_and_royalty_shares(
+        self, story_client: StoryClient, nft_collection
+    ):
+        """Test registration with mint, license terms and royalty shares
+        (uses mint_and_register_ip_and_attach_pil_terms_and_distribute_royalty_tokens internally)
+        """
+        royalty_shares = [
+            RoyaltyShareInput(recipient=account.address, percentage=50.0),
+            RoyaltyShareInput(recipient=account_2.address, percentage=50.0),
+        ]
+
+        response = story_client.IPAsset.register_ip_asset(
+            nft=MintNFT(
+                type="mint",
+                spg_nft_contract=nft_collection,
+                recipient=account_2.address,
+                allow_duplicates=True,
+            ),
+            license_terms_data=[
+                LicenseTermsDataInput(
+                    terms=LicenseTermsInput(
+                        transferable=True,
+                        royalty_policy=ROYALTY_POLICY,
+                        default_minting_fee=10000,
+                        expiration=1000,
+                        commercial_use=True,
+                        commercial_attribution=False,
+                        commercializer_checker=ZERO_ADDRESS,
+                        commercializer_checker_data=ZERO_HASH,
+                        commercial_rev_share=10,
+                        commercial_rev_ceiling=0,
+                        derivatives_allowed=True,
+                        derivatives_attribution=True,
+                        derivatives_approval=False,
+                        derivatives_reciprocal=True,
+                        derivative_rev_ceiling=0,
+                        currency=WIP_TOKEN_ADDRESS,
+                        uri="test-mint-license-terms-with-royalty",
+                    ),
+                    licensing_config=LicensingConfig(
+                        is_set=True,
+                        minting_fee=10000,
+                        licensing_hook=ZERO_ADDRESS,
+                        hook_data=ZERO_HASH,
+                        commercial_rev_share=10,
+                        disabled=False,
+                        expect_minimum_group_reward_share=0,
+                        expect_group_reward_pool=ZERO_ADDRESS,
+                    ),
+                )
+            ],
+            royalty_shares=royalty_shares,
+            ip_metadata=COMMON_IP_METADATA,
+        )
+
+        assert isinstance(response["tx_hash"], str) and response["tx_hash"]
+        assert isinstance(response["ip_id"], str) and response["ip_id"]
+        assert isinstance(response["token_id"], int)
+        assert (
+            isinstance(response["license_terms_ids"], list)
+            and len(response["license_terms_ids"]) > 0
+        )
+        assert isinstance(response["royalty_vault"], str) and response["royalty_vault"]
+
+    def test_register_ip_asset_royalty_shares_without_license_terms_error(
+        self, story_client: StoryClient, nft_collection
+    ):
+        """Test error case when royalty_shares is provided without license_terms_data"""
+        token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account)
+
+        with pytest.raises(ValueError) as exc_info:
+            story_client.IPAsset.register_ip_asset(
+                nft=MintedNFT(
+                    type="minted",
+                    nft_contract=nft_collection,
+                    token_id=token_id,
+                ),
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=100.0),
+                ],
+            )
+
+        assert "License terms data must be provided" in str(exc_info.value)

@@ -4,7 +4,7 @@ import pytest
 from ens.ens import HexStr
 from web3 import Web3
 
-from story_protocol_python_sdk import RoyaltyShareInput
+from story_protocol_python_sdk import MintedNFT, MintNFT, RoyaltyShareInput
 from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
     IPAccountImplClient,
 )
@@ -107,11 +107,11 @@ def mock_ip_account_impl_client(ip_asset):
 
 @pytest.fixture
 def mock_get_royalty_vault_address_by_ip_id(ip_asset):
-    def _mock():
+    def _mock(royalty_vault=ADDRESS):
         return patch.object(
             ip_asset,
             "get_royalty_vault_address_by_ip_id",
-            return_value=ADDRESS,
+            return_value=royalty_vault,
         )
 
     return _mock
@@ -2070,3 +2070,314 @@ class TestBatchMintAndRegisterIP:
                 assert result["registered_ips"][0]["ip_id"] == IP_ID
                 assert result["registered_ips"][0]["token_id"] == 3
                 assert result["registered_ips"][1]["ip_id"] == ADDRESS
+
+
+class TestRegisterIpAsset:
+    def test_throw_not_provided_license_terms_data_when_royalty_shares_provided_for_minted_nft(
+        self, ip_asset: IPAsset
+    ):
+        with pytest.raises(
+            ValueError,
+            match="License terms data must be provided when royalty shares are specified.",
+        ):
+            ip_asset.register_ip_asset(
+                nft=MintedNFT(type="minted", nft_contract=ADDRESS, token_id=3),
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0)
+                ],
+            )
+
+    def test_throw_not_provided_license_terms_data_when_royalty_shares_provided_for_mint_nft(
+        self, ip_asset: IPAsset
+    ):
+        with pytest.raises(
+            ValueError,
+            match="License terms data must be provided when royalty shares are specified.",
+        ):
+            ip_asset.register_ip_asset(
+                nft=MintNFT(type="mint", spg_nft_contract=ADDRESS),
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0)
+                ],
+            )
+
+    def test_success_when_license_terms_data_and_royalty_shares_provided_for_minted_nft(
+        self,
+        ip_asset: IPAsset,
+        mock_is_registered,
+        mock_get_ip_id,
+        mock_signature_related_methods,
+        mock_parse_ip_registered_event,
+        mock_ip_account_impl_client,
+        mock_parse_tx_license_terms_attached_event,
+        mock_get_royalty_vault_address_by_ip_id,
+    ):
+        royalty_shares = [
+            RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0),
+        ]
+        royalty_shares_obj = get_royalty_shares(royalty_shares)
+        royalty_vault = HexStr("0x" + "a" * 64)
+        with (
+            mock_is_registered(is_registered=False),
+            mock_get_ip_id(),
+            mock_signature_related_methods(),
+            mock_parse_ip_registered_event(),
+            mock_ip_account_impl_client(),
+            mock_parse_tx_license_terms_attached_event(),
+            mock_get_royalty_vault_address_by_ip_id(royalty_vault),
+            patch.object(
+                ip_asset.royalty_token_distribution_workflows_client,
+                "build_registerIpAndAttachPILTermsAndDeployRoyaltyVault_transaction",
+                return_value={
+                    "tx_hash": TX_HASH.hex(),
+                },
+            ) as mock_build_register_transaction,
+            patch.object(
+                ip_asset.royalty_token_distribution_workflows_client,
+                "build_distributeRoyaltyTokens_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_distribute,
+            patch.object(
+                ip_asset.sign_util,
+                "get_signature",
+                return_value={"signature": "signature"},
+            ),
+        ):
+            result = ip_asset.register_ip_asset(
+                nft=MintedNFT(type="minted", nft_contract=ADDRESS, token_id=3),
+                license_terms_data=LICENSE_TERMS_DATA,
+                royalty_shares=royalty_shares,
+            )
+            assert mock_build_register_transaction.call_args[0][0] == ADDRESS
+            assert mock_build_register_transaction.call_args[0][1] == 3
+            assert (
+                mock_build_register_transaction.call_args[0][2]
+                == IPMetadata.from_input().get_validated_data()
+            )
+            assert mock_distribute.call_args[0][0] == IP_ID
+            assert (
+                mock_distribute.call_args[0][1] == royalty_shares_obj["royalty_shares"]
+            )
+            assert result["tx_hash"] == TX_HASH.hex()
+            assert result["ip_id"] == IP_ID
+            assert result["token_id"] == 3
+            assert result["license_terms_ids"] is not None
+            assert result["royalty_vault"] == royalty_vault
+            assert result["distribute_royalty_tokens_tx_hash"] == TX_HASH.hex()
+
+    def test_success_when_license_terms_data_and_royalty_shares_provided_for_mint_nft(
+        self,
+        ip_asset: IPAsset,
+        mock_parse_ip_registered_event,
+        mock_parse_tx_license_terms_attached_event,
+        mock_get_royalty_vault_address_by_ip_id,
+    ):
+        royalty_shares = [
+            RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0),
+        ]
+        royalty_shares_obj = get_royalty_shares(royalty_shares)
+        royalty_vault = HexStr("0x" + "a" * 64)
+        with (
+            mock_parse_ip_registered_event(),
+            mock_parse_tx_license_terms_attached_event(),
+            mock_get_royalty_vault_address_by_ip_id(royalty_vault),
+            patch.object(
+                ip_asset.royalty_token_distribution_workflows_client,
+                "build_mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_register_transaction,
+        ):
+            result = ip_asset.register_ip_asset(
+                nft=MintNFT(
+                    type="mint", spg_nft_contract=ADDRESS, allow_duplicates=False
+                ),
+                license_terms_data=LICENSE_TERMS_DATA,
+                royalty_shares=royalty_shares,
+                ip_metadata=IP_METADATA,
+            )
+            assert mock_build_register_transaction.call_args[0][0] == ADDRESS
+            assert mock_build_register_transaction.call_args[0][1] == ACCOUNT_ADDRESS
+            assert (
+                mock_build_register_transaction.call_args[0][2]
+                == IPMetadata.from_input(IP_METADATA).get_validated_data()
+            )
+            assert (
+                mock_build_register_transaction.call_args[0][4]
+                == royalty_shares_obj["royalty_shares"]
+            )
+            assert mock_build_register_transaction.call_args[0][5] is False
+            assert result["tx_hash"] == TX_HASH.hex()
+            assert result["ip_id"] == IP_ID
+            assert result["token_id"] == 3
+            assert result["license_terms_ids"] is not None
+            assert result["royalty_vault"] == royalty_vault
+
+    def test_success_when_license_terms_data_provided_for_mint_nft(
+        self,
+        ip_asset: IPAsset,
+        mock_parse_ip_registered_event,
+        mock_parse_tx_license_terms_attached_event,
+    ):
+        with (
+            mock_parse_ip_registered_event(),
+            mock_parse_tx_license_terms_attached_event(),
+            patch.object(
+                ip_asset.license_attachment_workflows_client,
+                "build_mintAndRegisterIpAndAttachPILTerms_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_register_transaction,
+        ):
+            result = ip_asset.register_ip_asset(
+                nft=MintNFT(
+                    type="mint", spg_nft_contract=ADDRESS, allow_duplicates=False
+                ),
+                license_terms_data=LICENSE_TERMS_DATA,
+                ip_metadata=IP_METADATA,
+            )
+            assert mock_build_register_transaction.call_args[0][0] == ADDRESS
+            assert mock_build_register_transaction.call_args[0][1] == ACCOUNT_ADDRESS
+            assert (
+                mock_build_register_transaction.call_args[0][2]
+                == IPMetadata.from_input(IP_METADATA).get_validated_data()
+            )
+            assert mock_build_register_transaction.call_args[0][4] is False
+            assert result["tx_hash"] == TX_HASH.hex()
+            assert result["ip_id"] == IP_ID
+            assert result["token_id"] == 3
+            assert result["license_terms_ids"] is not None
+
+    def test_success_when_license_terms_data_provided_for_minted_nft(
+        self,
+        ip_asset: IPAsset,
+        mock_parse_ip_registered_event,
+        mock_parse_tx_license_terms_attached_event,
+        mock_get_ip_id,
+        mock_signature_related_methods,
+        mock_is_registered,
+    ):
+        with (
+            mock_parse_ip_registered_event(),
+            mock_parse_tx_license_terms_attached_event(),
+            mock_get_ip_id(),
+            mock_signature_related_methods(),
+            mock_is_registered(is_registered=False),
+            patch.object(
+                ip_asset.license_attachment_workflows_client,
+                "build_registerIpAndAttachPILTerms_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_register_transaction,
+        ):
+            result = ip_asset.register_ip_asset(
+                nft=MintedNFT(type="minted", nft_contract=ADDRESS, token_id=3),
+                license_terms_data=LICENSE_TERMS_DATA,
+                ip_metadata=IP_METADATA,
+            )
+            assert mock_build_register_transaction.call_args[0][0] == ADDRESS
+            assert mock_build_register_transaction.call_args[0][1] == 3
+            assert (
+                mock_build_register_transaction.call_args[0][2]
+                == IPMetadata.from_input(IP_METADATA).get_validated_data()
+            )
+            assert result["tx_hash"] == TX_HASH.hex()
+            assert result["ip_id"] == IP_ID
+            assert result["token_id"] == 3
+            assert result["license_terms_ids"] is not None
+
+    def test_success_when_ip_metadata_provided_for_minted_nft(
+        self,
+        ip_asset: IPAsset,
+        mock_parse_ip_registered_event,
+        mock_get_ip_id,
+        mock_signature_related_methods,
+        mock_is_registered,
+    ):
+        with (
+            mock_parse_ip_registered_event(),
+            mock_get_ip_id(),
+            mock_signature_related_methods(),
+            mock_is_registered(is_registered=False),
+            patch.object(
+                ip_asset.registration_workflows_client,
+                "build_registerIp_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_register_transaction,
+        ):
+            result = ip_asset.register_ip_asset(
+                nft=MintedNFT(type="minted", nft_contract=ADDRESS, token_id=3),
+                ip_metadata=IP_METADATA,
+            )
+            assert mock_build_register_transaction.call_args[0][0] == ADDRESS
+            assert mock_build_register_transaction.call_args[0][1] == 3
+            assert (
+                mock_build_register_transaction.call_args[0][2]
+                == IPMetadata.from_input(IP_METADATA).get_validated_data()
+            )
+            assert result["tx_hash"] == TX_HASH.hex()
+            assert result["ip_id"] == IP_ID
+
+    def test_success_when_ip_metadata_not_provided_for_minted_nft(
+        self,
+        ip_asset: IPAsset,
+        mock_parse_ip_registered_event,
+        mock_get_ip_id,
+        mock_signature_related_methods,
+        mock_is_registered,
+    ):
+        with (
+            mock_parse_ip_registered_event(),
+            mock_get_ip_id(),
+            mock_signature_related_methods(),
+            mock_is_registered(is_registered=False),
+            patch.object(
+                ip_asset.ip_asset_registry_client,
+                "build_register_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_register_transaction,
+        ):
+            result = ip_asset.register_ip_asset(
+                nft=MintedNFT(type="minted", nft_contract=ADDRESS, token_id=3),
+            )
+            print(
+                "mock_build_register_transaction.call_args",
+                mock_build_register_transaction.call_args,
+            )
+            assert mock_build_register_transaction.call_args[0][0] == 1315
+            assert mock_build_register_transaction.call_args[0][1] == ADDRESS
+            assert mock_build_register_transaction.call_args[0][2] == 3
+            assert result["tx_hash"] == TX_HASH.hex()
+            assert result["ip_id"] == IP_ID
+
+    def test_success_when_ip_metadata_provided_for_mint_nft(
+        self,
+        ip_asset: IPAsset,
+        mock_parse_ip_registered_event,
+        mock_get_ip_id,
+        mock_signature_related_methods,
+        mock_is_registered,
+    ):
+        with (
+            mock_parse_ip_registered_event(),
+            mock_get_ip_id(),
+            mock_signature_related_methods(),
+            mock_is_registered(is_registered=False),
+            patch.object(
+                ip_asset.registration_workflows_client,
+                "build_mintAndRegisterIp_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_register_transaction,
+        ):
+            result = ip_asset.register_ip_asset(
+                nft=MintNFT(
+                    type="mint", spg_nft_contract=ADDRESS, allow_duplicates=False
+                ),
+            )
+            assert mock_build_register_transaction.call_args[0][0] == ADDRESS
+            assert mock_build_register_transaction.call_args[0][1] == ACCOUNT_ADDRESS
+            assert (
+                mock_build_register_transaction.call_args[0][2]
+                == IPMetadata.from_input().get_validated_data()
+            )
+            assert mock_build_register_transaction.call_args[0][3] is False
+            assert result["tx_hash"] == TX_HASH.hex()
+            assert result["ip_id"] == IP_ID
+            assert result["token_id"] == 3

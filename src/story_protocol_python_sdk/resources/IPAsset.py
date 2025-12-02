@@ -76,7 +76,12 @@ from story_protocol_python_sdk.utils.derivative_data import (
     DerivativeDataInput,
 )
 from story_protocol_python_sdk.utils.function_signature import get_function_signature
-from story_protocol_python_sdk.utils.ip_metadata import IPMetadata, IPMetadataInput
+from story_protocol_python_sdk.utils.ip_metadata import (
+    IPMetadata,
+    IPMetadataInput,
+    get_ip_metadata_dict,
+    is_initial_ip_metadata,
+)
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
 from story_protocol_python_sdk.utils.royalty import get_royalty_shares
 from story_protocol_python_sdk.utils.sign import Sign
@@ -200,7 +205,7 @@ class IPAsset:
                 },
             }
 
-            if ip_metadata:
+            if not is_initial_ip_metadata(ip_metadata) and ip_metadata:
                 req_object["ipMetadata"].update(
                     {
                         "ipMetadataURI": ip_metadata.get("ip_metadata_uri", ""),
@@ -448,7 +453,6 @@ class IPAsset:
                     f"The NFT contract address {spg_nft_contract} is not valid."
                 )
             license_terms = self._validate_license_terms_data(terms)
-
             metadata = {
                 "ipMetadataURI": "",
                 "ipMetadataHash": ZERO_HASH,
@@ -1537,8 +1541,9 @@ class IPAsset:
         """
         Handle registration for already minted NFTs with optional license terms and royalty shares.
         """
-        # Convert ip_metadata to dict format for methods that expect dict
-        ip_metadata_dict = IPMetadata.from_input(ip_metadata).get_validated_data()
+        # In order to compatible with the previous version, we need to convert the ip_metadata to dict format for methods that expect dict
+        # We can remove this function after these method become the internal methods.
+        ip_metadata_dict = get_ip_metadata_dict(ip_metadata)
         if license_terms_data and royalty_shares:
             royalty_result = (
                 self.register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
@@ -1601,8 +1606,9 @@ class IPAsset:
         """
         Handle minting and registration of new NFTs with optional license terms and royalty shares.
         """
-        ip_metadata_dict = IPMetadata.from_input(ip_metadata).get_validated_data()
-
+        # In order to compatible with the previous version, we need to convert the ip_metadata to dict format for methods that expect dict.
+        # We can remove this function after these method become the internal methods.
+        ip_metadata_dict = get_ip_metadata_dict(ip_metadata)
         if license_terms_data and royalty_shares:
             royalty_result = self.mint_and_register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
                 spg_nft_contract=nft.spg_nft_contract,

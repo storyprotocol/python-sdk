@@ -77,3 +77,56 @@ class IPMetadata:
             "nftMetadataURI": self.nft_metadata_uri,
             "nftMetadataHash": self.nft_metadata_hash,
         }
+
+
+# In order to compatible with the previous version, we need to convert the ip_metadata to dict format for methods that expect dict.
+# We can remove this function after these method become the internal methods.
+def get_ip_metadata_dict(ip_metadata: IPMetadataInput | None = None) -> dict:
+    ip_metadata_dict = {
+        "ip_metadata_uri": "",
+        "ip_metadata_hash": ZERO_HASH,
+        "nft_metadata_uri": "",
+        "nft_metadata_hash": ZERO_HASH,
+    }
+
+    if ip_metadata:
+        ip_metadata_dict.update(
+            {
+                "ip_metadata_uri": (
+                    ip_metadata.ip_metadata_uri
+                    if ip_metadata.ip_metadata_uri is not None
+                    else ""
+                ),
+                "ip_metadata_hash": (
+                    ip_metadata.ip_metadata_hash
+                    if ip_metadata.ip_metadata_hash is not None
+                    else ZERO_HASH
+                ),
+                "nft_metadata_uri": (
+                    ip_metadata.nft_metadata_uri
+                    if ip_metadata.nft_metadata_uri is not None
+                    else ""
+                ),
+                "nft_metadata_hash": (
+                    ip_metadata.nft_metadata_hash
+                    if ip_metadata.nft_metadata_hash is not None
+                    else ZERO_HASH
+                ),
+            }
+        )
+
+    return ip_metadata_dict
+
+
+# In order to compatible with the previous version, we need to check if the ip_metadata is the initial ip metadata.
+# We can move into the IPMetadata class after these method become the internal methods.
+def is_initial_ip_metadata(ip_metadata: dict | None = None) -> bool:
+    if ip_metadata is None:
+        return True
+
+    return (
+        ip_metadata.get("ip_metadata_uri", "") == ""
+        and ip_metadata.get("ip_metadata_hash", ZERO_HASH) == ZERO_HASH
+        and ip_metadata.get("nft_metadata_uri", "") == ""
+        and ip_metadata.get("nft_metadata_hash", ZERO_HASH) == ZERO_HASH
+    )

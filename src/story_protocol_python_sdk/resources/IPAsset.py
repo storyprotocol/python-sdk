@@ -3,6 +3,7 @@
 from dataclasses import asdict, is_dataclass
 
 from ens.ens import Address, HexStr
+from typing_extensions import deprecated
 from web3 import Web3
 
 from story_protocol_python_sdk.abi.AccessController.AccessController_client import (
@@ -163,6 +164,7 @@ class IPAsset:
 
         return tx_hash
 
+    @deprecated("Use register_ip_asset() instead.")
     def register(
         self,
         nft_contract: str,
@@ -390,6 +392,7 @@ class IPAsset:
                 f"Failed to register derivative with license tokens: {str(e)}"
             )
 
+    @deprecated("Use register_ip_asset() instead.")
     def mint_and_register_ip_asset_with_pil_terms(
         self,
         spg_nft_contract: str,
@@ -503,6 +506,7 @@ class IPAsset:
         except Exception as e:
             raise e
 
+    @deprecated("Use register_ip_asset() instead.")
     def mint_and_register_ip(
         self,
         spg_nft_contract: str,
@@ -619,6 +623,7 @@ class IPAsset:
         except Exception as e:
             raise ValueError(f"Failed to batch mint and register IP: {str(e)}")
 
+    @deprecated("Use register_ip_asset() instead.")
     def register_ip_and_attach_pil_terms(
         self,
         nft_contract: str,
@@ -1046,6 +1051,7 @@ class IPAsset:
                 f"Failed to register IP and make derivative with license tokens: {str(e)}"
             ) from e
 
+    @deprecated("Use register_ip_asset() instead.")
     def mint_and_register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
         self,
         spg_nft_contract: Address,
@@ -1275,6 +1281,7 @@ class IPAsset:
                 f"Failed to register derivative IP and distribute royalty tokens: {str(e)}"
             ) from e
 
+    @deprecated("Use register_ip_asset() instead.")
     def register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
         self,
         nft_contract: Address,

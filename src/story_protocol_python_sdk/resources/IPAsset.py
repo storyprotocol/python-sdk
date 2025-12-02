@@ -1488,7 +1488,7 @@ class IPAsset:
                 - If `ip_metadata` is provided, calls the `registerIp` (contract method).
 
         For new minted NFT (type="mint"):
-            - With `license_terms_data` + `royalty_shares`: `mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens_transaction` (contract method)
+            - With `license_terms_data` + `royalty_shares`: `mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens` (contract method)
             - With license_terms_data only: `mintAndRegisterIpAndAttachPILTerms` (contract method)
             - Basic registration: `mintAndRegisterIp` (contract method)
 

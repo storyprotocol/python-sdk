@@ -2315,6 +2315,41 @@ class TestRegisterIpAsset:
             assert result["tx_hash"] == TX_HASH.hex()
             assert result["ip_id"] == IP_ID
 
+    def test_success_when_ip_metadata_provided_for_minted_nft_without_ip_metadata(
+        self,
+        ip_asset: IPAsset,
+        mock_parse_ip_registered_event,
+        mock_get_ip_id,
+        mock_signature_related_methods,
+        mock_is_registered,
+    ):
+        partialIpMetadata = IPMetadataInput(
+            ip_metadata_uri="https://example.com/metadata/custom-value.json"
+        )
+        with (
+            mock_parse_ip_registered_event(),
+            mock_get_ip_id(),
+            mock_signature_related_methods(),
+            mock_is_registered(is_registered=False),
+            patch.object(
+                ip_asset.registration_workflows_client,
+                "build_registerIp_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_register_transaction,
+        ):
+            result = ip_asset.register_ip_asset(
+                nft=MintedNFT(type="minted", nft_contract=ADDRESS, token_id=3),
+                ip_metadata=partialIpMetadata,
+            )
+            assert mock_build_register_transaction.call_args[0][0] == ADDRESS
+            assert mock_build_register_transaction.call_args[0][1] == 3
+            assert (
+                mock_build_register_transaction.call_args[0][2]
+                == IPMetadata.from_input(partialIpMetadata).get_validated_data()
+            )
+            assert result["tx_hash"] == TX_HASH.hex()
+            assert result["ip_id"] == IP_ID
+
     def test_success_when_ip_metadata_not_provided_for_minted_nft(
         self,
         ip_asset: IPAsset,

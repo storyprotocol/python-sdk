@@ -2078,7 +2078,7 @@ class TestRegisterIpAsset:
     ):
         with pytest.raises(
             ValueError,
-            match="License terms data must be provided when royalty shares are specified.",
+            match="Failed to register IP Asset: License terms data must be provided when royalty shares are specified.",
         ):
             ip_asset.register_ip_asset(
                 nft=MintedNFT(type="minted", nft_contract=ADDRESS, token_id=3),

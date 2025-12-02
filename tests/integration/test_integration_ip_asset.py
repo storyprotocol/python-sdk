@@ -1161,10 +1161,10 @@ class TestRegisterIpAsset:
     """Test suite for the unified register_ip_asset method that supports 6 different workflows"""
 
     @pytest.fixture(scope="class")
-    def test_register_ip_asset_minted_basic(
+    def test_register_ip_asset_minted_basic_with_ip_metadata(
         self, story_client: StoryClient, nft_collection
     ):
-        """Test basic registration for already minted NFT (uses register internally)"""
+        """Test basic registration for already minted NFT with ip metadata (uses register internally)"""
         token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account)
 
         response = story_client.IPAsset.register_ip_asset(
@@ -1175,6 +1175,21 @@ class TestRegisterIpAsset:
             ),
             ip_metadata=COMMON_IP_METADATA,
             deadline=1000,
+        )
+
+        assert isinstance(response["tx_hash"], str) and response["tx_hash"]
+        assert isinstance(response["ip_id"], str) and response["ip_id"]
+
+    def test_register_ip_asset_minted_basic_without_ip_metadata(
+        self, story_client: StoryClient, nft_collection
+    ):
+        """Test basic registration for already minted NFT without ip metadata (uses register internally)"""
+        token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account)
+
+        response = story_client.IPAsset.register_ip_asset(
+            nft=MintedNFT(
+                type="minted", nft_contract=nft_collection, token_id=token_id
+            ),
         )
 
         assert isinstance(response["tx_hash"], str) and response["tx_hash"]
@@ -1447,23 +1462,3 @@ class TestRegisterIpAsset:
             and len(response["license_terms_ids"]) > 0
         )
         assert isinstance(response["royalty_vault"], str) and response["royalty_vault"]
-
-    def test_register_ip_asset_royalty_shares_without_license_terms_error(
-        self, story_client: StoryClient, nft_collection
-    ):
-        """Test error case when royalty_shares is provided without license_terms_data"""
-        token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account)
-
-        with pytest.raises(ValueError) as exc_info:
-            story_client.IPAsset.register_ip_asset(
-                nft=MintedNFT(
-                    type="minted",
-                    nft_contract=nft_collection,
-                    token_id=token_id,
-                ),
-                royalty_shares=[
-                    RoyaltyShareInput(recipient=account.address, percentage=100.0),
-                ],
-            )
-
-        assert "License terms data must be provided" in str(exc_info.value)

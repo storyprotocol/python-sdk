@@ -1479,14 +1479,18 @@ class IPAsset:
         methods based on your input parameters:
 
         For already minted NFT (type="minted"):
-            - With `license_terms_data` + `royalty_shares`: `register_ip_and_attach_pil_terms_and_distribute_royalty_tokens`
-            - With `license_terms_data` only: `register_ip_and_attach_pil_terms`
-            - Basic registration: `register`
+            - With `license_terms_data` + `royalty_shares`:
+                `registerIpAndAttachPILTermsAndDeployRoyaltyVault` (contract method)
+                + `distributeRoyaltyTokens` (contract method)
+            - With `license_terms_data` only: `registerIpAndAttachPILTerms` (contract method)
+            - Basic registration:
+                - If `ip_metadata` is not provided, calls the `register` (contract method).
+                - If `ip_metadata` is provided, calls the `registerIp` (contract method).
 
         For new minted NFT (type="mint"):
-            - With `license_terms_data` + `royalty_shares`: `mint_and_register_ip_and_attach_pil_terms_and_distribute_royalty_tokens`
-            - With license_terms_data only: `mint_and_register_ip_asset_with_pil_terms`
-            - Basic registration: `mint_and_register_ip`
+            - With `license_terms_data` + `royalty_shares`: `mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens_transaction` (contract method)
+            - With license_terms_data only: `mintAndRegisterIpAndAttachPILTerms` (contract method)
+            - Basic registration: `mintAndRegisterIp` (contract method)
 
         :param nft `MintNFT` | `MintedNFT`: The NFT to be registered as an IP asset.
             - For `MintNFT`: Mint a new NFT from an SPG NFT contract.
@@ -1499,10 +1503,8 @@ class IPAsset:
         :param tx_options dict: [Optional] Transaction options.
         :return `RegisterIpAssetResponse`: Response with transaction hash, IP ID, token ID, and optionally license terms IDs, royalty vault, and distribute royalty tokens transaction hash.
         :raises ValueError: If `royalty_shares` is provided without `license_terms_data`.
-        :raises ValueError: If the `NFT` type is invalid.
         """
         try:
-            # Validate `royalty_shares` without `license_terms_data`
             if royalty_shares and not license_terms_data:
                 raise ValueError(
                     "License terms data must be provided when royalty shares are specified."

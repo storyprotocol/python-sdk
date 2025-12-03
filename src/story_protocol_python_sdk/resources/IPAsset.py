@@ -59,6 +59,7 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
     MintNFT,
     RegisterAndAttachAndDistributeRoyaltyTokensResponse,
     RegisterDerivativeIPAndAttachAndDistributeRoyaltyTokensResponse,
+    RegisterDerivativeIpAssetResponse,
     RegisteredIP,
     RegisterIpAssetResponse,
     RegisterPILTermsAndAttachResponse,
@@ -1663,6 +1664,219 @@ class IPAsset:
             tx_hash=basic_result["tx_hash"],
             ip_id=basic_result["ip_id"],
             token_id=basic_result["token_id"],
+        )
+
+    def register_derivative_ip_asset(
+        self,
+        nft: MintNFT | MintedNFT,
+        deriv_data: DerivativeDataInput | None = None,
+        license_token_ids: list[int] | None = None,
+        royalty_shares: list[RoyaltyShareInput] | None = None,
+        max_rts: int = MAX_ROYALTY_TOKEN,
+        ip_metadata: IPMetadataInput | None = None,
+        deadline: int | None = None,
+        tx_options: dict | None = None,
+    ) -> RegisterDerivativeIpAssetResponse:
+        """
+        Register a derivative IP asset, supporting both minted and mint-on-demand NFTs,
+        with optional `deriv_data`, `royalty_shares` and `license_token_ids`.
+
+        This method automatically selects and calls the appropriate workflow from 6 available
+        methods based on your input parameters:
+
+        For already minted NFT (type="minted"):
+            - With `deriv_data` + `royalty_shares`:
+                `registerIpAndMakeDerivativeAndDeployRoyaltyVault` (contract method)
+                + `distributeRoyaltyTokens` (contract method)
+            - With `deriv_data` only: `registerIpAndMakeDerivative` (contract method)
+            - With `license_token_ids` only: `registerIpAndMakeDerivativeWithLicenseTokens` (contract method)
+
+        For new minted NFT (type="mint"):
+            - With `deriv_data` + `royalty_shares`: `mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens` (contract method)
+            - With `deriv_data` only: `mintAndRegisterIpAndMakeDerivative` (contract method)
+            - With `license_token_ids` only: `mintAndRegisterIpAndMakeDerivativeWithLicenseTokens` (contract method)
+
+        :param nft `MintNFT` | `MintedNFT`: The NFT to be registered as a derivative IP asset.
+            - For `MintNFT`: Mint a new NFT from an SPG NFT contract.
+            - For `MintedNFT`: Register an already minted NFT.
+        :param deriv_data `DerivativeDataInput`: [Optional] The derivative data containing parent IP information and licensing terms.
+            Can be used independently or together with `royalty_shares` for royalty distribution.
+        :param license_token_ids list[int]: [Optional] The IDs of the license tokens to be burned for linking the IP to parent IPs.
+        :param royalty_shares `list[RoyaltyShareInput]`: [Optional] Authors of the IP and their shares of the royalty tokens.
+            Can only be specified when `deriv_data` is also provided.
+        :param max_rts int: [Optional] The maximum number of royalty tokens that can be distributed to the external royalty policies (max: 100,000,000). (default: 100,000,000)
+        :param ip_metadata `IPMetadataInput`: [Optional] The desired metadata for the newly registered IP.
+        :param deadline int: [Optional] Signature deadline in seconds. (default: 1000 seconds)
+        :param tx_options dict: [Optional] Transaction options.
+        :return `RegisterDerivativeIpAssetResponse`: Response with transaction hash, IP ID, token ID, and optionally royalty vault and distribute royalty tokens transaction hash.
+        :raises ValueError: If `royalty_shares` is provided without `deriv_data`.
+        :raises ValueError: If neither `deriv_data` nor `license_token_ids` are provided.
+        """
+        try:
+            if royalty_shares and not deriv_data:
+                raise ValueError(
+                    "deriv_data must be provided when royalty_shares are provided."
+                )
+
+            has_deriv_data = deriv_data is not None
+            has_license_tokens = (
+                license_token_ids is not None and len(license_token_ids) > 0
+            )
+
+            if not has_deriv_data and not has_license_tokens:
+                raise ValueError(
+                    "Either deriv_data or license_token_ids must be provided."
+                )
+
+            if nft.type == "minted":
+                return self._handle_minted_nft_derivative_registration(
+                    nft=nft,
+                    deriv_data=deriv_data,
+                    license_token_ids=license_token_ids,
+                    royalty_shares=royalty_shares,
+                    max_rts=max_rts,
+                    ip_metadata=ip_metadata,
+                    deadline=deadline,
+                    tx_options=tx_options,
+                )
+
+            return self._handle_mint_nft_derivative_registration(
+                nft=nft,
+                deriv_data=deriv_data,
+                license_token_ids=license_token_ids,
+                royalty_shares=royalty_shares,
+                max_rts=max_rts,
+                ip_metadata=ip_metadata,
+                tx_options=tx_options,
+            )
+
+        except Exception as e:
+            raise ValueError(f"Failed to register derivative IP Asset: {str(e)}") from e
+
+    def _handle_minted_nft_derivative_registration(
+        self,
+        nft: MintedNFT,
+        deriv_data: DerivativeDataInput | None,
+        license_token_ids: list[int] | None,
+        royalty_shares: list[RoyaltyShareInput] | None,
+        max_rts: int,
+        ip_metadata: IPMetadataInput | None,
+        deadline: int | None,
+        tx_options: dict | None,
+    ) -> RegisterDerivativeIpAssetResponse:
+        """
+        Handle derivative registration for already minted NFTs.
+        """
+        if royalty_shares and deriv_data:
+            royalty_result = self.register_derivative_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+                nft_contract=nft.nft_contract,
+                token_id=nft.token_id,
+                deriv_data=deriv_data,
+                royalty_shares=royalty_shares,
+                ip_metadata=ip_metadata,
+                deadline=deadline or 1000,
+                tx_options=tx_options,
+            )
+            return RegisterDerivativeIpAssetResponse(
+                tx_hash=royalty_result["tx_hash"],
+                ip_id=royalty_result["ip_id"],
+                token_id=royalty_result["token_id"],
+                royalty_vault=royalty_result["royalty_vault"],
+                distribute_royalty_tokens_tx_hash=royalty_result[
+                    "distribute_royalty_tokens_tx_hash"
+                ],
+            )
+
+        if deriv_data:
+            deriv_result = self.register_derivative_ip(
+                nft_contract=nft.nft_contract,
+                token_id=nft.token_id,
+                deriv_data=deriv_data,
+                metadata=ip_metadata,
+                deadline=deadline,
+                tx_options=tx_options,
+            )
+            return RegisterDerivativeIpAssetResponse(
+                tx_hash=deriv_result["tx_hash"],
+                ip_id=deriv_result["ip_id"],
+            )
+
+        # Use license_token_ids
+        token_result = self.register_ip_and_make_derivative_with_license_tokens(
+            nft_contract=nft.nft_contract,
+            token_id=nft.token_id,
+            license_token_ids=license_token_ids,  # type: ignore
+            max_rts=max_rts,
+            deadline=deadline or 1000,
+            ip_metadata=ip_metadata,
+            tx_options=tx_options,
+        )
+        return RegisterDerivativeIpAssetResponse(
+            tx_hash=token_result["tx_hash"],
+            ip_id=token_result["ip_id"],
+            token_id=token_result["token_id"],
+        )
+
+    def _handle_mint_nft_derivative_registration(
+        self,
+        nft: MintNFT,
+        deriv_data: DerivativeDataInput | None,
+        license_token_ids: list[int] | None,
+        royalty_shares: list[RoyaltyShareInput] | None,
+        max_rts: int,
+        ip_metadata: IPMetadataInput | None,
+        tx_options: dict | None,
+    ) -> RegisterDerivativeIpAssetResponse:
+        """
+        Handle derivative registration for minting new NFTs.
+        """
+        if royalty_shares and deriv_data:
+            royalty_result = self.mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
+                spg_nft_contract=nft.spg_nft_contract,
+                deriv_data=deriv_data,
+                royalty_shares=royalty_shares,
+                ip_metadata=ip_metadata,
+                recipient=nft.recipient,
+                allow_duplicates=nft.allow_duplicates,
+                tx_options=tx_options,
+            )
+            return RegisterDerivativeIpAssetResponse(
+                tx_hash=royalty_result["tx_hash"],
+                ip_id=royalty_result["ip_id"],
+                token_id=royalty_result["token_id"],
+            )
+
+        if deriv_data:
+            deriv_result = self.mint_and_register_ip_and_make_derivative(
+                spg_nft_contract=nft.spg_nft_contract,
+                deriv_data=deriv_data,
+                ip_metadata=ip_metadata,
+                recipient=nft.recipient,
+                allow_duplicates=nft.allow_duplicates,
+                tx_options=tx_options,
+            )
+            return RegisterDerivativeIpAssetResponse(
+                tx_hash=deriv_result["tx_hash"],
+                ip_id=deriv_result["ip_id"],
+                token_id=deriv_result["token_id"],
+            )
+
+        # Use license_token_ids
+        token_result = (
+            self.mint_and_register_ip_and_make_derivative_with_license_tokens(
+                spg_nft_contract=nft.spg_nft_contract,
+                license_token_ids=license_token_ids,  # type: ignore
+                max_rts=max_rts,
+                recipient=nft.recipient,
+                allow_duplicates=nft.allow_duplicates,
+                ip_metadata=ip_metadata,
+                tx_options=tx_options,
+            )
+        )
+        return RegisterDerivativeIpAssetResponse(
+            tx_hash=token_result["tx_hash"],
+            ip_id=token_result["ip_id"],
+            token_id=token_result["token_id"],
         )
 
     def _validate_derivative_data(self, derivative_data: dict) -> dict:

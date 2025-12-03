@@ -206,3 +206,23 @@ class RegisterIpAssetResponse(TypedDict, total=False):
     license_terms_ids: list[int]
     royalty_vault: Address
     distribute_royalty_tokens_tx_hash: HexStr
+
+
+class RegisterDerivativeIpAssetResponse(TypedDict, total=False):
+    """
+    Response structure for unified derivative IP asset registration.
+    Fields vary based on the registration method used.
+
+    Attributes:
+        tx_hash: The transaction hash of the registration transaction.
+        ip_id: The IP ID of the registered IP asset.
+        token_id: The token ID of the registered IP asset.
+        royalty_vault: [Optional] The royalty vault address of the registered IP asset.
+        distribute_royalty_tokens_tx_hash: [Optional] The transaction hash of the distribute royalty tokens transaction.
+    """
+
+    tx_hash: HexStr
+    ip_id: Address
+    token_id: int
+    royalty_vault: Address
+    distribute_royalty_tokens_tx_hash: HexStr

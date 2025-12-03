@@ -21,6 +21,7 @@ from .types.resource.IPAsset import (
     MintNFT,
     RegisterAndAttachAndDistributeRoyaltyTokensResponse,
     RegisterDerivativeIPAndAttachAndDistributeRoyaltyTokensResponse,
+    RegisterDerivativeIpAssetResponse,
     RegisteredIP,
     RegisterIpAssetResponse,
     RegisterPILTermsAndAttachResponse,
@@ -75,6 +76,7 @@ __all__ = [
     "MintNFT",
     "MintedNFT",
     "RegisterIpAssetResponse",
+    "RegisterDerivativeIpAssetResponse",
     # Constants
     "ZERO_ADDRESS",
     "ZERO_HASH",

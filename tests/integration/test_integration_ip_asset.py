@@ -1462,3 +1462,254 @@ class TestRegisterIpAsset:
             and len(response["license_terms_ids"]) > 0
         )
         assert isinstance(response["royalty_vault"], str) and response["royalty_vault"]
+
+
+class TestRegisterDerivativeIpAsset:
+    """Test suite for the unified register_derivative_ip_asset method that supports 6 different workflows"""
+
+    @pytest.fixture(scope="class")
+    def parent_ip_with_commercial_license(
+        self, story_client: StoryClient, nft_collection
+    ):
+        """Fixture to provide a parent IP with commercial license terms attached"""
+        response = story_client.IPAsset.register_ip_asset(
+            nft=MintNFT(
+                type="mint",
+                spg_nft_contract=nft_collection,
+                allow_duplicates=True,
+            ),
+            license_terms_data=[
+                LicenseTermsDataInput(
+                    terms=LicenseTermsInput(
+                        transferable=True,
+                        royalty_policy=ROYALTY_POLICY,
+                        default_minting_fee=0,
+                        expiration=0,
+                        commercial_use=True,
+                        commercial_attribution=False,
+                        commercializer_checker=ZERO_ADDRESS,
+                        commercializer_checker_data=ZERO_HASH,
+                        commercial_rev_share=10,
+                        commercial_rev_ceiling=0,
+                        derivatives_allowed=True,
+                        derivatives_attribution=True,
+                        derivatives_approval=False,
+                        derivatives_reciprocal=True,
+                        derivative_rev_ceiling=0,
+                        currency=WIP_TOKEN_ADDRESS,
+                        uri="test-parent-license-for-derivative",
+                    ),
+                    licensing_config=LicensingConfig(
+                        is_set=True,
+                        minting_fee=0,
+                        licensing_hook=ZERO_ADDRESS,
+                        hook_data=ZERO_HASH,
+                        commercial_rev_share=10,
+                        disabled=False,
+                        expect_minimum_group_reward_share=0,
+                        expect_group_reward_pool=ZERO_ADDRESS,
+                    ),
+                )
+            ],
+        )
+        return {
+            "parent_ip_id": response["ip_id"],
+            "license_terms_id": response["license_terms_ids"][0],
+        }
+
+    def test_register_derivative_ip_asset_minted_with_deriv_data(
+        self,
+        story_client: StoryClient,
+        nft_collection,
+        parent_ip_with_commercial_license,
+    ):
+        """Test derivative registration for already minted NFT with deriv_data
+        (uses register_derivative_ip internally)
+        """
+        token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account)
+
+        response = story_client.IPAsset.register_derivative_ip_asset(
+            nft=MintedNFT(
+                type="minted",
+                nft_contract=nft_collection,
+                token_id=token_id,
+            ),
+            deriv_data=DerivativeDataInput(
+                parent_ip_ids=[parent_ip_with_commercial_license["parent_ip_id"]],
+                license_terms_ids=[
+                    parent_ip_with_commercial_license["license_terms_id"]
+                ],
+                max_minting_fee=0,
+                max_rts=100_000_000,
+                max_revenue_share=100,
+            ),
+            ip_metadata=COMMON_IP_METADATA,
+            deadline=1000,
+        )
+
+        assert isinstance(response["tx_hash"], str) and response["tx_hash"]
+        assert isinstance(response["ip_id"], str) and response["ip_id"]
+
+    def test_register_derivative_ip_asset_minted_with_deriv_data_and_royalty_shares(
+        self,
+        story_client: StoryClient,
+        nft_collection,
+        parent_ip_with_commercial_license,
+    ):
+        """Test derivative registration for already minted NFT with deriv_data and royalty_shares
+        (uses register_derivative_ip_and_attach_pil_terms_and_distribute_royalty_tokens internally)
+        """
+        token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account)
+
+        royalty_shares = [
+            RoyaltyShareInput(recipient=account.address, percentage=50.0),
+            RoyaltyShareInput(recipient=account_2.address, percentage=50.0),
+        ]
+
+        response = story_client.IPAsset.register_derivative_ip_asset(
+            nft=MintedNFT(
+                type="minted",
+                nft_contract=nft_collection,
+                token_id=token_id,
+            ),
+            deriv_data=DerivativeDataInput(
+                parent_ip_ids=[parent_ip_with_commercial_license["parent_ip_id"]],
+                license_terms_ids=[
+                    parent_ip_with_commercial_license["license_terms_id"]
+                ],
+                max_minting_fee=0,
+                max_rts=100_000_000,
+                max_revenue_share=100,
+            ),
+            royalty_shares=royalty_shares,
+            ip_metadata=COMMON_IP_METADATA,
+            deadline=1000,
+        )
+
+        assert isinstance(response["tx_hash"], str) and response["tx_hash"]
+        assert isinstance(response["ip_id"], str) and response["ip_id"]
+        assert (
+            isinstance(response["token_id"], int) and response["token_id"] == token_id
+        )
+        assert isinstance(response["royalty_vault"], str) and response["royalty_vault"]
+        assert (
+            isinstance(response["distribute_royalty_tokens_tx_hash"], str)
+            and response["distribute_royalty_tokens_tx_hash"]
+        )
+
+    def test_register_derivative_ip_asset_minted_with_license_token_ids(
+        self,
+        story_client: StoryClient,
+        nft_collection,
+        mint_and_approve_license_token,
+    ):
+        """Test derivative registration for already minted NFT with license_token_ids
+        (uses register_ip_and_make_derivative_with_license_tokens internally)
+        """
+        token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account)
+
+        response = story_client.IPAsset.register_derivative_ip_asset(
+            nft=MintedNFT(
+                type="minted",
+                nft_contract=nft_collection,
+                token_id=token_id,
+            ),
+            license_token_ids=[mint_and_approve_license_token[0]],
+            max_rts=100_000_000,
+            ip_metadata=COMMON_IP_METADATA,
+            deadline=1000,
+        )
+
+        assert isinstance(response["tx_hash"], str) and response["tx_hash"]
+        assert isinstance(response["ip_id"], str) and response["ip_id"]
+        assert (
+            isinstance(response["token_id"], int) and response["token_id"] == token_id
+        )
+
+    def test_register_derivative_ip_asset_mint_with_deriv_data(
+        self,
+        story_client: StoryClient,
+        nft_collection,
+        parent_ip_with_commercial_license,
+    ):
+        """Test derivative registration with minting new NFT and deriv_data
+        (uses mint_and_register_ip_and_make_derivative internally)
+        """
+        response = story_client.IPAsset.register_derivative_ip_asset(
+            nft=MintNFT(
+                type="mint",
+                spg_nft_contract=nft_collection,
+                recipient=account.address,
+                allow_duplicates=True,
+            ),
+            deriv_data=DerivativeDataInput(
+                parent_ip_ids=[parent_ip_with_commercial_license["parent_ip_id"]],
+                license_terms_ids=[
+                    parent_ip_with_commercial_license["license_terms_id"]
+                ],
+            ),
+            ip_metadata=COMMON_IP_METADATA,
+        )
+
+        assert isinstance(response["tx_hash"], str) and response["tx_hash"]
+        assert isinstance(response["ip_id"], str) and response["ip_id"]
+        assert isinstance(response["token_id"], int)
+
+    def test_register_derivative_ip_asset_mint_with_deriv_data_and_royalty_shares(
+        self,
+        story_client: StoryClient,
+        nft_collection,
+        parent_ip_with_commercial_license,
+    ):
+        """Test derivative registration with minting new NFT, deriv_data and royalty_shares
+        (uses mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens internally)
+        """
+        royalty_shares = [
+            RoyaltyShareInput(recipient=account.address, percentage=60.0),
+            RoyaltyShareInput(recipient=account_2.address, percentage=40.0),
+        ]
+
+        response = story_client.IPAsset.register_derivative_ip_asset(
+            nft=MintNFT(
+                type="mint",
+                spg_nft_contract=nft_collection,
+                recipient=account.address,
+                allow_duplicates=True,
+            ),
+            deriv_data=DerivativeDataInput(
+                parent_ip_ids=[parent_ip_with_commercial_license["parent_ip_id"]],
+                license_terms_ids=[
+                    parent_ip_with_commercial_license["license_terms_id"]
+                ],
+            ),
+            royalty_shares=royalty_shares,
+            ip_metadata=COMMON_IP_METADATA,
+        )
+
+        assert isinstance(response["tx_hash"], str) and response["tx_hash"]
+        assert isinstance(response["ip_id"], str) and response["ip_id"]
+        assert isinstance(response["token_id"], int)
+
+    def test_register_derivative_ip_asset_mint_with_license_token_ids(
+        self,
+        story_client: StoryClient,
+        nft_collection,
+        mint_and_approve_license_token,
+    ):
+        """Test derivative registration with minting new NFT and license_token_ids
+        (uses mint_and_register_ip_and_make_derivative_with_license_tokens internally)
+        """
+        response = story_client.IPAsset.register_derivative_ip_asset(
+            nft=MintNFT(
+                type="mint",
+                spg_nft_contract=nft_collection,
+                recipient=account.address,
+                allow_duplicates=True,
+            ),
+            license_token_ids=[mint_and_approve_license_token[1]],
+            ip_metadata=COMMON_IP_METADATA,
+        )
+
+        assert isinstance(response["tx_hash"], str) and response["tx_hash"]
+        assert isinstance(response["ip_id"], str) and response["ip_id"]
+        assert isinstance(response["token_id"], int)

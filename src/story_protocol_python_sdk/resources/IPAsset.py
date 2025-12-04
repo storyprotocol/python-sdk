@@ -1,6 +1,7 @@
 """Module for handling IP Account operations and transactions."""
 
 from dataclasses import asdict, is_dataclass
+from typing import cast
 
 from ens.ens import Address, HexStr
 from typing_extensions import deprecated
@@ -907,7 +908,7 @@ class IPAsset:
         self,
         spg_nft_contract: Address,
         license_token_ids: list[int],
-        max_rts: int,
+        max_rts: int = MAX_ROYALTY_TOKEN,
         recipient: Address | None = None,
         allow_duplicates: bool = True,
         ip_metadata: IPMetadataInput | None = None,
@@ -918,7 +919,7 @@ class IPAsset:
 
         :param spg_nft_contract Address: The address of the `SPGNFT` collection.
         :param license_token_ids list[int]: The IDs of the license tokens to be burned for linking the IP to parent IPs.
-        :param max_rts int: The maximum number of royalty tokens that can be distributed to the external royalty policies (max: 100,000,000).
+        :param max_rts int: The maximum number of royalty tokens that can be distributed to the external royalty policies (default: 100,000,000).
         :param recipient Address: [Optional] The address to receive the minted NFT. If not provided, the client's own wallet address will be used.
         :param allow_duplicates bool: [Optional] Set to true to allow minting an NFT with a duplicate metadata hash. (default: True)
         :param ip_metadata IPMetadataInput: [Optional] The desired metadata for the newly minted NFT and newly registered IP.
@@ -1170,7 +1171,6 @@ class IPAsset:
                 response["tx_receipt"],
                 ip_registered["ip_id"],
             )
-
             return RegistrationWithRoyaltyVaultResponse(
                 tx_hash=response["tx_hash"],
                 ip_id=ip_registered["ip_id"],
@@ -1482,7 +1482,7 @@ class IPAsset:
         license_terms_data: list[LicenseTermsDataInput] | None = None,
         royalty_shares: list[RoyaltyShareInput] | None = None,
         ip_metadata: IPMetadataInput | None = None,
-        deadline: int | None = None,
+        deadline: int = 1000,
         tx_options: dict | None = None,
     ) -> RegisterIpAssetResponse:
         """
@@ -1679,8 +1679,8 @@ class IPAsset:
         license_token_ids: list[int] | None = None,
         royalty_shares: list[RoyaltyShareInput] | None = None,
         max_rts: int = MAX_ROYALTY_TOKEN,
+        deadline: int = 1000,
         ip_metadata: IPMetadataInput | None = None,
-        deadline: int | None = None,
         tx_options: dict | None = None,
     ) -> RegisterDerivativeIpAssetResponse:
         """
@@ -1731,7 +1731,7 @@ class IPAsset:
 
             if not has_deriv_data and not has_license_tokens:
                 raise ValueError(
-                    "Either deriv_data or license_token_ids must be provided."
+                    "either deriv_data or license_token_ids must be provided."
                 )
 
             if nft.type == "minted":
@@ -1767,7 +1767,7 @@ class IPAsset:
         royalty_shares: list[RoyaltyShareInput] | None,
         max_rts: int,
         ip_metadata: IPMetadataInput | None,
-        deadline: int | None,
+        deadline: int,
         tx_options: dict | None,
     ) -> RegisterDerivativeIpAssetResponse:
         """
@@ -1780,7 +1780,7 @@ class IPAsset:
                 deriv_data=deriv_data,
                 royalty_shares=royalty_shares,
                 ip_metadata=ip_metadata,
-                deadline=deadline or 1000,
+                deadline=deadline,
                 tx_options=tx_options,
             )
             return RegisterDerivativeIpAssetResponse(
@@ -1811,9 +1811,9 @@ class IPAsset:
         token_result = self.register_ip_and_make_derivative_with_license_tokens(
             nft_contract=nft.nft_contract,
             token_id=nft.token_id,
-            license_token_ids=license_token_ids,  # type: ignore
+            license_token_ids=cast(list[int], license_token_ids),
             max_rts=max_rts,
-            deadline=deadline or 1000,
+            deadline=deadline,
             ip_metadata=ip_metadata,
             tx_options=tx_options,
         )
@@ -1850,6 +1850,7 @@ class IPAsset:
                 tx_hash=royalty_result["tx_hash"],
                 ip_id=royalty_result["ip_id"],
                 token_id=royalty_result["token_id"],
+                royalty_vault=royalty_result["royalty_vault"],
             )
 
         if deriv_data:

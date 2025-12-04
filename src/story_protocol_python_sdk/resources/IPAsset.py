@@ -3,6 +3,7 @@
 from dataclasses import asdict, is_dataclass
 
 from ens.ens import Address, HexStr
+from typing_extensions import deprecated
 from web3 import Web3
 
 from story_protocol_python_sdk.abi.AccessController.AccessController_client import (
@@ -54,9 +55,12 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
     BatchMintAndRegisterIPInput,
     BatchMintAndRegisterIPResponse,
     LicenseTermsDataInput,
+    MintedNFT,
+    MintNFT,
     RegisterAndAttachAndDistributeRoyaltyTokensResponse,
     RegisterDerivativeIPAndAttachAndDistributeRoyaltyTokensResponse,
     RegisteredIP,
+    RegisterIpAssetResponse,
     RegisterPILTermsAndAttachResponse,
     RegistrationResponse,
     RegistrationWithRoyaltyVaultAndLicenseTermsResponse,
@@ -73,7 +77,12 @@ from story_protocol_python_sdk.utils.derivative_data import (
     DerivativeDataInput,
 )
 from story_protocol_python_sdk.utils.function_signature import get_function_signature
-from story_protocol_python_sdk.utils.ip_metadata import IPMetadata, IPMetadataInput
+from story_protocol_python_sdk.utils.ip_metadata import (
+    IPMetadata,
+    IPMetadataInput,
+    get_ip_metadata_dict,
+    is_initial_ip_metadata,
+)
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
 from story_protocol_python_sdk.utils.royalty import get_royalty_shares
 from story_protocol_python_sdk.utils.sign import Sign
@@ -155,6 +164,7 @@ class IPAsset:
 
         return tx_hash
 
+    @deprecated("Use register_ip_asset() instead.")
     def register(
         self,
         nft_contract: str,
@@ -197,7 +207,7 @@ class IPAsset:
                 },
             }
 
-            if ip_metadata:
+            if not is_initial_ip_metadata(ip_metadata) and ip_metadata:
                 req_object["ipMetadata"].update(
                     {
                         "ipMetadataURI": ip_metadata.get("ip_metadata_uri", ""),
@@ -382,6 +392,7 @@ class IPAsset:
                 f"Failed to register derivative with license tokens: {str(e)}"
             )
 
+    @deprecated("Use register_ip_asset() instead.")
     def mint_and_register_ip_asset_with_pil_terms(
         self,
         spg_nft_contract: str,
@@ -445,7 +456,6 @@ class IPAsset:
                     f"The NFT contract address {spg_nft_contract} is not valid."
                 )
             license_terms = self._validate_license_terms_data(terms)
-
             metadata = {
                 "ipMetadataURI": "",
                 "ipMetadataHash": ZERO_HASH,
@@ -496,6 +506,7 @@ class IPAsset:
         except Exception as e:
             raise e
 
+    @deprecated("Use register_ip_asset() instead.")
     def mint_and_register_ip(
         self,
         spg_nft_contract: str,
@@ -612,6 +623,7 @@ class IPAsset:
         except Exception as e:
             raise ValueError(f"Failed to batch mint and register IP: {str(e)}")
 
+    @deprecated("Use register_ip_asset() instead.")
     def register_ip_and_attach_pil_terms(
         self,
         nft_contract: str,
@@ -1039,6 +1051,7 @@ class IPAsset:
                 f"Failed to register IP and make derivative with license tokens: {str(e)}"
             ) from e
 
+    @deprecated("Use register_ip_asset() instead.")
     def mint_and_register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
         self,
         spg_nft_contract: Address,
@@ -1268,6 +1281,7 @@ class IPAsset:
                 f"Failed to register derivative IP and distribute royalty tokens: {str(e)}"
             ) from e
 
+    @deprecated("Use register_ip_asset() instead.")
     def register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
         self,
         nft_contract: Address,
@@ -1454,6 +1468,202 @@ class IPAsset:
             )
         except Exception as e:
             raise e
+
+    def register_ip_asset(
+        self,
+        nft: MintNFT | MintedNFT,
+        license_terms_data: list[LicenseTermsDataInput] | None = None,
+        royalty_shares: list[RoyaltyShareInput] | None = None,
+        ip_metadata: IPMetadataInput | None = None,
+        deadline: int | None = None,
+        tx_options: dict | None = None,
+    ) -> RegisterIpAssetResponse:
+        """
+        Register an IP asset, supporting both minted and mint-on-demand NFTs,
+        with optional license terms and royalty shares.
+
+        This method automatically selects and calls the appropriate workflow from 6 available
+        methods based on your input parameters:
+
+        For already minted NFT (type="minted"):
+            - With `license_terms_data` + `royalty_shares`:
+                `registerIpAndAttachPILTermsAndDeployRoyaltyVault` (contract method)
+                + `distributeRoyaltyTokens` (contract method)
+            - With `license_terms_data` only: `registerIpAndAttachPILTerms` (contract method)
+            - Basic registration:
+                - If `ip_metadata` is not provided, calls the `register` (contract method).
+                - If `ip_metadata` is provided, calls the `registerIp` (contract method).
+
+        For new minted NFT (type="mint"):
+            - With `license_terms_data` + `royalty_shares`: `mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens` (contract method)
+            - With license_terms_data only: `mintAndRegisterIpAndAttachPILTerms` (contract method)
+            - Basic registration: `mintAndRegisterIp` (contract method)
+
+        :param nft `MintNFT` | `MintedNFT`: The NFT to be registered as an IP asset.
+            - For `MintNFT`: Mint a new NFT from an SPG NFT contract.
+            - For `MintedNFT`: Register an already minted NFT.
+        :param license_terms_data `list[LicenseTermsDataInput]`: [Optional] License terms and configuration to be attached to the IP asset.
+        :param royalty_shares `list[RoyaltyShareInput]`: [Optional] Authors of the IP and their shares of the royalty tokens.
+            Can only be specified when `license_terms_data` is also provided.
+        :param ip_metadata `IPMetadataInput`: [Optional] The desired metadata for the newly registered IP.
+        :param deadline int: [Optional] Signature deadline in seconds. (default: 1000 seconds)
+        :param tx_options dict: [Optional] Transaction options.
+        :return `RegisterIpAssetResponse`: Response with transaction hash, IP ID, token ID, and optionally license terms IDs, royalty vault, and distribute royalty tokens transaction hash.
+        :raises ValueError: If `royalty_shares` is provided without `license_terms_data`.
+        """
+        try:
+            if royalty_shares and not license_terms_data:
+                raise ValueError(
+                    "License terms data must be provided when royalty shares are specified."
+                )
+
+            if nft.type == "minted":
+                return self._handle_minted_nft_registration(
+                    nft=nft,
+                    license_terms_data=license_terms_data,
+                    royalty_shares=royalty_shares,
+                    ip_metadata=ip_metadata,
+                    deadline=deadline,
+                    tx_options=tx_options,
+                )
+            elif nft.type == "mint":
+                return self._handle_mint_nft_registration(
+                    nft=nft,
+                    license_terms_data=license_terms_data,
+                    royalty_shares=royalty_shares,
+                    ip_metadata=ip_metadata,
+                    tx_options=tx_options,
+                )
+
+        except Exception as e:
+            raise ValueError(f"Failed to register IP Asset: {str(e)}") from e
+
+    def _handle_minted_nft_registration(
+        self,
+        nft: MintedNFT,
+        license_terms_data: list[LicenseTermsDataInput] | None,
+        royalty_shares: list[RoyaltyShareInput] | None,
+        ip_metadata: IPMetadataInput | None,
+        deadline: int | None,
+        tx_options: dict | None,
+    ) -> RegisterIpAssetResponse:
+        """
+        Handle registration for already minted NFTs with optional license terms and royalty shares.
+        """
+        # In order to compatible with the previous version, we need to convert the ip_metadata to dict format for methods that expect dict
+        # We can remove this function after these method become the internal methods.
+        ip_metadata_dict = get_ip_metadata_dict(ip_metadata)
+        if license_terms_data and royalty_shares:
+            royalty_result = (
+                self.register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+                    nft_contract=nft.nft_contract,
+                    token_id=nft.token_id,
+                    license_terms_data=license_terms_data,
+                    royalty_shares=royalty_shares,
+                    ip_metadata=ip_metadata,
+                    deadline=deadline,
+                    tx_options=tx_options,
+                )
+            )
+            return RegisterIpAssetResponse(
+                tx_hash=royalty_result["tx_hash"],
+                ip_id=royalty_result["ip_id"],
+                token_id=royalty_result["token_id"],
+                license_terms_ids=royalty_result["license_terms_ids"],
+                royalty_vault=royalty_result["royalty_vault"],
+                distribute_royalty_tokens_tx_hash=royalty_result[
+                    "distribute_royalty_tokens_tx_hash"
+                ],
+            )
+
+        if license_terms_data:
+            terms_result = self.register_ip_and_attach_pil_terms(
+                nft_contract=nft.nft_contract,
+                token_id=nft.token_id,
+                license_terms_data=license_terms_data,
+                ip_metadata=ip_metadata_dict,
+                deadline=deadline,
+                tx_options=tx_options,
+            )
+            return RegisterIpAssetResponse(
+                tx_hash=terms_result["tx_hash"],
+                ip_id=terms_result["ip_id"],
+                token_id=terms_result["token_id"],
+                license_terms_ids=terms_result["license_terms_ids"],
+            )
+
+        basic_result = self.register(
+            nft_contract=nft.nft_contract,
+            token_id=nft.token_id,
+            ip_metadata=ip_metadata_dict,
+            deadline=deadline,
+            tx_options=tx_options,
+        )
+        return RegisterIpAssetResponse(
+            tx_hash=basic_result["tx_hash"],
+            ip_id=basic_result["ip_id"],
+        )
+
+    def _handle_mint_nft_registration(
+        self,
+        nft: MintNFT,
+        license_terms_data: list[LicenseTermsDataInput] | None,
+        royalty_shares: list[RoyaltyShareInput] | None,
+        ip_metadata: IPMetadataInput | None,
+        tx_options: dict | None,
+    ) -> RegisterIpAssetResponse:
+        """
+        Handle minting and registration of new NFTs with optional license terms and royalty shares.
+        """
+        # In order to compatible with the previous version, we need to convert the ip_metadata to dict format for methods that expect dict.
+        # We can remove this function after these method become the internal methods.
+        ip_metadata_dict = get_ip_metadata_dict(ip_metadata)
+        if license_terms_data and royalty_shares:
+            royalty_result = self.mint_and_register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+                spg_nft_contract=nft.spg_nft_contract,
+                license_terms_data=license_terms_data,
+                royalty_shares=royalty_shares,
+                ip_metadata=ip_metadata,
+                recipient=nft.recipient,
+                allow_duplicates=nft.allow_duplicates,
+                tx_options=tx_options,
+            )
+            return RegisterIpAssetResponse(
+                tx_hash=royalty_result["tx_hash"],
+                ip_id=royalty_result["ip_id"],
+                token_id=royalty_result["token_id"],
+                license_terms_ids=royalty_result["license_terms_ids"],
+                royalty_vault=royalty_result["royalty_vault"],
+            )
+
+        if license_terms_data:
+            terms_result = self.mint_and_register_ip_asset_with_pil_terms(
+                spg_nft_contract=nft.spg_nft_contract,
+                terms=license_terms_data,
+                ip_metadata=ip_metadata_dict,
+                recipient=nft.recipient,
+                allow_duplicates=nft.allow_duplicates,
+                tx_options=tx_options,
+            )
+            return RegisterIpAssetResponse(
+                tx_hash=terms_result["tx_hash"],
+                ip_id=terms_result["ip_id"],
+                token_id=terms_result["token_id"],
+                license_terms_ids=terms_result["license_terms_ids"],
+            )
+
+        basic_result = self.mint_and_register_ip(
+            spg_nft_contract=nft.spg_nft_contract,
+            recipient=nft.recipient,
+            ip_metadata=ip_metadata_dict,
+            allow_duplicates=nft.allow_duplicates,
+            tx_options=tx_options,
+        )
+        return RegisterIpAssetResponse(
+            tx_hash=basic_result["tx_hash"],
+            ip_id=basic_result["ip_id"],
+            token_id=basic_result["token_id"],
+        )
 
     def _validate_derivative_data(self, derivative_data: dict) -> dict:
         """

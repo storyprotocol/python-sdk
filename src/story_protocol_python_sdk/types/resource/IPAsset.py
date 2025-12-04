@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TypedDict
+from typing import Literal, TypedDict
 
 from ens.ens import Address, HexStr
 
@@ -149,3 +149,60 @@ class BatchMintAndRegisterIPResponse(TypedDict):
 
     tx_hash: HexStr
     registered_ips: list[RegisteredIP]
+
+
+@dataclass
+class MintNFT:
+    """
+    Configuration for minting a new NFT from an SPG NFT contract.
+
+    Attributes:
+        type: Must be "mint" to indicate a new NFT will be minted.
+        spg_nft_contract: The address of the SPG NFT contract.
+            You can create one via `client.nft_client.create_nft_collection`.
+        recipient: [Optional] The address to receive the NFT. Defaults to caller's wallet address.
+        allow_duplicates: [Optional] Set to true to allow minting an NFT with a duplicate metadata hash. (default: True)
+    """
+
+    type: Literal["mint"]
+    spg_nft_contract: Address
+    recipient: Address | None = None
+    allow_duplicates: bool = True
+
+
+@dataclass
+class MintedNFT:
+    """
+    Configuration for registering an already minted NFT as an IP asset.
+
+    Attributes:
+        type: Must be "minted" to indicate an existing NFT.
+        nft_contract: The address of the NFT contract.
+        token_id: The token ID of the NFT.
+    """
+
+    type: Literal["minted"]
+    nft_contract: Address
+    token_id: int
+
+
+class RegisterIpAssetResponse(TypedDict, total=False):
+    """
+    Response structure for unified IP asset registration.
+    Fields vary based on the registration method used.
+
+    Attributes:
+        tx_hash: The transaction hash of the registration transaction.
+        ip_id: The IP ID of the registered IP asset.
+        token_id: The token ID of the registered IP asset.
+        license_terms_ids: [Optional] The IDs of the license terms attached to the IP asset.
+        royalty_vault: [Optional] The royalty vault address of the registered IP asset.
+        distribute_royalty_tokens_tx_hash: [Optional] The transaction hash of the distribute royalty tokens transaction.
+    """
+
+    tx_hash: HexStr
+    ip_id: Address
+    token_id: int
+    license_terms_ids: list[int]
+    royalty_vault: Address
+    distribute_royalty_tokens_tx_hash: HexStr

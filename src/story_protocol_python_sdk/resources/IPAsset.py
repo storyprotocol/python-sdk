@@ -850,7 +850,11 @@ class IPAsset:
                 0
             ]
 
-            return {"tx_hash": response["tx_hash"], "ip_id": ip_registered["ip_id"]}
+            return {
+                "tx_hash": response["tx_hash"],
+                "ip_id": ip_registered["ip_id"],
+                "token_id": ip_registered["token_id"],
+            }
 
         except Exception as e:
             raise e
@@ -1805,6 +1809,7 @@ class IPAsset:
             return RegisterDerivativeIpAssetResponse(
                 tx_hash=deriv_result["tx_hash"],
                 ip_id=deriv_result["ip_id"],
+                token_id=deriv_result["token_id"],
             )
 
         # Use license_token_ids

@@ -1544,11 +1544,14 @@ class TestRegisterDerivativeIpAsset:
                 max_revenue_share=100,
             ),
             ip_metadata=COMMON_IP_METADATA,
-            deadline=1000,
+            deadline=100000,
         )
 
         assert isinstance(response["tx_hash"], str) and response["tx_hash"]
         assert isinstance(response["ip_id"], str) and response["ip_id"]
+        assert (
+            isinstance(response["token_id"], int) and response["token_id"] == token_id
+        )
 
     def test_register_derivative_ip_asset_minted_with_deriv_data_and_royalty_shares(
         self,
@@ -1583,7 +1586,7 @@ class TestRegisterDerivativeIpAsset:
             ),
             royalty_shares=royalty_shares,
             ip_metadata=COMMON_IP_METADATA,
-            deadline=1000,
+            deadline=100000,
         )
 
         assert isinstance(response["tx_hash"], str) and response["tx_hash"]
@@ -1615,9 +1618,8 @@ class TestRegisterDerivativeIpAsset:
                 token_id=token_id,
             ),
             license_token_ids=[mint_and_approve_license_token[0]],
-            max_rts=100_000_000,
             ip_metadata=COMMON_IP_METADATA,
-            deadline=1000,
+            deadline=100000,
         )
 
         assert isinstance(response["tx_hash"], str) and response["tx_hash"]

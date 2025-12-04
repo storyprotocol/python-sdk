@@ -770,6 +770,7 @@ class IPAsset:
         except Exception as e:
             raise e
 
+    @deprecated("Deprecated: Use register_derivative_ip_asset instead.")
     def register_derivative_ip(
         self,
         nft_contract: str,
@@ -853,6 +854,7 @@ class IPAsset:
         except Exception as e:
             raise e
 
+    @deprecated("Deprecated: Use register_derivative_ip_asset instead.")
     def mint_and_register_ip_and_make_derivative(
         self,
         spg_nft_contract: str,
@@ -900,6 +902,7 @@ class IPAsset:
         except Exception as e:
             raise e
 
+    @deprecated("Deprecated: Use register_derivative_ip_asset instead.")
     def mint_and_register_ip_and_make_derivative_with_license_tokens(
         self,
         spg_nft_contract: Address,
@@ -951,6 +954,7 @@ class IPAsset:
         except Exception as e:
             raise e
 
+    @deprecated("Deprecated: Use register_derivative_ip_asset instead.")
     def register_ip_and_make_derivative_with_license_tokens(
         self,
         nft_contract: str,
@@ -1117,6 +1121,7 @@ class IPAsset:
                 f"Failed to mint, register IP, attach PIL terms and distribute royalty tokens: {str(e)}"
             ) from e
 
+    @deprecated("Deprecated: Use register_derivative_ip_asset instead.")
     def mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
         self,
         spg_nft_contract: Address,
@@ -1177,6 +1182,7 @@ class IPAsset:
                 f"Failed to mint, register IP, make derivative and distribute royalty tokens: {str(e)}"
             ) from e
 
+    @deprecated("Deprecated: Use register_derivative_ip_asset instead.")
     def register_derivative_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
         self,
         nft_contract: Address,

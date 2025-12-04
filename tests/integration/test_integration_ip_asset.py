@@ -21,7 +21,11 @@ from story_protocol_python_sdk.abi.LicenseToken.LicenseToken_client import (
     LicenseTokenClient,
 )
 from tests.integration.config.test_config import account_2
-from tests.integration.config.utils import approve
+from tests.integration.config.utils import (
+    approve,
+    create_parent_ip_and_license_terms,
+    mint_and_approve_license_token,
+)
 
 from .setup_for_integration import (
     PIL_LICENSE_TEMPLATE,
@@ -391,9 +395,12 @@ class TestIPAssetMinting:
         )
 
     def test_mint_and_register_ip_and_make_derivative(
-        self, story_client: StoryClient, nft_collection, parent_ip_and_license_terms
+        self, story_client: StoryClient, nft_collection
     ):
         """Test minting NFT, registering IP and making derivative with custom derivative data and metadata"""
+        parent_ip_and_license_terms = create_parent_ip_and_license_terms(
+            story_client, nft_collection, account
+        )
         response = story_client.IPAsset.mint_and_register_ip_and_make_derivative(
             spg_nft_contract=nft_collection,
             deriv_data=DerivativeDataInput(
@@ -416,10 +423,16 @@ class TestIPAssetMinting:
         self,
         story_client: StoryClient,
         nft_collection,
-        mint_and_approve_license_token,
     ):
         """Test minting NFT, registering IP and making derivative using license tokens with custom metadata"""
-        license_token_ids = mint_and_approve_license_token
+        parent_ip_and_license_terms = create_parent_ip_and_license_terms(
+            story_client, nft_collection, account
+        )
+        license_token_ids = mint_and_approve_license_token(
+            story_client,
+            parent_ip_and_license_terms,
+            account,
+        )
         response = story_client.IPAsset.mint_and_register_ip_and_make_derivative_with_license_tokens(
             spg_nft_contract=nft_collection,
             license_token_ids=[license_token_ids[1]],
@@ -434,9 +447,14 @@ class TestIPAssetMinting:
         assert isinstance(response["token_id"], int)
 
     def test_mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
-        self, story_client: StoryClient, nft_collection, parent_ip_and_license_terms
+        self,
+        story_client: StoryClient,
+        nft_collection,
     ):
         """Test minting NFT, registering IP, making derivative and distributing royalty tokens with custom derivative data"""
+        parent_ip_and_license_terms = create_parent_ip_and_license_terms(
+            story_client, nft_collection, account
+        )
         response = story_client.IPAsset.mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
             spg_nft_contract=nft_collection,
             deriv_data=DerivativeDataInput(
@@ -461,9 +479,10 @@ class TestIPAssetMinting:
 
 
 class TestSPGNFTOperations:
-    def test_register_derivative_ip(
-        self, story_client: StoryClient, parent_ip_and_license_terms, nft_collection
-    ):
+    def test_register_derivative_ip(self, story_client: StoryClient, nft_collection):
+        parent_ip_and_license_terms = create_parent_ip_and_license_terms(
+            story_client, nft_collection, account
+        )
         token_child_id = mint_by_spg(
             nft_collection, story_client.web3, story_client.account
         )
@@ -621,9 +640,12 @@ class TestSPGNFTOperations:
     def test_register_pil_terms_and_attach(
         self,
         story_client: StoryClient,
-        parent_ip_and_license_terms,
+        nft_collection,
     ):
         """Test registering PIL terms and attaching them to an existing IP with multiple license terms"""
+        parent_ip_and_license_terms = create_parent_ip_and_license_terms(
+            story_client, nft_collection, account
+        )
         response = story_client.IPAsset.register_pil_terms_and_attach(
             ip_id=parent_ip_and_license_terms["parent_ip_id"],
             license_terms_data=[
@@ -766,9 +788,12 @@ class TestSPGNFTOperations:
         )
 
     def test_register_derivative_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
-        self, story_client: StoryClient, nft_collection, parent_ip_and_license_terms
+        self, story_client: StoryClient, nft_collection
     ):
         """Test registering an existing NFT as derivative IP and distributing royalty tokens with all optional parameters"""
+        parent_ip_and_license_terms = create_parent_ip_and_license_terms(
+            story_client, nft_collection, account
+        )
         # Mint an NFT first
         token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account)
 
@@ -1604,20 +1629,24 @@ class TestRegisterDerivativeIpAsset:
         self,
         story_client: StoryClient,
         nft_collection,
-        mint_and_approve_license_token,
     ):
         """Test derivative registration for already minted NFT with license_token_ids
         (uses register_ip_and_make_derivative_with_license_tokens internally)
         """
         token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account)
-
+        parent_ip_and_license_terms = create_parent_ip_and_license_terms(
+            story_client, nft_collection, account
+        )
+        license_token_ids = mint_and_approve_license_token(
+            story_client, parent_ip_and_license_terms, account
+        )
         response = story_client.IPAsset.register_derivative_ip_asset(
             nft=MintedNFT(
                 type="minted",
                 nft_contract=nft_collection,
                 token_id=token_id,
             ),
-            license_token_ids=[mint_and_approve_license_token[0]],
+            license_token_ids=license_token_ids,
             ip_metadata=COMMON_IP_METADATA,
             deadline=100000,
         )
@@ -1696,11 +1725,16 @@ class TestRegisterDerivativeIpAsset:
         self,
         story_client: StoryClient,
         nft_collection,
-        mint_and_approve_license_token,
     ):
         """Test derivative registration with minting new NFT and license_token_ids
         (uses mint_and_register_ip_and_make_derivative_with_license_tokens internally)
         """
+        parent_ip_and_license_terms = create_parent_ip_and_license_terms(
+            story_client, nft_collection, account
+        )
+        license_token_ids = mint_and_approve_license_token(
+            story_client, parent_ip_and_license_terms, account
+        )
         response = story_client.IPAsset.register_derivative_ip_asset(
             nft=MintNFT(
                 type="mint",
@@ -1708,7 +1742,7 @@ class TestRegisterDerivativeIpAsset:
                 recipient=account.address,
                 allow_duplicates=True,
             ),
-            license_token_ids=[mint_and_approve_license_token[1]],
+            license_token_ids=license_token_ids,
             ip_metadata=COMMON_IP_METADATA,
         )
 

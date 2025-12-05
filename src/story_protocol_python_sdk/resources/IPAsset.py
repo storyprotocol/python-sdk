@@ -70,6 +70,7 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
 )
 from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
 from story_protocol_python_sdk.utils.constants import (
+    DEADLINE,
     MAX_ROYALTY_TOKEN,
     ZERO_ADDRESS,
     ZERO_HASH,
@@ -1486,7 +1487,7 @@ class IPAsset:
         license_terms_data: list[LicenseTermsDataInput] | None = None,
         royalty_shares: list[RoyaltyShareInput] | None = None,
         ip_metadata: IPMetadataInput | None = None,
-        deadline: int = 1000,
+        deadline: int = DEADLINE,
         tx_options: dict | None = None,
     ) -> RegisterIpAssetResponse:
         """
@@ -1683,7 +1684,7 @@ class IPAsset:
         license_token_ids: list[int] | None = None,
         royalty_shares: list[RoyaltyShareInput] | None = None,
         max_rts: int = MAX_ROYALTY_TOKEN,
-        deadline: int = 1000,
+        deadline: int = DEADLINE,
         ip_metadata: IPMetadataInput | None = None,
         tx_options: dict | None = None,
     ) -> RegisterDerivativeIpAssetResponse:

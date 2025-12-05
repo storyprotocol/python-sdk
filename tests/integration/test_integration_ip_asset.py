@@ -435,7 +435,7 @@ class TestIPAssetMinting:
         )
         response = story_client.IPAsset.mint_and_register_ip_and_make_derivative_with_license_tokens(
             spg_nft_contract=nft_collection,
-            license_token_ids=[license_token_ids[1]],
+            license_token_ids=license_token_ids,
             max_rts=100000000,
             ip_metadata=COMMON_IP_METADATA,
             recipient=account_2.address,
@@ -1633,13 +1633,13 @@ class TestRegisterDerivativeIpAsset:
         """Test derivative registration for already minted NFT with license_token_ids
         (uses register_ip_and_make_derivative_with_license_tokens internally)
         """
-        token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account)
         parent_ip_and_license_terms = create_parent_ip_and_license_terms(
             story_client, nft_collection, account
         )
         license_token_ids = mint_and_approve_license_token(
             story_client, parent_ip_and_license_terms, account
         )
+        token_id = mint_by_spg(nft_collection, story_client.web3, story_client.account)
         response = story_client.IPAsset.register_derivative_ip_asset(
             nft=MintedNFT(
                 type="minted",
@@ -1739,7 +1739,6 @@ class TestRegisterDerivativeIpAsset:
             nft=MintNFT(
                 type="mint",
                 spg_nft_contract=nft_collection,
-                recipient=account.address,
                 allow_duplicates=True,
             ),
             license_token_ids=license_token_ids,

@@ -283,9 +283,9 @@ def mint_and_approve_license_token(
     story_client: StoryClient,
     parent_ip_and_license_terms: dict,
     account: LocalAccount,
-):
+) -> list[int]:
     """
-    Fixture to mint and approve license tokens for derivative workflow testing.
+    Mint and approve license tokens for derivative workflow testing.
 
     :param story_client: The StoryClient instance.
     :param parent_ip_and_license_terms: A dictionary containing the parent IP ID and license terms ID.
@@ -295,7 +295,7 @@ def mint_and_approve_license_token(
         licensor_ip_id=parent_ip_and_license_terms["parent_ip_id"],
         license_template=PIL_LICENSE_TEMPLATE,
         license_terms_id=parent_ip_and_license_terms["license_terms_id"],
-        amount=2,
+        amount=1,
         receiver=account.address,
         max_revenue_share=100,
     )
@@ -319,8 +319,8 @@ def mint_and_approve_license_token(
 
 def create_parent_ip_and_license_terms(
     story_client: StoryClient, nft_collection, account: LocalAccount
-):
-    """Fixture to provide the parent IP and license terms"""
+) -> dict[str, int]:
+    """Create a parent IP with license terms for testing."""
     response = story_client.IPAsset.register_ip_asset(
         nft=MintNFT(
             spg_nft_contract=nft_collection,

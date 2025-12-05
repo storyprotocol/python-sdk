@@ -2377,10 +2377,6 @@ class TestRegisterIpAsset:
             result = ip_asset.register_ip_asset(
                 nft=MintedNFT(type="minted", nft_contract=ADDRESS, token_id=3),
             )
-            print(
-                "mock_build_register_transaction.call_args",
-                mock_build_register_transaction.call_args,
-            )
             assert mock_build_register_transaction.call_args[0][0] == 1315
             assert mock_build_register_transaction.call_args[0][1] == ADDRESS
             assert mock_build_register_transaction.call_args[0][2] == 3

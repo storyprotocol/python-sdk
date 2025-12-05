@@ -1877,7 +1877,7 @@ class IPAsset:
         token_result = (
             self.mint_and_register_ip_and_make_derivative_with_license_tokens(
                 spg_nft_contract=nft.spg_nft_contract,
-                license_token_ids=license_token_ids,  # type: ignore
+                license_token_ids=cast(list[int], license_token_ids),
                 max_rts=max_rts,
                 recipient=nft.recipient,
                 allow_duplicates=nft.allow_duplicates,

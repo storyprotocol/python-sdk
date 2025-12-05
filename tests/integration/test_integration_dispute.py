@@ -2,6 +2,9 @@
 
 import pytest
 
+from story_protocol_python_sdk.abi.ArbitrationPolicyUMA.ArbitrationPolicyUMA_client import (
+    ArbitrationPolicyUMAClient,
+)
 from story_protocol_python_sdk.story_client import StoryClient
 
 from .setup_for_integration import account, generate_cid, web3
@@ -42,7 +45,11 @@ class TestDispute:
     def dispute_id(self, story_client: StoryClient, target_ip_id):
         cid = generate_cid()
         bond_amount = 1000000000000000000  # 1 ETH in wei
-
+        # Approve WIP tokens to the target IP
+        story_client.WIP.approve(
+            spender=ArbitrationPolicyUMAClient(web3).contract.address,
+            amount=bond_amount,
+        )
         response = story_client.Dispute.raise_dispute(
             target_ip_id=target_ip_id,
             target_tag="IMPROPER_REGISTRATION",
@@ -77,9 +84,12 @@ class TestDispute:
 
         # Generate a CID for counter evidence
         counter_evidence_cid = generate_cid()
-
-        story_client_2.WIP.deposit(amount=web3.to_wei(1, "ether"))  # 1 IP
-
+        amount = web3.to_wei(1, "ether")
+        story_client_2.WIP.deposit(amount=amount)  # 1 IP
+        story_client_2.WIP.approve(
+            spender=target_ip_id,
+            amount=amount,
+        )
         # Counter the dispute assertion with story_client_2 (the IP owner)
         response = story_client_2.Dispute.dispute_assertion(
             ip_id=target_ip_id,

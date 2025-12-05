@@ -4,11 +4,26 @@ import os
 
 import base58
 from dotenv import load_dotenv
+from eth_account.signers.local import LocalAccount
 from web3 import Web3
 
+from story_protocol_python_sdk import (
+    ROYALTY_POLICY_LAP_ADDRESS,
+    LicenseTermsDataInput,
+    LicenseTermsInput,
+    LicensingConfig,
+    MintNFT,
+)
+from story_protocol_python_sdk.abi.DerivativeWorkflows.DerivativeWorkflows_client import (
+    DerivativeWorkflowsClient,
+)
+from story_protocol_python_sdk.abi.LicenseToken.LicenseToken_client import (
+    LicenseTokenClient,
+)
 from story_protocol_python_sdk.story_client import StoryClient
 
 load_dotenv()
+
 
 # Mock ERC721 contract address
 MockERC721 = "0xa1119092ea911202E0a65B743a13AE28C5CF2f21"
@@ -262,3 +277,92 @@ def setup_royalty_vault(story_client, parent_ip_id, account):
     )
 
     return response
+
+
+def mint_and_approve_license_token(
+    story_client: StoryClient,
+    parent_ip_and_license_terms: dict,
+    account: LocalAccount,
+) -> list[int]:
+    """
+    Mint and approve license tokens for derivative workflow testing.
+
+    :param story_client: The StoryClient instance.
+    :param parent_ip_and_license_terms: A dictionary containing the parent IP ID and license terms ID.
+    :return: A list of license token IDs.
+    """
+    license_token_response = story_client.License.mint_license_tokens(
+        licensor_ip_id=parent_ip_and_license_terms["parent_ip_id"],
+        license_template=PIL_LICENSE_TEMPLATE,
+        license_terms_id=parent_ip_and_license_terms["license_terms_id"],
+        amount=1,
+        receiver=account.address,
+        max_revenue_share=100,
+    )
+    license_token_ids = license_token_response["license_token_ids"]
+
+    for license_token_id in license_token_ids:
+        approve(
+            erc20_contract_address=LicenseTokenClient(
+                story_client.web3
+            ).contract.address,
+            web3=story_client.web3,
+            account=account,
+            spender_address=DerivativeWorkflowsClient(
+                story_client.web3
+            ).contract.address,
+            amount=license_token_id,
+        )
+
+    return license_token_ids
+
+
+def create_parent_ip_and_license_terms(
+    story_client: StoryClient, nft_collection, account: LocalAccount
+) -> dict[str, int]:
+    """Create a parent IP with license terms for testing."""
+    response = story_client.IPAsset.register_ip_asset(
+        nft=MintNFT(
+            spg_nft_contract=nft_collection,
+            recipient=account.address,
+            allow_duplicates=True,
+            type="mint",
+        ),
+        license_terms_data=[
+            LicenseTermsDataInput(
+                terms=LicenseTermsInput(
+                    transferable=True,
+                    royalty_policy=ROYALTY_POLICY_LAP_ADDRESS,
+                    default_minting_fee=0,
+                    expiration=0,
+                    commercial_use=True,
+                    commercial_attribution=False,
+                    commercializer_checker=ZERO_ADDRESS,
+                    commercializer_checker_data=ZERO_ADDRESS,
+                    commercial_rev_share=50,
+                    commercial_rev_ceiling=0,
+                    derivatives_allowed=True,
+                    derivatives_attribution=True,
+                    derivatives_approval=False,
+                    derivatives_reciprocal=True,
+                    derivative_rev_ceiling=0,
+                    currency=MockERC20,
+                    uri="",
+                ),
+                licensing_config=LicensingConfig(
+                    is_set=True,
+                    minting_fee=0,
+                    hook_data=ZERO_ADDRESS,
+                    licensing_hook=ZERO_ADDRESS,
+                    commercial_rev_share=0,
+                    disabled=False,
+                    expect_minimum_group_reward_share=0,
+                    expect_group_reward_pool=ZERO_ADDRESS,
+                ),
+            ),
+        ],
+    )
+    return {
+        "parent_ip_id": response["ip_id"],
+        "license_terms_id": response["license_terms_ids"][0],
+    }

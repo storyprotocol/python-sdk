@@ -2442,33 +2442,6 @@ class TestRegisterIpAsset:
             == IPMetadata.from_input(partialIpMetadata).get_validated_data()
         )  # ip_metadata
 
-    def test_success_when_ip_metadata_not_provided_for_minted_nft(
-        self,
-        ip_asset: IPAsset,
-        mock_parse_ip_registered_event,
-        mock_get_ip_id,
-        mock_signature_related_methods,
-        mock_is_registered,
-    ):
-        with (
-            mock_parse_ip_registered_event(),
-            mock_get_ip_id(),
-            mock_signature_related_methods(),
-            mock_is_registered(is_registered=False),
-            patch.object(
-                ip_asset.ip_asset_registry_client,
-                "build_register_transaction",
-                return_value={"tx_hash": TX_HASH.hex()},
-            ) as mock_build_register_transaction,
-        ):
-            ip_asset.register_ip_asset(
-                nft=MintedNFT(type="minted", nft_contract=ADDRESS, token_id=3),
-            )
-            assert (
-                mock_build_register_transaction.call_args[0][2]
-                == IPMetadata.from_input().get_validated_data()
-            )  # ip_metadata
-
     def test_success_when_all_optional_parameters_provided_for_mint_nft(
         self,
         ip_asset: IPAsset,

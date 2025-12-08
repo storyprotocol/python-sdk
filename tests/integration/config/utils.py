@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import os
+from typing import TypedDict
 
 import base58
 from dotenv import load_dotenv
@@ -279,9 +280,14 @@ def setup_royalty_vault(story_client, parent_ip_id, account):
     return response
 
 
+class ParentIpAndLicenseTerms(TypedDict):
+    parent_ip_id: str
+    license_terms_id: int
+
+
 def mint_and_approve_license_token(
     story_client: StoryClient,
-    parent_ip_and_license_terms: dict,
+    parent_ip_and_license_terms: ParentIpAndLicenseTerms,
     account: LocalAccount,
 ) -> list[int]:
     """
@@ -319,7 +325,7 @@ def mint_and_approve_license_token(
 
 def create_parent_ip_and_license_terms(
     story_client: StoryClient, nft_collection, account: LocalAccount
-) -> dict[str, int]:
+) -> ParentIpAndLicenseTerms:
     """Create a parent IP with license terms for testing."""
     response = story_client.IPAsset.register_ip_asset(
         nft=MintNFT(

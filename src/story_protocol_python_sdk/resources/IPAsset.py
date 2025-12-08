@@ -400,8 +400,8 @@ class IPAsset:
 
     def link_derivative(
         self,
-        child_ip_id: str,
-        parent_ip_ids: list[str] | None = None,
+        child_ip_id: Address,
+        parent_ip_ids: list[Address] | None = None,
         license_terms_ids: list[int] | None = None,
         license_token_ids: list[int] | None = None,
         max_minting_fee: int = 0,
@@ -417,10 +417,10 @@ class IPAsset:
         - If `parent_ip_ids` is provided, calls `registerDerivative`(contract method)
         - If `license_token_ids` is provided, calls `registerDerivativeWithLicenseTokens`(contract method)
 
-        :param child_ip_id str: The derivative IP ID.
-        :param parent_ip_ids list[str]: [Optional] The parent IP IDs. Required if using license terms.
-        :param license_terms_ids list[int]: [Optional] The IDs of the license terms that the parent IP supports. Required if using license terms.
-        :param license_token_ids list[int]: [Optional] The IDs of the license tokens. Required if linking with license tokens.
+        :param child_ip_id Address: The derivative IP ID.
+        :param parent_ip_ids list[Address]: [Optional] The parent IP IDs. Required if using license terms.
+        :param license_terms_ids list[int]: [Optional] The IDs of the license terms that the parent IP supports. Required if `parent_ip_ids` is provided.
+        :param license_token_ids list[int]: [Optional] The IDs of the license tokens.
         :param max_minting_fee int: [Optional] The maximum minting fee that the caller is willing to pay.
             if set to 0 then no limit. (default: 0) Only used with `parent_ip_ids`.
         :param max_rts int: [Optional] The maximum number of royalty tokens that can be distributed

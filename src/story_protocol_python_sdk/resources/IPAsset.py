@@ -277,6 +277,7 @@ class IPAsset:
         except Exception as e:
             raise e
 
+    @deprecated("Use link_derivative() instead.")
     def register_derivative(
         self,
         child_ip_id: str,
@@ -344,6 +345,7 @@ class IPAsset:
         except Exception as e:
             raise ValueError(f"Failed to register derivative: {str(e)}") from e
 
+    @deprecated("Use link_derivative() instead.")
     def register_derivative_with_license_tokens(
         self,
         child_ip_id: str,

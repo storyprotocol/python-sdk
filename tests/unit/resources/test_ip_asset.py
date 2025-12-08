@@ -3022,3 +3022,188 @@ class TestRegisterDerivativeIpAsset:
             assert result["tx_hash"] == TX_HASH.hex()
             assert result["ip_id"] == IP_ID
             assert result["token_id"] == 3
+
+
+class TestLinkDerivative:
+    def test_throw_error_when_parent_ip_ids_and_license_token_ids_are_not_provided(
+        self, ip_asset: IPAsset
+    ):
+        with pytest.raises(
+            ValueError,
+            match="Failed to link derivative: either parent_ip_ids or license_token_ids must be provided.",
+        ):
+            ip_asset.link_derivative(child_ip_id=IP_ID)
+
+    def test_throw_error_when_parent_ip_ids_are_provided_and_license_terms_ids_are_not(
+        self, ip_asset: IPAsset
+    ):
+        with pytest.raises(
+            ValueError,
+            match="Failed to link derivative: license_terms_ids is required when parent_ip_ids is provided.",
+        ):
+            ip_asset.link_derivative(
+                child_ip_id=IP_ID, parent_ip_ids=[IP_ID, IP_ID], license_terms_ids=None
+            )
+
+    def test_success_when_parent_ip_ids_and_license_terms_ids_are_provided(
+        self,
+        ip_asset: IPAsset,
+        mock_is_registered,
+        mock_license_registry_client,
+    ):
+        with (
+            mock_is_registered(True),
+            patch.object(
+                ip_asset.licensing_module_client,
+                "build_registerDerivative_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_register_transaction,
+            mock_license_registry_client(),
+        ):
+            result = ip_asset.link_derivative(
+                child_ip_id=IP_ID,
+                parent_ip_ids=[IP_ID, IP_ID],
+                license_terms_ids=[1, 2],
+            )
+
+            assert (
+                mock_build_register_transaction.call_args[0][0] == IP_ID
+            )  # child_ip_id
+            assert mock_build_register_transaction.call_args[0][1] == [
+                IP_ID,
+                IP_ID,
+            ]  # parent_ip_ids
+            assert mock_build_register_transaction.call_args[0][2] == [
+                1,
+                2,
+            ]  # license_terms_ids
+            assert (
+                mock_build_register_transaction.call_args[0][3] == ADDRESS
+            )  # license_template
+            assert (
+                mock_build_register_transaction.call_args[0][4] == ZERO_ADDRESS
+            )  # royalty_context
+            assert (
+                mock_build_register_transaction.call_args[0][5] == 0
+            )  # max_minting_fee
+            assert (
+                mock_build_register_transaction.call_args[0][6] == MAX_ROYALTY_TOKEN
+            )  # max_rts
+            assert (
+                mock_build_register_transaction.call_args[0][7] == 100 * 10**6
+            )  # max_revenue_share
+            assert result["tx_hash"] == TX_HASH.hex()
+
+    def test_success_when_parent_ip_ids_and_license_terms_ids_and_all_optional_parameters_are_provided(
+        self,
+        ip_asset: IPAsset,
+        mock_is_registered,
+        mock_license_registry_client,
+    ):
+        license_template = "0x" + bytes(32).hex()
+        with (
+            mock_is_registered(True),
+            patch.object(
+                ip_asset.licensing_module_client,
+                "build_registerDerivative_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_register_transaction,
+            mock_license_registry_client(),
+        ):
+            ip_asset.link_derivative(
+                child_ip_id=IP_ID,
+                parent_ip_ids=[IP_ID, IP_ID],
+                license_terms_ids=[1, 2],
+                max_minting_fee=10,
+                max_rts=1000_000,
+                max_revenue_share=10,
+                license_template=license_template,
+            )
+
+            assert (
+                mock_build_register_transaction.call_args[0][3] == license_template
+            )  # license_template
+            assert (
+                mock_build_register_transaction.call_args[0][4] == ZERO_ADDRESS
+            )  # royalty_context
+            assert (
+                mock_build_register_transaction.call_args[0][5] == 10
+            )  # max_minting_fee
+            assert (
+                mock_build_register_transaction.call_args[0][6] == 1000_000
+            )  # max_rts
+            assert (
+                mock_build_register_transaction.call_args[0][7] == 10 * 10**6
+            )  # max_revenue_share
+
+    def test_success_when_license_token_ids_only_are_provided(
+        self,
+        ip_asset: IPAsset,
+        mock_is_registered,
+        mock_owner_of,
+    ):
+        with (
+            mock_is_registered(True),
+            mock_owner_of(),
+            patch.object(
+                ip_asset.licensing_module_client,
+                "build_registerDerivativeWithLicenseTokens_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_register_transaction,
+        ):
+            result = ip_asset.link_derivative(
+                license_token_ids=[1, 2],
+                child_ip_id=IP_ID,
+            )
+            assert (
+                mock_build_register_transaction.call_args[0][0] == IP_ID
+            )  # child_ip_id
+            assert mock_build_register_transaction.call_args[0][1] == [
+                1,
+                2,
+            ]  # license_token_ids
+            assert (
+                mock_build_register_transaction.call_args[0][2] == ZERO_ADDRESS
+            )  # royalty_context
+            assert (
+                mock_build_register_transaction.call_args[0][3] == MAX_ROYALTY_TOKEN
+            )  # max_rts
+            assert result["tx_hash"] == TX_HASH.hex()
+
+    def test_success_when_license_token_ids_and_all_optional_parameters_are_provided(
+        self,
+        ip_asset: IPAsset,
+        mock_is_registered,
+        mock_owner_of,
+    ):
+        with (
+            mock_is_registered(True),
+            mock_owner_of(),
+            patch.object(
+                ip_asset.licensing_module_client,
+                "build_registerDerivativeWithLicenseTokens_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_register_transaction,
+        ):
+            ip_asset.link_derivative(
+                license_token_ids=[1, 2],
+                child_ip_id=IP_ID,
+                max_rts=1000,
+            )
+            assert mock_build_register_transaction.call_args[0][3] == 1000  # max_rts
+
+    def test_throw_error_when_license_token_ids_are_not_owned_by_caller(
+        self,
+        ip_asset: IPAsset,
+        mock_is_registered,
+        mock_owner_of,
+    ):
+        with (
+            mock_is_registered(True),
+            mock_owner_of("0x" + bytes(20).hex()),
+        ):
+            with pytest.raises(
+                ValueError,
+                match="Failed to link derivative: Failed to register derivative with license tokens: License token id 1 must be owned by the caller.",
+            ):
+                ip_asset.link_derivative(license_token_ids=[1], child_ip_id=IP_ID)

@@ -459,7 +459,7 @@ class IPAsset:
                 return LinkDerivativeResponse(tx_hash=response["tx_hash"])
             else:
                 raise ValueError(
-                    "Either parent_ip_ids or license_token_ids must be provided."
+                    "either parent_ip_ids or license_token_ids must be provided."
                 )
 
         except Exception as e:

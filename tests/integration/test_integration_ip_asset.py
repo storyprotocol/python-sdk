@@ -1748,3 +1748,79 @@ class TestRegisterDerivativeIpAsset:
         assert isinstance(response["tx_hash"], str) and response["tx_hash"]
         assert isinstance(response["ip_id"], str) and response["ip_id"]
         assert isinstance(response["token_id"], int)
+
+
+class TestLinkDerivative:
+    """Test suite for the link_derivative helper method."""
+
+    @pytest.fixture(scope="class")
+    def child_ip_id(self, story_client: StoryClient, nft_collection):
+        """Register a child IP asset that will be linked as derivative."""
+        response = story_client.IPAsset.register_ip_asset(
+            nft=MintNFT(
+                type="mint",
+                spg_nft_contract=nft_collection,
+                recipient=account.address,
+                allow_duplicates=True,
+            ),
+        )
+
+        assert isinstance(response["ip_id"], str) and response["ip_id"]
+        return response["ip_id"]
+
+    def test_link_derivative_with_license_terms(
+        self,
+        story_client: StoryClient,
+        child_ip_id,
+        nft_collection,
+    ):
+        """Link derivative using parent IP IDs and license terms IDs."""
+        parent_ip_and_license_terms = create_parent_ip_and_license_terms(
+            story_client, nft_collection, account
+        )
+
+        response = story_client.IPAsset.link_derivative(
+            child_ip_id=child_ip_id,
+            parent_ip_ids=[parent_ip_and_license_terms["parent_ip_id"]],
+            license_terms_ids=[parent_ip_and_license_terms["license_terms_id"]],
+            max_minting_fee=10_000,
+            max_rts=10_000_000,
+            max_revenue_share=50,
+            license_template=PIL_LICENSE_TEMPLATE,
+        )
+
+        assert response is not None
+        assert isinstance(response, dict)
+        assert "tx_hash" in response
+        assert isinstance(response["tx_hash"], str)
+        assert response["tx_hash"].startswith("0x")
+        assert len(response["tx_hash"]) > 0
+
+    def test_link_derivative_with_license_tokens(
+        self,
+        story_client: StoryClient,
+        child_ip_id,
+        nft_collection,
+    ):
+        """Link derivative using license token IDs."""
+        parent_ip_and_license_terms = create_parent_ip_and_license_terms(
+            story_client, nft_collection, account
+        )
+        license_token_ids = mint_and_approve_license_token(
+            story_client,
+            parent_ip_and_license_terms,
+            account,
+        )
+
+        response = story_client.IPAsset.link_derivative(
+            child_ip_id=child_ip_id,
+            license_token_ids=license_token_ids,
+            max_rts=80_000_000,
+        )
+
+        assert response is not None
+        assert isinstance(response, dict)
+        assert "tx_hash" in response
+        assert isinstance(response["tx_hash"], str)
+        assert response["tx_hash"].startswith("0x")
+        assert len(response["tx_hash"]) > 0

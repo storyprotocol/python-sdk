@@ -226,3 +226,14 @@ class RegisterDerivativeIpAssetResponse(TypedDict, total=False):
     token_id: int
     royalty_vault: Address
     distribute_royalty_tokens_tx_hash: HexStr
+
+
+class LinkDerivativeResponse(TypedDict):
+    """
+    Response structure for linking a derivative IP asset.
+
+    Attributes:
+        tx_hash: The transaction hash of the link derivative transaction.
+    """
+
+    tx_hash: HexStr

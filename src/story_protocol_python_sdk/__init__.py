@@ -17,6 +17,7 @@ from .types.resource.IPAsset import (
     BatchMintAndRegisterIPInput,
     BatchMintAndRegisterIPResponse,
     LicenseTermsDataInput,
+    LinkDerivativeResponse,
     MintedNFT,
     MintNFT,
     RegisterAndAttachAndDistributeRoyaltyTokensResponse,
@@ -77,6 +78,7 @@ __all__ = [
     "MintedNFT",
     "RegisterIpAssetResponse",
     "RegisterDerivativeIpAssetResponse",
+    "LinkDerivativeResponse",
     # Constants
     "ZERO_ADDRESS",
     "ZERO_HASH",

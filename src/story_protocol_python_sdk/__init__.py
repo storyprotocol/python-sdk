@@ -44,6 +44,7 @@ from .utils.constants import (
 from .utils.derivative_data import DerivativeDataInput
 from .utils.ip_metadata import IPMetadataInput
 from .utils.licensing_config_data import LicensingConfig
+from .utils.pil_flavor import PILFlavor
 
 __all__ = [
     "StoryClient",
@@ -87,4 +88,6 @@ __all__ = [
     "DEFAULT_FUNCTION_SELECTOR",
     "MAX_ROYALTY_TOKEN",
     "WIP_TOKEN_ADDRESS",
+    # utils
+    "PILFlavor",
 ]

@@ -253,6 +253,14 @@ class PILFlavor:
         return result
 
     @staticmethod
+    def _convert_camel_case_to_snake_case(camel_case_key: str) -> str:
+        """Convert camelCase to snake_case for internal use."""
+        for key, value in PILFlavor._OVERRIDE_KEY_MAP.items():
+            if value == camel_case_key:
+                return key
+        raise ValueError(f"Unknown camelCase key: {camel_case_key}")  # pragma: no cover
+
+    @staticmethod
     def non_commercial_social_remixing(
         override: Optional[LicenseTermsOverride] = None,
     ) -> LicenseTerms:
@@ -391,12 +399,14 @@ class PILFlavor:
 
         # Validate royalty policy and currency relationship
         if royalty_policy != ZERO_ADDRESS and currency == ZERO_ADDRESS:
-            raise PILFlavorError("royalty policy requires currency token.")
+            raise PILFlavorError(
+                "royalty_policy is not zero address and currency cannot be zero address."
+            )
 
         # Validate defaultMintingFee
         if normalized["defaultMintingFee"] < 0:
             raise PILFlavorError(
-                "defaultMintingFee should be greater than or equal to 0."
+                "default_minting_fee should be greater than or equal to 0."
             )
 
         if (
@@ -404,7 +414,7 @@ class PILFlavor:
             and normalized["royaltyPolicy"] == ZERO_ADDRESS
         ):
             raise PILFlavorError(
-                "royalty policy is required when defaultMintingFee is greater than 0."
+                "royalty_policy is required when default_minting_fee is greater than 0."
             )
 
         # Validate commercial use and derivatives
@@ -415,7 +425,7 @@ class PILFlavor:
             normalized["commercialRevShare"] > 100
             or normalized["commercialRevShare"] < 0
         ):
-            raise PILFlavorError("commercialRevShare must be between 0 and 100.")
+            raise PILFlavorError("commercial_rev_share must be between 0 and 100.")
 
         return normalized
 
@@ -438,12 +448,12 @@ class PILFlavor:
             for field, value in commercial_fields:
                 if value:
                     raise PILFlavorError(
-                        f"cannot add {field} when commercial use is disabled."
+                        f"cannot add {PILFlavor._convert_camel_case_to_snake_case(field)} when commercial_use is False."
                     )
         else:
             if terms["royaltyPolicy"] == ZERO_ADDRESS:
                 raise PILFlavorError(
-                    "royalty policy is required when commercial use is enabled."
+                    "royalty_policy is required when commercial_use is True."
                 )
 
     @staticmethod
@@ -460,5 +470,5 @@ class PILFlavor:
             for field, value in derivative_fields:
                 if value:
                     raise PILFlavorError(
-                        f"cannot add {field} when derivative use is disabled."
+                        f"cannot add {PILFlavor._convert_camel_case_to_snake_case(field)} when derivatives_allowed is False."
                     )

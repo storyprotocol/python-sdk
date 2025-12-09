@@ -30,7 +30,7 @@ from .types.resource.IPAsset import (
     RegistrationWithRoyaltyVaultResponse,
 )
 from .types.resource.License import LicenseTermsInput
-from .types.resource.Royalty import RoyaltyShareInput
+from .types.resource.Royalty import NativeRoyaltyPolicy, RoyaltyShareInput
 from .utils.constants import (
     DEFAULT_FUNCTION_SELECTOR,
     MAX_ROYALTY_TOKEN,
@@ -72,6 +72,7 @@ __all__ = [
     "LicensingConfig",
     "RegisterPILTermsAndAttachResponse",
     "RoyaltyShareInput",
+    "NativeRoyaltyPolicy",
     "LicenseTermsInput",
     "MintNFT",
     "MintedNFT",

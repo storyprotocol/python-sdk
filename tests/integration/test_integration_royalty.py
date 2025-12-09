@@ -1,5 +1,8 @@
 import pytest
 
+from story_protocol_python_sdk.abi.DerivativeWorkflows.DerivativeWorkflows_client import (
+    DerivativeWorkflowsClient,
+)
 from story_protocol_python_sdk.story_client import StoryClient
 from story_protocol_python_sdk.utils.constants import WIP_TOKEN_ADDRESS
 from story_protocol_python_sdk.utils.derivative_data import DerivativeDataInput
@@ -198,6 +201,12 @@ class TestClaimAllRevenue:
 
             # Approve SPG contract to spend WIP tokens
             story_client.WIP.approve(spender=spg_nft_contract, amount=amount)
+            derivative_workflows_address = DerivativeWorkflowsClient(
+                story_client.web3
+            ).contract.address
+            story_client.WIP.approve(
+                spender=derivative_workflows_address, amount=amount
+            )
 
             # Mint and register the derivative IP
             response = story_client.IPAsset.mint_and_register_ip_and_make_derivative(

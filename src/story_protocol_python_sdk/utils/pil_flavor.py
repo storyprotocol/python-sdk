@@ -5,6 +5,7 @@ from ens.ens import Address
 from story_protocol_python_sdk.types.resource.Royalty import RoyaltyPolicyInput
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
 from story_protocol_python_sdk.utils.royalty import royalty_policy_input_to_address
+from story_protocol_python_sdk.utils.validation import validate_address
 
 
 class LicenseTerms(TypedDict):
@@ -390,7 +391,7 @@ class PILFlavor:
             "derivativesApproval": params.get("derivativesApproval", False),
             "derivativesReciprocal": params.get("derivativesReciprocal", False),
             "derivativeRevCeiling": int(params.get("derivativeRevCeiling", 0)),
-            "currency": params.get("currency", ZERO_ADDRESS),
+            "currency": validate_address(params.get("currency", ZERO_ADDRESS)),
             "uri": params.get("uri", ""),
         }
 

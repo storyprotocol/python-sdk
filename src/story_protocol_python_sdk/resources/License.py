@@ -1,4 +1,7 @@
+from typing import cast
+
 from ens.ens import Address, HexStr
+from typing_extensions import deprecated
 from web3 import Web3
 
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import (
@@ -16,13 +19,16 @@ from story_protocol_python_sdk.abi.ModuleRegistry.ModuleRegistry_client import (
 from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client import (
     PILicenseTemplateClient,
 )
+from story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client import (
+    RoyaltyModuleClient,
+)
 from story_protocol_python_sdk.types.common import RevShareType
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
-from story_protocol_python_sdk.utils.license_terms import LicenseTerms
 from story_protocol_python_sdk.utils.licensing_config_data import (
     LicensingConfig,
     LicensingConfigData,
 )
+from story_protocol_python_sdk.utils.pil_flavor import LicenseTerms, PILFlavor
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 from story_protocol_python_sdk.utils.validation import (
     get_revenue_share,
@@ -49,14 +55,13 @@ class License:
         self.licensing_module_client = LicensingModuleClient(web3)
         self.ip_asset_registry_client = IPAssetRegistryClient(web3)
         self.module_registry_client = ModuleRegistryClient(web3)
+        self.royalty_module_client = RoyaltyModuleClient(web3)
 
-        self.license_terms_util = LicenseTerms(web3)
-
-    def _get_license_terms_id(self, license_terms: dict) -> int:
+    def _get_license_terms_id(self, license_terms: LicenseTerms) -> int:
         """
         Get the ID of the license terms.
 
-        :param license_terms dict: The license terms.
+        :param license_terms LicenseTerms: The license terms.
         :return int: The ID of the license terms.
         """
         return self.license_template_client.getLicenseTermsId(license_terms)
@@ -106,48 +111,34 @@ class License:
         :return dict: A dictionary with the transaction hash and license terms ID.
         """
         try:
-            license_terms = self.license_terms_util.validate_license_terms(
-                {
-                    "transferable": transferable,
-                    "royalty_policy": royalty_policy,
-                    "default_minting_fee": default_minting_fee,
-                    "expiration": expiration,
-                    "commercial_use": commercial_use,
-                    "commercial_attribution": commercial_attribution,
-                    "commercializer_checker": commercializer_checker,
-                    "commercializer_checker_data": commercializer_checker_data,
-                    "commercial_rev_share": commercial_rev_share,
-                    "commercial_rev_ceiling": commercial_rev_ceiling,
-                    "derivatives_allowed": derivatives_allowed,
-                    "derivatives_attribution": derivatives_attribution,
-                    "derivatives_approval": derivatives_approval,
-                    "derivatives_reciprocal": derivatives_reciprocal,
-                    "derivative_rev_ceiling": derivative_rev_ceiling,
-                    "currency": currency,
-                    "uri": uri,
-                }
-            )
-
-            license_terms_id = self._get_license_terms_id(license_terms)
-            if (license_terms_id is not None) and (license_terms_id != 0):
-                return {"license_terms_id": license_terms_id}
-
-            response = build_and_send_transaction(
-                self.web3,
-                self.account,
-                self.license_template_client.build_registerLicenseTerms_transaction,
-                license_terms,
+            return self._register_license_terms_helper(
+                license_terms=LicenseTerms(
+                    transferable=transferable,
+                    royaltyPolicy=royalty_policy,
+                    defaultMintingFee=default_minting_fee,
+                    expiration=expiration,
+                    commercialUse=commercial_use,
+                    commercialAttribution=commercial_attribution,
+                    commercializerChecker=commercializer_checker,
+                    commercializerCheckerData=commercializer_checker_data,
+                    commercialRevShare=commercial_rev_share,
+                    commercialRevCeiling=commercial_rev_ceiling,
+                    derivativesAllowed=derivatives_allowed,
+                    derivativesAttribution=derivatives_attribution,
+                    derivativesApproval=derivatives_approval,
+                    derivativesReciprocal=derivatives_reciprocal,
+                    derivativeRevCeiling=derivative_rev_ceiling,
+                    currency=currency,
+                    uri=uri,
+                ),
                 tx_options=tx_options,
             )
-
-            target_logs = self._parse_tx_license_terms_registered_event(
-                response["tx_receipt"]
-            )
-            return {"tx_hash": response["tx_hash"], "license_terms_id": target_logs}
-
         except Exception as e:
             raise e
 
+    @deprecated(
+        "Use register_pil_terms(PILFlavor.non_commercial_social_remixing()) instead.",
+    )
     def register_non_com_social_remixing_pil(
         self, tx_options: dict | None = None
     ) -> dict:
@@ -158,30 +149,15 @@ class License:
         :return dict: A dictionary with the transaction hash and the license terms ID.
         """
         try:
-            license_terms = self.license_terms_util.get_license_term_by_type(
-                self.license_terms_util.PIL_TYPE["NON_COMMERCIAL_REMIX"]
-            )
-
-            license_terms_id = self._get_license_terms_id(license_terms)
-            if (license_terms_id is not None) and (license_terms_id != 0):
-                return {"license_terms_id": license_terms_id}
-
-            response = build_and_send_transaction(
-                self.web3,
-                self.account,
-                self.license_template_client.build_registerLicenseTerms_transaction,
-                license_terms,
-                tx_options=tx_options,
-            )
-
-            target_logs = self._parse_tx_license_terms_registered_event(
-                response["tx_receipt"]
-            )
-            return {"tx_hash": response["tx_hash"], "license_terms_id": target_logs}
-
+            license_terms = PILFlavor.non_commercial_social_remixing()
+            response = self._register_license_terms_helper(license_terms, tx_options)
+            return response
         except Exception as e:
             raise e
 
+    @deprecated(
+        "Use register_pil_terms(PILFlavor.commercial_use(default_minting_fee, currency, royalty_policy)) instead.",
+    )
     def register_commercial_use_pil(
         self,
         default_minting_fee: int,
@@ -199,38 +175,20 @@ class License:
         :return dict: A dictionary with the transaction hash and the license terms ID.
         """
         try:
-            complete_license_terms = self.license_terms_util.get_license_term_by_type(
-                self.license_terms_util.PIL_TYPE["COMMERCIAL_USE"],
-                {
-                    "defaultMintingFee": default_minting_fee,
-                    "currency": currency,
-                    "royaltyPolicyAddress": royalty_policy,
-                },
+            license_terms = PILFlavor.commercial_use(
+                default_minting_fee=default_minting_fee,
+                currency=currency,
+                royalty_policy=royalty_policy,
             )
-
-            license_terms_id = self._get_license_terms_id(complete_license_terms)
-            if (license_terms_id is not None) and (license_terms_id != 0):
-                return {"license_terms_id": license_terms_id}
-
-            response = build_and_send_transaction(
-                self.web3,
-                self.account,
-                self.license_template_client.build_registerLicenseTerms_transaction,
-                complete_license_terms,
-                tx_options=tx_options,
-            )
-            tx_hash = response["tx_hash"]
-            if not response["tx_receipt"]["logs"]:
-                return {"tx_hash": tx_hash}
-
-            target_logs = self._parse_tx_license_terms_registered_event(
-                response["tx_receipt"]
-            )
-            return {"tx_hash": tx_hash, "license_terms_id": target_logs}
+            response = self._register_license_terms_helper(license_terms, tx_options)
+            return response
 
         except Exception as e:
             raise e
 
+    @deprecated(
+        "Use register_pil_terms(PILFlavor.commercial_remix(default_minting_fee, currency, commercial_rev_share, royalty_policy)) instead.",
+    )
     def register_commercial_remix_pil(
         self,
         default_minting_fee: int,
@@ -250,39 +208,63 @@ class License:
         :return dict: A dictionary with the transaction hash and the license terms ID.
         """
         try:
-            complete_license_terms = self.license_terms_util.get_license_term_by_type(
-                self.license_terms_util.PIL_TYPE["COMMERCIAL_REMIX"],
-                {
-                    "defaultMintingFee": default_minting_fee,
-                    "currency": currency,
-                    "commercialRevShare": commercial_rev_share,
-                    "royaltyPolicyAddress": royalty_policy,
-                },
+            license_terms = PILFlavor.commercial_remix(
+                default_minting_fee=default_minting_fee,
+                currency=currency,
+                commercial_rev_share=commercial_rev_share,
+                royalty_policy=royalty_policy,
             )
-
-            license_terms_id = self._get_license_terms_id(complete_license_terms)
-            if license_terms_id and license_terms_id != 0:
-                return {"license_terms_id": license_terms_id}
-
-            response = build_and_send_transaction(
-                self.web3,
-                self.account,
-                self.license_template_client.build_registerLicenseTerms_transaction,
-                complete_license_terms,
-                tx_options=tx_options,
-            )
-
-            tx_hash = response["tx_hash"]
-            if not response["tx_receipt"]["logs"]:
-                return {"tx_hash": tx_hash}
-
-            target_logs = self._parse_tx_license_terms_registered_event(
-                response["tx_receipt"]
-            )
-            return {"tx_hash": tx_hash, "license_terms_id": target_logs}
+            response = self._register_license_terms_helper(license_terms, tx_options)
+            return response
 
         except Exception as e:
             raise e
+
+    def _register_license_terms_helper(
+        self, license_terms: LicenseTerms, tx_options: dict | None = None
+    ):
+        """
+        Validate the license terms.
+
+        :param license_terms LicenseTerms: The license terms.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash and the license terms ID.
+        """
+        validated_license_terms = PILFlavor.validate_license_terms(
+            cast(dict, license_terms)
+        )
+        validated_license_terms["commercialRevShare"] = (
+            validated_license_terms["commercialRevShare"] * 10**6
+        )
+        if validated_license_terms["royaltyPolicy"] != ZERO_ADDRESS:
+            is_whitelisted = self.royalty_module_client.isWhitelistedRoyaltyPolicy(
+                validated_license_terms["royaltyPolicy"]
+            )
+            if not is_whitelisted:
+                raise ValueError("The royalty_policy is not whitelisted.")
+
+        if validated_license_terms["currency"] != ZERO_ADDRESS:
+            is_whitelisted = self.royalty_module_client.isWhitelistedRoyaltyToken(
+                validated_license_terms["currency"]
+            )
+            if not is_whitelisted:
+                raise ValueError("The currency is not whitelisted.")
+
+        license_terms_id = self._get_license_terms_id(validated_license_terms)
+        if (license_terms_id is not None) and (license_terms_id != 0):
+            return {"license_terms_id": license_terms_id}
+
+        response = build_and_send_transaction(
+            self.web3,
+            self.account,
+            self.license_template_client.build_registerLicenseTerms_transaction,
+            validated_license_terms,
+            tx_options=tx_options,
+        )
+        target_logs = self._parse_tx_license_terms_registered_event(
+            response["tx_receipt"]
+        )
+        return {"tx_hash": response["tx_hash"], "license_terms_id": target_logs}
 
     def _parse_tx_license_terms_registered_event(self, tx_receipt: dict) -> int | None:
         """

@@ -44,7 +44,7 @@ from .utils.constants import (
 from .utils.derivative_data import DerivativeDataInput
 from .utils.ip_metadata import IPMetadataInput
 from .utils.licensing_config_data import LicensingConfig
-from .utils.pil_flavor import PILFlavor
+from .utils.pil_flavor import PILFlavor, PILFlavorError
 
 __all__ = [
     "StoryClient",
@@ -90,4 +90,5 @@ __all__ = [
     "WIP_TOKEN_ADDRESS",
     # utils
     "PILFlavor",
+    "PILFlavorError",
 ]

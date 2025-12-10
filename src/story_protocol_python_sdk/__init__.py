@@ -29,7 +29,7 @@ from .types.resource.IPAsset import (
     RegistrationWithRoyaltyVaultAndLicenseTermsResponse,
     RegistrationWithRoyaltyVaultResponse,
 )
-from .types.resource.License import LicenseTermsInput
+from .types.resource.License import LicenseTermsInput, LicenseTermsOverride
 from .types.resource.Royalty import NativeRoyaltyPolicy, RoyaltyShareInput
 from .utils.constants import (
     DEFAULT_FUNCTION_SELECTOR,
@@ -75,6 +75,7 @@ __all__ = [
     "RoyaltyShareInput",
     "NativeRoyaltyPolicy",
     "LicenseTermsInput",
+    "LicenseTermsOverride",
     "MintNFT",
     "MintedNFT",
     "RegisterIpAssetResponse",

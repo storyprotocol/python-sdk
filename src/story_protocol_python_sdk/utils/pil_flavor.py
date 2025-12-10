@@ -1,126 +1,27 @@
-from typing import Optional, TypedDict
+from dataclasses import asdict, replace
+from typing import Optional
 
 from ens.ens import Address
-from typing_extensions import cast
 
-from story_protocol_python_sdk.types.resource.License import LicenseTermsInput
+from story_protocol_python_sdk.types.resource.License import (
+    LicenseTermsInput,
+    LicenseTermsOverride,
+)
 from story_protocol_python_sdk.types.resource.Royalty import RoyaltyPolicyInput
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
 from story_protocol_python_sdk.utils.royalty import royalty_policy_input_to_address
 from story_protocol_python_sdk.utils.validation import validate_address
 
 
-class LicenseTerms(TypedDict):
-    """
-    The normalized license terms structure used internally by the SDK.
-    Uses camelCase keys to match the contract interface.
-    """
-
-    transferable: bool
-    royaltyPolicy: Address
-    defaultMintingFee: int
-    expiration: int
-    commercialUse: bool
-    commercialAttribution: bool
-    commercializerChecker: Address
-    commercializerCheckerData: str
-    commercialRevShare: int
-    commercialRevCeiling: int
-    derivativesAllowed: bool
-    derivativesAttribution: bool
-    derivativesApproval: bool
-    derivativesReciprocal: bool
-    derivativeRevCeiling: int
-    currency: Address
-    uri: str
-
-
-class LicenseTermsOverride(TypedDict, total=False):
-    """
-    Optional override parameters for license terms.
-    Uses snake_case keys following SDK conventions.
-    """
-
-    transferable: bool
-    """Whether the license is transferable."""
-    royalty_policy: RoyaltyPolicyInput
-    """The type of royalty policy to be used."""
-    default_minting_fee: int
-    """The fee to be paid when minting a license."""
-    expiration: int
-    """The expiration period of the license."""
-    commercial_use: bool
-    """Whether commercial use is allowed."""
-    commercial_attribution: bool
-    """Whether commercial attribution is required."""
-    commercializer_checker: Address
-    """The address of the commercializer checker contract."""
-    commercializer_checker_data: str
-    """Percentage of revenue that must be shared with the licensor. Must be between 0 and 100."""
-    commercial_rev_share: int
-    """Percentage of revenue that must be shared with the licensor."""
-    commercial_rev_ceiling: int
-    """The maximum revenue that can be collected from commercial use."""
-    derivatives_allowed: bool
-    """Whether derivatives are allowed."""
-    derivatives_attribution: bool
-    """Whether attribution is required for derivatives."""
-    derivatives_approval: bool
-    """Whether approval is required for derivatives."""
-    derivatives_reciprocal: bool
-    """Whether derivatives must have the same license terms."""
-    derivative_rev_ceiling: int
-    """The maximum revenue that can be collected from derivatives."""
-    currency: Address
-    """The ERC20 token to be used to pay the minting fee."""
-    uri: str
-    """The URI of the license terms."""
-
-
-class NonCommercialSocialRemixingRequest(TypedDict, total=False):
-    """Request parameters for non-commercial social remixing license."""
-
-    override: LicenseTermsOverride
-    """Optional overrides for the default license terms."""
-
-
-class CommercialUseRequest(TypedDict, total=False):
-    """Request parameters for commercial use license."""
-
-    default_minting_fee: int
-    """The fee to be paid when minting a license."""
-    currency: Address
-    """The ERC20 token to be used to pay the minting fee."""
-    royalty_policy: RoyaltyPolicyInput
-    """The type of royalty policy to be used. Default is LAP."""
-    override: LicenseTermsOverride
-    """Optional overrides for the default license terms."""
-
-
-class CommercialRemixRequest(TypedDict, total=False):
-    """Request parameters for commercial remix license."""
-
-    default_minting_fee: int
-    """The fee to be paid when minting a license."""
-    commercial_rev_share: int
-    """Percentage of revenue that must be shared with the licensor. Must be between 0 and 100."""
-    currency: Address
-    """The ERC20 token to be used to pay the minting fee."""
-    royalty_policy: RoyaltyPolicyInput
-    """The type of royalty policy to be used. Default is LAP."""
-    override: LicenseTermsOverride
-    """Optional overrides for the default license terms."""
-
-
-class CreativeCommonsAttributionRequest(TypedDict, total=False):
-    """Request parameters for creative commons attribution license."""
-
-    currency: Address
-    """The ERC20 token to be used to pay the minting fee."""
-    royalty_policy: RoyaltyPolicyInput
-    """The type of royalty policy to be used. Default is LAP."""
-    override: LicenseTermsOverride
-    """Optional overrides for the default license terms."""
+def _apply_override(
+    base: LicenseTermsInput, override: Optional[LicenseTermsOverride]
+) -> LicenseTermsInput:
+    """Apply override values to base license terms, ignoring None values."""
+    if not override:
+        return base
+    # Filter out None values from override
+    overrides = {k: v for k, v in asdict(override).items() if v is not None}
+    return replace(base, **overrides)
 
 
 # PIL URIs for off-chain terms
@@ -132,25 +33,25 @@ PIL_URIS = {
 }
 
 # Common default values for license terms
-COMMON_DEFAULTS: LicenseTerms = {
-    "transferable": True,
-    "royaltyPolicy": ZERO_ADDRESS,
-    "defaultMintingFee": 0,
-    "expiration": 0,
-    "commercialUse": False,
-    "commercialAttribution": False,
-    "commercializerChecker": ZERO_ADDRESS,
-    "commercializerCheckerData": ZERO_ADDRESS,
-    "commercialRevShare": 0,
-    "commercialRevCeiling": 0,
-    "derivativesAllowed": False,
-    "derivativesAttribution": False,
-    "derivativesApproval": False,
-    "derivativesReciprocal": False,
-    "derivativeRevCeiling": 0,
-    "currency": ZERO_ADDRESS,
-    "uri": "",
-}
+COMMON_DEFAULTS: LicenseTermsInput = LicenseTermsInput(
+    transferable=True,
+    royalty_policy=ZERO_ADDRESS,
+    default_minting_fee=0,
+    expiration=0,
+    commercial_use=False,
+    commercial_attribution=False,
+    commercializer_checker=ZERO_ADDRESS,
+    commercializer_checker_data=ZERO_ADDRESS,
+    commercial_rev_share=0,
+    commercial_rev_ceiling=0,
+    derivatives_allowed=False,
+    derivatives_attribution=False,
+    derivatives_approval=False,
+    derivatives_reciprocal=False,
+    derivative_rev_ceiling=0,
+    currency=ZERO_ADDRESS,
+    uri="",
+)
 
 
 class PILFlavorError(Exception):
@@ -180,99 +81,49 @@ class PILFlavor:
         remix_license = PILFlavor.non_commercial_social_remixing()
     """
 
-    _non_commercial_social_remixing_pil: LicenseTerms = {
-        **COMMON_DEFAULTS,
-        "commercialUse": False,
-        "commercialAttribution": False,
-        "derivativesAllowed": True,
-        "derivativesAttribution": True,
-        "derivativesApproval": False,
-        "derivativesReciprocal": True,
-        "uri": PIL_URIS["NCSR"],
-    }
+    _non_commercial_social_remixing_pil = replace(
+        COMMON_DEFAULTS,
+        commercial_use=False,
+        commercial_attribution=False,
+        derivatives_allowed=True,
+        derivatives_attribution=True,
+        derivatives_approval=False,
+        derivatives_reciprocal=True,
+        uri=PIL_URIS["NCSR"],
+    )
 
-    _commercial_use: LicenseTerms = {
-        **COMMON_DEFAULTS,
-        "commercialUse": True,
-        "commercialAttribution": True,
-        "derivativesAllowed": False,
-        "derivativesAttribution": False,
-        "derivativesApproval": False,
-        "derivativesReciprocal": False,
-        "uri": PIL_URIS["COMMERCIAL_USE"],
-    }
+    _commercial_use = replace(
+        COMMON_DEFAULTS,
+        commercial_use=True,
+        commercial_attribution=True,
+        derivatives_allowed=False,
+        derivatives_attribution=False,
+        derivatives_approval=False,
+        derivatives_reciprocal=False,
+        uri=PIL_URIS["COMMERCIAL_USE"],
+    )
 
-    _commercial_remix: LicenseTerms = {
-        **COMMON_DEFAULTS,
-        "commercialUse": True,
-        "commercialAttribution": True,
-        "derivativesAllowed": True,
-        "derivativesAttribution": True,
-        "derivativesApproval": False,
-        "derivativesReciprocal": True,
-        "uri": PIL_URIS["COMMERCIAL_REMIX"],
-    }
+    _commercial_remix = replace(
+        COMMON_DEFAULTS,
+        commercial_use=True,
+        commercial_attribution=True,
+        derivatives_allowed=True,
+        derivatives_attribution=True,
+        derivatives_approval=False,
+        derivatives_reciprocal=True,
+        uri=PIL_URIS["COMMERCIAL_REMIX"],
+    )
 
-    _creative_commons_attribution: LicenseTerms = {
-        **COMMON_DEFAULTS,
-        "commercialUse": True,
-        "commercialAttribution": True,
-        "derivativesAllowed": True,
-        "derivativesAttribution": True,
-        "derivativesApproval": False,
-        "derivativesReciprocal": True,
-        "uri": PIL_URIS["CC_BY"],
-    }
-
-    # Mapping from snake_case to camelCase for license terms
-    _OVERRIDE_KEY_MAP = {
-        "transferable": "transferable",
-        "royalty_policy": "royaltyPolicy",
-        "default_minting_fee": "defaultMintingFee",
-        "expiration": "expiration",
-        "commercial_use": "commercialUse",
-        "commercial_attribution": "commercialAttribution",
-        "commercializer_checker": "commercializerChecker",
-        "commercializer_checker_data": "commercializerCheckerData",
-        "commercial_rev_share": "commercialRevShare",
-        "commercial_rev_ceiling": "commercialRevCeiling",
-        "derivatives_allowed": "derivativesAllowed",
-        "derivatives_attribution": "derivativesAttribution",
-        "derivatives_approval": "derivativesApproval",
-        "derivatives_reciprocal": "derivativesReciprocal",
-        "derivative_rev_ceiling": "derivativeRevCeiling",
-        "currency": "currency",
-        "uri": "uri",
-    }
-
-    @staticmethod
-    def _convert_override_to_camel_case(override: LicenseTermsOverride) -> dict:
-        """Convert snake_case override keys to camelCase for internal use."""
-        result = {}
-        for key, value in override.items():
-            camel_key = PILFlavor._OVERRIDE_KEY_MAP.get(key)
-            if camel_key:
-                result[camel_key] = value
-        return result
-
-    @staticmethod
-    def _convert_camel_case_to_snake_case(camel_case_key: str) -> str:
-        """Convert camelCase to snake_case for internal use."""
-        for key, value in PILFlavor._OVERRIDE_KEY_MAP.items():
-            if value == camel_case_key:
-                return key
-        raise ValueError(f"Unknown camelCase key: {camel_case_key}")  # pragma: no cover
-
-    @staticmethod
-    def _convert_camel_case_to_snake_case_license_terms(
-        terms: LicenseTerms,
-    ) -> LicenseTermsInput:
-        """Convert license terms to LicenseTermsInput."""
-        result = {}
-        for key, value in terms.items():
-            if key in PILFlavor._OVERRIDE_KEY_MAP:
-                result[PILFlavor._convert_camel_case_to_snake_case(key)] = value
-        return cast(LicenseTermsInput, result)
+    _creative_commons_attribution = replace(
+        COMMON_DEFAULTS,
+        commercial_use=True,
+        commercial_attribution=True,
+        derivatives_allowed=True,
+        derivatives_attribution=True,
+        derivatives_approval=False,
+        derivatives_reciprocal=True,
+        uri=PIL_URIS["CC_BY"],
+    )
 
     @staticmethod
     def non_commercial_social_remixing(
@@ -286,13 +137,8 @@ class PILFlavor:
         :param override: Optional overrides for the default license terms.
         :return: The license terms dictionary.
         """
-        terms = {**PILFlavor._non_commercial_social_remixing_pil}
-        if override:
-            terms.update(PILFlavor._convert_override_to_camel_case(override))
-        validated_terms = PILFlavor.validate_license_terms(terms)
-        return PILFlavor._convert_camel_case_to_snake_case_license_terms(
-            validated_terms
-        )
+        terms = _apply_override(PILFlavor._non_commercial_social_remixing_pil, override)
+        return PILFlavor.validate_license_terms(terms)
 
     @staticmethod
     def commercial_use(
@@ -312,18 +158,14 @@ class PILFlavor:
         :param override: Optional overrides for the default license terms.
         :return: The license terms dictionary.
         """
-        terms = {
-            **PILFlavor._commercial_use,
-            "defaultMintingFee": default_minting_fee,
-            "currency": currency,
-            "royaltyPolicy": royalty_policy,
-        }
-        if override:
-            terms.update(PILFlavor._convert_override_to_camel_case(override))
-        validated_terms = PILFlavor.validate_license_terms(terms)
-        return PILFlavor._convert_camel_case_to_snake_case_license_terms(
-            validated_terms
+        base = replace(
+            PILFlavor._commercial_use,
+            default_minting_fee=default_minting_fee,
+            currency=currency,
+            royalty_policy=royalty_policy,
         )
+        terms = _apply_override(base, override)
+        return PILFlavor.validate_license_terms(terms)
 
     @staticmethod
     def commercial_remix(
@@ -345,19 +187,15 @@ class PILFlavor:
         :param override: Optional overrides for the default license terms.
         :return: The license terms dictionary.
         """
-        terms = {
-            **PILFlavor._commercial_remix,
-            "defaultMintingFee": default_minting_fee,
-            "currency": currency,
-            "commercialRevShare": commercial_rev_share,
-            "royaltyPolicy": royalty_policy,
-        }
-        if override:
-            terms.update(PILFlavor._convert_override_to_camel_case(override))
-        validated_terms = PILFlavor.validate_license_terms(terms)
-        return PILFlavor._convert_camel_case_to_snake_case_license_terms(
-            validated_terms
+        base = replace(
+            PILFlavor._commercial_remix,
+            default_minting_fee=default_minting_fee,
+            currency=currency,
+            commercial_rev_share=commercial_rev_share,
+            royalty_policy=royalty_policy,
         )
+        terms = _apply_override(base, override)
+        return PILFlavor.validate_license_terms(terms)
 
     @staticmethod
     def creative_commons_attribution(
@@ -375,20 +213,16 @@ class PILFlavor:
         :param override: Optional overrides for the default license terms.
         :return: The license terms dictionary.
         """
-        terms = {
-            **PILFlavor._creative_commons_attribution,
-            "currency": currency,
-            "royaltyPolicy": royalty_policy,
-        }
-        if override:
-            terms.update(PILFlavor._convert_override_to_camel_case(override))
-        validated_terms = PILFlavor.validate_license_terms(terms)
-        return PILFlavor._convert_camel_case_to_snake_case_license_terms(
-            validated_terms
+        base = replace(
+            PILFlavor._creative_commons_attribution,
+            currency=currency,
+            royalty_policy=royalty_policy,
         )
+        terms = _apply_override(base, override)
+        return PILFlavor.validate_license_terms(terms)
 
     @staticmethod
-    def validate_license_terms(params: dict) -> LicenseTerms:
+    def validate_license_terms(params: LicenseTermsInput) -> LicenseTermsInput:
         """
         Validates and normalizes license terms.
 
@@ -396,32 +230,14 @@ class PILFlavor:
         :return: The validated and normalized license terms.
         :raises PILFlavorError: If validation fails.
         """
-        normalized: LicenseTerms = {
-            "transferable": params.get("transferable", True),
-            "royaltyPolicy": royalty_policy_input_to_address(
-                params.get("royaltyPolicy")
-            ),
-            "defaultMintingFee": int(params.get("defaultMintingFee", 0)),
-            "expiration": int(params.get("expiration", 0)),
-            "commercialUse": params.get("commercialUse", False),
-            "commercialAttribution": params.get("commercialAttribution", False),
-            "commercializerChecker": params.get("commercializerChecker", ZERO_ADDRESS),
-            "commercializerCheckerData": params.get(
-                "commercializerCheckerData", ZERO_ADDRESS
-            ),
-            "commercialRevShare": params.get("commercialRevShare", 0),
-            "commercialRevCeiling": int(params.get("commercialRevCeiling", 0)),
-            "derivativesAllowed": params.get("derivativesAllowed", False),
-            "derivativesAttribution": params.get("derivativesAttribution", False),
-            "derivativesApproval": params.get("derivativesApproval", False),
-            "derivativesReciprocal": params.get("derivativesReciprocal", False),
-            "derivativeRevCeiling": int(params.get("derivativeRevCeiling", 0)),
-            "currency": validate_address(params.get("currency", ZERO_ADDRESS)),
-            "uri": params.get("uri", ""),
-        }
+        # Normalize royalty_policy to address
+        royalty_policy = royalty_policy_input_to_address(params.royalty_policy)
+        currency = validate_address(params.currency)
 
-        royalty_policy = normalized["royaltyPolicy"]
-        currency = normalized["currency"]
+        normalized = replace(
+            params,
+            royalty_policy=royalty_policy,
+        )
 
         # Validate royalty policy and currency relationship
         if royalty_policy != ZERO_ADDRESS and currency == ZERO_ADDRESS:
@@ -429,16 +245,13 @@ class PILFlavor:
                 "royalty_policy is not zero address and currency cannot be zero address."
             )
 
-        # Validate defaultMintingFee
-        if normalized["defaultMintingFee"] < 0:
+        # Validate default_minting_fee
+        if normalized.default_minting_fee < 0:
             raise PILFlavorError(
                 "default_minting_fee should be greater than or equal to 0."
             )
 
-        if (
-            normalized["defaultMintingFee"] > 0
-            and normalized["royaltyPolicy"] == ZERO_ADDRESS
-        ):
+        if normalized.default_minting_fee > 0 and royalty_policy == ZERO_ADDRESS:
             raise PILFlavorError(
                 "royalty_policy is required when default_minting_fee is greater than 0."
             )
@@ -447,54 +260,53 @@ class PILFlavor:
         PILFlavor._verify_commercial_use(normalized)
         PILFlavor._verify_derivatives(normalized)
 
-        if (
-            normalized["commercialRevShare"] > 100
-            or normalized["commercialRevShare"] < 0
-        ):
+        if normalized.commercial_rev_share > 100 or normalized.commercial_rev_share < 0:
             raise PILFlavorError("commercial_rev_share must be between 0 and 100.")
 
         return normalized
 
     @staticmethod
-    def _verify_commercial_use(terms: LicenseTerms) -> None:
+    def _verify_commercial_use(terms: LicenseTermsInput) -> None:
         """Verify commercial use related fields."""
-        if not terms["commercialUse"]:
+        royalty_policy = royalty_policy_input_to_address(terms.royalty_policy)
+
+        if not terms.commercial_use:
             commercial_fields = [
-                ("commercialAttribution", terms["commercialAttribution"]),
+                ("commercial_attribution", terms.commercial_attribution),
                 (
-                    "commercializerChecker",
-                    terms["commercializerChecker"] != ZERO_ADDRESS,
+                    "commercializer_checker",
+                    terms.commercializer_checker != ZERO_ADDRESS,
                 ),
-                ("commercialRevShare", terms["commercialRevShare"] > 0),
-                ("commercialRevCeiling", terms["commercialRevCeiling"] > 0),
-                ("derivativeRevCeiling", terms["derivativeRevCeiling"] > 0),
-                ("royaltyPolicy", terms["royaltyPolicy"] != ZERO_ADDRESS),
+                ("commercial_rev_share", terms.commercial_rev_share > 0),
+                ("commercial_rev_ceiling", terms.commercial_rev_ceiling > 0),
+                ("derivative_rev_ceiling", terms.derivative_rev_ceiling > 0),
+                ("royalty_policy", royalty_policy != ZERO_ADDRESS),
             ]
 
             for field, value in commercial_fields:
                 if value:
                     raise PILFlavorError(
-                        f"cannot add {PILFlavor._convert_camel_case_to_snake_case(field)} when commercial_use is False."
+                        f"cannot add {field} when commercial_use is False."
                     )
         else:
-            if terms["royaltyPolicy"] == ZERO_ADDRESS:
+            if royalty_policy == ZERO_ADDRESS:
                 raise PILFlavorError(
                     "royalty_policy is required when commercial_use is True."
                 )
 
     @staticmethod
-    def _verify_derivatives(terms: LicenseTerms) -> None:
+    def _verify_derivatives(terms: LicenseTermsInput) -> None:
         """Verify derivatives related fields."""
-        if not terms["derivativesAllowed"]:
+        if not terms.derivatives_allowed:
             derivative_fields = [
-                ("derivativesAttribution", terms["derivativesAttribution"]),
-                ("derivativesApproval", terms["derivativesApproval"]),
-                ("derivativesReciprocal", terms["derivativesReciprocal"]),
-                ("derivativeRevCeiling", terms["derivativeRevCeiling"] > 0),
+                ("derivatives_attribution", terms.derivatives_attribution),
+                ("derivatives_approval", terms.derivatives_approval),
+                ("derivatives_reciprocal", terms.derivatives_reciprocal),
+                ("derivative_rev_ceiling", terms.derivative_rev_ceiling > 0),
             ]
 
             for field, value in derivative_fields:
                 if value:
                     raise PILFlavorError(
-                        f"cannot add {PILFlavor._convert_camel_case_to_snake_case(field)} when derivatives_allowed is False."
+                        f"cannot add {field} when derivatives_allowed is False."
                     )

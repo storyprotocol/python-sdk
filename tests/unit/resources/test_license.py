@@ -1,4 +1,4 @@
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from typing import Callable
 from unittest.mock import patch
 
@@ -93,9 +93,9 @@ class TestPILTermsRegistration:
                 uri="",
             )
             assert (
-                mock_build_registerLicenseTerms_transaction.call_args[0][0][
-                    "commercialRevShare"
-                ]
+                mock_build_registerLicenseTerms_transaction.call_args[0][
+                    0
+                ].commercial_rev_share
                 == 90 * 10**6
             )
             assert "tx_hash" in response
@@ -178,6 +178,150 @@ class TestPILTermsRegistration:
                     currency=ADDRESS,
                     uri="",
                 )
+
+    def test_register_non_commercial_social_remixing_pil_success(
+        self, license: License
+    ):
+        with patch.object(
+            license.license_template_client, "getLicenseTermsId", return_value=0
+        ), patch.object(
+            license.royalty_module_client,
+            "isWhitelistedRoyaltyPolicy",
+            return_value=True,
+        ), patch.object(
+            license.royalty_module_client,
+            "isWhitelistedRoyaltyToken",
+            return_value=True,
+        ), patch.object(
+            license.license_template_client,
+            "build_registerLicenseTerms_transaction",
+            return_value={
+                "from": ADDRESS,
+                "nonce": 1,
+                "gas": 2000000,
+                "gasPrice": Web3.to_wei("100", "gwei"),
+            },
+        ) as mock_build_registerLicenseTerms_transaction:
+
+            license.register_pil_terms(
+                **asdict(PILFlavor.non_commercial_social_remixing())
+            )
+        assert (
+            mock_build_registerLicenseTerms_transaction.call_args[0][0]
+            == PILFlavor.non_commercial_social_remixing()
+        )
+
+    def test_register_commercial_remix_pil_success(self, license: License):
+        with patch.object(
+            license.license_template_client, "getLicenseTermsId", return_value=0
+        ), patch.object(
+            license.royalty_module_client,
+            "isWhitelistedRoyaltyPolicy",
+            return_value=True,
+        ), patch.object(
+            license.royalty_module_client,
+            "isWhitelistedRoyaltyToken",
+            return_value=True,
+        ), patch.object(
+            license.license_template_client,
+            "build_registerLicenseTerms_transaction",
+            return_value={
+                "from": ADDRESS,
+                "nonce": 1,
+                "gas": 2000000,
+                "gasPrice": Web3.to_wei("100", "gwei"),
+            },
+        ) as mock_build_registerLicenseTerms_transaction:
+
+            license.register_pil_terms(
+                **asdict(
+                    PILFlavor.commercial_remix(
+                        default_minting_fee=1513,
+                        currency=ADDRESS,
+                        commercial_rev_share=90,
+                    )
+                )
+            )
+        assert mock_build_registerLicenseTerms_transaction.call_args[0][0] == replace(
+            PILFlavor.commercial_remix(
+                default_minting_fee=1513,
+                currency=ADDRESS,
+                commercial_rev_share=90,
+            ),
+            commercial_rev_share=90 * 10**6,
+        )
+
+    def test_register_commercial_use_pil_success(self, license: License):
+        with patch.object(
+            license.license_template_client, "getLicenseTermsId", return_value=0
+        ), patch.object(
+            license.royalty_module_client,
+            "isWhitelistedRoyaltyPolicy",
+            return_value=True,
+        ), patch.object(
+            license.royalty_module_client,
+            "isWhitelistedRoyaltyToken",
+            return_value=True,
+        ), patch.object(
+            license.license_template_client,
+            "build_registerLicenseTerms_transaction",
+            return_value={
+                "from": ADDRESS,
+                "nonce": 1,
+                "gas": 2000000,
+                "gasPrice": Web3.to_wei("100", "gwei"),
+            },
+        ) as mock_build_registerLicenseTerms_transaction:
+
+            license.register_pil_terms(
+                **asdict(
+                    PILFlavor.commercial_use(
+                        default_minting_fee=1513,
+                        currency=ADDRESS,
+                    )
+                )
+            )
+        assert mock_build_registerLicenseTerms_transaction.call_args[0][
+            0
+        ] == PILFlavor.commercial_use(
+            default_minting_fee=1513,
+            currency=ADDRESS,
+        )
+
+    def test_register_creative_commons_attribution_pil_success(self, license: License):
+        with patch.object(
+            license.license_template_client, "getLicenseTermsId", return_value=0
+        ), patch.object(
+            license.royalty_module_client,
+            "isWhitelistedRoyaltyPolicy",
+            return_value=True,
+        ), patch.object(
+            license.royalty_module_client,
+            "isWhitelistedRoyaltyToken",
+            return_value=True,
+        ), patch.object(
+            license.license_template_client,
+            "build_registerLicenseTerms_transaction",
+            return_value={
+                "from": ADDRESS,
+                "nonce": 1,
+                "gas": 2000000,
+                "gasPrice": Web3.to_wei("100", "gwei"),
+            },
+        ) as mock_build_registerLicenseTerms_transaction:
+
+            license.register_pil_terms(
+                **asdict(
+                    PILFlavor.creative_commons_attribution(
+                        currency=ADDRESS,
+                    )
+                )
+            )
+        assert mock_build_registerLicenseTerms_transaction.call_args[0][
+            0
+        ] == PILFlavor.creative_commons_attribution(
+            currency=ADDRESS,
+        )
 
 
 class TestNonComSocialRemixingPIL:

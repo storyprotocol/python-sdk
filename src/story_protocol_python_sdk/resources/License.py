@@ -1,3 +1,5 @@
+from dataclasses import asdict
+
 from ens.ens import Address, HexStr
 from typing_extensions import deprecated
 from web3 import Web3
@@ -27,7 +29,7 @@ from story_protocol_python_sdk.utils.licensing_config_data import (
     LicensingConfig,
     LicensingConfigData,
 )
-from story_protocol_python_sdk.utils.pil_flavor import LicenseTerms, PILFlavor
+from story_protocol_python_sdk.utils.pil_flavor import PILFlavor
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 from story_protocol_python_sdk.utils.validation import (
     get_revenue_share,
@@ -56,11 +58,11 @@ class License:
         self.module_registry_client = ModuleRegistryClient(web3)
         self.royalty_module_client = RoyaltyModuleClient(web3)
 
-    def _get_license_terms_id(self, license_terms: LicenseTerms) -> int:
+    def _get_license_terms_id(self, license_terms: dict) -> int:
         """
         Get the ID of the license terms.
 
-        :param license_terms LicenseTerms: The license terms.
+        :param license_terms dict: The license terms.
         :return int: The ID of the license terms.
         """
         return self.license_template_client.getLicenseTermsId(license_terms)
@@ -237,7 +239,7 @@ class License:
         """
         validated_license_terms = PILFlavor.validate_license_terms(license_terms)
         validated_license_terms.commercial_rev_share = get_revenue_share(
-            validated_license_terms.commercial_rev_share * 10**6
+            validated_license_terms.commercial_rev_share
         )
         if validated_license_terms.royalty_policy != ZERO_ADDRESS:
             is_whitelisted = self.royalty_module_client.isWhitelistedRoyaltyPolicy(
@@ -253,7 +255,7 @@ class License:
             if not is_whitelisted:
                 raise ValueError("The currency is not whitelisted.")
 
-        license_terms_id = self._get_license_terms_id(validated_license_terms)
+        license_terms_id = self._get_license_terms_id(asdict(validated_license_terms))
         if (license_terms_id is not None) and (license_terms_id != 0):
             return {"license_terms_id": license_terms_id}
 

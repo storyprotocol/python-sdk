@@ -1,7 +1,9 @@
 from typing import Optional, TypedDict
 
 from ens.ens import Address
+from typing_extensions import cast
 
+from story_protocol_python_sdk.types.resource.License import LicenseTermsInput
 from story_protocol_python_sdk.types.resource.Royalty import RoyaltyPolicyInput
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
 from story_protocol_python_sdk.utils.royalty import royalty_policy_input_to_address
@@ -262,9 +264,20 @@ class PILFlavor:
         raise ValueError(f"Unknown camelCase key: {camel_case_key}")  # pragma: no cover
 
     @staticmethod
+    def _convert_camel_case_to_snake_case_license_terms(
+        terms: LicenseTerms,
+    ) -> LicenseTermsInput:
+        """Convert license terms to LicenseTermsInput."""
+        result = {}
+        for key, value in terms.items():
+            if key in PILFlavor._OVERRIDE_KEY_MAP:
+                result[PILFlavor._convert_camel_case_to_snake_case(key)] = value
+        return cast(LicenseTermsInput, result)
+
+    @staticmethod
     def non_commercial_social_remixing(
         override: Optional[LicenseTermsOverride] = None,
-    ) -> LicenseTerms:
+    ) -> LicenseTermsInput:
         """
         Gets the values to create a Non-Commercial Social Remixing license terms flavor.
 
@@ -276,7 +289,10 @@ class PILFlavor:
         terms = {**PILFlavor._non_commercial_social_remixing_pil}
         if override:
             terms.update(PILFlavor._convert_override_to_camel_case(override))
-        return PILFlavor.validate_license_terms(terms)
+        validated_terms = PILFlavor.validate_license_terms(terms)
+        return PILFlavor._convert_camel_case_to_snake_case_license_terms(
+            validated_terms
+        )
 
     @staticmethod
     def commercial_use(
@@ -284,7 +300,7 @@ class PILFlavor:
         currency: Address,
         royalty_policy: Optional[RoyaltyPolicyInput] = None,
         override: Optional[LicenseTermsOverride] = None,
-    ) -> LicenseTerms:
+    ) -> LicenseTermsInput:
         """
         Gets the values to create a Commercial Use license terms flavor.
 
@@ -304,7 +320,10 @@ class PILFlavor:
         }
         if override:
             terms.update(PILFlavor._convert_override_to_camel_case(override))
-        return PILFlavor.validate_license_terms(terms)
+        validated_terms = PILFlavor.validate_license_terms(terms)
+        return PILFlavor._convert_camel_case_to_snake_case_license_terms(
+            validated_terms
+        )
 
     @staticmethod
     def commercial_remix(
@@ -313,7 +332,7 @@ class PILFlavor:
         commercial_rev_share: int,
         royalty_policy: Optional[RoyaltyPolicyInput] = None,
         override: Optional[LicenseTermsOverride] = None,
-    ) -> LicenseTerms:
+    ) -> LicenseTermsInput:
         """
         Gets the values to create a Commercial Remixing license terms flavor.
 
@@ -335,14 +354,17 @@ class PILFlavor:
         }
         if override:
             terms.update(PILFlavor._convert_override_to_camel_case(override))
-        return PILFlavor.validate_license_terms(terms)
+        validated_terms = PILFlavor.validate_license_terms(terms)
+        return PILFlavor._convert_camel_case_to_snake_case_license_terms(
+            validated_terms
+        )
 
     @staticmethod
     def creative_commons_attribution(
         currency: Address,
         royalty_policy: Optional[RoyaltyPolicyInput] = None,
         override: Optional[LicenseTermsOverride] = None,
-    ) -> LicenseTerms:
+    ) -> LicenseTermsInput:
         """
         Gets the values to create a Creative Commons Attribution (CC-BY) license terms flavor.
 
@@ -360,7 +382,10 @@ class PILFlavor:
         }
         if override:
             terms.update(PILFlavor._convert_override_to_camel_case(override))
-        return PILFlavor.validate_license_terms(terms)
+        validated_terms = PILFlavor.validate_license_terms(terms)
+        return PILFlavor._convert_camel_case_to_snake_case_license_terms(
+            validated_terms
+        )
 
     @staticmethod
     def validate_license_terms(params: dict) -> LicenseTerms:

@@ -1,3 +1,4 @@
+from dataclasses import asdict
 from typing import Callable
 from unittest.mock import patch
 
@@ -10,6 +11,7 @@ from story_protocol_python_sdk import (
     ZERO_ADDRESS,
     License,
     LicensingConfig,
+    PILFlavor,
     PILFlavorError,
 )
 from tests.unit.fixtures.data import ADDRESS, CHAIN_ID, IP_ID, TX_HASH
@@ -38,23 +40,13 @@ class TestPILTermsRegistration:
         ):
 
             response = license.register_pil_terms(
-                default_minting_fee=1513,
-                currency=ADDRESS,
-                royalty_policy=ADDRESS,
-                transferable=False,
-                expiration=0,
-                commercial_use=True,
-                commercial_attribution=False,
-                commercializer_checker=ZERO_ADDRESS,
-                commercializer_checker_data="0x",
-                commercial_rev_share=0,
-                commercial_rev_ceiling=0,
-                derivatives_allowed=False,
-                derivatives_attribution=False,
-                derivatives_approval=False,
-                derivatives_reciprocal=False,
-                derivative_rev_ceiling=0,
-                uri="",
+                **asdict(
+                    PILFlavor.commercial_use(
+                        default_minting_fee=1513,
+                        currency=ADDRESS,
+                        royalty_policy=ADDRESS,
+                    )
+                )
             )
             assert response["license_terms_id"] == 1
             assert "tx_hash" not in response

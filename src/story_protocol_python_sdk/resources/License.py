@@ -1,5 +1,3 @@
-from typing import cast
-
 from ens.ens import Address, HexStr
 from typing_extensions import deprecated
 from web3 import Web3
@@ -23,6 +21,7 @@ from story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client import (
     RoyaltyModuleClient,
 )
 from story_protocol_python_sdk.types.common import RevShareType
+from story_protocol_python_sdk.types.resource.License import LicenseTermsInput
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
 from story_protocol_python_sdk.utils.licensing_config_data import (
     LicensingConfig,
@@ -112,22 +111,22 @@ class License:
         """
         try:
             return self._register_license_terms_helper(
-                license_terms=LicenseTerms(
+                license_terms=LicenseTermsInput(
                     transferable=transferable,
-                    royaltyPolicy=royalty_policy,
-                    defaultMintingFee=default_minting_fee,
+                    royalty_policy=royalty_policy,
+                    default_minting_fee=default_minting_fee,
                     expiration=expiration,
-                    commercialUse=commercial_use,
-                    commercialAttribution=commercial_attribution,
-                    commercializerChecker=commercializer_checker,
-                    commercializerCheckerData=commercializer_checker_data,
-                    commercialRevShare=commercial_rev_share,
-                    commercialRevCeiling=commercial_rev_ceiling,
-                    derivativesAllowed=derivatives_allowed,
-                    derivativesAttribution=derivatives_attribution,
-                    derivativesApproval=derivatives_approval,
-                    derivativesReciprocal=derivatives_reciprocal,
-                    derivativeRevCeiling=derivative_rev_ceiling,
+                    commercial_use=commercial_use,
+                    commercial_attribution=commercial_attribution,
+                    commercializer_checker=commercializer_checker,
+                    commercializer_checker_data=commercializer_checker_data,
+                    commercial_rev_share=commercial_rev_share,
+                    commercial_rev_ceiling=commercial_rev_ceiling,
+                    derivatives_allowed=derivatives_allowed,
+                    derivatives_attribution=derivatives_attribution,
+                    derivatives_approval=derivatives_approval,
+                    derivatives_reciprocal=derivatives_reciprocal,
+                    derivative_rev_ceiling=derivative_rev_ceiling,
                     currency=currency,
                     uri=uri,
                 ),
@@ -137,7 +136,9 @@ class License:
             raise e
 
     @deprecated(
-        "Use register_pil_terms(PILFlavor.non_commercial_social_remixing()) instead.",
+        "Use register_pil_terms(**asdict(PILFlavor.non_commercial_social_remixing())) instead. "
+        "In the next major version, register_pil_terms will accept LicenseTermsInput directly, "
+        "so you can use register_pil_terms(PILFlavor.non_commercial_social_remixing()) without asdict.",
     )
     def register_non_com_social_remixing_pil(
         self, tx_options: dict | None = None
@@ -156,7 +157,9 @@ class License:
             raise e
 
     @deprecated(
-        "Use register_pil_terms(PILFlavor.commercial_use(default_minting_fee, currency, royalty_policy)) instead.",
+        "Use register_pil_terms(**asdict(PILFlavor.commercial_use(default_minting_fee, currency, royalty_policy))) instead. "
+        "In the next major version, register_pil_terms will accept LicenseTermsInput directly, "
+        "so you can use register_pil_terms(PILFlavor.commercial_use(...)) without asdict.",
     )
     def register_commercial_use_pil(
         self,
@@ -187,7 +190,9 @@ class License:
             raise e
 
     @deprecated(
-        "Use register_pil_terms(PILFlavor.commercial_remix(default_minting_fee, currency, commercial_rev_share, royalty_policy)) instead.",
+        "Use register_pil_terms(**asdict(PILFlavor.commercial_remix(default_minting_fee, currency, commercial_rev_share, royalty_policy))) instead. "
+        "In the next major version, register_pil_terms will accept LicenseTermsInput directly, "
+        "so you can use register_pil_terms(PILFlavor.commercial_remix(...)) without asdict.",
     )
     def register_commercial_remix_pil(
         self,
@@ -221,31 +226,29 @@ class License:
             raise e
 
     def _register_license_terms_helper(
-        self, license_terms: LicenseTerms, tx_options: dict | None = None
+        self, license_terms: LicenseTermsInput, tx_options: dict | None = None
     ):
         """
         Validate the license terms.
 
-        :param license_terms LicenseTerms: The license terms.
+        :param license_terms LicenseTermsInput: The license terms.
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash and the license terms ID.
         """
-        validated_license_terms = PILFlavor.validate_license_terms(
-            cast(dict, license_terms)
+        validated_license_terms = PILFlavor.validate_license_terms(license_terms)
+        validated_license_terms.commercial_rev_share = get_revenue_share(
+            validated_license_terms.commercial_rev_share * 10**6
         )
-        validated_license_terms["commercialRevShare"] = (
-            validated_license_terms["commercialRevShare"] * 10**6
-        )
-        if validated_license_terms["royaltyPolicy"] != ZERO_ADDRESS:
+        if validated_license_terms.royalty_policy != ZERO_ADDRESS:
             is_whitelisted = self.royalty_module_client.isWhitelistedRoyaltyPolicy(
-                validated_license_terms["royaltyPolicy"]
+                validated_license_terms.royalty_policy
             )
             if not is_whitelisted:
                 raise ValueError("The royalty_policy is not whitelisted.")
 
-        if validated_license_terms["currency"] != ZERO_ADDRESS:
+        if validated_license_terms.currency != ZERO_ADDRESS:
             is_whitelisted = self.royalty_module_client.isWhitelistedRoyaltyToken(
-                validated_license_terms["currency"]
+                validated_license_terms.currency
             )
             if not is_whitelisted:
                 raise ValueError("The currency is not whitelisted.")

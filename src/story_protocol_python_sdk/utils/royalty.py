@@ -3,6 +3,7 @@
 from typing import List
 
 from ens.ens import Address
+from typing_extensions import cast
 
 from story_protocol_python_sdk.types.resource.Royalty import (
     NativeRoyaltyPolicy,
@@ -79,15 +80,17 @@ def royalty_policy_input_to_address(
     Raises:
         ValueError: If the custom address is invalid.
     """
+    print("--------------------------------")
+    print(input)
+    print(input == NativeRoyaltyPolicy.LAP)
+    print(input == NativeRoyaltyPolicy.LRP)
+    print("--------------------------------")
     if input is None:
         return ROYALTY_POLICY_LAP_ADDRESS
-
-    if isinstance(input, str):
-        return validate_address(input)
 
     if input == NativeRoyaltyPolicy.LAP:
         return ROYALTY_POLICY_LAP_ADDRESS
     elif input == NativeRoyaltyPolicy.LRP:
         return ROYALTY_POLICY_LRP_ADDRESS
-
-    return ROYALTY_POLICY_LAP_ADDRESS
+    else:
+        return validate_address(cast(str, input))

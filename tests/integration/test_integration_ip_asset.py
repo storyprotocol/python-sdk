@@ -1,3 +1,5 @@
+from dataclasses import asdict
+
 import pytest
 
 from story_protocol_python_sdk import (
@@ -8,9 +10,12 @@ from story_protocol_python_sdk import (
     IPMetadataInput,
     LicenseTermsDataInput,
     LicenseTermsInput,
+    LicenseTermsOverride,
     LicensingConfig,
     MintedNFT,
     MintNFT,
+    NativeRoyaltyPolicy,
+    PILFlavor,
     RoyaltyShareInput,
     StoryClient,
 )
@@ -114,8 +119,8 @@ class TestIPAssetDerivatives:
 
     @pytest.fixture(scope="module")
     def non_commercial_license(self, story_client: StoryClient):
-        license_register_response = (
-            story_client.License.register_non_com_social_remixing_pil()
+        license_register_response = story_client.License.register_pil_terms(
+            **asdict(PILFlavor.non_commercial_social_remixing())
         )
         no_commercial_license_terms_id = license_register_response["license_terms_id"]
         return no_commercial_license_terms_id
@@ -1234,24 +1239,9 @@ class TestRegisterIpAsset:
             ),
             license_terms_data=[
                 LicenseTermsDataInput(
-                    terms=LicenseTermsInput(
-                        transferable=True,
-                        royalty_policy=ROYALTY_POLICY,
-                        default_minting_fee=10000,
-                        expiration=1000,
-                        commercial_use=True,
-                        commercial_attribution=False,
-                        commercializer_checker=ZERO_ADDRESS,
-                        commercializer_checker_data=ZERO_HASH,
-                        commercial_rev_share=10,
-                        commercial_rev_ceiling=0,
-                        derivatives_allowed=True,
-                        derivatives_attribution=True,
-                        derivatives_approval=False,
-                        derivatives_reciprocal=True,
-                        derivative_rev_ceiling=0,
+                    terms=PILFlavor.commercial_use(
+                        default_minting_fee=10,
                         currency=WIP_TOKEN_ADDRESS,
-                        uri="test-minted-license-terms",
                     ),
                     licensing_config=LicensingConfig(
                         is_set=True,
@@ -1300,24 +1290,10 @@ class TestRegisterIpAsset:
             ),
             license_terms_data=[
                 LicenseTermsDataInput(
-                    terms=LicenseTermsInput(
-                        transferable=True,
-                        royalty_policy=ROYALTY_POLICY,
-                        default_minting_fee=10000,
-                        expiration=1000,
-                        commercial_use=True,
-                        commercial_attribution=False,
-                        commercializer_checker=ZERO_ADDRESS,
-                        commercializer_checker_data=ZERO_HASH,
-                        commercial_rev_share=10,
-                        commercial_rev_ceiling=0,
-                        derivatives_allowed=True,
-                        derivatives_attribution=True,
-                        derivatives_approval=False,
-                        derivatives_reciprocal=True,
-                        derivative_rev_ceiling=0,
+                    terms=PILFlavor.commercial_remix(
+                        default_minting_fee=10,
                         currency=WIP_TOKEN_ADDRESS,
-                        uri="test-minted-license-terms-with-royalty",
+                        commercial_rev_share=10,
                     ),
                     licensing_config=LicensingConfig(
                         is_set=True,
@@ -1382,24 +1358,8 @@ class TestRegisterIpAsset:
             ),
             license_terms_data=[
                 LicenseTermsDataInput(
-                    terms=LicenseTermsInput(
-                        transferable=True,
-                        royalty_policy=ROYALTY_POLICY,
-                        default_minting_fee=10000,
-                        expiration=1000,
-                        commercial_use=True,
-                        commercial_attribution=False,
-                        commercializer_checker=ZERO_ADDRESS,
-                        commercializer_checker_data=ZERO_HASH,
-                        commercial_rev_share=10,
-                        commercial_rev_ceiling=0,
-                        derivatives_allowed=True,
-                        derivatives_attribution=True,
-                        derivatives_approval=False,
-                        derivatives_reciprocal=True,
-                        derivative_rev_ceiling=0,
+                    terms=PILFlavor.creative_commons_attribution(
                         currency=WIP_TOKEN_ADDRESS,
-                        uri="test-mint-license-terms",
                     ),
                     licensing_config=LicensingConfig(
                         is_set=True,
@@ -1444,24 +1404,13 @@ class TestRegisterIpAsset:
             ),
             license_terms_data=[
                 LicenseTermsDataInput(
-                    terms=LicenseTermsInput(
-                        transferable=True,
-                        royalty_policy=ROYALTY_POLICY,
-                        default_minting_fee=10000,
-                        expiration=1000,
-                        commercial_use=True,
-                        commercial_attribution=False,
-                        commercializer_checker=ZERO_ADDRESS,
-                        commercializer_checker_data=ZERO_HASH,
-                        commercial_rev_share=10,
-                        commercial_rev_ceiling=0,
-                        derivatives_allowed=True,
-                        derivatives_attribution=True,
-                        derivatives_approval=False,
-                        derivatives_reciprocal=True,
-                        derivative_rev_ceiling=0,
-                        currency=WIP_TOKEN_ADDRESS,
-                        uri="test-mint-license-terms-with-royalty",
+                    terms=PILFlavor.non_commercial_social_remixing(
+                        override=LicenseTermsOverride(
+                            commercial_use=True,
+                            commercial_attribution=True,
+                            royalty_policy=NativeRoyaltyPolicy.LRP,
+                            currency=WIP_TOKEN_ADDRESS,
+                        ),
                     ),
                     licensing_config=LicensingConfig(
                         is_set=True,
@@ -1505,24 +1454,10 @@ class TestRegisterDerivativeIpAsset:
             ),
             license_terms_data=[
                 LicenseTermsDataInput(
-                    terms=LicenseTermsInput(
-                        transferable=True,
-                        royalty_policy=ROYALTY_POLICY,
+                    terms=PILFlavor.commercial_remix(
                         default_minting_fee=0,
-                        expiration=0,
-                        commercial_use=True,
-                        commercial_attribution=False,
-                        commercializer_checker=ZERO_ADDRESS,
-                        commercializer_checker_data=ZERO_HASH,
                         commercial_rev_share=10,
-                        commercial_rev_ceiling=0,
-                        derivatives_allowed=True,
-                        derivatives_attribution=True,
-                        derivatives_approval=False,
-                        derivatives_reciprocal=True,
-                        derivative_rev_ceiling=0,
                         currency=WIP_TOKEN_ADDRESS,
-                        uri="test-parent-license-for-derivative",
                     ),
                     licensing_config=LicensingConfig(
                         is_set=True,

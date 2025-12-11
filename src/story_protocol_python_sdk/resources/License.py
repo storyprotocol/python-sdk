@@ -31,6 +31,7 @@ from story_protocol_python_sdk.utils.licensing_config_data import (
 )
 from story_protocol_python_sdk.utils.pil_flavor import PILFlavor
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
+from story_protocol_python_sdk.utils.util import convert_dict_keys_to_camel_case
 from story_protocol_python_sdk.utils.validation import (
     get_revenue_share,
     validate_address,
@@ -254,8 +255,10 @@ class License:
             )
             if not is_whitelisted:
                 raise ValueError("The currency is not whitelisted.")
-
-        license_terms_id = self._get_license_terms_id(asdict(validated_license_terms))
+        camel_case_license_terms = convert_dict_keys_to_camel_case(
+            asdict(validated_license_terms)
+        )
+        license_terms_id = self._get_license_terms_id(camel_case_license_terms)
         if (license_terms_id is not None) and (license_terms_id != 0):
             return {"license_terms_id": license_terms_id}
 
@@ -263,7 +266,7 @@ class License:
             self.web3,
             self.account,
             self.license_template_client.build_registerLicenseTerms_transaction,
-            validated_license_terms,
+            camel_case_license_terms,
             tx_options=tx_options,
         )
         target_logs = self._parse_tx_license_terms_registered_event(

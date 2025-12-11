@@ -1,6 +1,6 @@
 """Module for handling IP Account operations and transactions."""
 
-from dataclasses import asdict, is_dataclass
+from dataclasses import asdict, is_dataclass, replace
 from typing import cast
 
 from ens.ens import Address, HexStr
@@ -68,6 +68,7 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
     RegistrationWithRoyaltyVaultAndLicenseTermsResponse,
     RegistrationWithRoyaltyVaultResponse,
 )
+from story_protocol_python_sdk.types.resource.License import LicenseTermsInput
 from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
 from story_protocol_python_sdk.utils.constants import (
     DEADLINE,
@@ -87,10 +88,13 @@ from story_protocol_python_sdk.utils.ip_metadata import (
     is_initial_ip_metadata,
 )
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
+from story_protocol_python_sdk.utils.pil_flavor import PILFlavor
 from story_protocol_python_sdk.utils.royalty import get_royalty_shares
 from story_protocol_python_sdk.utils.sign import Sign
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
+from story_protocol_python_sdk.utils.util import convert_dict_keys_to_camel_case
 from story_protocol_python_sdk.utils.validation import (
+    get_revenue_share,
     validate_address,
     validate_max_rts,
 )
@@ -1329,7 +1333,6 @@ class IPAsset:
             license_terms = self._validate_license_terms_data(license_terms_data)
             calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
             royalty_shares_obj = get_royalty_shares(royalty_shares)
-
             signature_response = self.sign_util.get_permission_signature(
                 ip_id=ip_id,
                 deadline=calculated_deadline,
@@ -2181,9 +2184,18 @@ class IPAsset:
                 terms_dict = term["terms"]
                 licensing_config_dict = term["licensing_config"]
 
+            license_terms = PILFlavor.validate_license_terms(
+                LicenseTermsInput(**terms_dict)
+            )
+            license_terms = replace(
+                license_terms,
+                commercial_rev_share=get_revenue_share(
+                    license_terms.commercial_rev_share
+                ),
+            )
             validated_license_terms_data.append(
                 {
-                    "terms": self.license_terms_util.validate_license_terms(terms_dict),
+                    "terms": convert_dict_keys_to_camel_case(asdict(license_terms)),
                     "licensingConfig": self.license_terms_util.validate_licensing_config(
                         licensing_config_dict
                     ),

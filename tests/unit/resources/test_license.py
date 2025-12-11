@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 import pytest
 from _pytest.fixtures import fixture
-from ens.ens import HexStr
 from web3 import Web3
 
 from story_protocol_python_sdk import (
@@ -791,7 +790,7 @@ def default_licensing_config() -> LicensingConfig:
         "is_set": True,
         "minting_fee": 1,
         "licensing_hook": ZERO_ADDRESS,
-        "hook_data": "0x",
+        "hook_data": ZERO_HASH,
         "commercial_rev_share": 0,
         "disabled": False,
         "expect_minimum_group_reward_share": 0,
@@ -1123,7 +1122,7 @@ class TestSetLicensingConfig:
                         is_set=True,
                         minting_fee=1,
                         licensing_hook=ZERO_ADDRESS,
-                        hook_data="test",
+                        hook_data=ZERO_HASH,
                         commercial_rev_share=10,
                         disabled=False,
                         expect_minimum_group_reward_share=100,
@@ -1141,7 +1140,7 @@ class TestSetLicensingConfig:
                 "isSet": True,
                 "mintingFee": 1,
                 "licensingHook": ZERO_ADDRESS,
-                "hookData": Web3.to_bytes(hexstr=HexStr("test")),
+                "hookData": ZERO_HASH,
                 "commercialRevShare": 10 * 10**6,
                 "disabled": False,
                 "expectMinimumGroupRewardShare": 100 * 10**6,
@@ -1181,7 +1180,7 @@ class TestSetLicensingConfig:
                 "isSet": True,
                 "mintingFee": 1,
                 "licensingHook": ZERO_ADDRESS,
-                "hookData": Web3.to_bytes(hexstr=HexStr("0x")),
+                "hookData": ZERO_HASH,
                 "commercialRevShare": 0,
                 "disabled": False,
                 "expectMinimumGroupRewardShare": 0,

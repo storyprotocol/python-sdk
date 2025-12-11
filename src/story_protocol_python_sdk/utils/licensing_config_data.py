@@ -132,7 +132,11 @@ class LicensingConfigData:
             isSet=licensing_config["is_set"],
             mintingFee=licensing_config["minting_fee"],
             licensingHook=validate_address(licensing_config["licensing_hook"]),
-            hookData=Web3.to_bytes(hexstr=HexStr(licensing_config["hook_data"])),
+            hookData=(
+                Web3.to_bytes(text=licensing_config["hook_data"])
+                if licensing_config["hook_data"] != ZERO_HASH
+                else ZERO_HASH
+            ),
             commercialRevShare=get_revenue_share(
                 licensing_config["commercial_rev_share"]
             ),

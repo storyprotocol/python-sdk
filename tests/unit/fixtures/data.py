@@ -37,7 +37,7 @@ LICENSING_CONFIG = {
     "is_set": True,
     "minting_fee": 10,
     "licensing_hook": ADDRESS,
-    "hook_data": ADDRESS,
+    "hook_data": "test",
     "commercial_rev_share": 10,
     "disabled": False,
     "expect_minimum_group_reward_share": 10,

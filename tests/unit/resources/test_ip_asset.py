@@ -377,7 +377,7 @@ class TestRegisterIpAndAttachPilTerms:
                     "licensingConfig": {
                         "isSet": True,
                         "mintingFee": 10,
-                        "hookData": Web3.to_bytes(hexstr=HexStr(ADDRESS)),
+                        "hookData": Web3.to_bytes(text="test"),
                         "licensingHook": "0x1234567890123456789012345678901234567890",
                         "commercialRevShare": 10000000,
                         "disabled": False,
@@ -1021,7 +1021,7 @@ class TestRegisterPilTermsAndAttach:
                 "licensingConfig": {
                     "isSet": True,
                     "mintingFee": 10,
-                    "hookData": Web3.to_bytes(hexstr=HexStr(ADDRESS)),
+                    "hookData": Web3.to_bytes(text="test"),
                     "licensingHook": "0x1234567890123456789012345678901234567890",
                     "commercialRevShare": 10000000,
                     "disabled": False,
@@ -2452,7 +2452,7 @@ class TestRegisterIpAsset:
                 "licensingConfig": {
                     "isSet": True,
                     "mintingFee": 10,
-                    "hookData": Web3.to_bytes(hexstr=HexStr("11")),
+                    "hookData": Web3.to_bytes(text="11"),
                     "licensingHook": ADDRESS,
                     "commercialRevShare": 10 * 10**6,
                     "disabled": False,

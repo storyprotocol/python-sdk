@@ -56,6 +56,7 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
     BatchMintAndRegisterIPInput,
     BatchMintAndRegisterIPResponse,
     LicenseTermsDataInput,
+    LinkDerivativeResponse,
     MintedNFT,
     MintNFT,
     RegisterAndAttachAndDistributeRoyaltyTokensResponse,
@@ -276,6 +277,7 @@ class IPAsset:
         except Exception as e:
             raise e
 
+    @deprecated("Use link_derivative() instead.")
     def register_derivative(
         self,
         child_ip_id: str,
@@ -343,6 +345,7 @@ class IPAsset:
         except Exception as e:
             raise ValueError(f"Failed to register derivative: {str(e)}") from e
 
+    @deprecated("Use link_derivative() instead.")
     def register_derivative_with_license_tokens(
         self,
         child_ip_id: str,
@@ -394,6 +397,73 @@ class IPAsset:
             raise ValueError(
                 f"Failed to register derivative with license tokens: {str(e)}"
             )
+
+    def link_derivative(
+        self,
+        child_ip_id: Address,
+        parent_ip_ids: list[Address] | None = None,
+        license_terms_ids: list[int] | None = None,
+        license_token_ids: list[int] | None = None,
+        max_minting_fee: int = 0,
+        max_rts: int = MAX_ROYALTY_TOKEN,
+        max_revenue_share: int = 100,
+        license_template: str | None = None,
+        tx_options: dict | None = None,
+    ) -> LinkDerivativeResponse:
+        """
+        Link a derivative IP asset using parent IP's license terms or license tokens.
+
+        Supports the following workflows:
+        - If `parent_ip_ids` is provided, calls `registerDerivative`(contract method)
+        - If `license_token_ids` is provided, calls `registerDerivativeWithLicenseTokens`(contract method)
+
+        :param child_ip_id Address: The derivative IP ID.
+        :param parent_ip_ids list[Address]: [Optional] The parent IP IDs. Required if using license terms.
+        :param license_terms_ids list[int]: [Optional] The IDs of the license terms that the parent IP supports. Required if `parent_ip_ids` is provided.
+        :param license_token_ids list[int]: [Optional] The IDs of the license tokens.
+        :param max_minting_fee int: [Optional] The maximum minting fee that the caller is willing to pay.
+            if set to 0 then no limit. (default: 0) Only used with `parent_ip_ids`.
+        :param max_rts int: [Optional] The maximum number of royalty tokens that can be distributed
+            (max: 100,000,000) (default: 100,000,000)
+        :param max_revenue_share int: [Optional] The maximum revenue share percentage allowed.
+            Must be between 0 and 100. (default: 100) Only used with `parent_ip_ids`.
+        :param license_template str: [Optional] The license template address.
+            Only used with `parent_ip_ids`.
+        :param tx_options dict: [Optional] Transaction options.
+        :return `LinkDerivativeResponse`: A dictionary with the transaction hash.
+        """
+        try:
+            if parent_ip_ids is not None:
+                if license_terms_ids is None:
+                    raise ValueError(
+                        "license_terms_ids is required when parent_ip_ids is provided."
+                    )
+                response = self.register_derivative(
+                    child_ip_id=child_ip_id,
+                    parent_ip_ids=parent_ip_ids,
+                    license_terms_ids=license_terms_ids,
+                    max_minting_fee=max_minting_fee,
+                    max_rts=max_rts,
+                    max_revenue_share=max_revenue_share,
+                    license_template=license_template,
+                    tx_options=tx_options,
+                )
+                return LinkDerivativeResponse(tx_hash=response["tx_hash"])
+            elif license_token_ids is not None:
+                response = self.register_derivative_with_license_tokens(
+                    child_ip_id=child_ip_id,
+                    license_token_ids=license_token_ids,
+                    max_rts=max_rts,
+                    tx_options=tx_options,
+                )
+                return LinkDerivativeResponse(tx_hash=response["tx_hash"])
+            else:
+                raise ValueError(
+                    "either parent_ip_ids or license_token_ids must be provided."
+                )
+
+        except Exception as e:
+            raise ValueError(f"Failed to link derivative: {str(e)}") from e
 
     @deprecated("Use register_ip_asset() instead.")
     def mint_and_register_ip_asset_with_pil_terms(

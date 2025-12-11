@@ -49,16 +49,6 @@ def mock_web3():
 
 
 @pytest.fixture(scope="package")
-def mock_is_checksum_address():
-    def _mock(is_checksum_address: bool = True):
-        return patch.object(
-            Web3, "is_checksum_address", return_value=is_checksum_address
-        )
-
-    return _mock
-
-
-@pytest.fixture(scope="package")
 def mock_signature_related_methods():
     class SignatureMockContext:
         def __init__(self):
@@ -71,10 +61,6 @@ def mock_signature_related_methods():
             mock_contract.encode_abi = MagicMock(return_value=b"encoded_data")
             mock_client.contract = mock_contract
 
-            # Create all the patches
-            mock_web3_to_bytes = patch.object(
-                Web3, "to_bytes", return_value=b"mock_bytes"
-            )
             mock_account_sign_message = patch.object(
                 Account,
                 "sign_message",
@@ -95,13 +81,11 @@ def mock_signature_related_methods():
             )
 
             # Apply all patches at once
-            mock_web3_to_bytes.start()
             mock_account_sign_message.start()
             mock_ip_account_client.start()
 
             # Store patches for cleanup
             self.patches = [
-                mock_web3_to_bytes,
                 mock_account_sign_message,
                 mock_ip_account_client,
             ]

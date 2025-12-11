@@ -141,7 +141,6 @@ class License:
     @deprecated(
         "Use register_pil_terms(**asdict(PILFlavor.non_commercial_social_remixing())) instead. "
         "In the next major version, register_pil_terms will accept LicenseTermsInput directly, "
-        "so you can use register_pil_terms(PILFlavor.non_commercial_social_remixing()) without asdict.",
     )
     def register_non_com_social_remixing_pil(
         self, tx_options: dict | None = None
@@ -162,7 +161,6 @@ class License:
     @deprecated(
         "Use register_pil_terms(**asdict(PILFlavor.commercial_use(default_minting_fee, currency, royalty_policy))) instead. "
         "In the next major version, register_pil_terms will accept LicenseTermsInput directly, "
-        "so you can use register_pil_terms(PILFlavor.commercial_use(...)) without asdict.",
     )
     def register_commercial_use_pil(
         self,
@@ -195,7 +193,6 @@ class License:
     @deprecated(
         "Use register_pil_terms(**asdict(PILFlavor.commercial_remix(default_minting_fee, currency, commercial_rev_share, royalty_policy))) instead. "
         "In the next major version, register_pil_terms will accept LicenseTermsInput directly, "
-        "so you can use register_pil_terms(PILFlavor.commercial_remix(...)) without asdict.",
     )
     def register_commercial_remix_pil(
         self,

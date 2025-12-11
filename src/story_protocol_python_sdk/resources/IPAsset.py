@@ -90,7 +90,6 @@ from story_protocol_python_sdk.utils.ip_metadata import (
     get_ip_metadata_dict,
     is_initial_ip_metadata,
 )
-from story_protocol_python_sdk.utils.license_terms import LicenseTerms
 from story_protocol_python_sdk.utils.licensing_config_data import LicensingConfigData
 from story_protocol_python_sdk.utils.pil_flavor import PILFlavor
 from story_protocol_python_sdk.utils.royalty import get_royalty_shares
@@ -136,7 +135,6 @@ class IPAsset:
         )
         self.royalty_module_client = RoyaltyModuleClient(web3)
         self.multicall3_client = Multicall3Client(web3)
-        self.license_terms_util = LicenseTerms(web3)
         self.sign_util = Sign(web3, self.chain_id, self.account)
         self.module_registry_client = ModuleRegistryClient(web3)
 

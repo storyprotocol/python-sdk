@@ -22,6 +22,9 @@ from story_protocol_python_sdk.abi.LicenseRegistry.LicenseRegistry_client import
 from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import (
     LicensingModuleClient,
 )
+from story_protocol_python_sdk.abi.ModuleRegistry.ModuleRegistry_client import (
+    ModuleRegistryClient,
+)
 from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client import (
     PILicenseTemplateClient,
 )
@@ -32,7 +35,7 @@ from story_protocol_python_sdk.types.resource.Group import (
     CollectRoyaltiesResponse,
 )
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
-from story_protocol_python_sdk.utils.license_terms import LicenseTerms
+from story_protocol_python_sdk.utils.licensing_config_data import LicensingConfigData
 from story_protocol_python_sdk.utils.sign import Sign
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 from story_protocol_python_sdk.utils.validation import get_revenue_share
@@ -59,8 +62,7 @@ class Group:
         self.licensing_module_client = LicensingModuleClient(web3)
         self.license_registry_client = LicenseRegistryClient(web3)
         self.pi_license_template_client = PILicenseTemplateClient(web3)
-
-        self.license_terms_util = LicenseTerms(web3)
+        self.module_registry_client = ModuleRegistryClient(web3)
         self.sign_util = Sign(web3, self.chain_id, self.account)
 
     def register_group(self, group_pool: str, tx_options: dict | None = None) -> dict:
@@ -707,8 +709,8 @@ class Group:
             processed_item = {
                 "licenseTemplate": license_template,
                 "licenseTermsId": item["license_terms_id"],
-                "licensingConfig": self.license_terms_util.validate_licensing_config(
-                    item.get("licensing_config", {})
+                "licensingConfig": LicensingConfigData.validate_license_config(
+                    self.module_registry_client, item.get("licensing_config", {})
                 ),
             }
 

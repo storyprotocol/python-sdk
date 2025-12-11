@@ -231,7 +231,7 @@ class License:
         """
         Validate the license terms.
 
-        :param license_terms LicenseTermsInput: The license terms.
+        :param license_terms `LicenseTermsInput`: The license terms.
         :param tx_options dict: [Optional] The transaction options.
         :return dict: A dictionary with the transaction hash and the license terms ID.
         """

@@ -21,7 +21,7 @@ class LicenseTermsOverride:
         commercial_attribution: Whether commercial attribution is required.
         commercializer_checker: The address of the commercializer checker contract.
         commercializer_checker_data: The data to be passed to the commercializer checker contract.
-        commercial_rev_share: Percentage of revenue that must be shared with the licensor.
+        commercial_rev_share: Percentage of revenue that must be shared with the licensor. Must be between 0 and 100 (where 100% represents 100_000_000).
         commercial_rev_ceiling: The maximum revenue that can be collected from commercial use.
         derivatives_allowed: Whether derivatives are allowed.
         derivatives_attribution: Whether attribution is required for derivatives.

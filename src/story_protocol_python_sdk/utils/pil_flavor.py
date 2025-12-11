@@ -134,8 +134,8 @@ class PILFlavor:
 
         See: https://docs.story.foundation/concepts/programmable-ip-license/pil-flavors#non-commercial-social-remixing
 
-        :param override: Optional overrides for the default license terms.
-        :return: The license terms dictionary.
+        :param `override` `Optional[LicenseTermsOverride]`: Optional overrides for the default license terms.
+        :return: `LicenseTermsInput`: The license terms.
         """
         terms = _apply_override(PILFlavor._non_commercial_social_remixing_pil, override)
         return PILFlavor.validate_license_terms(terms)
@@ -152,11 +152,11 @@ class PILFlavor:
 
         See: https://docs.story.foundation/concepts/programmable-ip-license/pil-flavors#commercial-use
 
-        :param default_minting_fee: The fee to be paid when minting a license.
-        :param currency: The ERC20 token to be used to pay the minting fee.
-        :param royalty_policy: The type of royalty policy to be used. Default is LAP.
-        :param override: Optional overrides for the default license terms.
-        :return: The license terms dictionary.
+        :param `default_minting_fee` int: The fee to be paid when minting a license.
+        :param `currency` Address: The ERC20 token to be used to pay the minting fee.
+        :param `royalty_policy` `Optional[RoyaltyPolicyInput]`: The type of royalty policy to be used.(default: LAP)
+        :param `override` `Optional[LicenseTermsOverride]`: Optional overrides for the default license terms.
+        :return: `LicenseTermsInput`: The license terms.
         """
         base = replace(
             PILFlavor._commercial_use,
@@ -180,12 +180,12 @@ class PILFlavor:
 
         See: https://docs.story.foundation/concepts/programmable-ip-license/pil-flavors#commercial-remix
 
-        :param default_minting_fee: The fee to be paid when minting a license.
-        :param currency: The ERC20 token to be used to pay the minting fee.
-        :param commercial_rev_share: Percentage of revenue that must be shared with the licensor. Must be between 0 and 100.
-        :param royalty_policy: The type of royalty policy to be used. Default is LAP.
-        :param override: Optional overrides for the default license terms.
-        :return: The license terms dictionary.
+        :param `default_minting_fee` int: The fee to be paid when minting a license.
+        :param `currency` Address: The ERC20 token to be used to pay the minting fee.
+        :param `commercial_rev_share` int: Percentage of revenue that must be shared with the licensor. Must be between 0 and 100.
+        :param `royalty_policy` `Optional[RoyaltyPolicyInput]`: The type of royalty policy to be used.(default: LAP)
+        :param `override` `Optional[LicenseTermsOverride]`: Optional overrides for the default license terms.
+        :return: `LicenseTermsInput`: The license terms.
         """
         base = replace(
             PILFlavor._commercial_remix,
@@ -208,10 +208,10 @@ class PILFlavor:
 
         See: https://docs.story.foundation/concepts/programmable-ip-license/pil-flavors#creative-commons-attribution
 
-        :param currency: The ERC20 token to be used to pay the minting fee.
-        :param royalty_policy: The type of royalty policy to be used. Default is LAP.
-        :param override: Optional overrides for the default license terms.
-        :return: The license terms dictionary.
+        :param `currency` Address: The ERC20 token to be used to pay the minting fee.
+        :param `royalty_policy` `Optional[RoyaltyPolicyInput]`: The type of royalty policy to be used.(default: LAP)
+        :param `override` `Optional[LicenseTermsOverride]`: Optional overrides for the default license terms.
+        :return: `LicenseTermsInput`: The license terms.
         """
         base = replace(
             PILFlavor._creative_commons_attribution,
@@ -226,8 +226,8 @@ class PILFlavor:
         """
         Validates and normalizes license terms.
 
-        :param params: The license terms parameters to validate.
-        :return: The validated and normalized license terms.
+        :param params `LicenseTermsInput`: The license terms parameters to validate.
+        :return: `LicenseTermsInput`: The validated and normalized license terms.
         :raises PILFlavorError: If validation fails.
         """
         # Normalize royalty_policy to address

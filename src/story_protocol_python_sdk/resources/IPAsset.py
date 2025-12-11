@@ -37,6 +37,9 @@ from story_protocol_python_sdk.abi.LicenseToken.LicenseToken_client import (
 from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import (
     LicensingModuleClient,
 )
+from story_protocol_python_sdk.abi.ModuleRegistry.ModuleRegistry_client import (
+    ModuleRegistryClient,
+)
 from story_protocol_python_sdk.abi.Multicall3.Multicall3_client import Multicall3Client
 from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client import (
     PILicenseTemplateClient,
@@ -88,6 +91,7 @@ from story_protocol_python_sdk.utils.ip_metadata import (
     is_initial_ip_metadata,
 )
 from story_protocol_python_sdk.utils.license_terms import LicenseTerms
+from story_protocol_python_sdk.utils.licensing_config_data import LicensingConfigData
 from story_protocol_python_sdk.utils.pil_flavor import PILFlavor
 from story_protocol_python_sdk.utils.royalty import get_royalty_shares
 from story_protocol_python_sdk.utils.sign import Sign
@@ -134,6 +138,7 @@ class IPAsset:
         self.multicall3_client = Multicall3Client(web3)
         self.license_terms_util = LicenseTerms(web3)
         self.sign_util = Sign(web3, self.chain_id, self.account)
+        self.module_registry_client = ModuleRegistryClient(web3)
 
     def mint(
         self,
@@ -689,7 +694,6 @@ class IPAsset:
                     f"The NFT with id {token_id} is already registered as IP."
                 )
             license_terms = self._validate_license_terms_data(license_terms_data)
-
             calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
 
             # Get permission signature for all required permissions
@@ -2196,8 +2200,8 @@ class IPAsset:
             validated_license_terms_data.append(
                 {
                     "terms": convert_dict_keys_to_camel_case(asdict(license_terms)),
-                    "licensingConfig": self.license_terms_util.validate_licensing_config(
-                        licensing_config_dict
+                    "licensingConfig": LicensingConfigData.validate_license_config(
+                        self.module_registry_client, licensing_config_dict
                     ),
                 }
             )

@@ -21,6 +21,7 @@ LICENSE_TERMS = {
     "expiration": 100,
     "commercial_use": True,
     "commercial_attribution": True,
+    "commercial_rev_ceiling": 0,
     "commercializer_checker": True,
     "commercializer_checker_data": ADDRESS,
     "derivatives_allowed": True,

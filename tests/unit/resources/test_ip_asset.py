@@ -6,8 +6,13 @@ from web3 import Web3
 
 from story_protocol_python_sdk import (
     MAX_ROYALTY_TOKEN,
+    LicenseTermsDataInput,
+    LicenseTermsOverride,
     MintedNFT,
     MintNFT,
+    NativeRoyaltyPolicy,
+    PILFlavor,
+    PILFlavorError,
     RoyaltyShareInput,
 )
 from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
@@ -298,7 +303,7 @@ class TestRegisterIpAndAttachPilTerms:
     ):
         with mock_get_ip_id(), mock_is_registered():
             with pytest.raises(
-                ValueError, match="commercial_rev_share should be between 0 and 100."
+                PILFlavorError, match="commercial_rev_share must be between 0 and 100."
             ):
                 ip_asset.register_ip_and_attach_pil_terms(
                     nft_contract=ADDRESS,
@@ -334,7 +339,6 @@ class TestRegisterIpAndAttachPilTerms:
                 ip_asset.license_attachment_workflows_client,
                 "build_registerIpAndAttachPILTerms_transaction",
             ) as mock_build_registerIpAndAttachPILTerms_transaction:
-
                 ip_asset.register_ip_and_attach_pil_terms(
                     nft_contract=ADDRESS,
                     token_id=3,
@@ -359,7 +363,7 @@ class TestRegisterIpAndAttachPilTerms:
                         "commercialUse": True,
                         "commercialAttribution": True,
                         "commercializerChecker": True,
-                        "commercializerCheckerData": b"mock_bytes",
+                        "commercializerCheckerData": "0x1234567890123456789012345678901234567890",
                         "commercialRevShare": 19000000,
                         "commercialRevCeiling": 0,
                         "derivativesAllowed": True,
@@ -373,7 +377,7 @@ class TestRegisterIpAndAttachPilTerms:
                     "licensingConfig": {
                         "isSet": True,
                         "mintingFee": 10,
-                        "hookData": b"mock_bytes",
+                        "hookData": Web3.to_bytes(hexstr=HexStr(ADDRESS)),
                         "licensingHook": "0x1234567890123456789012345678901234567890",
                         "commercialRevShare": 10000000,
                         "disabled": False,
@@ -1003,7 +1007,7 @@ class TestRegisterPilTermsAndAttach:
                     "commercialUse": True,
                     "commercialAttribution": True,
                     "commercializerChecker": True,
-                    "commercializerCheckerData": b"mock_bytes",
+                    "commercializerCheckerData": "0x1234567890123456789012345678901234567890",
                     "commercialRevShare": 19000000,
                     "commercialRevCeiling": 0,
                     "derivativesAllowed": True,
@@ -1017,7 +1021,7 @@ class TestRegisterPilTermsAndAttach:
                 "licensingConfig": {
                     "isSet": True,
                     "mintingFee": 10,
-                    "hookData": b"mock_bytes",
+                    "hookData": Web3.to_bytes(hexstr=HexStr(ADDRESS)),
                     "licensingHook": "0x1234567890123456789012345678901234567890",
                     "commercialRevShare": 10000000,
                     "disabled": False,
@@ -2376,6 +2380,87 @@ class TestRegisterIpAsset:
             assert result["ip_id"] == IP_ID
             assert result["token_id"] == 3
             assert result["license_terms_ids"] is not None
+
+    def test_success_when_license_terms_data_is_generated_by_pil_flavor_for_minted_nft(
+        self,
+        ip_asset: IPAsset,
+        mock_parse_ip_registered_event,
+        mock_parse_tx_license_terms_attached_event,
+        mock_get_ip_id,
+        mock_signature_related_methods,
+        mock_is_registered,
+    ):
+        with (
+            mock_parse_ip_registered_event(),
+            mock_parse_tx_license_terms_attached_event(),
+            mock_get_ip_id(),
+            mock_signature_related_methods(),
+            mock_is_registered(is_registered=False),
+            patch.object(
+                ip_asset.license_attachment_workflows_client,
+                "build_registerIpAndAttachPILTerms_transaction",
+                return_value={"tx_hash": TX_HASH.hex()},
+            ) as mock_build_register_transaction,
+        ):
+            ip_asset.register_ip_asset(
+                nft=MintedNFT(type="minted", nft_contract=ADDRESS, token_id=3),
+                license_terms_data=[
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.commercial_use(
+                            default_minting_fee=10,
+                            currency=ADDRESS,
+                            override=LicenseTermsOverride(
+                                commercial_rev_share=10,
+                                royalty_policy=NativeRoyaltyPolicy.LAP,
+                            ),
+                        ),
+                        licensing_config={
+                            "is_set": True,
+                            "minting_fee": 10,
+                            "licensing_hook": ADDRESS,
+                            "hook_data": "11",
+                            "commercial_rev_share": 10,
+                            "disabled": False,
+                            "expect_minimum_group_reward_share": 0,
+                            "expect_group_reward_pool": ZERO_ADDRESS,
+                        },
+                    )
+                ],
+                ip_metadata=IP_METADATA,
+            )
+        assert mock_build_register_transaction.call_args[0][3] == [
+            {
+                "terms": {
+                    "transferable": True,
+                    "commercialAttribution": True,
+                    "commercialRevCeiling": 0,
+                    "commercialRevShare": 10 * 10**6,
+                    "commercialUse": True,
+                    "commercializerChecker": ZERO_ADDRESS,
+                    "commercializerCheckerData": ZERO_ADDRESS,
+                    "currency": ADDRESS,
+                    "derivativeRevCeiling": 0,
+                    "derivativesAllowed": False,
+                    "derivativesApproval": False,
+                    "derivativesAttribution": False,
+                    "derivativesReciprocal": False,
+                    "expiration": 0,
+                    "defaultMintingFee": 10,
+                    "royaltyPolicy": "0xBe54FB168b3c982b7AaE60dB6CF75Bd8447b390E",
+                    "uri": "https://github.com/piplabs/pil-document/blob/9a1f803fcf8101a8a78f1dcc929e6014e144ab56/off-chain-terms/CommercialUse.json",
+                },
+                "licensingConfig": {
+                    "isSet": True,
+                    "mintingFee": 10,
+                    "hookData": Web3.to_bytes(hexstr=HexStr("11")),
+                    "licensingHook": ADDRESS,
+                    "commercialRevShare": 10 * 10**6,
+                    "disabled": False,
+                    "expectMinimumGroupRewardShare": 0,
+                    "expectGroupRewardPool": ZERO_ADDRESS,
+                },
+            }
+        ]
 
     def test_success_when_ip_metadata_provided_for_minted_nft(
         self,

@@ -80,11 +80,6 @@ def royalty_policy_input_to_address(
     Raises:
         ValueError: If the custom address is invalid.
     """
-    print("--------------------------------")
-    print(input)
-    print(input == NativeRoyaltyPolicy.LAP)
-    print(input == NativeRoyaltyPolicy.LRP)
-    print("--------------------------------")
     if input is None:
         return ROYALTY_POLICY_LAP_ADDRESS
 

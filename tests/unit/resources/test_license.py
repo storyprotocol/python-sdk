@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 from _pytest.fixtures import fixture
+from ens.ens import HexStr
 from web3 import Web3
 
 from story_protocol_python_sdk import (
@@ -14,6 +15,7 @@ from story_protocol_python_sdk import (
     PILFlavor,
     PILFlavorError,
 )
+from story_protocol_python_sdk.utils.util import convert_dict_keys_to_camel_case
 from tests.unit.fixtures.data import ADDRESS, CHAIN_ID, IP_ID, TX_HASH
 from tests.unit.resources.test_ip_account import ZERO_HASH
 
@@ -93,9 +95,9 @@ class TestPILTermsRegistration:
                 uri="",
             )
             assert (
-                mock_build_registerLicenseTerms_transaction.call_args[0][
-                    0
-                ].commercial_rev_share
+                mock_build_registerLicenseTerms_transaction.call_args[0][0][
+                    "commercialRevShare"
+                ]
                 == 90 * 10**6
             )
             assert "tx_hash" in response
@@ -206,9 +208,10 @@ class TestPILTermsRegistration:
             license.register_pil_terms(
                 **asdict(PILFlavor.non_commercial_social_remixing())
             )
-        assert (
-            mock_build_registerLicenseTerms_transaction.call_args[0][0]
-            == PILFlavor.non_commercial_social_remixing()
+        assert mock_build_registerLicenseTerms_transaction.call_args[0][
+            0
+        ] == convert_dict_keys_to_camel_case(
+            asdict(PILFlavor.non_commercial_social_remixing())
         )
 
     def test_register_commercial_remix_pil_success(self, license: License):
@@ -242,13 +245,19 @@ class TestPILTermsRegistration:
                     )
                 )
             )
-        assert mock_build_registerLicenseTerms_transaction.call_args[0][0] == replace(
-            PILFlavor.commercial_remix(
-                default_minting_fee=1513,
-                currency=ADDRESS,
-                commercial_rev_share=90,
-            ),
-            commercial_rev_share=90 * 10**6,
+        assert mock_build_registerLicenseTerms_transaction.call_args[0][
+            0
+        ] == convert_dict_keys_to_camel_case(
+            asdict(
+                replace(
+                    PILFlavor.commercial_remix(
+                        default_minting_fee=1513,
+                        currency=ADDRESS,
+                        commercial_rev_share=90,
+                    ),
+                    commercial_rev_share=90 * 10**6,
+                )
+            )
         )
 
     def test_register_commercial_use_pil_success(self, license: License):
@@ -283,9 +292,13 @@ class TestPILTermsRegistration:
             )
         assert mock_build_registerLicenseTerms_transaction.call_args[0][
             0
-        ] == PILFlavor.commercial_use(
-            default_minting_fee=1513,
-            currency=ADDRESS,
+        ] == convert_dict_keys_to_camel_case(
+            asdict(
+                PILFlavor.commercial_use(
+                    default_minting_fee=1513,
+                    currency=ADDRESS,
+                )
+            )
         )
 
     def test_register_creative_commons_attribution_pil_success(self, license: License):
@@ -319,8 +332,12 @@ class TestPILTermsRegistration:
             )
         assert mock_build_registerLicenseTerms_transaction.call_args[0][
             0
-        ] == PILFlavor.creative_commons_attribution(
-            currency=ADDRESS,
+        ] == convert_dict_keys_to_camel_case(
+            asdict(
+                PILFlavor.creative_commons_attribution(
+                    currency=ADDRESS,
+                )
+            )
         )
 
 
@@ -1106,7 +1123,7 @@ class TestSetLicensingConfig:
                         is_set=True,
                         minting_fee=1,
                         licensing_hook=ZERO_ADDRESS,
-                        hook_data=ZERO_HASH,
+                        hook_data="test",
                         commercial_rev_share=10,
                         disabled=False,
                         expect_minimum_group_reward_share=100,
@@ -1124,7 +1141,7 @@ class TestSetLicensingConfig:
                 "isSet": True,
                 "mintingFee": 1,
                 "licensingHook": ZERO_ADDRESS,
-                "hookData": ZERO_HASH,
+                "hookData": Web3.to_bytes(hexstr=HexStr("test")),
                 "commercialRevShare": 10 * 10**6,
                 "disabled": False,
                 "expectMinimumGroupRewardShare": 100 * 10**6,
@@ -1164,7 +1181,7 @@ class TestSetLicensingConfig:
                 "isSet": True,
                 "mintingFee": 1,
                 "licensingHook": ZERO_ADDRESS,
-                "hookData": "0x",
+                "hookData": Web3.to_bytes(hexstr=HexStr("0x")),
                 "commercialRevShare": 0,
                 "disabled": False,
                 "expectMinimumGroupRewardShare": 0,

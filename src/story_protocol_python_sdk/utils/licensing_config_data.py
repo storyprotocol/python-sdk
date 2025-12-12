@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import TypedDict
 
 from ens.ens import Address, HexStr
+from web3 import Web3
 
 from story_protocol_python_sdk.abi.ModuleRegistry.ModuleRegistry_client import (
     ModuleRegistryClient,
@@ -37,7 +38,7 @@ class LicensingConfig(TypedDict):
     is_set: bool
     minting_fee: int
     licensing_hook: Address
-    hook_data: HexStr
+    hook_data: str
     commercial_rev_share: int
     disabled: bool
     expect_minimum_group_reward_share: int
@@ -131,7 +132,11 @@ class LicensingConfigData:
             isSet=licensing_config["is_set"],
             mintingFee=licensing_config["minting_fee"],
             licensingHook=validate_address(licensing_config["licensing_hook"]),
-            hookData=licensing_config["hook_data"],
+            hookData=(
+                Web3.to_bytes(text=licensing_config["hook_data"])
+                if licensing_config["hook_data"] != ZERO_HASH
+                else ZERO_HASH
+            ),
             commercialRevShare=get_revenue_share(
                 licensing_config["commercial_rev_share"]
             ),

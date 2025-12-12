@@ -1,3 +1,4 @@
+from dataclasses import asdict, replace
 from typing import Callable
 from unittest.mock import patch
 
@@ -5,9 +6,15 @@ import pytest
 from _pytest.fixtures import fixture
 from web3 import Web3
 
-from story_protocol_python_sdk.resources.License import License
-from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
-from story_protocol_python_sdk.utils.licensing_config_data import LicensingConfig
+from story_protocol_python_sdk import (
+    WIP_TOKEN_ADDRESS,
+    ZERO_ADDRESS,
+    License,
+    LicensingConfig,
+    PILFlavor,
+    PILFlavorError,
+)
+from story_protocol_python_sdk.utils.util import convert_dict_keys_to_camel_case
 from tests.unit.fixtures.data import ADDRESS, CHAIN_ID, IP_ID, TX_HASH
 from tests.unit.resources.test_ip_account import ZERO_HASH
 
@@ -24,33 +31,23 @@ class TestPILTermsRegistration:
         with patch.object(
             license.license_template_client, "getLicenseTermsId", return_value=1
         ), patch.object(
-            license.license_terms_util.royalty_module_client,
+            license.royalty_module_client,
             "isWhitelistedRoyaltyPolicy",
             return_value=True,
         ), patch.object(
-            license.license_terms_util.royalty_module_client,
+            license.royalty_module_client,
             "isWhitelistedRoyaltyToken",
             return_value=True,
         ):
 
             response = license.register_pil_terms(
-                default_minting_fee=1513,
-                currency=ADDRESS,
-                royalty_policy=ADDRESS,
-                transferable=False,
-                expiration=0,
-                commercial_use=True,
-                commercial_attribution=False,
-                commercializer_checker=ZERO_ADDRESS,
-                commercializer_checker_data="0x",
-                commercial_rev_share=0,
-                commercial_rev_ceiling=0,
-                derivatives_allowed=False,
-                derivatives_attribution=False,
-                derivatives_approval=False,
-                derivatives_reciprocal=False,
-                derivative_rev_ceiling=0,
-                uri="",
+                **asdict(
+                    PILFlavor.commercial_use(
+                        default_minting_fee=1513,
+                        currency=ADDRESS,
+                        royalty_policy=ADDRESS,
+                    )
+                )
             )
             assert response["license_terms_id"] == 1
             assert "tx_hash" not in response
@@ -59,11 +56,11 @@ class TestPILTermsRegistration:
         with patch.object(
             license.license_template_client, "getLicenseTermsId", return_value=0
         ), patch.object(
-            license.license_terms_util.royalty_module_client,
+            license.royalty_module_client,
             "isWhitelistedRoyaltyPolicy",
             return_value=True,
         ), patch.object(
-            license.license_terms_util.royalty_module_client,
+            license.royalty_module_client,
             "isWhitelistedRoyaltyToken",
             return_value=True,
         ), patch.object(
@@ -75,7 +72,7 @@ class TestPILTermsRegistration:
                 "gas": 2000000,
                 "gasPrice": Web3.to_wei("100", "gwei"),
             },
-        ):
+        ) as mock_build_registerLicenseTerms_transaction:
 
             response = license.register_pil_terms(
                 transferable=False,
@@ -96,7 +93,12 @@ class TestPILTermsRegistration:
                 currency=ADDRESS,
                 uri="",
             )
-
+            assert (
+                mock_build_registerLicenseTerms_transaction.call_args[0][0][
+                    "commercialRevShare"
+                ]
+                == 90 * 10**6
+            )
             assert "tx_hash" in response
             assert response["tx_hash"] == TX_HASH.hex()
             assert isinstance(response["tx_hash"], str)
@@ -107,17 +109,18 @@ class TestPILTermsRegistration:
         with patch.object(
             license.license_template_client, "getLicenseTermsId", return_value=0
         ), patch.object(
-            license.license_terms_util.royalty_module_client,
+            license.royalty_module_client,
             "isWhitelistedRoyaltyPolicy",
             return_value=True,
         ), patch.object(
-            license.license_terms_util.royalty_module_client,
+            license.royalty_module_client,
             "isWhitelistedRoyaltyToken",
             return_value=True,
         ):
 
             with pytest.raises(
-                ValueError, match="commercial_rev_share should be between 0 and 100."
+                PILFlavorError,
+                match="commercial_rev_share must be between 0 and 100.",
             ):
                 license.register_pil_terms(
                     transferable=False,
@@ -145,17 +148,17 @@ class TestPILTermsRegistration:
         with patch.object(
             license.license_template_client, "getLicenseTermsId", return_value=0
         ), patch.object(
-            license.license_terms_util.royalty_module_client,
+            license.royalty_module_client,
             "isWhitelistedRoyaltyPolicy",
             return_value=True,
         ), patch.object(
-            license.license_terms_util.royalty_module_client,
+            license.royalty_module_client,
             "isWhitelistedRoyaltyToken",
             return_value=True,
         ):
 
             with pytest.raises(
-                ValueError, match="commercial_rev_share should be between 0 and 100."
+                PILFlavorError, match="commercial_rev_share must be between 0 and 100."
             ):
                 license.register_pil_terms(
                     transferable=False,
@@ -176,6 +179,165 @@ class TestPILTermsRegistration:
                     currency=ADDRESS,
                     uri="",
                 )
+
+    def test_register_non_commercial_social_remixing_pil_success(
+        self, license: License
+    ):
+        with patch.object(
+            license.license_template_client, "getLicenseTermsId", return_value=0
+        ), patch.object(
+            license.royalty_module_client,
+            "isWhitelistedRoyaltyPolicy",
+            return_value=True,
+        ), patch.object(
+            license.royalty_module_client,
+            "isWhitelistedRoyaltyToken",
+            return_value=True,
+        ), patch.object(
+            license.license_template_client,
+            "build_registerLicenseTerms_transaction",
+            return_value={
+                "from": ADDRESS,
+                "nonce": 1,
+                "gas": 2000000,
+                "gasPrice": Web3.to_wei("100", "gwei"),
+            },
+        ) as mock_build_registerLicenseTerms_transaction:
+
+            license.register_pil_terms(
+                **asdict(PILFlavor.non_commercial_social_remixing())
+            )
+        assert mock_build_registerLicenseTerms_transaction.call_args[0][
+            0
+        ] == convert_dict_keys_to_camel_case(
+            asdict(PILFlavor.non_commercial_social_remixing())
+        )
+
+    def test_register_commercial_remix_pil_success(self, license: License):
+        with patch.object(
+            license.license_template_client, "getLicenseTermsId", return_value=0
+        ), patch.object(
+            license.royalty_module_client,
+            "isWhitelistedRoyaltyPolicy",
+            return_value=True,
+        ), patch.object(
+            license.royalty_module_client,
+            "isWhitelistedRoyaltyToken",
+            return_value=True,
+        ), patch.object(
+            license.license_template_client,
+            "build_registerLicenseTerms_transaction",
+            return_value={
+                "from": ADDRESS,
+                "nonce": 1,
+                "gas": 2000000,
+                "gasPrice": Web3.to_wei("100", "gwei"),
+            },
+        ) as mock_build_registerLicenseTerms_transaction:
+
+            license.register_pil_terms(
+                **asdict(
+                    PILFlavor.commercial_remix(
+                        default_minting_fee=1513,
+                        currency=ADDRESS,
+                        commercial_rev_share=90,
+                    )
+                )
+            )
+        assert mock_build_registerLicenseTerms_transaction.call_args[0][
+            0
+        ] == convert_dict_keys_to_camel_case(
+            asdict(
+                replace(
+                    PILFlavor.commercial_remix(
+                        default_minting_fee=1513,
+                        currency=ADDRESS,
+                        commercial_rev_share=90,
+                    ),
+                    commercial_rev_share=90 * 10**6,
+                )
+            )
+        )
+
+    def test_register_commercial_use_pil_success(self, license: License):
+        with patch.object(
+            license.license_template_client, "getLicenseTermsId", return_value=0
+        ), patch.object(
+            license.royalty_module_client,
+            "isWhitelistedRoyaltyPolicy",
+            return_value=True,
+        ), patch.object(
+            license.royalty_module_client,
+            "isWhitelistedRoyaltyToken",
+            return_value=True,
+        ), patch.object(
+            license.license_template_client,
+            "build_registerLicenseTerms_transaction",
+            return_value={
+                "from": ADDRESS,
+                "nonce": 1,
+                "gas": 2000000,
+                "gasPrice": Web3.to_wei("100", "gwei"),
+            },
+        ) as mock_build_registerLicenseTerms_transaction:
+
+            license.register_pil_terms(
+                **asdict(
+                    PILFlavor.commercial_use(
+                        default_minting_fee=1513,
+                        currency=ADDRESS,
+                    )
+                )
+            )
+        assert mock_build_registerLicenseTerms_transaction.call_args[0][
+            0
+        ] == convert_dict_keys_to_camel_case(
+            asdict(
+                PILFlavor.commercial_use(
+                    default_minting_fee=1513,
+                    currency=ADDRESS,
+                )
+            )
+        )
+
+    def test_register_creative_commons_attribution_pil_success(self, license: License):
+        with patch.object(
+            license.license_template_client, "getLicenseTermsId", return_value=0
+        ), patch.object(
+            license.royalty_module_client,
+            "isWhitelistedRoyaltyPolicy",
+            return_value=True,
+        ), patch.object(
+            license.royalty_module_client,
+            "isWhitelistedRoyaltyToken",
+            return_value=True,
+        ), patch.object(
+            license.license_template_client,
+            "build_registerLicenseTerms_transaction",
+            return_value={
+                "from": ADDRESS,
+                "nonce": 1,
+                "gas": 2000000,
+                "gasPrice": Web3.to_wei("100", "gwei"),
+            },
+        ) as mock_build_registerLicenseTerms_transaction:
+
+            license.register_pil_terms(
+                **asdict(
+                    PILFlavor.creative_commons_attribution(
+                        currency=ADDRESS,
+                    )
+                )
+            )
+        assert mock_build_registerLicenseTerms_transaction.call_args[0][
+            0
+        ] == convert_dict_keys_to_camel_case(
+            asdict(
+                PILFlavor.creative_commons_attribution(
+                    currency=ADDRESS,
+                )
+            )
+        )
 
 
 class TestNonComSocialRemixingPIL:
@@ -218,7 +380,7 @@ class TestNonComSocialRemixingPIL:
         with patch.object(
             license.license_template_client, "getLicenseTermsId", return_value=0
         ), patch.object(
-            license.license_terms_util.royalty_module_client,
+            license.royalty_module_client,
             "isWhitelistedRoyaltyPolicy",
             return_value=True,
         ), patch.object(
@@ -241,7 +403,9 @@ class TestCommercialUsePIL:
             license.license_template_client, "getLicenseTermsId", return_value=1
         ):
             response = license.register_commercial_use_pil(
-                default_minting_fee=1, currency=ZERO_ADDRESS
+                default_minting_fee=1,
+                currency=WIP_TOKEN_ADDRESS,
+                royalty_policy=ADDRESS,
             )
             assert response["license_terms_id"] == 1
             assert "tx_hash" not in response
@@ -250,7 +414,7 @@ class TestCommercialUsePIL:
         with patch.object(
             license.license_template_client, "getLicenseTermsId", return_value=0
         ), patch.object(
-            license.license_terms_util.royalty_module_client,
+            license.royalty_module_client,
             "isWhitelistedRoyaltyPolicy",
             return_value=True,
         ), patch.object(
@@ -267,7 +431,7 @@ class TestCommercialUsePIL:
         ):
 
             response = license.register_commercial_use_pil(
-                default_minting_fee=1, currency=ZERO_ADDRESS
+                default_minting_fee=1, currency=WIP_TOKEN_ADDRESS
             )
             assert response is not None
             assert "tx_hash" in response
@@ -278,7 +442,7 @@ class TestCommercialUsePIL:
         with patch.object(
             license.license_template_client, "getLicenseTermsId", return_value=0
         ), patch.object(
-            license.license_terms_util.royalty_module_client,
+            license.royalty_module_client,
             "isWhitelistedRoyaltyPolicy",
             return_value=True,
         ), patch.object(
@@ -288,7 +452,9 @@ class TestCommercialUsePIL:
         ):
             with pytest.raises(Exception, match="request fail."):
                 license.register_commercial_use_pil(
-                    default_minting_fee=1, currency=ZERO_ADDRESS
+                    default_minting_fee=1,
+                    currency=WIP_TOKEN_ADDRESS,
+                    royalty_policy=ADDRESS,
                 )
 
 
@@ -301,15 +467,15 @@ class TestCommercialRemixPIL:
         with patch.object(
             license.license_template_client, "getLicenseTermsId", return_value=1
         ), patch.object(
-            license.license_terms_util.royalty_module_client,
+            license.royalty_module_client,
             "isWhitelistedRoyaltyPolicy",
             return_value=True,
         ):
             response = license.register_commercial_remix_pil(
                 default_minting_fee=1,
                 commercial_rev_share=100,
-                currency=ZERO_ADDRESS,
-                royalty_policy=ZERO_ADDRESS,
+                currency=WIP_TOKEN_ADDRESS,
+                royalty_policy=ADDRESS,
             )
             assert response["license_terms_id"] == 1
             assert "tx_hash" not in response
@@ -318,7 +484,7 @@ class TestCommercialRemixPIL:
         with patch.object(
             license.license_template_client, "getLicenseTermsId", return_value=0
         ), patch.object(
-            license.license_terms_util.royalty_module_client,
+            license.royalty_module_client,
             "isWhitelistedRoyaltyPolicy",
             return_value=True,
         ), patch.object(
@@ -337,8 +503,8 @@ class TestCommercialRemixPIL:
             response = license.register_commercial_remix_pil(
                 default_minting_fee=1,
                 commercial_rev_share=100,
-                currency=ZERO_ADDRESS,
-                royalty_policy=ZERO_ADDRESS,
+                currency=WIP_TOKEN_ADDRESS,
+                royalty_policy=ADDRESS,
             )
             assert response is not None
             assert "tx_hash" in response
@@ -624,7 +790,7 @@ def default_licensing_config() -> LicensingConfig:
         "is_set": True,
         "minting_fee": 1,
         "licensing_hook": ZERO_ADDRESS,
-        "hook_data": "0x",
+        "hook_data": ZERO_HASH,
         "commercial_rev_share": 0,
         "disabled": False,
         "expect_minimum_group_reward_share": 0,
@@ -1014,7 +1180,7 @@ class TestSetLicensingConfig:
                 "isSet": True,
                 "mintingFee": 1,
                 "licensingHook": ZERO_ADDRESS,
-                "hookData": "0x",
+                "hookData": ZERO_HASH,
                 "commercialRevShare": 0,
                 "disabled": False,
                 "expectMinimumGroupRewardShare": 0,

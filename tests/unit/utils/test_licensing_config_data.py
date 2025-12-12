@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, Mock
 
 import pytest
+from web3 import Web3
 
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
 from story_protocol_python_sdk.utils.licensing_config_data import (
@@ -44,7 +45,7 @@ class TestValidateLicenseConfig:
             "is_set": True,
             "minting_fee": 100,
             "licensing_hook": ZERO_ADDRESS,
-            "hook_data": "0xabcdef",
+            "hook_data": ZERO_HASH,
             "commercial_rev_share": 50,
             "disabled": False,
             "expect_minimum_group_reward_share": 25,
@@ -59,7 +60,37 @@ class TestValidateLicenseConfig:
             isSet=True,
             mintingFee=100,
             licensingHook=ZERO_ADDRESS,
-            hookData="0xabcdef",
+            hookData=ZERO_HASH,
+            commercialRevShare=50 * 10**6,
+            disabled=False,
+            expectMinimumGroupRewardShare=25 * 10**6,
+            expectGroupRewardPool=ZERO_ADDRESS,
+        )
+
+    def test_validate_license_config_valid_input_with_custom_hook_data(
+        self, mock_module_registry_client
+    ):
+        """Test validate_license_config with valid input."""
+        input_config: LicensingConfig = {
+            "is_set": True,
+            "minting_fee": 100,
+            "licensing_hook": ZERO_ADDRESS,
+            "hook_data": "test",
+            "commercial_rev_share": 50,
+            "disabled": False,
+            "expect_minimum_group_reward_share": 25,
+            "expect_group_reward_pool": ZERO_ADDRESS,
+        }
+
+        result = LicensingConfigData.validate_license_config(
+            mock_module_registry_client(), input_config
+        )
+
+        assert result == ValidatedLicensingConfig(
+            isSet=True,
+            mintingFee=100,
+            licensingHook=ZERO_ADDRESS,
+            hookData=Web3.to_bytes(text="test"),
             commercialRevShare=50 * 10**6,
             disabled=False,
             expectMinimumGroupRewardShare=25 * 10**6,

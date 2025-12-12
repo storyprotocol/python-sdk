@@ -1,8 +1,54 @@
 from dataclasses import dataclass
+from typing import Optional
 
 from ens.ens import Address, HexStr
 
 from story_protocol_python_sdk.types.resource.Royalty import RoyaltyPolicyInput
+
+
+@dataclass
+class LicenseTermsOverride:
+    """
+    Optional override parameters for license terms.
+    All fields are optional and default to None.
+
+    Attributes:
+        transferable: Whether the license is transferable.
+        royalty_policy: The type of royalty policy to be used.
+        default_minting_fee: The fee to be paid when minting a license.
+        expiration: The expiration period of the license.
+        commercial_use: Whether commercial use is allowed.
+        commercial_attribution: Whether commercial attribution is required.
+        commercializer_checker: The address of the commercializer checker contract.
+        commercializer_checker_data: The data to be passed to the commercializer checker contract.
+        commercial_rev_share: Percentage of revenue that must be shared with the licensor. Must be between 0 and 100 (where 100% represents 100_000_000).
+        commercial_rev_ceiling: The maximum revenue that can be collected from commercial use.
+        derivatives_allowed: Whether derivatives are allowed.
+        derivatives_attribution: Whether attribution is required for derivatives.
+        derivatives_approval: Whether approval is required for derivatives.
+        derivatives_reciprocal: Whether derivatives must have the same license terms.
+        derivative_rev_ceiling: The maximum revenue that can be collected from derivatives.
+        currency: The ERC20 token to be used to pay the minting fee.
+        uri: The URI of the license terms.
+    """
+
+    transferable: Optional[bool] = None
+    royalty_policy: Optional[RoyaltyPolicyInput] = None
+    default_minting_fee: Optional[int] = None
+    expiration: Optional[int] = None
+    commercial_use: Optional[bool] = None
+    commercial_attribution: Optional[bool] = None
+    commercializer_checker: Optional[Address] = None
+    commercializer_checker_data: Optional[Address | HexStr] = None
+    commercial_rev_share: Optional[int] = None
+    commercial_rev_ceiling: Optional[int] = None
+    derivatives_allowed: Optional[bool] = None
+    derivatives_attribution: Optional[bool] = None
+    derivatives_approval: Optional[bool] = None
+    derivatives_reciprocal: Optional[bool] = None
+    derivative_rev_ceiling: Optional[int] = None
+    currency: Optional[Address] = None
+    uri: Optional[str] = None
 
 
 @dataclass

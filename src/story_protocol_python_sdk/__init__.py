@@ -30,8 +30,8 @@ from .types.resource.IPAsset import (
     RegistrationWithRoyaltyVaultAndLicenseTermsResponse,
     RegistrationWithRoyaltyVaultResponse,
 )
-from .types.resource.License import LicenseTermsInput
-from .types.resource.Royalty import RoyaltyShareInput
+from .types.resource.License import LicenseTermsInput, LicenseTermsOverride
+from .types.resource.Royalty import NativeRoyaltyPolicy, RoyaltyShareInput
 from .utils.constants import (
     DEFAULT_FUNCTION_SELECTOR,
     MAX_ROYALTY_TOKEN,
@@ -45,6 +45,7 @@ from .utils.constants import (
 from .utils.derivative_data import DerivativeDataInput
 from .utils.ip_metadata import IPMetadataInput
 from .utils.licensing_config_data import LicensingConfig
+from .utils.pil_flavor import PILFlavor, PILFlavorError
 
 __all__ = [
     "StoryClient",
@@ -73,7 +74,9 @@ __all__ = [
     "LicensingConfig",
     "RegisterPILTermsAndAttachResponse",
     "RoyaltyShareInput",
+    "NativeRoyaltyPolicy",
     "LicenseTermsInput",
+    "LicenseTermsOverride",
     "MintNFT",
     "MintedNFT",
     "RegisterIpAssetResponse",
@@ -88,4 +91,7 @@ __all__ = [
     "DEFAULT_FUNCTION_SELECTOR",
     "MAX_ROYALTY_TOKEN",
     "WIP_TOKEN_ADDRESS",
+    # utils
+    "PILFlavor",
+    "PILFlavorError",
 ]

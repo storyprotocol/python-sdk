@@ -1,6 +1,6 @@
 """Module for handling IP Account operations and transactions."""
 
-from dataclasses import asdict, is_dataclass
+from dataclasses import asdict, is_dataclass, replace
 from typing import cast
 
 from ens.ens import Address, HexStr
@@ -37,6 +37,9 @@ from story_protocol_python_sdk.abi.LicenseToken.LicenseToken_client import (
 from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import (
     LicensingModuleClient,
 )
+from story_protocol_python_sdk.abi.ModuleRegistry.ModuleRegistry_client import (
+    ModuleRegistryClient,
+)
 from story_protocol_python_sdk.abi.Multicall3.Multicall3_client import Multicall3Client
 from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client import (
     PILicenseTemplateClient,
@@ -69,6 +72,7 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
     RegistrationWithRoyaltyVaultAndLicenseTermsResponse,
     RegistrationWithRoyaltyVaultResponse,
 )
+from story_protocol_python_sdk.types.resource.License import LicenseTermsInput
 from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
 from story_protocol_python_sdk.utils.constants import (
     DEADLINE,
@@ -87,11 +91,14 @@ from story_protocol_python_sdk.utils.ip_metadata import (
     get_ip_metadata_dict,
     is_initial_ip_metadata,
 )
-from story_protocol_python_sdk.utils.license_terms import LicenseTerms
+from story_protocol_python_sdk.utils.licensing_config_data import LicensingConfigData
+from story_protocol_python_sdk.utils.pil_flavor import PILFlavor
 from story_protocol_python_sdk.utils.royalty import get_royalty_shares
 from story_protocol_python_sdk.utils.sign import Sign
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
+from story_protocol_python_sdk.utils.util import convert_dict_keys_to_camel_case
 from story_protocol_python_sdk.utils.validation import (
+    get_revenue_share,
     validate_address,
     validate_max_rts,
 )
@@ -129,8 +136,8 @@ class IPAsset:
         )
         self.royalty_module_client = RoyaltyModuleClient(web3)
         self.multicall3_client = Multicall3Client(web3)
-        self.license_terms_util = LicenseTerms(web3)
         self.sign_util = Sign(web3, self.chain_id, self.account)
+        self.module_registry_client = ModuleRegistryClient(web3)
 
     def mint(
         self,
@@ -755,7 +762,6 @@ class IPAsset:
                     f"The NFT with id {token_id} is already registered as IP."
                 )
             license_terms = self._validate_license_terms_data(license_terms_data)
-
             calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
 
             # Get permission signature for all required permissions
@@ -1399,7 +1405,6 @@ class IPAsset:
             license_terms = self._validate_license_terms_data(license_terms_data)
             calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
             royalty_shares_obj = get_royalty_shares(royalty_shares)
-
             signature_response = self.sign_util.get_permission_signature(
                 ip_id=ip_id,
                 deadline=calculated_deadline,
@@ -2251,11 +2256,34 @@ class IPAsset:
                 terms_dict = term["terms"]
                 licensing_config_dict = term["licensing_config"]
 
+            license_terms = PILFlavor.validate_license_terms(
+                LicenseTermsInput(**terms_dict)
+            )
+            license_terms = replace(
+                license_terms,
+                commercial_rev_share=get_revenue_share(
+                    license_terms.commercial_rev_share
+                ),
+            )
+            if license_terms.royalty_policy != ZERO_ADDRESS:
+                is_whitelisted = self.royalty_module_client.isWhitelistedRoyaltyPolicy(
+                    license_terms.royalty_policy
+                )
+                if not is_whitelisted:
+                    raise ValueError("The royalty_policy is not whitelisted.")
+
+            if license_terms.currency != ZERO_ADDRESS:
+                is_whitelisted = self.royalty_module_client.isWhitelistedRoyaltyToken(
+                    license_terms.currency
+                )
+                if not is_whitelisted:
+                    raise ValueError("The currency is not whitelisted.")
+
             validated_license_terms_data.append(
                 {
-                    "terms": self.license_terms_util.validate_license_terms(terms_dict),
-                    "licensingConfig": self.license_terms_util.validate_licensing_config(
-                        licensing_config_dict
+                    "terms": convert_dict_keys_to_camel_case(asdict(license_terms)),
+                    "licensingConfig": LicensingConfigData.validate_license_config(
+                        self.module_registry_client, licensing_config_dict
                     ),
                 }
             )

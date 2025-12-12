@@ -15,7 +15,10 @@ from story_protocol_python_sdk.abi.PILicenseTemplate.PILicenseTemplate_client im
 )
 from story_protocol_python_sdk.types.common import RevShareType
 from story_protocol_python_sdk.utils.constants import MAX_ROYALTY_TOKEN, ZERO_ADDRESS
-from story_protocol_python_sdk.utils.validation import get_revenue_share
+from story_protocol_python_sdk.utils.validation import (
+    get_revenue_share,
+    validate_address,
+)
 
 
 @dataclass
@@ -110,13 +113,12 @@ class DerivativeData:
             raise ValueError(
                 "The number of parent IP IDs must match the number of license terms IDs."
             )
-
         total_royalty_percent = 0
         for parent_ip_id, license_terms_id in zip(
             self.parent_ip_ids, self.license_terms_ids
         ):
-            if not Web3.is_checksum_address(parent_ip_id):
-                raise ValueError("The parent IP ID must be a valid address.")
+            validate_address(parent_ip_id)
+
             if not self.ip_asset_registry_client.isRegistered(parent_ip_id):
                 raise ValueError(f"The parent IP ID {parent_ip_id} must be registered.")
             if not self.license_registry_client.hasIpAttachedLicenseTerms(

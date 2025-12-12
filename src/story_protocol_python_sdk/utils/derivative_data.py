@@ -117,8 +117,8 @@ class DerivativeData:
         for parent_ip_id, license_terms_id in zip(
             self.parent_ip_ids, self.license_terms_ids
         ):
-            if not validate_address(parent_ip_id):
-                raise ValueError("The parent IP ID must be a valid address.")
+            validate_address(parent_ip_id)
+
             if not self.ip_asset_registry_client.isRegistered(parent_ip_id):
                 raise ValueError(f"The parent IP ID {parent_ip_id} must be registered.")
             if not self.license_registry_client.hasIpAttachedLicenseTerms(

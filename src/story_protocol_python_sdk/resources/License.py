@@ -1,4 +1,4 @@
-from dataclasses import asdict
+from dataclasses import asdict, replace
 
 from ens.ens import Address, HexStr
 from typing_extensions import deprecated
@@ -236,8 +236,11 @@ class License:
         :return dict: A dictionary with the transaction hash and the license terms ID.
         """
         validated_license_terms = PILFlavor.validate_license_terms(license_terms)
-        validated_license_terms.commercial_rev_share = get_revenue_share(
-            validated_license_terms.commercial_rev_share
+        validated_license_terms = replace(
+            validated_license_terms,
+            commercial_rev_share=get_revenue_share(
+                validated_license_terms.commercial_rev_share
+            ),
         )
         if validated_license_terms.royalty_policy != ZERO_ADDRESS:
             is_whitelisted = self.royalty_module_client.isWhitelistedRoyaltyPolicy(

@@ -1,4 +1,4 @@
-__version__ = "0.3.16"
+__version__ = "0.3.17"
 
 from .resources.Dispute import Dispute
 from .resources.IPAccount import IPAccount

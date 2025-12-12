@@ -2195,12 +2195,26 @@ class IPAsset:
                     license_terms.commercial_rev_share
                 ),
             )
-            validated_license_terms_data.append(
-                {
-                    "terms": convert_dict_keys_to_camel_case(asdict(license_terms)),
-                    "licensingConfig": LicensingConfigData.validate_license_config(
-                        self.module_registry_client, licensing_config_dict
-                    ),
-                }
+            if license_terms.royalty_policy != ZERO_ADDRESS:
+                is_whitelisted = self.royalty_module_client.isWhitelistedRoyaltyPolicy(
+                    license_terms.royalty_policy
+                )
+                if not is_whitelisted:
+                    raise ValueError("The royalty_policy is not whitelisted.")
+
+        if license_terms.currency != ZERO_ADDRESS:
+            is_whitelisted = self.royalty_module_client.isWhitelistedRoyaltyToken(
+                license_terms.currency
             )
+            if not is_whitelisted:
+                raise ValueError("The currency is not whitelisted.")
+
+        validated_license_terms_data.append(
+            {
+                "terms": convert_dict_keys_to_camel_case(asdict(license_terms)),
+                "licensingConfig": LicensingConfigData.validate_license_config(
+                    self.module_registry_client, licensing_config_dict
+                ),
+            }
+        )
         return validated_license_terms_data

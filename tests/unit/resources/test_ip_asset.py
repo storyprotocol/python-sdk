@@ -199,6 +199,30 @@ class TestIPAssetRegister:
                 assert result["ip_id"] == IP_ID
 
 
+@pytest.fixture(scope="class")
+def mock_is_whitelisted_royalty_policy(ip_asset):
+    def _mock(is_whitelisted: bool = True):
+        return patch.object(
+            ip_asset.royalty_module_client,
+            "isWhitelistedRoyaltyPolicy",
+            return_value=is_whitelisted,
+        )
+
+    return _mock
+
+
+@pytest.fixture(scope="class")
+def mock_is_whitelisted_royalty_token(ip_asset):
+    def _mock(is_whitelisted: bool = True):
+        return patch.object(
+            ip_asset.royalty_module_client,
+            "isWhitelistedRoyaltyToken",
+            return_value=is_whitelisted,
+        )
+
+    return _mock
+
+
 class TestRegisterDerivativeIp:
     def test_ip_is_already_registered(
         self, ip_asset, mock_get_ip_id, mock_is_registered
@@ -2177,12 +2201,40 @@ class TestRegisterIpAsset:
             assert result["royalty_vault"] == royalty_vault
             assert result["distribute_royalty_tokens_tx_hash"] == TX_HASH.hex()
 
+    def test_throw_error_when_royalty_policy_is_not_whitelisted(
+        self,
+        ip_asset: IPAsset,
+        mock_is_whitelisted_royalty_policy,
+    ):
+        with mock_is_whitelisted_royalty_policy(False):
+            with pytest.raises(
+                ValueError, match="The royalty_policy is not whitelisted."
+            ):
+                ip_asset.register_ip_asset(
+                    nft=MintNFT(type="mint", spg_nft_contract=ADDRESS),
+                    license_terms_data=LICENSE_TERMS_DATA,
+                )
+
+    def test_throw_error_when_currency_is_not_whitelisted(
+        self,
+        ip_asset: IPAsset,
+        mock_is_whitelisted_royalty_token,
+    ):
+        with mock_is_whitelisted_royalty_token(False):
+            with pytest.raises(ValueError, match="The currency is not whitelisted."):
+                ip_asset.register_ip_asset(
+                    nft=MintNFT(type="mint", spg_nft_contract=ADDRESS),
+                    license_terms_data=LICENSE_TERMS_DATA,
+                )
+
     def test_success_when_license_terms_data_and_royalty_shares_provided_for_mint_nft(
         self,
         ip_asset: IPAsset,
         mock_parse_ip_registered_event,
         mock_parse_tx_license_terms_attached_event,
         mock_get_royalty_vault_address_by_ip_id,
+        mock_is_whitelisted_royalty_policy,
+        mock_is_whitelisted_royalty_token,
     ):
         royalty_shares = [
             RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0),
@@ -2193,6 +2245,8 @@ class TestRegisterIpAsset:
             mock_parse_ip_registered_event(),
             mock_parse_tx_license_terms_attached_event(),
             mock_get_royalty_vault_address_by_ip_id(royalty_vault),
+            mock_is_whitelisted_royalty_policy(True),
+            mock_is_whitelisted_royalty_token(True),
             patch.object(
                 ip_asset.royalty_token_distribution_workflows_client,
                 "build_mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens_transaction",

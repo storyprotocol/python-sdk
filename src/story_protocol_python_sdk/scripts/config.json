@@ -163,7 +163,8 @@
         "mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens",
         "registerIpAndAttachPILTermsAndDeployRoyaltyVault",
         "distributeRoyaltyTokens",
-        "registerIpAndMakeDerivativeAndDeployRoyaltyVault"
+        "registerIpAndMakeDerivativeAndDeployRoyaltyVault",
+        "multicall"
       ]
     },
     {
@@ -235,7 +236,7 @@
     {
       "contract_name": "SPGNFTImpl",
       "contract_address": "0xc09e3788Fdfbd3dd8CDaa2aa481B52CcFAb74a42",
-      "functions": ["mintFeeToken", "mintFee"]
+      "functions": ["mintFeeToken", "mintFee", "publicMinting"]
     },
     {
       "contract_name": "DerivativeWorkflows",
@@ -244,7 +245,8 @@
         "registerIpAndMakeDerivative",
         "mintAndRegisterIpAndMakeDerivative",
         "mintAndRegisterIpAndMakeDerivativeWithLicenseTokens",
-        "registerIpAndMakeDerivativeWithLicenseTokens"
+        "registerIpAndMakeDerivativeWithLicenseTokens",
+        "multicall"
       ]
     },
     {

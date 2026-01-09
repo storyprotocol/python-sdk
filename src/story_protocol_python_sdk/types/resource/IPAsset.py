@@ -4,6 +4,8 @@ from typing import Literal, TypedDict
 from ens.ens import Address, HexStr
 
 from story_protocol_python_sdk.types.resource.License import LicenseTermsInput
+from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
+from story_protocol_python_sdk.utils.derivative_data import DerivativeDataInput
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadataInput
 from story_protocol_python_sdk.utils.licensing_config_data import LicensingConfig
 
@@ -237,3 +239,102 @@ class LinkDerivativeResponse(TypedDict):
     """
 
     tx_hash: HexStr
+
+
+# =============================================================================
+# Batch Registration Types for batch_register_ip_assets_with_optimized_workflows
+# =============================================================================
+
+
+@dataclass
+class MintAndRegisterRequest:
+    """
+    Request for mint and register IP operations.
+
+    Used for:
+    - mintAndRegisterIpAssetWithPilTerms
+    - mintAndRegisterIpAndMakeDerivative
+    - mintAndRegisterIpAndAttachPilTermsAndDistributeRoyaltyTokens
+    - mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens
+
+    Attributes:
+        spg_nft_contract: The address of the SPG NFT contract.
+        recipient: [Optional] The address to receive the NFT. Defaults to caller's wallet address.
+        allow_duplicates: [Optional] Set to true to allow minting an NFT with a duplicate metadata hash. (default: True)
+        ip_metadata: [Optional] The metadata for the newly minted NFT and registered IP.
+        license_terms_data: [Optional] The license terms data to attach. Required if not using deriv_data.
+        deriv_data: [Optional] The derivative data for creating derivative IP. Required if not using license_terms_data.
+        royalty_shares: [Optional] The royalty shares for distributing royalty tokens.
+    """
+
+    spg_nft_contract: Address
+    recipient: Address | None = None
+    allow_duplicates: bool = True
+    ip_metadata: IPMetadataInput | None = None
+    license_terms_data: list[LicenseTermsDataInput] | None = None
+    deriv_data: DerivativeDataInput | None = None
+    royalty_shares: list[RoyaltyShareInput] | None = None
+
+
+@dataclass
+class RegisterRegistrationRequest:
+    """
+    Request for register IP operations (already minted NFT).
+
+    Used for:
+    - registerIpAndAttachPilTerms
+    - registerIpAndMakeDerivative (registerDerivativeIp)
+    - registerIpAndAttachPilTermsAndDeployRoyaltyVault
+    - registerIpAndMakeDerivativeAndDeployRoyaltyVault
+
+    Attributes:
+        nft_contract: The address of the NFT contract.
+        token_id: The token ID of the NFT.
+        ip_metadata: [Optional] The metadata for the registered IP.
+        deadline: [Optional] The deadline for the signature in seconds. (default: 1000)
+        license_terms_data: [Optional] The license terms data to attach. Required if not using deriv_data.
+        deriv_data: [Optional] The derivative data for creating derivative IP. Required if not using license_terms_data.
+        royalty_shares: [Optional] The royalty shares for distributing royalty tokens.
+    """
+
+    nft_contract: Address
+    token_id: int
+    ip_metadata: IPMetadataInput | None = None
+    deadline: int | None = None
+    license_terms_data: list[LicenseTermsDataInput] | None = None
+    deriv_data: DerivativeDataInput | None = None
+    royalty_shares: list[RoyaltyShareInput] | None = None
+
+
+# Union type for all registration requests
+IpRegistrationWorkflowRequest = MintAndRegisterRequest | RegisterRegistrationRequest
+
+
+class BatchRegistrationResult(TypedDict, total=False):
+    """
+    Result of a single batch registration transaction.
+
+    Attributes:
+        tx_hash: The transaction hash.
+        registered_ips: List of registered IP assets (ip_id, token_id).
+        license_terms_ids: [Optional] The IDs of the license terms attached (applies to all IPs in this batch).
+        ip_royalty_vaults: [Optional] List of (ip_id, ip_royalty_vault) tuples for deployed royalty vaults.
+    """
+
+    tx_hash: HexStr
+    registered_ips: list[RegisteredIP]
+    license_terms_ids: list[int]
+    ip_royalty_vaults: list[tuple[Address, Address]]
+
+
+class BatchRegisterIpAssetsWithOptimizedWorkflowsResponse(TypedDict, total=False):
+    """
+    Response for batch register IP assets with optimized workflows.
+
+    Attributes:
+        registration_results: List of batch registration results.
+        distribute_royalty_tokens_tx_hashes: [Optional] Transaction hashes for royalty token distribution.
+    """
+
+    registration_results: list[BatchRegistrationResult]
+    distribute_royalty_tokens_tx_hashes: list[HexStr]

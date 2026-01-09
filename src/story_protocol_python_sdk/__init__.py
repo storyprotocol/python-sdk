@@ -16,8 +16,12 @@ from .types.resource.Group import (
 from .types.resource.IPAsset import (
     BatchMintAndRegisterIPInput,
     BatchMintAndRegisterIPResponse,
+    BatchRegisterIpAssetsWithOptimizedWorkflowsResponse,
+    BatchRegistrationResult,
+    IpRegistrationWorkflowRequest,
     LicenseTermsDataInput,
     LinkDerivativeResponse,
+    MintAndRegisterRequest,
     MintedNFT,
     MintNFT,
     RegisterAndAttachAndDistributeRoyaltyTokensResponse,
@@ -26,6 +30,7 @@ from .types.resource.IPAsset import (
     RegisteredIP,
     RegisterIpAssetResponse,
     RegisterPILTermsAndAttachResponse,
+    RegisterRegistrationRequest,
     RegistrationResponse,
     RegistrationWithRoyaltyVaultAndLicenseTermsResponse,
     RegistrationWithRoyaltyVaultResponse,
@@ -82,6 +87,12 @@ __all__ = [
     "RegisterIpAssetResponse",
     "RegisterDerivativeIpAssetResponse",
     "LinkDerivativeResponse",
+    # Types for batch_register_ip_assets_with_optimized_workflows
+    "MintAndRegisterRequest",
+    "RegisterRegistrationRequest",
+    "IpRegistrationWorkflowRequest",
+    "BatchRegistrationResult",
+    "BatchRegisterIpAssetsWithOptimizedWorkflowsResponse",
     # Constants
     "ZERO_ADDRESS",
     "ZERO_HASH",

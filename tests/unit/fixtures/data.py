@@ -1,3 +1,5 @@
+from dataclasses import asdict, replace
+
 from ens.ens import HexStr
 
 from story_protocol_python_sdk import (
@@ -6,6 +8,7 @@ from story_protocol_python_sdk import (
     LicenseTermsInput,
 )
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
+from story_protocol_python_sdk.utils.util import convert_dict_keys_to_camel_case
 
 CHAIN_ID = 1315
 ADDRESS = "0x1234567890123456789012345678901234567890"
@@ -78,6 +81,25 @@ LICENSE_TERMS_DATA = [
         },
     )
 ]
+
+# camel case version of LICENSE_TERMS_DATA
+LICENSE_TERMS_DATA_CAMEL_CASE = {
+    "terms": convert_dict_keys_to_camel_case(
+        asdict(replace(LICENSE_TERMS_DATA[0].terms, commercial_rev_share=10 * 10**6))
+    ),
+    "licensingConfig": {
+        "isSet": True,
+        "mintingFee": 10,
+        "licensingHook": ADDRESS,
+        "hookData": ZERO_HASH,
+        "commercialRevShare": 10 * 10**6,
+        "disabled": False,
+        "expectMinimumGroupRewardShare": 0,
+        "expectGroupRewardPool": ZERO_ADDRESS,
+    },
+}
+
+
 IP_METADATA = IPMetadataInput(
     ip_metadata_uri="https://example.com/ip-metadata.json",
     ip_metadata_hash=HexStr("0x" + "a" * 64),

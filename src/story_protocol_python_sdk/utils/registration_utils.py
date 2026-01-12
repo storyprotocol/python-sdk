@@ -18,7 +18,10 @@ from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
 from story_protocol_python_sdk.utils.licensing_config_data import LicensingConfigData
 from story_protocol_python_sdk.utils.pil_flavor import PILFlavor
 from story_protocol_python_sdk.utils.util import convert_dict_keys_to_camel_case
-from story_protocol_python_sdk.utils.validation import get_revenue_share
+from story_protocol_python_sdk.utils.validation import (
+    get_revenue_share,
+    validate_address,
+)
 
 
 def get_public_minting(spg_nft_contract: Address, web3: Web3) -> bool:
@@ -33,7 +36,7 @@ def get_public_minting(spg_nft_contract: Address, web3: Web3) -> bool:
         True if public minting is enabled, False otherwise.
     """
     spg_client = SPGNFTImplClient(
-        web3, contract_address=Web3.to_checksum_address(spg_nft_contract)
+        web3, contract_address=validate_address(spg_nft_contract)
     )
     return spg_client.publicMinting()
 
@@ -41,7 +44,7 @@ def get_public_minting(spg_nft_contract: Address, web3: Web3) -> bool:
 def validate_license_terms_data(
     license_terms_data: list[LicenseTermsDataInput] | list[dict],
     web3: Web3,
-) -> list:
+) -> list[dict]:
     """
     Validate the license terms data.
 

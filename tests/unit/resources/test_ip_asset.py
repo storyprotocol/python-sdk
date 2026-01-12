@@ -200,11 +200,10 @@ class TestIPAssetRegister:
 
 
 @pytest.fixture(scope="class")
-def mock_is_whitelisted_royalty_policy(ip_asset):
+def mock_is_whitelisted_royalty_policy():
     def _mock(is_whitelisted: bool = True):
-        return patch.object(
-            ip_asset.royalty_module_client,
-            "isWhitelistedRoyaltyPolicy",
+        return patch(
+            "story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client.RoyaltyModuleClient.isWhitelistedRoyaltyPolicy",
             return_value=is_whitelisted,
         )
 
@@ -212,11 +211,10 @@ def mock_is_whitelisted_royalty_policy(ip_asset):
 
 
 @pytest.fixture(scope="class")
-def mock_is_whitelisted_royalty_token(ip_asset):
+def mock_is_whitelisted_royalty_token():
     def _mock(is_whitelisted: bool = True):
-        return patch.object(
-            ip_asset.royalty_module_client,
-            "isWhitelistedRoyaltyToken",
+        return patch(
+            "story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client.RoyaltyModuleClient.isWhitelistedRoyaltyToken",
             return_value=is_whitelisted,
         )
 

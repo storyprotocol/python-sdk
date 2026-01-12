@@ -1,6 +1,5 @@
 """Module for handling IP Account operations and transactions."""
 
-from dataclasses import asdict, is_dataclass, replace
 from typing import Any, cast
 
 from ens.ens import Address, HexStr
@@ -76,7 +75,6 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
     RegistrationWithRoyaltyVaultAndLicenseTermsResponse,
     RegistrationWithRoyaltyVaultResponse,
 )
-from story_protocol_python_sdk.types.resource.License import LicenseTermsInput
 from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
 from story_protocol_python_sdk.utils.constants import (
     DEADLINE,
@@ -95,15 +93,14 @@ from story_protocol_python_sdk.utils.ip_metadata import (
     get_ip_metadata_dict,
     is_initial_ip_metadata,
 )
-from story_protocol_python_sdk.utils.licensing_config_data import LicensingConfigData
-from story_protocol_python_sdk.utils.pil_flavor import PILFlavor
-from story_protocol_python_sdk.utils.registration_utils import get_public_minting
+from story_protocol_python_sdk.utils.registration_utils import (
+    get_public_minting,
+    validate_license_terms_data,
+)
 from story_protocol_python_sdk.utils.royalty import get_royalty_shares
 from story_protocol_python_sdk.utils.sign import Sign
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
-from story_protocol_python_sdk.utils.util import convert_dict_keys_to_camel_case
 from story_protocol_python_sdk.utils.validation import (
-    get_revenue_share,
     validate_address,
     validate_max_rts,
 )
@@ -540,7 +537,7 @@ class IPAsset:
                 raise ValueError(
                     f"The NFT contract address {spg_nft_contract} is not valid."
                 )
-            license_terms = self._validate_license_terms_data(terms)
+            license_terms = validate_license_terms_data(terms, self.web3)
             metadata = {
                 "ipMetadataURI": "",
                 "ipMetadataHash": ZERO_HASH,
@@ -766,7 +763,7 @@ class IPAsset:
                 raise ValueError(
                     f"The NFT with id {token_id} is already registered as IP."
                 )
-            license_terms = self._validate_license_terms_data(license_terms_data)
+            license_terms = validate_license_terms_data(license_terms_data, self.web3)
             calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
 
             # Get permission signature for all required permissions
@@ -1170,7 +1167,7 @@ class IPAsset:
             validated_royalty_shares = get_royalty_shares(royalty_shares)[
                 "royalty_shares"
             ]
-            license_terms = self._validate_license_terms_data(license_terms_data)
+            license_terms = validate_license_terms_data(license_terms_data, self.web3)
 
             response = build_and_send_transaction(
                 self.web3,
@@ -1407,7 +1404,7 @@ class IPAsset:
                     f"The NFT with id {token_id} is already registered as IP."
                 )
 
-            license_terms = self._validate_license_terms_data(license_terms_data)
+            license_terms = validate_license_terms_data(license_terms_data, self.web3)
             calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
             royalty_shares_obj = get_royalty_shares(royalty_shares)
             signature_response = self.sign_util.get_permission_signature(
@@ -1510,7 +1507,7 @@ class IPAsset:
             calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
             ip_account_impl_client = IPAccountImplClient(self.web3, ip_id)
             state = ip_account_impl_client.state()
-            license_terms = self._validate_license_terms_data(license_terms_data)
+            license_terms = validate_license_terms_data(license_terms_data, self.web3)
             signature_response = self.sign_util.get_permission_signature(
                 ip_id=ip_id,
                 deadline=calculated_deadline,
@@ -2294,58 +2291,6 @@ class IPAsset:
             return self.account.address
         return validate_address(recipient)
 
-    def _validate_license_terms_data(
-        self, license_terms_data: list[LicenseTermsDataInput] | list[dict]
-    ) -> list:
-        """
-        Validate the license terms data.
-
-        :param license_terms_data `list[LicenseTermsDataInput]` or `list[dict]`: The license terms data to validate.
-        :return list: The validated license terms data.
-        """
-
-        validated_license_terms_data = []
-        for term in license_terms_data:
-            if is_dataclass(term):
-                terms_dict = asdict(term.terms)
-                licensing_config_dict = term.licensing_config
-            else:
-                terms_dict = term["terms"]
-                licensing_config_dict = term["licensing_config"]
-
-            license_terms = PILFlavor.validate_license_terms(
-                LicenseTermsInput(**terms_dict)
-            )
-            license_terms = replace(
-                license_terms,
-                commercial_rev_share=get_revenue_share(
-                    license_terms.commercial_rev_share
-                ),
-            )
-            if license_terms.royalty_policy != ZERO_ADDRESS:
-                is_whitelisted = self.royalty_module_client.isWhitelistedRoyaltyPolicy(
-                    license_terms.royalty_policy
-                )
-                if not is_whitelisted:
-                    raise ValueError("The royalty_policy is not whitelisted.")
-
-            if license_terms.currency != ZERO_ADDRESS:
-                is_whitelisted = self.royalty_module_client.isWhitelistedRoyaltyToken(
-                    license_terms.currency
-                )
-                if not is_whitelisted:
-                    raise ValueError("The currency is not whitelisted.")
-
-            validated_license_terms_data.append(
-                {
-                    "terms": convert_dict_keys_to_camel_case(asdict(license_terms)),
-                    "licensingConfig": LicensingConfigData.validate_license_config(
-                        self.module_registry_client, licensing_config_dict
-                    ),
-                }
-            )
-        return validated_license_terms_data
-
     def _parse_all_ip_royalty_vault_deployed_events(
         self, tx_receipt: dict
     ) -> list[tuple[Address, Address]]:
@@ -2427,8 +2372,8 @@ class IPAsset:
                 # Type assertions - already validated by has_* checks above
                 assert request.license_terms_data is not None
                 assert request.royalty_shares is not None
-                license_terms = self._validate_license_terms_data(
-                    request.license_terms_data
+                license_terms = validate_license_terms_data(
+                    request.license_terms_data, self.web3
                 )
                 validated_royalty_shares = get_royalty_shares(request.royalty_shares)[
                     "royalty_shares"
@@ -2474,8 +2419,8 @@ class IPAsset:
                 # mintAndRegisterIpAndAttachPILTerms
                 # Type assertion - already validated by has_license_terms check above
                 assert request.license_terms_data is not None
-                license_terms = self._validate_license_terms_data(
-                    request.license_terms_data
+                license_terms = validate_license_terms_data(
+                    request.license_terms_data, self.web3
                 )
                 encoded_data = (
                     self.license_attachment_workflows_client.contract.encode_abi(
@@ -2656,8 +2601,8 @@ class IPAsset:
                 # Type assertions - already validated by has_* checks above
                 assert request.license_terms_data is not None
                 assert request.royalty_shares is not None
-                license_terms = self._validate_license_terms_data(
-                    request.license_terms_data
+                license_terms = validate_license_terms_data(
+                    request.license_terms_data, self.web3
                 )
                 royalty_shares_obj = get_royalty_shares(request.royalty_shares)
 
@@ -2784,8 +2729,8 @@ class IPAsset:
                 # registerIpAndAttachPILTerms
                 # Type assertion - already validated by has_license_terms check above
                 assert request.license_terms_data is not None
-                license_terms = self._validate_license_terms_data(
-                    request.license_terms_data
+                license_terms = validate_license_terms_data(
+                    request.license_terms_data, self.web3
                 )
 
                 signature_response = self.sign_util.get_permission_signature(

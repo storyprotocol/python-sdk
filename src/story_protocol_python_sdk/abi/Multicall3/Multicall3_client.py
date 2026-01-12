@@ -29,6 +29,12 @@ class Multicall3Client:
             abi = json.load(abi_file)
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
 
+    def aggregate3(self, calls):
+        return self.contract.functions.aggregate3(calls).transact()
+
+    def build_aggregate3_transaction(self, calls, tx_params):
+        return self.contract.functions.aggregate3(calls).build_transaction(tx_params)
+
     def aggregate3Value(self, calls):
         return self.contract.functions.aggregate3Value(calls).transact()
 

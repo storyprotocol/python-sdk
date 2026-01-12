@@ -252,7 +252,7 @@
     {
       "contract_name": "Multicall3",
       "contract_address": "0xcA11bde05977b3631167028862bE2a173976CA11",
-      "functions": ["aggregate3Value"]
+      "functions": ["aggregate3Value", "aggregate3"]
     },
     {
       "contract_name": "WrappedIP",

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from ens.ens import Address, HexStr
 from typing_extensions import cast
 from web3 import Web3
@@ -37,7 +35,7 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
 from story_protocol_python_sdk.utils.constants import ZERO_HASH
 from story_protocol_python_sdk.utils.derivative_data import DerivativeData
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadata
-from story_protocol_python_sdk.utils.registration_utils import (
+from story_protocol_python_sdk.utils.registrationUtils.registration_utils import (
     get_public_minting,
     validate_license_terms_data,
 )
@@ -45,8 +43,29 @@ from story_protocol_python_sdk.utils.royalty import get_royalty_shares
 from story_protocol_python_sdk.utils.sign import Sign
 from story_protocol_python_sdk.utils.validation import validate_address
 
-if TYPE_CHECKING:
-    pass
+
+def get_allow_duplicates(allow_duplicates: bool, request_type: str) -> bool:
+    """
+    Get the allow duplicates value based on the request type.
+    Due to history reasons, we need to use different allow duplicates values for different request types.
+    In the future, we need to unified the allow duplicates logic for all request types, but it can cause breaking changes.
+    Args:
+        allow_duplicates: The allow duplicates value.
+        request_type: The request type.
+    Returns:
+        The allow duplicates value.
+    """
+    ALLOW_DUPLICATES_MAP = {
+        "mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens": True,
+        "mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens": True,
+        "mintAndRegisterIpAndAttachPILTerms": False,
+        "mintAndRegisterIpAndMakeDerivative": True,
+    }
+    return (
+        allow_duplicates
+        if allow_duplicates is not None
+        else ALLOW_DUPLICATES_MAP[request_type]
+    )
 
 
 def transform_registration_request(
@@ -102,7 +121,6 @@ def _handle_mint_and_register_request(
     Multicall strategy:
     - Public minting enabled: Uses multicall3
     - Public minting disabled: Uses SPG's native multicall
-    - Exception: Royalty distribution methods always use SPG's native multicall
     """
     spg_nft_contract = validate_address(request.spg_nft_contract)
     is_public_minting = get_public_minting(spg_nft_contract, web3)
@@ -134,19 +152,24 @@ def _handle_mint_and_register_request(
     royalty_token_distribution_workflows_address = (
         royalty_token_distribution_workflows_client.contract.address
     )
+    metadata = IPMetadata.from_input(request.ip_metadata).get_validated_data()
     # Build encoded data based on request type
     if license_terms_data and royalty_shares:
+        abi_element_identifier = (
+            "mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens"
+        )
         encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
-            abi_element_identifier="mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens",
+            abi_element_identifier=abi_element_identifier,
             args=[
                 spg_nft_contract,
                 recipient,
-                IPMetadata.from_input(request.ip_metadata).get_validated_data(),
+                metadata,
                 license_terms_data,
                 royalty_shares,
-                # TODO Need to base on request type to determine if allow_duplicates is true or false, due to history reasons
-                # We also need unified the allow_duplicates logic for all request types, due to history reasons. But it can cause breaking changes.
-                request.allow_duplicates,
+                get_allow_duplicates(
+                    request.allow_duplicates,
+                    abi_element_identifier,
+                ),
             ],
         )
 
@@ -161,15 +184,18 @@ def _handle_mint_and_register_request(
         )
 
     elif deriv_data and royalty_shares:
+        abi_element_identifier = (
+            "mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens"
+        )
         encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
-            abi_element_identifier="mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens",
+            abi_element_identifier=abi_element_identifier,
             args=[
                 spg_nft_contract,
                 recipient,
-                IPMetadata.from_input(request.ip_metadata).get_validated_data(),
+                metadata,
                 deriv_data,
                 royalty_shares,
-                request.allow_duplicates,
+                get_allow_duplicates(request.allow_duplicates, abi_element_identifier),
             ],
         )
 
@@ -187,14 +213,15 @@ def _handle_mint_and_register_request(
         license_attachment_workflows_address = (
             license_attachment_workflows_client.contract.address
         )
+        abi_element_identifier = "mintAndRegisterIpAndAttachPILTerms"
         encoded_data = license_attachment_workflows_client.contract.encode_abi(
-            abi_element_identifier="mintAndRegisterIpAndAttachPILTerms",
+            abi_element_identifier=abi_element_identifier,
             args=[
                 spg_nft_contract,
                 recipient,
-                IPMetadata.from_input(request.ip_metadata).get_validated_data(),
+                metadata,
                 license_terms_data,
-                request.allow_duplicates,
+                get_allow_duplicates(request.allow_duplicates, abi_element_identifier),
             ],
         )
         return TransformedRegistrationRequest(
@@ -209,14 +236,15 @@ def _handle_mint_and_register_request(
     elif deriv_data:
         derivative_workflows_client = DerivativeWorkflowsClient(web3)
         derivative_workflows_address = derivative_workflows_client.contract.address
+        abi_element_identifier = "mintAndRegisterIpAndMakeDerivative"
         encoded_data = derivative_workflows_client.contract.encode_abi(
-            abi_element_identifier="mintAndRegisterIpAndMakeDerivative",
+            abi_element_identifier=abi_element_identifier,
             args=[
                 spg_nft_contract,
                 deriv_data,
-                IPMetadata.from_input(request.ip_metadata).get_validated_data(),
+                metadata,
                 recipient,
-                request.allow_duplicates,
+                get_allow_duplicates(request.allow_duplicates, abi_element_identifier),
             ],
         )
 
@@ -285,12 +313,14 @@ def _handle_register_request(
         if request.royalty_shares
         else None
     )
+    state = web3.to_bytes(hexstr=HexStr(ZERO_HASH))
+    metadata = IPMetadata.from_input(request.ip_metadata).get_validated_data()
     deadline = sign_util.get_deadline(deadline=request.deadline)
     if license_terms_data and royalty_shares:
-        signature_response = sign_util.get_permission_signature(
+        signature_data = sign_util.get_permission_signature(
             ip_id=ip_id,
             deadline=deadline,
-            state=web3.to_bytes(hexstr=HexStr(ZERO_HASH)),
+            state=state,
             permissions=[
                 {
                     "ipId": ip_id,
@@ -320,12 +350,12 @@ def _handle_register_request(
             args=[
                 nft_contract,
                 request.token_id,
-                IPMetadata.from_input(request.ip_metadata).get_validated_data(),
+                metadata,
                 license_terms_data,
                 {
-                    "signer": web3.to_checksum_address(wallet_address),
+                    "signer": wallet_address,
                     "deadline": deadline,
-                    "signature": signature_response["signature"],
+                    "signature": signature_data["signature"],
                 },
             ],
         )
@@ -370,7 +400,7 @@ def _handle_register_request(
             args=[
                 nft_contract,
                 request.token_id,
-                IPMetadata.from_input(request.ip_metadata).get_validated_data(),
+                metadata,
                 deriv_data,
                 {
                     "signer": wallet_address,
@@ -397,13 +427,46 @@ def _handle_register_request(
         license_attachment_workflows_address = (
             license_attachment_workflows_client.contract.address
         )
+        signature_data = sign_util.get_permission_signature(
+            ip_id=ip_id,
+            deadline=deadline,
+            state=state,
+            permissions=[
+                {
+                    "ipId": ip_id,
+                    "signer": license_attachment_workflows_address,
+                    "to": core_metadata_module_client.contract.address,
+                    "permission": AccessPermission.ALLOW,
+                    "func": "setAll(address,string,bytes32,bytes32)",
+                },
+                {
+                    "ipId": ip_id,
+                    "signer": license_attachment_workflows_address,
+                    "to": licensing_module_client.contract.address,
+                    "permission": AccessPermission.ALLOW,
+                    "func": "attachLicenseTerms(address,address,uint256)",
+                },
+                {
+                    "ipId": ip_id,
+                    "signer": license_attachment_workflows_address,
+                    "to": licensing_module_client.contract.address,
+                    "permission": AccessPermission.ALLOW,
+                    "func": "setLicensingConfig(address,address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))",
+                },
+            ],
+        )
         encoded_data = license_attachment_workflows_client.contract.encode_abi(
             abi_element_identifier="registerIpAndAttachPILTerms",
             args=[
                 nft_contract,
                 request.token_id,
-                IPMetadata.from_input(request.ip_metadata).get_validated_data(),
+                metadata,
                 license_terms_data,
+                {
+                    "signer": wallet_address,
+                    "deadline": deadline,
+                    "signature": signature_data["signature"],
+                },
             ],
         )
 
@@ -419,13 +482,39 @@ def _handle_register_request(
     elif deriv_data:
         derivative_workflows_client = DerivativeWorkflowsClient(web3)
         derivative_workflows_address = derivative_workflows_client.contract.address
+        signature_data = sign_util.get_permission_signature(
+            ip_id=ip_id,
+            deadline=deadline,
+            state=state,
+            permissions=[
+                {
+                    "ipId": ip_id,
+                    "signer": derivative_workflows_address,
+                    "to": core_metadata_module_client.contract.address,
+                    "permission": AccessPermission.ALLOW,
+                    "func": "setAll(address,string,bytes32,bytes32)",
+                },
+                {
+                    "ipId": ip_id,
+                    "signer": derivative_workflows_address,
+                    "to": licensing_module_client.contract.address,
+                    "permission": AccessPermission.ALLOW,
+                    "func": "registerDerivative(address,address[],uint256[],address,bytes,uint256,uint32,address)",
+                },
+            ],
+        )
         encoded_data = derivative_workflows_client.contract.encode_abi(
             abi_element_identifier="registerIpAndMakeDerivative",
             args=[
                 nft_contract,
                 deriv_data,
-                IPMetadata.from_input(request.ip_metadata).get_validated_data(),
+                metadata,
                 wallet_address,
+                {
+                    "signer": wallet_address,
+                    "deadline": deadline,
+                    "signature": signature_data["signature"],
+                },
             ],
         )
         return TransformedRegistrationRequest(

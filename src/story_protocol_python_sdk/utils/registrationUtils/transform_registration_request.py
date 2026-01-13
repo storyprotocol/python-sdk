@@ -26,7 +26,6 @@ from story_protocol_python_sdk.abi.RoyaltyTokenDistributionWorkflows.RoyaltyToke
 )
 from story_protocol_python_sdk.types.common import AccessPermission
 from story_protocol_python_sdk.types.resource.IPAsset import (
-    EncodedTxData,
     ExtraData,
     MintAndRegisterRequest,
     RegisterRegistrationRequest,
@@ -174,10 +173,7 @@ def _handle_mint_and_register_request(
         )
 
         return TransformedRegistrationRequest(
-            # TODO: not sure if need the property
-            encoded_tx_data=EncodedTxData(
-                to=royalty_token_distribution_workflows_address, data=encoded_data
-            ),
+            encoded_tx_data=encoded_data,
             is_use_multicall3=is_public_minting,
             workflow_address=royalty_token_distribution_workflows_address,
             extra_data=None,
@@ -200,9 +196,7 @@ def _handle_mint_and_register_request(
         )
 
         return TransformedRegistrationRequest(
-            encoded_tx_data=EncodedTxData(
-                to=royalty_token_distribution_workflows_address, data=encoded_data
-            ),
+            encoded_tx_data=encoded_data,
             is_use_multicall3=is_public_minting,
             workflow_address=royalty_token_distribution_workflows_address,
             extra_data=None,
@@ -225,9 +219,7 @@ def _handle_mint_and_register_request(
             ],
         )
         return TransformedRegistrationRequest(
-            encoded_tx_data=EncodedTxData(
-                to=license_attachment_workflows_address, data=encoded_data
-            ),
+            encoded_tx_data=encoded_data,
             is_use_multicall3=is_public_minting,
             workflow_address=license_attachment_workflows_address,
             extra_data=None,
@@ -249,9 +241,7 @@ def _handle_mint_and_register_request(
         )
 
         return TransformedRegistrationRequest(
-            encoded_tx_data=EncodedTxData(
-                to=derivative_workflows_address, data=encoded_data
-            ),
+            encoded_tx_data=encoded_data,
             is_use_multicall3=is_public_minting,
             workflow_address=derivative_workflows_address,
             extra_data=None,
@@ -361,9 +351,7 @@ def _handle_register_request(
         )
 
         return TransformedRegistrationRequest(
-            encoded_tx_data=EncodedTxData(
-                to=royalty_token_distribution_workflows_address, data=encoded_data
-            ),
+            encoded_tx_data=encoded_data,
             is_use_multicall3=False,
             workflow_address=royalty_token_distribution_workflows_address,
             extra_data=ExtraData(
@@ -411,9 +399,7 @@ def _handle_register_request(
         )
 
         return TransformedRegistrationRequest(
-            encoded_tx_data=EncodedTxData(
-                to=royalty_token_distribution_workflows_address, data=encoded_data
-            ),
+            encoded_tx_data=encoded_data,
             is_use_multicall3=False,
             workflow_address=royalty_token_distribution_workflows_address,
             extra_data=ExtraData(
@@ -471,9 +457,7 @@ def _handle_register_request(
         )
 
         return TransformedRegistrationRequest(
-            encoded_tx_data=EncodedTxData(
-                to=license_attachment_workflows_address, data=encoded_data
-            ),
+            encoded_tx_data=encoded_data,
             is_use_multicall3=False,
             workflow_address=license_attachment_workflows_address,
             extra_data=None,
@@ -518,9 +502,7 @@ def _handle_register_request(
             ],
         )
         return TransformedRegistrationRequest(
-            encoded_tx_data=EncodedTxData(
-                to=derivative_workflows_address, data=encoded_data
-            ),
+            encoded_tx_data=encoded_data,
             is_use_multicall3=False,
             workflow_address=derivative_workflows_address,
             extra_data=None,

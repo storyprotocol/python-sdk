@@ -807,10 +807,10 @@ class TestHandleRegisterRequest:
             # Verify args
             args = call_args[1]["args"]
             assert args[0] == ADDRESS  # nft_contract
+            assert args[1] == 1  # token_id
             assert (
-                args[2] == IPMetadata.from_input(IP_METADATA).get_validated_data()
+                args[3] == IPMetadata.from_input(IP_METADATA).get_validated_data()
             )  # metadata
-            assert args[3] == ACCOUNT_ADDRESS  # wallet_address
             assert args[4]["signer"] == ACCOUNT_ADDRESS
             assert args[4]["deadline"] == 1000
             assert args[4]["signature"] == b"signature"

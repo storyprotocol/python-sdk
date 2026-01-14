@@ -222,15 +222,25 @@ def _handle_mint_and_register_with_license_terms_and_royalty_tokens(
     abi_element_identifier = (
         "mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens"
     )
+    validated_request = {
+        "spg_nft_contract": spg_nft_contract,
+        "recipient": recipient,
+        "metadata": metadata,
+        "license_terms_data": license_terms_data,
+        "royalty_shares": royalty_shares,
+        "allow_duplicates": get_allow_duplicates(
+            allow_duplicates, abi_element_identifier
+        ),
+    }
     encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
         abi_element_identifier=abi_element_identifier,
         args=[
-            spg_nft_contract,
-            recipient,
-            metadata,
-            license_terms_data,
-            royalty_shares,
-            get_allow_duplicates(allow_duplicates, abi_element_identifier),
+            validated_request["spg_nft_contract"],
+            validated_request["recipient"],
+            validated_request["metadata"],
+            validated_request["license_terms_data"],
+            validated_request["royalty_shares"],
+            validated_request["allow_duplicates"],
         ],
     )
 
@@ -238,6 +248,7 @@ def _handle_mint_and_register_with_license_terms_and_royalty_tokens(
         encoded_tx_data=encoded_data,
         is_use_multicall3=is_public_minting,
         workflow_address=royalty_token_distribution_workflows_address,
+        validated_request=validated_request,
         extra_data=None,
     )
 
@@ -262,15 +273,25 @@ def _handle_mint_and_register_with_derivative_and_royalty_tokens(
     abi_element_identifier = (
         "mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens"
     )
+    validated_request = {
+        "spg_nft_contract": spg_nft_contract,
+        "recipient": recipient,
+        "metadata": metadata,
+        "deriv_data": deriv_data,
+        "royalty_shares": royalty_shares,
+        "allow_duplicates": get_allow_duplicates(
+            allow_duplicates, abi_element_identifier
+        ),
+    }
     encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
         abi_element_identifier=abi_element_identifier,
         args=[
-            spg_nft_contract,
-            recipient,
-            metadata,
-            deriv_data,
-            royalty_shares,
-            get_allow_duplicates(allow_duplicates, abi_element_identifier),
+            validated_request["spg_nft_contract"],
+            validated_request["recipient"],
+            validated_request["metadata"],
+            validated_request["deriv_data"],
+            validated_request["royalty_shares"],
+            validated_request["allow_duplicates"],
         ],
     )
 
@@ -278,6 +299,7 @@ def _handle_mint_and_register_with_derivative_and_royalty_tokens(
         encoded_tx_data=encoded_data,
         is_use_multicall3=is_public_minting,
         workflow_address=royalty_token_distribution_workflows_address,
+        validated_request=validated_request,
         extra_data=None,
     )
 
@@ -297,14 +319,23 @@ def _handle_mint_and_register_with_license_terms(
         license_attachment_workflows_client.contract.address
     )
     abi_element_identifier = "mintAndRegisterIpAndAttachPILTerms"
+    validated_request = {
+        "spg_nft_contract": spg_nft_contract,
+        "recipient": recipient,
+        "metadata": metadata,
+        "license_terms_data": license_terms_data,
+        "allow_duplicates": get_allow_duplicates(
+            allow_duplicates, abi_element_identifier
+        ),
+    }
     encoded_data = license_attachment_workflows_client.contract.encode_abi(
         abi_element_identifier=abi_element_identifier,
         args=[
-            spg_nft_contract,
-            recipient,
-            metadata,
-            license_terms_data,
-            get_allow_duplicates(allow_duplicates, abi_element_identifier),
+            validated_request["spg_nft_contract"],
+            validated_request["recipient"],
+            validated_request["metadata"],
+            validated_request["license_terms_data"],
+            validated_request["allow_duplicates"],
         ],
     )
 
@@ -312,6 +343,7 @@ def _handle_mint_and_register_with_license_terms(
         encoded_tx_data=encoded_data,
         is_use_multicall3=is_public_minting,
         workflow_address=license_attachment_workflows_address,
+        validated_request=validated_request,
         extra_data=None,
     )
 
@@ -329,14 +361,23 @@ def _handle_mint_and_register_with_derivative(
     derivative_workflows_client = DerivativeWorkflowsClient(web3)
     derivative_workflows_address = derivative_workflows_client.contract.address
     abi_element_identifier = "mintAndRegisterIpAndMakeDerivative"
+    validated_request = {
+        "spg_nft_contract": spg_nft_contract,
+        "recipient": recipient,
+        "metadata": metadata,
+        "deriv_data": deriv_data,
+        "allow_duplicates": get_allow_duplicates(
+            allow_duplicates, abi_element_identifier
+        ),
+    }
     encoded_data = derivative_workflows_client.contract.encode_abi(
         abi_element_identifier=abi_element_identifier,
         args=[
-            spg_nft_contract,
-            deriv_data,
-            metadata,
-            recipient,
-            get_allow_duplicates(allow_duplicates, abi_element_identifier),
+            validated_request["spg_nft_contract"],
+            validated_request["deriv_data"],
+            validated_request["metadata"],
+            validated_request["recipient"],
+            validated_request["allow_duplicates"],
         ],
     )
 
@@ -344,6 +385,7 @@ def _handle_mint_and_register_with_derivative(
         encoded_tx_data=encoded_data,
         is_use_multicall3=is_public_minting,
         workflow_address=derivative_workflows_address,
+        validated_request=validated_request,
         extra_data=None,
     )
 
@@ -460,6 +502,7 @@ def _handle_register_request(
             nft_contract=nft_contract,
             deriv_data=deriv_data,
             metadata=metadata,
+            token_id=request.token_id,
             wallet_address=wallet_address,
             ip_id=ip_id,
             calculated_deadline=calculated_deadline,
@@ -507,18 +550,26 @@ def _handle_register_with_license_terms_and_royalty_vault(
             licensing_module_address=licensing_module_client.contract.address,
         ),
     )
+    abi_element_identifier = "registerIpAndAttachPILTermsAndDeployRoyaltyVault"
+    validated_request = {
+        "nft_contract": nft_contract,
+        "token_id": token_id,
+        "metadata": metadata,
+        "license_terms_data": license_terms_data,
+        "signature_data": {
+            "signer": wallet_address,
+            "deadline": calculated_deadline,
+            "signature": signature_data["signature"],
+        },
+    }
     encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
-        abi_element_identifier="registerIpAndAttachPILTermsAndDeployRoyaltyVault",
+        abi_element_identifier=abi_element_identifier,
         args=[
-            nft_contract,
-            token_id,
-            metadata,
-            license_terms_data,
-            {
-                "signer": wallet_address,
-                "deadline": calculated_deadline,
-                "signature": signature_data["signature"],
-            },
+            validated_request["nft_contract"],
+            validated_request["token_id"],
+            validated_request["metadata"],
+            validated_request["license_terms_data"],
+            validated_request["signature_data"],
         ],
     )
 
@@ -526,6 +577,7 @@ def _handle_register_with_license_terms_and_royalty_vault(
         encoded_tx_data=encoded_data,
         is_use_multicall3=False,
         workflow_address=royalty_token_distribution_workflows_address,
+        validated_request=validated_request,
         extra_data=ExtraData(
             royalty_shares=cast(list[RoyaltyShareInput], royalty_shares),
             deadline=request_deadline,
@@ -567,19 +619,27 @@ def _handle_register_with_derivative_and_royalty_vault(
             licensing_module_address=licensing_module_client.contract.address,
         ),
     )
-
+    abi_element_identifier = "registerIpAndMakeDerivativeAndDeployRoyaltyVault"
+    validated_request = {
+        "nft_contract": nft_contract,
+        "token_id": token_id,
+        "metadata": metadata,
+        "deriv_data": deriv_data,
+        "royalty_shares": royalty_shares,
+        "signature_data": {
+            "signer": wallet_address,
+            "deadline": calculated_deadline,
+            "signature": signature_response["signature"],
+        },
+    }
     encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
-        abi_element_identifier="registerIpAndMakeDerivativeAndDeployRoyaltyVault",
+        abi_element_identifier=abi_element_identifier,
         args=[
-            nft_contract,
-            token_id,
-            metadata,
-            deriv_data,
-            {
-                "signer": wallet_address,
-                "deadline": calculated_deadline,
-                "signature": signature_response["signature"],
-            },
+            validated_request["nft_contract"],
+            validated_request["token_id"],
+            validated_request["metadata"],
+            validated_request["deriv_data"],
+            validated_request["signature_data"],
         ],
     )
 
@@ -587,6 +647,7 @@ def _handle_register_with_derivative_and_royalty_vault(
         encoded_tx_data=encoded_data,
         is_use_multicall3=False,
         workflow_address=royalty_token_distribution_workflows_address,
+        validated_request=validated_request,
         extra_data=ExtraData(
             royalty_shares=cast(list[RoyaltyShareInput], royalty_shares),
             deadline=request_deadline,
@@ -624,18 +685,26 @@ def _handle_register_with_license_terms(
             licensing_module_address=licensing_module_client.contract.address,
         ),
     )
+    abi_element_identifier = "registerIpAndAttachPILTerms"
+    validated_request = {
+        "nft_contract": nft_contract,
+        "token_id": token_id,
+        "metadata": metadata,
+        "license_terms_data": license_terms_data,
+        "signature_data": {
+            "signer": wallet_address,
+            "deadline": calculated_deadline,
+            "signature": signature_data["signature"],
+        },
+    }
     encoded_data = license_attachment_workflows_client.contract.encode_abi(
-        abi_element_identifier="registerIpAndAttachPILTerms",
+        abi_element_identifier=abi_element_identifier,
         args=[
-            nft_contract,
-            token_id,
-            metadata,
-            license_terms_data,
-            {
-                "signer": wallet_address,
-                "deadline": calculated_deadline,
-                "signature": signature_data["signature"],
-            },
+            validated_request["nft_contract"],
+            validated_request["token_id"],
+            validated_request["metadata"],
+            validated_request["license_terms_data"],
+            validated_request["signature_data"],
         ],
     )
 
@@ -643,6 +712,7 @@ def _handle_register_with_license_terms(
         encoded_tx_data=encoded_data,
         is_use_multicall3=False,
         workflow_address=license_attachment_workflows_address,
+        validated_request=validated_request,
         extra_data=None,
     )
 
@@ -652,8 +722,9 @@ def _handle_register_with_derivative(
     nft_contract: Address,
     deriv_data: dict,
     metadata: dict,
-    wallet_address: Address,
+    token_id: int,
     ip_id: Address,
+    wallet_address: Address,
     calculated_deadline: int,
     sign_util: Sign,
     core_metadata_module_client: CoreMetadataModuleClient,
@@ -674,18 +745,26 @@ def _handle_register_with_derivative(
             licensing_module_address=licensing_module_client.contract.address,
         ),
     )
+    abi_element_identifier = "registerIpAndMakeDerivative"
+    validated_request = {
+        "nft_contract": nft_contract,
+        "token_id": token_id,
+        "metadata": metadata,
+        "deriv_data": deriv_data,
+        "signature_data": {
+            "signer": wallet_address,
+            "deadline": calculated_deadline,
+            "signature": signature_data["signature"],
+        },
+    }
     encoded_data = derivative_workflows_client.contract.encode_abi(
-        abi_element_identifier="registerIpAndMakeDerivative",
+        abi_element_identifier=abi_element_identifier,
         args=[
-            nft_contract,
-            deriv_data,
-            metadata,
-            wallet_address,
-            {
-                "signer": wallet_address,
-                "deadline": calculated_deadline,
-                "signature": signature_data["signature"],
-            },
+            validated_request["nft_contract"],
+            validated_request["token_id"],
+            validated_request["deriv_data"],
+            validated_request["metadata"],
+            validated_request["signature_data"],
         ],
     )
 
@@ -693,6 +772,7 @@ def _handle_register_with_derivative(
         encoded_tx_data=encoded_data,
         is_use_multicall3=False,
         workflow_address=derivative_workflows_address,
+        validated_request=validated_request,
         extra_data=None,
     )
 

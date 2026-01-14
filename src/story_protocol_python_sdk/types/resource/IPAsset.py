@@ -375,4 +375,5 @@ class TransformedRegistrationRequest:
     encoded_tx_data: bytes
     is_use_multicall3: bool
     workflow_address: Address
+    validated_request: dict
     extra_data: ExtraData | None = None

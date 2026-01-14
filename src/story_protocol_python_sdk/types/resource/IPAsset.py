@@ -269,7 +269,7 @@ class MintAndRegisterRequest:
 
     spg_nft_contract: Address
     recipient: Address | None = None
-    allow_duplicates: bool = True
+    allow_duplicates: bool | None = None
     ip_metadata: IPMetadataInput | None = None
     license_terms_data: list[LicenseTermsDataInput] | None = None
     deriv_data: DerivativeDataInput | None = None

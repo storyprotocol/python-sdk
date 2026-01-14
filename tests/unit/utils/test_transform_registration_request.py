@@ -352,9 +352,7 @@ class TestTransformRegistrationRequest:
         self, mock_web3, mock_ip_asset_registry_client
     ):
         with mock_ip_asset_registry_client():
-            with pytest.raises(
-                ValueError, match="Invalid mint and register request type"
-            ):
+            with pytest.raises(ValueError, match="Invalid register request type"):
                 transform_registration_request(
                     RegisterRegistrationRequest(
                         nft_contract=ADDRESS,

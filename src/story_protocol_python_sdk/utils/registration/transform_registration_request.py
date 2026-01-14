@@ -1,7 +1,5 @@
 """Transform registration request utilities."""
 
-from __future__ import annotations
-
 from ens.ens import Address, HexStr
 from typing_extensions import cast
 from web3 import Web3
@@ -31,6 +29,7 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
     RegisterRegistrationRequest,
     TransformedRegistrationRequest,
 )
+from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
 from story_protocol_python_sdk.utils.constants import ZERO_HASH
 from story_protocol_python_sdk.utils.derivative_data import DerivativeData
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadata
@@ -84,7 +83,9 @@ def transform_registration_request(
 
     Args:
         request: The registration request (MintAndRegisterRequest or RegisterRegistrationRequest)
-        ip_asset: The IPAsset instance for validation and encoding
+        web3: Web3 instance for contract interaction
+        wallet_address: The wallet address for signing and recipient fallback
+        chain_id: The chain ID for IP ID calculation
 
     Returns:
         TransformedRegistrationRequest with encoded data and multicall strategy
@@ -101,6 +102,11 @@ def transform_registration_request(
         return _handle_register_request(request, web3, wallet_address, chain_id)
     else:
         raise ValueError("Invalid registration request type")
+
+
+# =============================================================================
+# Mint and Register Request Handlers
+# =============================================================================
 
 
 def _handle_mint_and_register_request(
@@ -144,111 +150,207 @@ def _handle_mint_and_register_request(
         else None
     )
 
-    # Validate request
+    metadata = IPMetadata.from_input(request.ip_metadata).get_validated_data()
+    # Build encoded data based on request type
+    if license_terms_data and royalty_shares:
+        return _handle_mint_and_register_with_license_terms_and_royalty_tokens(
+            web3=web3,
+            spg_nft_contract=spg_nft_contract,
+            recipient=recipient,
+            metadata=metadata,
+            license_terms_data=license_terms_data,
+            royalty_shares=royalty_shares,
+            allow_duplicates=request.allow_duplicates,
+            is_public_minting=is_public_minting,
+        )
+
+    elif deriv_data and royalty_shares:
+        return _handle_mint_and_register_with_derivative_and_royalty_tokens(
+            web3=web3,
+            spg_nft_contract=spg_nft_contract,
+            recipient=recipient,
+            metadata=metadata,
+            deriv_data=deriv_data,
+            royalty_shares=royalty_shares,
+            allow_duplicates=request.allow_duplicates,
+            is_public_minting=is_public_minting,
+        )
+
+    elif license_terms_data:
+        return _handle_mint_and_register_with_license_terms(
+            web3=web3,
+            spg_nft_contract=spg_nft_contract,
+            recipient=recipient,
+            metadata=metadata,
+            license_terms_data=license_terms_data,
+            allow_duplicates=request.allow_duplicates,
+            is_public_minting=is_public_minting,
+        )
+
+    elif deriv_data:
+        return _handle_mint_and_register_with_derivative(
+            web3=web3,
+            spg_nft_contract=spg_nft_contract,
+            recipient=recipient,
+            metadata=metadata,
+            deriv_data=deriv_data,
+            allow_duplicates=request.allow_duplicates,
+            is_public_minting=is_public_minting,
+        )
+
+    else:
+        raise ValueError("Invalid mint and register request type")
+
+
+def _handle_mint_and_register_with_license_terms_and_royalty_tokens(
+    web3: Web3,
+    spg_nft_contract: Address,
+    recipient: Address,
+    metadata: dict,
+    license_terms_data: list[dict],
+    royalty_shares: list[dict],
+    allow_duplicates: bool | None,
+    is_public_minting: bool,
+) -> TransformedRegistrationRequest:
+    """Handle mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens."""
     royalty_token_distribution_workflows_client = (
         RoyaltyTokenDistributionWorkflowsClient(web3)
     )
     royalty_token_distribution_workflows_address = (
         royalty_token_distribution_workflows_client.contract.address
     )
-    metadata = IPMetadata.from_input(request.ip_metadata).get_validated_data()
-    # Build encoded data based on request type
-    if license_terms_data and royalty_shares:
-        abi_element_identifier = (
-            "mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens"
-        )
-        encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
-            abi_element_identifier=abi_element_identifier,
-            args=[
-                spg_nft_contract,
-                recipient,
-                metadata,
-                license_terms_data,
-                royalty_shares,
-                get_allow_duplicates(
-                    request.allow_duplicates,
-                    abi_element_identifier,
-                ),
-            ],
-        )
+    abi_element_identifier = (
+        "mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens"
+    )
+    encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
+        abi_element_identifier=abi_element_identifier,
+        args=[
+            spg_nft_contract,
+            recipient,
+            metadata,
+            license_terms_data,
+            royalty_shares,
+            get_allow_duplicates(allow_duplicates, abi_element_identifier),
+        ],
+    )
 
-        return TransformedRegistrationRequest(
-            encoded_tx_data=encoded_data,
-            is_use_multicall3=is_public_minting,
-            workflow_address=royalty_token_distribution_workflows_address,
-            extra_data=None,
-        )
+    return TransformedRegistrationRequest(
+        encoded_tx_data=encoded_data,
+        is_use_multicall3=is_public_minting,
+        workflow_address=royalty_token_distribution_workflows_address,
+        extra_data=None,
+    )
 
-    elif deriv_data and royalty_shares:
-        abi_element_identifier = (
-            "mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens"
-        )
-        encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
-            abi_element_identifier=abi_element_identifier,
-            args=[
-                spg_nft_contract,
-                recipient,
-                metadata,
-                deriv_data,
-                royalty_shares,
-                get_allow_duplicates(request.allow_duplicates, abi_element_identifier),
-            ],
-        )
 
-        return TransformedRegistrationRequest(
-            encoded_tx_data=encoded_data,
-            is_use_multicall3=is_public_minting,
-            workflow_address=royalty_token_distribution_workflows_address,
-            extra_data=None,
-        )
+def _handle_mint_and_register_with_derivative_and_royalty_tokens(
+    web3: Web3,
+    spg_nft_contract: Address,
+    recipient: Address,
+    metadata: dict,
+    deriv_data: dict,
+    royalty_shares: list[dict],
+    allow_duplicates: bool | None,
+    is_public_minting: bool,
+) -> TransformedRegistrationRequest:
+    """Handle mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens."""
+    royalty_token_distribution_workflows_client = (
+        RoyaltyTokenDistributionWorkflowsClient(web3)
+    )
+    royalty_token_distribution_workflows_address = (
+        royalty_token_distribution_workflows_client.contract.address
+    )
+    abi_element_identifier = (
+        "mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens"
+    )
+    encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
+        abi_element_identifier=abi_element_identifier,
+        args=[
+            spg_nft_contract,
+            recipient,
+            metadata,
+            deriv_data,
+            royalty_shares,
+            get_allow_duplicates(allow_duplicates, abi_element_identifier),
+        ],
+    )
 
-    elif license_terms_data:
-        license_attachment_workflows_client = LicenseAttachmentWorkflowsClient(web3)
-        license_attachment_workflows_address = (
-            license_attachment_workflows_client.contract.address
-        )
-        abi_element_identifier = "mintAndRegisterIpAndAttachPILTerms"
-        encoded_data = license_attachment_workflows_client.contract.encode_abi(
-            abi_element_identifier=abi_element_identifier,
-            args=[
-                spg_nft_contract,
-                recipient,
-                metadata,
-                license_terms_data,
-                get_allow_duplicates(request.allow_duplicates, abi_element_identifier),
-            ],
-        )
-        return TransformedRegistrationRequest(
-            encoded_tx_data=encoded_data,
-            is_use_multicall3=is_public_minting,
-            workflow_address=license_attachment_workflows_address,
-            extra_data=None,
-        )
+    return TransformedRegistrationRequest(
+        encoded_tx_data=encoded_data,
+        is_use_multicall3=is_public_minting,
+        workflow_address=royalty_token_distribution_workflows_address,
+        extra_data=None,
+    )
 
-    elif deriv_data:
-        derivative_workflows_client = DerivativeWorkflowsClient(web3)
-        derivative_workflows_address = derivative_workflows_client.contract.address
-        abi_element_identifier = "mintAndRegisterIpAndMakeDerivative"
-        encoded_data = derivative_workflows_client.contract.encode_abi(
-            abi_element_identifier=abi_element_identifier,
-            args=[
-                spg_nft_contract,
-                deriv_data,
-                metadata,
-                recipient,
-                get_allow_duplicates(request.allow_duplicates, abi_element_identifier),
-            ],
-        )
 
-        return TransformedRegistrationRequest(
-            encoded_tx_data=encoded_data,
-            is_use_multicall3=is_public_minting,
-            workflow_address=derivative_workflows_address,
-            extra_data=None,
-        )
+def _handle_mint_and_register_with_license_terms(
+    web3: Web3,
+    spg_nft_contract: Address,
+    recipient: Address,
+    metadata: dict,
+    license_terms_data: list[dict],
+    allow_duplicates: bool | None,
+    is_public_minting: bool,
+) -> TransformedRegistrationRequest:
+    """Handle mintAndRegisterIpAndAttachPILTerms."""
+    license_attachment_workflows_client = LicenseAttachmentWorkflowsClient(web3)
+    license_attachment_workflows_address = (
+        license_attachment_workflows_client.contract.address
+    )
+    abi_element_identifier = "mintAndRegisterIpAndAttachPILTerms"
+    encoded_data = license_attachment_workflows_client.contract.encode_abi(
+        abi_element_identifier=abi_element_identifier,
+        args=[
+            spg_nft_contract,
+            recipient,
+            metadata,
+            license_terms_data,
+            get_allow_duplicates(allow_duplicates, abi_element_identifier),
+        ],
+    )
 
-    else:
-        raise ValueError("Invalid mint and register request type")
+    return TransformedRegistrationRequest(
+        encoded_tx_data=encoded_data,
+        is_use_multicall3=is_public_minting,
+        workflow_address=license_attachment_workflows_address,
+        extra_data=None,
+    )
+
+
+def _handle_mint_and_register_with_derivative(
+    web3: Web3,
+    spg_nft_contract: Address,
+    recipient: Address,
+    metadata: dict,
+    deriv_data: dict,
+    allow_duplicates: bool | None,
+    is_public_minting: bool,
+) -> TransformedRegistrationRequest:
+    """Handle mintAndRegisterIpAndMakeDerivative."""
+    derivative_workflows_client = DerivativeWorkflowsClient(web3)
+    derivative_workflows_address = derivative_workflows_client.contract.address
+    abi_element_identifier = "mintAndRegisterIpAndMakeDerivative"
+    encoded_data = derivative_workflows_client.contract.encode_abi(
+        abi_element_identifier=abi_element_identifier,
+        args=[
+            spg_nft_contract,
+            deriv_data,
+            metadata,
+            recipient,
+            get_allow_duplicates(allow_duplicates, abi_element_identifier),
+        ],
+    )
+
+    return TransformedRegistrationRequest(
+        encoded_tx_data=encoded_data,
+        is_use_multicall3=is_public_minting,
+        workflow_address=derivative_workflows_address,
+        extra_data=None,
+    )
+
+
+# =============================================================================
+# Register Request Handlers
+# =============================================================================
 
 
 def _handle_register_request(
@@ -280,12 +382,6 @@ def _handle_register_request(
     sign_util = Sign(web3=web3, chain_id=chain_id, account=wallet_address)
     core_metadata_module_client = CoreMetadataModuleClient(web3)
     licensing_module_client = LicensingModuleClient(web3)
-    royalty_token_distribution_workflows_client = (
-        RoyaltyTokenDistributionWorkflowsClient(web3)
-    )
-    royalty_token_distribution_workflows_address = (
-        royalty_token_distribution_workflows_client.contract.address
-    )
     license_terms_data = (
         validate_license_terms_data(request.license_terms_data, web3)
         if request.license_terms_data
@@ -305,208 +401,359 @@ def _handle_register_request(
     )
     state = web3.to_bytes(hexstr=HexStr(ZERO_HASH))
     metadata = IPMetadata.from_input(request.ip_metadata).get_validated_data()
-    deadline = sign_util.get_deadline(deadline=request.deadline)
+    calculated_deadline = sign_util.get_deadline(deadline=request.deadline)
     if license_terms_data and royalty_shares:
-        signature_data = sign_util.get_permission_signature(
+        return _handle_register_with_license_terms_and_royalty_vault(
+            web3=web3,
+            nft_contract=nft_contract,
+            token_id=request.token_id,
+            metadata=metadata,
+            license_terms_data=license_terms_data,
+            royalty_shares=royalty_shares,
             ip_id=ip_id,
-            deadline=deadline,
+            wallet_address=wallet_address,
+            calculated_deadline=calculated_deadline,
+            request_deadline=request.deadline,
+            sign_util=sign_util,
+            core_metadata_module_client=core_metadata_module_client,
+            licensing_module_client=licensing_module_client,
             state=state,
-            permissions=[
-                {
-                    "ipId": ip_id,
-                    "signer": royalty_token_distribution_workflows_address,
-                    "to": core_metadata_module_client.contract.address,
-                    "permission": AccessPermission.ALLOW,
-                    "func": "setAll(address,string,bytes32,bytes32)",
-                },
-                {
-                    "ipId": ip_id,
-                    "signer": royalty_token_distribution_workflows_address,
-                    "to": licensing_module_client.contract.address,
-                    "permission": AccessPermission.ALLOW,
-                    "func": "attachLicenseTerms(address,address,uint256)",
-                },
-                {
-                    "ipId": ip_id,
-                    "signer": royalty_token_distribution_workflows_address,
-                    "to": licensing_module_client.contract.address,
-                    "permission": AccessPermission.ALLOW,
-                    "func": "setLicensingConfig(address,address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))",
-                },
-            ],
-        )
-        encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
-            abi_element_identifier="registerIpAndAttachPILTermsAndDeployRoyaltyVault",
-            args=[
-                nft_contract,
-                request.token_id,
-                metadata,
-                license_terms_data,
-                {
-                    "signer": wallet_address,
-                    "deadline": deadline,
-                    "signature": signature_data["signature"],
-                },
-            ],
-        )
-
-        return TransformedRegistrationRequest(
-            encoded_tx_data=encoded_data,
-            is_use_multicall3=False,
-            workflow_address=royalty_token_distribution_workflows_address,
-            extra_data=ExtraData(
-                royalty_shares=royalty_shares,
-                deadline=request.deadline,
-            ),
         )
 
     elif deriv_data and royalty_shares:
-        signature_response = sign_util.get_permission_signature(
+        return _handle_register_with_derivative_and_royalty_vault(
+            web3=web3,
+            nft_contract=nft_contract,
+            token_id=request.token_id,
+            metadata=metadata,
+            deriv_data=deriv_data,
+            royalty_shares=royalty_shares,
             ip_id=ip_id,
-            deadline=deadline,
-            state=web3.to_bytes(hexstr=HexStr(ZERO_HASH)),
-            permissions=[
-                {
-                    "ipId": ip_id,
-                    "signer": royalty_token_distribution_workflows_address,
-                    "to": core_metadata_module_client.contract.address,
-                    "permission": AccessPermission.ALLOW,
-                    "func": "setAll(address,string,bytes32,bytes32)",
-                },
-                {
-                    "ipId": ip_id,
-                    "signer": royalty_token_distribution_workflows_address,
-                    "to": licensing_module_client.contract.address,
-                    "permission": AccessPermission.ALLOW,
-                    "func": "registerDerivative(address,address[],uint256[],address,bytes,uint256,uint32,address)",
-                },
-            ],
-        )
-
-        encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
-            abi_element_identifier="registerIpAndMakeDerivativeAndDeployRoyaltyVault",
-            args=[
-                nft_contract,
-                request.token_id,
-                metadata,
-                deriv_data,
-                {
-                    "signer": wallet_address,
-                    "deadline": deadline,
-                    "signature": signature_response["signature"],
-                },
-            ],
-        )
-
-        return TransformedRegistrationRequest(
-            encoded_tx_data=encoded_data,
-            is_use_multicall3=False,
-            workflow_address=royalty_token_distribution_workflows_address,
-            extra_data=ExtraData(
-                royalty_shares=royalty_shares,
-                deadline=deadline,
-            ),
+            wallet_address=wallet_address,
+            calculated_deadline=calculated_deadline,
+            request_deadline=request.deadline,
+            sign_util=sign_util,
+            core_metadata_module_client=core_metadata_module_client,
+            licensing_module_client=licensing_module_client,
+            state=state,
         )
 
     elif license_terms_data:
-        license_attachment_workflows_client = LicenseAttachmentWorkflowsClient(web3)
-        license_attachment_workflows_address = (
-            license_attachment_workflows_client.contract.address
-        )
-        signature_data = sign_util.get_permission_signature(
+        return _handle_register_with_license_terms(
+            web3=web3,
+            nft_contract=nft_contract,
+            token_id=request.token_id,
+            metadata=metadata,
+            license_terms_data=license_terms_data,
             ip_id=ip_id,
-            deadline=deadline,
+            wallet_address=wallet_address,
+            calculated_deadline=calculated_deadline,
+            sign_util=sign_util,
+            core_metadata_module_client=core_metadata_module_client,
+            licensing_module_client=licensing_module_client,
             state=state,
-            permissions=[
-                {
-                    "ipId": ip_id,
-                    "signer": license_attachment_workflows_address,
-                    "to": core_metadata_module_client.contract.address,
-                    "permission": AccessPermission.ALLOW,
-                    "func": "setAll(address,string,bytes32,bytes32)",
-                },
-                {
-                    "ipId": ip_id,
-                    "signer": license_attachment_workflows_address,
-                    "to": licensing_module_client.contract.address,
-                    "permission": AccessPermission.ALLOW,
-                    "func": "attachLicenseTerms(address,address,uint256)",
-                },
-                {
-                    "ipId": ip_id,
-                    "signer": license_attachment_workflows_address,
-                    "to": licensing_module_client.contract.address,
-                    "permission": AccessPermission.ALLOW,
-                    "func": "setLicensingConfig(address,address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))",
-                },
-            ],
-        )
-        encoded_data = license_attachment_workflows_client.contract.encode_abi(
-            abi_element_identifier="registerIpAndAttachPILTerms",
-            args=[
-                nft_contract,
-                request.token_id,
-                metadata,
-                license_terms_data,
-                {
-                    "signer": wallet_address,
-                    "deadline": deadline,
-                    "signature": signature_data["signature"],
-                },
-            ],
-        )
-
-        return TransformedRegistrationRequest(
-            encoded_tx_data=encoded_data,
-            is_use_multicall3=False,
-            workflow_address=license_attachment_workflows_address,
-            extra_data=None,
         )
 
     elif deriv_data:
-        derivative_workflows_client = DerivativeWorkflowsClient(web3)
-        derivative_workflows_address = derivative_workflows_client.contract.address
-        signature_data = sign_util.get_permission_signature(
+        return _handle_register_with_derivative(
+            web3=web3,
+            nft_contract=nft_contract,
+            deriv_data=deriv_data,
+            metadata=metadata,
+            wallet_address=wallet_address,
             ip_id=ip_id,
-            deadline=deadline,
+            calculated_deadline=calculated_deadline,
+            sign_util=sign_util,
+            core_metadata_module_client=core_metadata_module_client,
+            licensing_module_client=licensing_module_client,
             state=state,
-            permissions=[
-                {
-                    "ipId": ip_id,
-                    "signer": derivative_workflows_address,
-                    "to": core_metadata_module_client.contract.address,
-                    "permission": AccessPermission.ALLOW,
-                    "func": "setAll(address,string,bytes32,bytes32)",
-                },
-                {
-                    "ipId": ip_id,
-                    "signer": derivative_workflows_address,
-                    "to": licensing_module_client.contract.address,
-                    "permission": AccessPermission.ALLOW,
-                    "func": "registerDerivative(address,address[],uint256[],address,bytes,uint256,uint32,address)",
-                },
-            ],
-        )
-        encoded_data = derivative_workflows_client.contract.encode_abi(
-            abi_element_identifier="registerIpAndMakeDerivative",
-            args=[
-                nft_contract,
-                deriv_data,
-                metadata,
-                wallet_address,
-                {
-                    "signer": wallet_address,
-                    "deadline": deadline,
-                    "signature": signature_data["signature"],
-                },
-            ],
-        )
-        return TransformedRegistrationRequest(
-            encoded_tx_data=encoded_data,
-            is_use_multicall3=False,
-            workflow_address=derivative_workflows_address,
-            extra_data=None,
         )
 
     else:
-        raise ValueError("Invalid mint and register request type")
+        raise ValueError("Invalid register request type")
+
+
+def _handle_register_with_license_terms_and_royalty_vault(
+    web3: Web3,
+    nft_contract: Address,
+    token_id: int,
+    metadata: dict,
+    license_terms_data: list[dict],
+    royalty_shares: list[dict],
+    ip_id: Address,
+    wallet_address: Address,
+    calculated_deadline: int,
+    request_deadline: int | None,
+    sign_util: Sign,
+    core_metadata_module_client: CoreMetadataModuleClient,
+    licensing_module_client: LicensingModuleClient,
+    state: bytes,
+) -> TransformedRegistrationRequest:
+    """Handle registerIpAndAttachPILTermsAndDeployRoyaltyVault."""
+    royalty_token_distribution_workflows_client = (
+        RoyaltyTokenDistributionWorkflowsClient(web3)
+    )
+    royalty_token_distribution_workflows_address = (
+        royalty_token_distribution_workflows_client.contract.address
+    )
+    signature_data = sign_util.get_permission_signature(
+        ip_id=ip_id,
+        deadline=calculated_deadline,
+        state=state,
+        permissions=_get_license_terms_permissions(
+            ip_id=ip_id,
+            signer_address=royalty_token_distribution_workflows_address,
+            core_metadata_address=core_metadata_module_client.contract.address,
+            licensing_module_address=licensing_module_client.contract.address,
+        ),
+    )
+    encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
+        abi_element_identifier="registerIpAndAttachPILTermsAndDeployRoyaltyVault",
+        args=[
+            nft_contract,
+            token_id,
+            metadata,
+            license_terms_data,
+            {
+                "signer": wallet_address,
+                "deadline": calculated_deadline,
+                "signature": signature_data["signature"],
+            },
+        ],
+    )
+
+    return TransformedRegistrationRequest(
+        encoded_tx_data=encoded_data,
+        is_use_multicall3=False,
+        workflow_address=royalty_token_distribution_workflows_address,
+        extra_data=ExtraData(
+            royalty_shares=cast(list[RoyaltyShareInput], royalty_shares),
+            deadline=request_deadline,
+        ),
+    )
+
+
+def _handle_register_with_derivative_and_royalty_vault(
+    web3: Web3,
+    nft_contract: Address,
+    token_id: int,
+    metadata: dict,
+    deriv_data: dict,
+    royalty_shares: list[dict],
+    ip_id: Address,
+    wallet_address: Address,
+    calculated_deadline: int,
+    request_deadline: int | None,
+    sign_util: Sign,
+    core_metadata_module_client: CoreMetadataModuleClient,
+    licensing_module_client: LicensingModuleClient,
+    state: bytes,
+) -> TransformedRegistrationRequest:
+    """Handle registerIpAndMakeDerivativeAndDeployRoyaltyVault."""
+    royalty_token_distribution_workflows_client = (
+        RoyaltyTokenDistributionWorkflowsClient(web3)
+    )
+    royalty_token_distribution_workflows_address = (
+        royalty_token_distribution_workflows_client.contract.address
+    )
+    signature_response = sign_util.get_permission_signature(
+        ip_id=ip_id,
+        deadline=calculated_deadline,
+        state=state,
+        permissions=_get_derivative_permissions(
+            ip_id=ip_id,
+            signer_address=royalty_token_distribution_workflows_address,
+            core_metadata_address=core_metadata_module_client.contract.address,
+            licensing_module_address=licensing_module_client.contract.address,
+        ),
+    )
+
+    encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
+        abi_element_identifier="registerIpAndMakeDerivativeAndDeployRoyaltyVault",
+        args=[
+            nft_contract,
+            token_id,
+            metadata,
+            deriv_data,
+            {
+                "signer": wallet_address,
+                "deadline": calculated_deadline,
+                "signature": signature_response["signature"],
+            },
+        ],
+    )
+
+    return TransformedRegistrationRequest(
+        encoded_tx_data=encoded_data,
+        is_use_multicall3=False,
+        workflow_address=royalty_token_distribution_workflows_address,
+        extra_data=ExtraData(
+            royalty_shares=cast(list[RoyaltyShareInput], royalty_shares),
+            deadline=request_deadline,
+        ),
+    )
+
+
+def _handle_register_with_license_terms(
+    web3: Web3,
+    nft_contract: Address,
+    token_id: int,
+    metadata: dict,
+    license_terms_data: list[dict],
+    ip_id: Address,
+    wallet_address: Address,
+    calculated_deadline: int,
+    sign_util: Sign,
+    core_metadata_module_client: CoreMetadataModuleClient,
+    licensing_module_client: LicensingModuleClient,
+    state: bytes,
+) -> TransformedRegistrationRequest:
+    """Handle registerIpAndAttachPILTerms."""
+    license_attachment_workflows_client = LicenseAttachmentWorkflowsClient(web3)
+    license_attachment_workflows_address = (
+        license_attachment_workflows_client.contract.address
+    )
+    signature_data = sign_util.get_permission_signature(
+        ip_id=ip_id,
+        deadline=calculated_deadline,
+        state=state,
+        permissions=_get_license_terms_permissions(
+            ip_id=ip_id,
+            signer_address=license_attachment_workflows_address,
+            core_metadata_address=core_metadata_module_client.contract.address,
+            licensing_module_address=licensing_module_client.contract.address,
+        ),
+    )
+    encoded_data = license_attachment_workflows_client.contract.encode_abi(
+        abi_element_identifier="registerIpAndAttachPILTerms",
+        args=[
+            nft_contract,
+            token_id,
+            metadata,
+            license_terms_data,
+            {
+                "signer": wallet_address,
+                "deadline": calculated_deadline,
+                "signature": signature_data["signature"],
+            },
+        ],
+    )
+
+    return TransformedRegistrationRequest(
+        encoded_tx_data=encoded_data,
+        is_use_multicall3=False,
+        workflow_address=license_attachment_workflows_address,
+        extra_data=None,
+    )
+
+
+def _handle_register_with_derivative(
+    web3: Web3,
+    nft_contract: Address,
+    deriv_data: dict,
+    metadata: dict,
+    wallet_address: Address,
+    ip_id: Address,
+    calculated_deadline: int,
+    sign_util: Sign,
+    core_metadata_module_client: CoreMetadataModuleClient,
+    licensing_module_client: LicensingModuleClient,
+    state: bytes,
+) -> TransformedRegistrationRequest:
+    """Handle registerIpAndMakeDerivative."""
+    derivative_workflows_client = DerivativeWorkflowsClient(web3)
+    derivative_workflows_address = derivative_workflows_client.contract.address
+    signature_data = sign_util.get_permission_signature(
+        ip_id=ip_id,
+        deadline=calculated_deadline,
+        state=state,
+        permissions=_get_derivative_permissions(
+            ip_id=ip_id,
+            signer_address=derivative_workflows_address,
+            core_metadata_address=core_metadata_module_client.contract.address,
+            licensing_module_address=licensing_module_client.contract.address,
+        ),
+    )
+    encoded_data = derivative_workflows_client.contract.encode_abi(
+        abi_element_identifier="registerIpAndMakeDerivative",
+        args=[
+            nft_contract,
+            deriv_data,
+            metadata,
+            wallet_address,
+            {
+                "signer": wallet_address,
+                "deadline": calculated_deadline,
+                "signature": signature_data["signature"],
+            },
+        ],
+    )
+
+    return TransformedRegistrationRequest(
+        encoded_tx_data=encoded_data,
+        is_use_multicall3=False,
+        workflow_address=derivative_workflows_address,
+        extra_data=None,
+    )
+
+
+# =============================================================================
+# Internal Helper Methods
+# =============================================================================
+
+
+def _get_license_terms_permissions(
+    ip_id: Address,
+    signer_address: Address,
+    core_metadata_address: Address,
+    licensing_module_address: Address,
+) -> list[dict]:
+    """Get permissions for license terms operations."""
+    return [
+        {
+            "ipId": ip_id,
+            "signer": signer_address,
+            "to": core_metadata_address,
+            "permission": AccessPermission.ALLOW,
+            "func": "setAll(address,string,bytes32,bytes32)",
+        },
+        {
+            "ipId": ip_id,
+            "signer": signer_address,
+            "to": licensing_module_address,
+            "permission": AccessPermission.ALLOW,
+            "func": "attachLicenseTerms(address,address,uint256)",
+        },
+        {
+            "ipId": ip_id,
+            "signer": signer_address,
+            "to": licensing_module_address,
+            "permission": AccessPermission.ALLOW,
+            "func": "setLicensingConfig(address,address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))",
+        },
+    ]
+
+
+def _get_derivative_permissions(
+    ip_id: Address,
+    signer_address: Address,
+    core_metadata_address: Address,
+    licensing_module_address: Address,
+) -> list[dict]:
+    """Get permissions for derivative operations."""
+    return [
+        {
+            "ipId": ip_id,
+            "signer": signer_address,
+            "to": core_metadata_address,
+            "permission": AccessPermission.ALLOW,
+            "func": "setAll(address,string,bytes32,bytes32)",
+        },
+        {
+            "ipId": ip_id,
+            "signer": signer_address,
+            "to": licensing_module_address,
+            "permission": AccessPermission.ALLOW,
+            "func": "registerDerivative(address,address[],uint256[],address,bytes,uint256,uint32,address)",
+        },
+    ]

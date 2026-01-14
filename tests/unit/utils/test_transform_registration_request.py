@@ -2,6 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from typing_extensions import cast
+from web3 import Account
 
 from story_protocol_python_sdk import (
     DerivativeDataInput,
@@ -21,10 +22,9 @@ from story_protocol_python_sdk.abi.RoyaltyTokenDistributionWorkflows.RoyaltyToke
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadata
 from story_protocol_python_sdk.utils.registration.transform_registration_request import (
     get_allow_duplicates,
-    transform_registration_request,
+    transform_request,
 )
 from tests.unit.fixtures.data import (
-    ACCOUNT_ADDRESS,
     ADDRESS,
     CHAIN_ID,
     IP_ID,
@@ -155,7 +155,7 @@ def mock_workflow_clients(mock_web3):
 def mock_ip_asset_registry_client():
     """Mock IPAssetRegistryClient."""
 
-    def _mock(is_registered: bool = True, ip_id: str = IP_ID):
+    def _mock(is_registered: bool = False, ip_id: str = IP_ID):
         mock_client = MagicMock()
         mock_client.ipId = MagicMock(return_value=ip_id)
         mock_client.isRegistered = MagicMock(return_value=is_registered)
@@ -213,6 +213,12 @@ def mock_module_clients():
         return patches
 
     return _mock
+
+
+account = Account.from_key(
+    "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+)
+ACCOUNT_ADDRESS = account.address
 
 
 class TestGetAllowDuplicates:
@@ -273,9 +279,7 @@ class TestTransformRegistrationRequest:
             patches[1],
             patches[2],
         ):
-            result = transform_registration_request(
-                request, mock_web3, ACCOUNT_ADDRESS, CHAIN_ID
-            )
+            result = transform_request(request, mock_web3, account, CHAIN_ID)
             # Assert real encoding result (not mock value)
             license_attachment_client.contract.encode_abi.assert_called_once()
             call_args = license_attachment_client.contract.encode_abi.call_args
@@ -325,9 +329,7 @@ class TestTransformRegistrationRequest:
             module_patches[0],
             module_patches[1],
         ):
-            result = transform_registration_request(
-                request, mock_web3, ACCOUNT_ADDRESS, CHAIN_ID
-            )
+            result = transform_request(request, mock_web3, account, CHAIN_ID)
             # Assert real encoding result (not mock value)
             license_attachment_client.contract.encode_abi.assert_called_once()
             assert result.workflow_address == "license_attachment_client_address"
@@ -353,23 +355,23 @@ class TestTransformRegistrationRequest:
     ):
         with mock_ip_asset_registry_client():
             with pytest.raises(ValueError, match="Invalid register request type"):
-                transform_registration_request(
+                transform_request(
                     RegisterRegistrationRequest(
                         nft_contract=ADDRESS,
                         token_id=1,
                     ),
                     mock_web3,
-                    ACCOUNT_ADDRESS,
+                    account,
                     CHAIN_ID,
                 )
 
     def test_raises_error_for_invalid_registration_request_type(self, mock_web3):
         """Test that ValueError is raised when request doesn't match any known type."""
         with pytest.raises(ValueError, match="Invalid registration request type"):
-            transform_registration_request(
+            transform_request(
                 None,  # type: ignore[arg-type]
                 mock_web3,
-                ACCOUNT_ADDRESS,
+                account,
                 CHAIN_ID,
             )
 
@@ -403,9 +405,7 @@ class TestHandleMintAndRegisterRequest:
             patches[1],
             patches[2],
         ):
-            result = transform_registration_request(
-                request, mock_web3, ACCOUNT_ADDRESS, CHAIN_ID
-            )
+            result = transform_request(request, mock_web3, account, CHAIN_ID)
 
             royalty_token_distribution_client.contract.encode_abi.assert_called_once()
             call_args = royalty_token_distribution_client.contract.encode_abi.call_args
@@ -463,9 +463,7 @@ class TestHandleMintAndRegisterRequest:
             patches[1],
             patches[2],
         ):
-            result = transform_registration_request(
-                request, mock_web3, ACCOUNT_ADDRESS, CHAIN_ID
-            )
+            result = transform_request(request, mock_web3, account, CHAIN_ID)
 
             royalty_token_distribution_client.contract.encode_abi.assert_called_once()
             call_args = royalty_token_distribution_client.contract.encode_abi.call_args
@@ -519,9 +517,7 @@ class TestHandleMintAndRegisterRequest:
             patches[1],
             patches[2],
         ):
-            result = transform_registration_request(
-                request, mock_web3, ACCOUNT_ADDRESS, CHAIN_ID
-            )
+            result = transform_request(request, mock_web3, account, CHAIN_ID)
             # Assert real encoding result (not mock value)
             derivative_workflows_client.contract.encode_abi.assert_called_once()
             call_args = derivative_workflows_client.contract.encode_abi.call_args
@@ -562,9 +558,7 @@ class TestHandleMintAndRegisterRequest:
             with pytest.raises(
                 ValueError, match="Invalid mint and register request type"
             ):
-                transform_registration_request(
-                    request, mock_web3, ACCOUNT_ADDRESS, CHAIN_ID
-                )
+                transform_request(request, mock_web3, account, CHAIN_ID)
 
 
 class TestHandleRegisterRequest:
@@ -603,9 +597,7 @@ class TestHandleRegisterRequest:
             module_patches[0],
             module_patches[1],
         ):
-            result = transform_registration_request(
-                request, mock_web3, ACCOUNT_ADDRESS, CHAIN_ID
-            )
+            result = transform_request(request, mock_web3, account, CHAIN_ID)
 
             royalty_token_distribution_client.contract.encode_abi.assert_called_once()
             call_args = royalty_token_distribution_client.contract.encode_abi.call_args
@@ -628,6 +620,10 @@ class TestHandleRegisterRequest:
             )
             assert result.extra_data is not None
             royalty_shares = result.extra_data["royalty_shares"]
+            royalty_total_amount = cast(dict[str, int], result.extra_data)[
+                "royalty_total_amount"
+            ]
+            assert royalty_total_amount == 50 * 10**6
             assert len(royalty_shares) == 1
             royalty_share_dict = cast(list[dict[str, str | int]], royalty_shares)[0]
             assert royalty_share_dict["recipient"] == ADDRESS
@@ -671,9 +667,7 @@ class TestHandleRegisterRequest:
             module_patches[0],
             module_patches[1],
         ):
-            result = transform_registration_request(
-                request, mock_web3, ACCOUNT_ADDRESS, CHAIN_ID
-            )
+            result = transform_request(request, mock_web3, account, CHAIN_ID)
 
             # Verify encode_abi was called with correct method and arguments
             royalty_token_distribution_client.contract.encode_abi.assert_called_once()
@@ -731,9 +725,7 @@ class TestHandleRegisterRequest:
             module_patches[0],
             module_patches[1],
         ):
-            result = transform_registration_request(
-                request, mock_web3, ACCOUNT_ADDRESS, CHAIN_ID
-            )
+            result = transform_request(request, mock_web3, account, CHAIN_ID)
 
             # Verify encode_abi was called with correct method and arguments
             license_attachment_client.contract.encode_abi.assert_called_once()
@@ -791,9 +783,7 @@ class TestHandleRegisterRequest:
             module_patches[0],
             module_patches[1],
         ):
-            result = transform_registration_request(
-                request, mock_web3, ACCOUNT_ADDRESS, CHAIN_ID
-            )
+            result = transform_request(request, mock_web3, account, CHAIN_ID)
 
             # Verify encode_abi was called with correct method and arguments
             derivative_workflows_client.contract.encode_abi.assert_called_once()
@@ -827,11 +817,9 @@ class TestHandleRegisterRequest:
             license_terms_data=LICENSE_TERMS_DATA,
         )
         with (
-            mock_ip_asset_registry_client(is_registered=False),
+            mock_ip_asset_registry_client(is_registered=True),
             pytest.raises(
-                ValueError, match="The NFT with id 1 is not registered as IP."
+                ValueError, match="The NFT with id 1 is already registered as IP."
             ),
         ):
-            transform_registration_request(
-                request, mock_web3, ACCOUNT_ADDRESS, CHAIN_ID
-            )
+            transform_request(request, mock_web3, account, CHAIN_ID)

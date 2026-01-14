@@ -355,9 +355,8 @@ class ExtraData(TypedDict, total=False):
     """
 
     royalty_shares: list[RoyaltyShareInput]
-    deadline: int | None
-    max_license_tokens: list[int | None]
-    license_terms_data: list[LicenseTermsDataInput]
+    deadline: int
+    royalty_total_amount: int
 
 
 @dataclass
@@ -375,5 +374,5 @@ class TransformedRegistrationRequest:
     encoded_tx_data: bytes
     is_use_multicall3: bool
     workflow_address: Address
-    validated_request: dict
+    validated_request: list
     extra_data: ExtraData | None = None

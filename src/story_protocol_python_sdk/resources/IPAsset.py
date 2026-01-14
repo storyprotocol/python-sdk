@@ -57,6 +57,7 @@ from story_protocol_python_sdk.types.common import AccessPermission
 from story_protocol_python_sdk.types.resource.IPAsset import (
     BatchMintAndRegisterIPInput,
     BatchMintAndRegisterIPResponse,
+    ExtraData,
     LicenseTermsDataInput,
     LinkDerivativeResponse,
     MintedNFT,
@@ -67,6 +68,7 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
     RegisteredIP,
     RegisterIpAssetResponse,
     RegisterPILTermsAndAttachResponse,
+    RegisterRegistrationRequest,
     RegistrationResponse,
     RegistrationWithRoyaltyVaultAndLicenseTermsResponse,
     RegistrationWithRoyaltyVaultResponse,
@@ -91,6 +93,9 @@ from story_protocol_python_sdk.utils.ip_metadata import (
 )
 from story_protocol_python_sdk.utils.registration.registration_utils import (
     validate_license_terms_data,
+)
+from story_protocol_python_sdk.utils.registration.transform_registration_request import (
+    transform_request,
 )
 from story_protocol_python_sdk.utils.royalty import get_royalty_shares
 from story_protocol_python_sdk.utils.sign import Sign
@@ -1392,58 +1397,24 @@ class IPAsset:
          :return `RegisterAndAttachAndDistributeRoyaltyTokensResponse`: Response with tx hash, license terms IDs, royalty vault address, and distribute royalty tokens transaction hash.
         """
         try:
-            nft_contract = validate_address(nft_contract)
-            ip_id = self._get_ip_id(nft_contract, token_id)
-            if self._is_registered(ip_id):
-                raise ValueError(
-                    f"The NFT with id {token_id} is already registered as IP."
-                )
-
-            license_terms = validate_license_terms_data(license_terms_data, self.web3)
-            calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
-            royalty_shares_obj = get_royalty_shares(royalty_shares)
-            signature_response = self.sign_util.get_permission_signature(
-                ip_id=ip_id,
-                deadline=calculated_deadline,
-                state=self.web3.to_bytes(hexstr=HexStr(ZERO_HASH)),
-                permissions=[
-                    {
-                        "ipId": ip_id,
-                        "signer": self.royalty_token_distribution_workflows_client.contract.address,
-                        "to": self.core_metadata_module_client.contract.address,
-                        "permission": AccessPermission.ALLOW,
-                        "func": "setAll(address,string,bytes32,bytes32)",
-                    },
-                    {
-                        "ipId": ip_id,
-                        "signer": self.royalty_token_distribution_workflows_client.contract.address,
-                        "to": self.licensing_module_client.contract.address,
-                        "permission": AccessPermission.ALLOW,
-                        "func": "attachLicenseTerms(address,address,uint256)",
-                    },
-                    {
-                        "ipId": ip_id,
-                        "signer": self.royalty_token_distribution_workflows_client.contract.address,
-                        "to": self.licensing_module_client.contract.address,
-                        "permission": AccessPermission.ALLOW,
-                        "func": "setLicensingConfig(address,address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))",
-                    },
-                ],
+            transformed_request = transform_request(
+                request=RegisterRegistrationRequest(
+                    nft_contract=nft_contract,
+                    token_id=token_id,
+                    license_terms_data=license_terms_data,
+                    royalty_shares=royalty_shares,
+                    ip_metadata=ip_metadata,
+                ),
+                web3=self.web3,
+                account=self.account,
+                chain_id=self.chain_id,
             )
 
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.royalty_token_distribution_workflows_client.build_registerIpAndAttachPILTermsAndDeployRoyaltyVault_transaction,
-                nft_contract,
-                token_id,
-                IPMetadata.from_input(ip_metadata).get_validated_data(),
-                license_terms,
-                {
-                    "signer": self.web3.to_checksum_address(self.account.address),
-                    "deadline": calculated_deadline,
-                    "signature": signature_response["signature"],
-                },
+                *transformed_request.validated_request,
                 tx_options=tx_options,
             )
             ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
@@ -1456,15 +1427,15 @@ class IPAsset:
                 response["tx_receipt"],
                 ip_registered["ip_id"],
             )
-
+            extra_data = cast(ExtraData, transformed_request.extra_data)
             # Distribute royalty tokens
             distribute_tx_hash = self._distribute_royalty_tokens(
                 ip_id=ip_registered["ip_id"],
-                royalty_shares=royalty_shares_obj["royalty_shares"],
+                royalty_shares=extra_data["royalty_shares"],
                 royalty_vault=royalty_vault,
-                total_amount=royalty_shares_obj["total_amount"],
+                total_amount=extra_data["royalty_total_amount"],
                 tx_options=tx_options,
-                deadline=calculated_deadline,
+                deadline=extra_data["deadline"],
             )
 
             return RegisterAndAttachAndDistributeRoyaltyTokensResponse(

@@ -1,6 +1,7 @@
 """Transform registration request utilities."""
 
 from ens.ens import Address, HexStr
+from eth_account.signers.local import LocalAccount
 from typing_extensions import cast
 from web3 import Web3
 
@@ -66,10 +67,10 @@ def get_allow_duplicates(allow_duplicates: bool | None, request_type: str) -> bo
     )
 
 
-def transform_registration_request(
+def transform_request(
     request: MintAndRegisterRequest | RegisterRegistrationRequest,
     web3: Web3,
-    wallet_address: Address,
+    account: LocalAccount,
     chain_id: int,
 ) -> TransformedRegistrationRequest:
     """
@@ -84,7 +85,7 @@ def transform_registration_request(
     Args:
         request: The registration request (MintAndRegisterRequest or RegisterRegistrationRequest)
         web3: Web3 instance for contract interaction
-        wallet_address: The wallet address for signing and recipient fallback
+        account: The account for signing and recipient fallback
         chain_id: The chain ID for IP ID calculation
 
     Returns:
@@ -96,10 +97,10 @@ def transform_registration_request(
     # Check request type by attribute presence (following TypeScript SDK pattern)
     if hasattr(request, "spg_nft_contract"):
         return _handle_mint_and_register_request(
-            cast(MintAndRegisterRequest, request), web3, wallet_address
+            cast(MintAndRegisterRequest, request), web3, account.address
         )
     elif hasattr(request, "nft_contract") and hasattr(request, "token_id"):
-        return _handle_register_request(request, web3, wallet_address, chain_id)
+        return _handle_register_request(request, web3, account, chain_id)
     else:
         raise ValueError("Invalid registration request type")
 
@@ -149,7 +150,6 @@ def _handle_mint_and_register_request(
         if request.royalty_shares
         else None
     )
-
     metadata = IPMetadata.from_input(request.ip_metadata).get_validated_data()
     # Build encoded data based on request type
     if license_terms_data and royalty_shares:
@@ -398,7 +398,7 @@ def _handle_mint_and_register_with_derivative(
 def _handle_register_request(
     request: RegisterRegistrationRequest,
     web3: Web3,
-    wallet_address: Address,
+    account: LocalAccount,
     chain_id: int,
 ) -> TransformedRegistrationRequest:
     """
@@ -417,11 +417,13 @@ def _handle_register_request(
     ip_id = ip_asset_registry_client.ipId(
         chain_id, request.nft_contract, request.token_id
     )
-    if not ip_asset_registry_client.isRegistered(ip_id):
-        raise ValueError(f"The NFT with id {request.token_id} is not registered as IP.")
+    if ip_asset_registry_client.isRegistered(ip_id):
+        raise ValueError(
+            f"The NFT with id {request.token_id} is already registered as IP."
+        )
 
     nft_contract = validate_address(request.nft_contract)
-    sign_util = Sign(web3=web3, chain_id=chain_id, account=wallet_address)
+    sign_util = Sign(web3=web3, chain_id=chain_id, account=account)
     core_metadata_module_client = CoreMetadataModuleClient(web3)
     licensing_module_client = LicensingModuleClient(web3)
     license_terms_data = (
@@ -437,13 +439,12 @@ def _handle_register_request(
         else None
     )
     royalty_shares = (
-        get_royalty_shares(request.royalty_shares)["royalty_shares"]
-        if request.royalty_shares
-        else None
+        get_royalty_shares(request.royalty_shares) if request.royalty_shares else None
     )
     state = web3.to_bytes(hexstr=HexStr(ZERO_HASH))
     metadata = IPMetadata.from_input(request.ip_metadata).get_validated_data()
     calculated_deadline = sign_util.get_deadline(deadline=request.deadline)
+    wallet_address = account.address
     if license_terms_data and royalty_shares:
         return _handle_register_with_license_terms_and_royalty_vault(
             web3=web3,
@@ -451,11 +452,11 @@ def _handle_register_request(
             token_id=request.token_id,
             metadata=metadata,
             license_terms_data=license_terms_data,
-            royalty_shares=royalty_shares,
+            royalty_shares=royalty_shares["royalty_shares"],
+            royalty_total_amount=royalty_shares["total_amount"],
             ip_id=ip_id,
             wallet_address=wallet_address,
             calculated_deadline=calculated_deadline,
-            request_deadline=request.deadline,
             sign_util=sign_util,
             core_metadata_module_client=core_metadata_module_client,
             licensing_module_client=licensing_module_client,
@@ -469,7 +470,7 @@ def _handle_register_request(
             token_id=request.token_id,
             metadata=metadata,
             deriv_data=deriv_data,
-            royalty_shares=royalty_shares,
+            royalty_shares=royalty_shares["royalty_shares"],
             ip_id=ip_id,
             wallet_address=wallet_address,
             calculated_deadline=calculated_deadline,
@@ -526,11 +527,11 @@ def _handle_register_with_license_terms_and_royalty_vault(
     ip_id: Address,
     wallet_address: Address,
     calculated_deadline: int,
-    request_deadline: int | None,
     sign_util: Sign,
     core_metadata_module_client: CoreMetadataModuleClient,
     licensing_module_client: LicensingModuleClient,
     state: bytes,
+    royalty_total_amount: int,
 ) -> TransformedRegistrationRequest:
     """Handle registerIpAndAttachPILTermsAndDeployRoyaltyVault."""
     royalty_token_distribution_workflows_client = (
@@ -551,26 +552,20 @@ def _handle_register_with_license_terms_and_royalty_vault(
         ),
     )
     abi_element_identifier = "registerIpAndAttachPILTermsAndDeployRoyaltyVault"
-    validated_request = {
-        "nft_contract": nft_contract,
-        "token_id": token_id,
-        "metadata": metadata,
-        "license_terms_data": license_terms_data,
-        "signature_data": {
+    validated_request = [
+        nft_contract,
+        token_id,
+        metadata,
+        license_terms_data,
+        {
             "signer": wallet_address,
             "deadline": calculated_deadline,
             "signature": signature_data["signature"],
         },
-    }
+    ]
     encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
         abi_element_identifier=abi_element_identifier,
-        args=[
-            validated_request["nft_contract"],
-            validated_request["token_id"],
-            validated_request["metadata"],
-            validated_request["license_terms_data"],
-            validated_request["signature_data"],
-        ],
+        args=validated_request,
     )
 
     return TransformedRegistrationRequest(
@@ -580,7 +575,8 @@ def _handle_register_with_license_terms_and_royalty_vault(
         validated_request=validated_request,
         extra_data=ExtraData(
             royalty_shares=cast(list[RoyaltyShareInput], royalty_shares),
-            deadline=request_deadline,
+            deadline=calculated_deadline,
+            royalty_total_amount=royalty_total_amount,
         ),
     )
 

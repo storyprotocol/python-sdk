@@ -34,7 +34,7 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
 from story_protocol_python_sdk.utils.constants import ZERO_HASH
 from story_protocol_python_sdk.utils.derivative_data import DerivativeData
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadata
-from story_protocol_python_sdk.utils.registrationUtils.registration_utils import (
+from story_protocol_python_sdk.utils.registration.registration_utils import (
     get_public_minting,
     validate_license_terms_data,
 )
@@ -43,7 +43,7 @@ from story_protocol_python_sdk.utils.sign import Sign
 from story_protocol_python_sdk.utils.validation import validate_address
 
 
-def get_allow_duplicates(allow_duplicates: bool, request_type: str) -> bool:
+def get_allow_duplicates(allow_duplicates: bool | None, request_type: str) -> bool:
     """
     Get the allow duplicates value based on the request type.
     Due to history reasons, we need to use different allow duplicates values for different request types.

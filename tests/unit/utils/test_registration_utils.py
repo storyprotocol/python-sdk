@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from story_protocol_python_sdk.utils.registration_utils import (
+from story_protocol_python_sdk.utils.registration.registration_utils import (
     get_public_minting,
     validate_license_terms_data,
 )
@@ -20,7 +20,7 @@ def mock_spg_nft_client():
 
     def _mock(public_minting: bool = True):
         return patch(
-            "story_protocol_python_sdk.utils.registration_utils.SPGNFTImplClient",
+            "story_protocol_python_sdk.utils.registration.registration_utils.SPGNFTImplClient",
             return_value=MagicMock(
                 publicMinting=MagicMock(return_value=public_minting)
             ),
@@ -35,7 +35,7 @@ def mock_royalty_module_client():
 
     def _mock(is_whitelisted_policy: bool = True, is_whitelisted_token: bool = True):
         return patch(
-            "story_protocol_python_sdk.utils.registration_utils.RoyaltyModuleClient",
+            "story_protocol_python_sdk.utils.registration.registration_utils.RoyaltyModuleClient",
             return_value=MagicMock(
                 isWhitelistedRoyaltyPolicy=MagicMock(
                     return_value=is_whitelisted_policy
@@ -51,7 +51,7 @@ def mock_royalty_module_client():
 def mock_module_registry_client():
     """Mock ModuleRegistryClient."""
     return patch(
-        "story_protocol_python_sdk.utils.registration_utils.ModuleRegistryClient",
+        "story_protocol_python_sdk.utils.registration.registration_utils.ModuleRegistryClient",
         return_value=MagicMock(),
     )
 

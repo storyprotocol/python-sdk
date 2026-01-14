@@ -89,7 +89,7 @@ from story_protocol_python_sdk.utils.ip_metadata import (
     get_ip_metadata_dict,
     is_initial_ip_metadata,
 )
-from story_protocol_python_sdk.utils.registration_utils import (
+from story_protocol_python_sdk.utils.registration.registration_utils import (
     validate_license_terms_data,
 )
 from story_protocol_python_sdk.utils.royalty import get_royalty_shares

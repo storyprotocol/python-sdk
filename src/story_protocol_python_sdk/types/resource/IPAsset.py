@@ -338,3 +338,41 @@ class BatchRegisterIpAssetsWithOptimizedWorkflowsResponse(TypedDict, total=False
 
     registration_results: list[BatchRegistrationResult]
     distribute_royalty_tokens_tx_hashes: list[HexStr]
+
+
+# =============================================================================
+# Transform Registration Request Types
+# =============================================================================
+class ExtraData(TypedDict, total=False):
+    """
+    Extra data for post-processing after registration.
+
+    Attributes:
+        royalty_shares: [Optional] The royalty shares for distribution.
+        deadline: [Optional] The deadline for the signature.
+        max_license_tokens: [Optional] Maximum license tokens for each license term.
+        license_terms_data: [Optional] The license terms data.
+    """
+
+    royalty_shares: list[RoyaltyShareInput]
+    deadline: int | None
+    max_license_tokens: list[int | None]
+    license_terms_data: list[LicenseTermsDataInput]
+
+
+@dataclass
+class TransformedRegistrationRequest:
+    """
+    Transformed registration request with encoded data and multicall info.
+
+    Attributes:
+        encoded_tx_data: The encoded transaction data.
+        is_use_multicall3: Whether to use multicall3 or SPG's native multicall.
+        workflow_address: The workflow contract address.
+        extra_data: [Optional] Extra data for post-processing.
+    """
+
+    encoded_tx_data: bytes
+    is_use_multicall3: bool
+    workflow_address: Address
+    extra_data: ExtraData | None = None

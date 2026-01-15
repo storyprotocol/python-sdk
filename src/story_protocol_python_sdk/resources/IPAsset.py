@@ -1397,6 +1397,11 @@ class IPAsset:
          :return `RegisterAndAttachAndDistributeRoyaltyTokensResponse`: Response with tx hash, license terms IDs, royalty vault address, and distribute royalty tokens transaction hash.
         """
         try:
+            if not royalty_shares:
+                raise ValueError("Royalty shares must be provided.")
+            if not license_terms_data:
+                raise ValueError("License terms data must be provided.")
+
             transformed_request = transform_request(
                 request=RegisterRegistrationRequest(
                     nft_contract=nft_contract,

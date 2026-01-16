@@ -885,16 +885,7 @@ class IPAsset:
                 request=MintAndRegisterRequest(
                     spg_nft_contract=spg_nft_contract,
                     recipient=recipient,
-                    ip_metadata=(
-                        IPMetadataInput(
-                            ip_metadata_uri=ip_metadata.ip_metadata_uri,
-                            ip_metadata_hash=ip_metadata.ip_metadata_hash,
-                            nft_metadata_uri=ip_metadata.nft_metadata_uri,
-                            nft_metadata_hash=ip_metadata.nft_metadata_hash,
-                        )
-                        if ip_metadata
-                        else None
-                    ),
+                    ip_metadata=ip_metadata,
                     deriv_data=deriv_data,
                     allow_duplicates=allow_duplicates,
                 ),

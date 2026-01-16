@@ -474,11 +474,11 @@ def _handle_register_request(
             ip_id=ip_id,
             wallet_address=wallet_address,
             calculated_deadline=calculated_deadline,
-            request_deadline=request.deadline,
             sign_util=sign_util,
             core_metadata_module_client=core_metadata_module_client,
             licensing_module_client=licensing_module_client,
             state=state,
+            royalty_total_amount=royalty_shares["total_amount"],
         )
 
     elif license_terms_data:
@@ -591,11 +591,11 @@ def _handle_register_with_derivative_and_royalty_vault(
     ip_id: Address,
     wallet_address: Address,
     calculated_deadline: int,
-    request_deadline: int | None,
     sign_util: Sign,
     core_metadata_module_client: CoreMetadataModuleClient,
     licensing_module_client: LicensingModuleClient,
     state: bytes,
+    royalty_total_amount: int,
 ) -> TransformedRegistrationRequest:
     """Handle registerIpAndMakeDerivativeAndDeployRoyaltyVault."""
     royalty_token_distribution_workflows_client = (
@@ -616,27 +616,20 @@ def _handle_register_with_derivative_and_royalty_vault(
         ),
     )
     abi_element_identifier = "registerIpAndMakeDerivativeAndDeployRoyaltyVault"
-    validated_request = {
-        "nft_contract": nft_contract,
-        "token_id": token_id,
-        "metadata": metadata,
-        "deriv_data": deriv_data,
-        "royalty_shares": royalty_shares,
-        "signature_data": {
+    validated_request = [
+        nft_contract,
+        token_id,
+        metadata,
+        deriv_data,
+        {
             "signer": wallet_address,
             "deadline": calculated_deadline,
             "signature": signature_response["signature"],
         },
-    }
+    ]
     encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
         abi_element_identifier=abi_element_identifier,
-        args=[
-            validated_request["nft_contract"],
-            validated_request["token_id"],
-            validated_request["metadata"],
-            validated_request["deriv_data"],
-            validated_request["signature_data"],
-        ],
+        args=validated_request,
     )
 
     return TransformedRegistrationRequest(
@@ -646,7 +639,8 @@ def _handle_register_with_derivative_and_royalty_vault(
         validated_request=validated_request,
         extra_data=ExtraData(
             royalty_shares=cast(list[RoyaltyShareInput], royalty_shares),
-            deadline=request_deadline,
+            deadline=calculated_deadline,
+            royalty_total_amount=royalty_total_amount,
         ),
     )
 

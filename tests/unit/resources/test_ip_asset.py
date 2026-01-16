@@ -172,7 +172,6 @@ def mock_transform_request_dependencies():
         ip_id: str = IP_ID,
         deadline: int = 1000,
         signature: bytes = b"signature",
-        license_terms_data: list | None = None,
     ):
         # Mock IPAssetRegistryClient
         mock_ip_registry_client = MagicMock()
@@ -1678,75 +1677,6 @@ class TestRegisterIpAndAttachPilTermsAndDistributeRoyaltyTokens:
             assert result["royalty_vault"] == ADDRESS
             assert result["distribute_royalty_tokens_tx_hash"] == TX_HASH.hex()
 
-    def test_success_with_default_values_using_detailed_mocks(
-        self,
-        ip_asset: IPAsset,
-        mock_transform_request_dependencies,
-        mock_parse_ip_registered_event,
-        mock_parse_tx_license_terms_attached_event,
-        mock_get_royalty_vault_address_by_ip_id,
-    ):
-        """
-        Test using detailed mocks for transform_request dependencies.
-        This approach mocks all internal dependencies instead of the entire transform_request function.
-        """
-        royalty_shares = [
-            RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0),
-            RoyaltyShareInput(recipient=ADDRESS, percentage=30.0),
-        ]
-
-        with (
-            mock_transform_request_dependencies(
-                is_registered=False,
-                ip_id=IP_ID,
-                deadline=1000,
-                signature=b"signature",
-                license_terms_data=LICENSE_TERMS_DATA,
-            ),
-            mock_parse_ip_registered_event(),
-            mock_parse_tx_license_terms_attached_event(),
-            mock_get_royalty_vault_address_by_ip_id(),
-        ):
-            with (
-                patch.object(
-                    ip_asset.royalty_token_distribution_workflows_client,
-                    "build_registerIpAndAttachPILTermsAndDeployRoyaltyVault_transaction",
-                    return_value={"tx_hash": TX_HASH.hex()},
-                ),
-                patch.object(
-                    ip_asset,
-                    "_distribute_royalty_tokens",
-                    return_value=TX_HASH.hex(),
-                ) as mock_distribute,
-            ):
-                result = ip_asset.register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
-                    nft_contract=ADDRESS,
-                    token_id=3,
-                    license_terms_data=LICENSE_TERMS_DATA,
-                    royalty_shares=royalty_shares,
-                )
-
-                # Verify distribute was called with correct arguments
-                mock_distribute.assert_called_once()
-                call_kwargs = mock_distribute.call_args[1]
-                assert call_kwargs["ip_id"] == IP_ID
-                assert (
-                    call_kwargs["royalty_shares"]
-                    == get_royalty_shares(royalty_shares)["royalty_shares"]
-                )
-                assert call_kwargs["royalty_vault"] == ADDRESS
-                assert (
-                    call_kwargs["total_amount"]
-                    == get_royalty_shares(royalty_shares)["total_amount"]
-                )
-
-            assert result["tx_hash"] == TX_HASH.hex()
-            assert result["ip_id"] == IP_ID
-            assert result["token_id"] == 3
-            assert result["license_terms_ids"] == [1, 2]
-            assert result["royalty_vault"] == ADDRESS
-            assert result["distribute_royalty_tokens_tx_hash"] == TX_HASH.hex()
-
     def test_success_with_custom_values(
         self,
         ip_asset: IPAsset,
@@ -1831,12 +1761,9 @@ class TestRegisterIpAndAttachPilTermsAndDistributeRoyaltyTokens:
 
 class TestRegisterDerivativeIpAndAttachPilTermsAndDistributeRoyaltyTokens:
     def test_token_id_is_already_registered(
-        self, ip_asset: IPAsset, mock_get_ip_id, mock_is_registered
+        self, ip_asset: IPAsset, mock_transform_request_dependencies
     ):
-        with (
-            mock_get_ip_id(),
-            mock_is_registered(True),
-        ):
+        with (mock_transform_request_dependencies(is_registered=True),):
             with pytest.raises(
                 ValueError,
                 match="Failed to register derivative IP and distribute royalty tokens: The NFT with id 3 is already registered as IP.",
@@ -1856,13 +1783,11 @@ class TestRegisterDerivativeIpAndAttachPilTermsAndDistributeRoyaltyTokens:
     def test_throw_error_when_royalty_shares_empty(
         self,
         ip_asset: IPAsset,
-        mock_get_ip_id,
-        mock_is_registered,
+        mock_transform_request_dependencies,
         mock_license_registry_client,
     ):
         with (
-            mock_get_ip_id(),
-            mock_is_registered(),
+            mock_transform_request_dependencies(),
             mock_license_registry_client(),
         ):
             with pytest.raises(
@@ -1882,12 +1807,9 @@ class TestRegisterDerivativeIpAndAttachPilTermsAndDistributeRoyaltyTokens:
     def test_success_with_default_values(
         self,
         ip_asset: IPAsset,
-        mock_get_ip_id,
-        mock_is_registered,
+        mock_transform_request_dependencies,
         mock_parse_ip_registered_event,
-        mock_signature_related_methods,
         mock_get_royalty_vault_address_by_ip_id,
-        mock_ip_account_impl_client,
         mock_license_registry_client,
     ):
         royalty_shares = [
@@ -1896,12 +1818,9 @@ class TestRegisterDerivativeIpAndAttachPilTermsAndDistributeRoyaltyTokens:
         ]
 
         with (
-            mock_get_ip_id(),
-            mock_is_registered(),
+            mock_transform_request_dependencies(),
             mock_parse_ip_registered_event(),
-            mock_signature_related_methods(),
             mock_get_royalty_vault_address_by_ip_id(),
-            mock_ip_account_impl_client(),
             mock_license_registry_client(),
         ):
             with (
@@ -1950,12 +1869,9 @@ class TestRegisterDerivativeIpAndAttachPilTermsAndDistributeRoyaltyTokens:
     def test_success_with_custom_values(
         self,
         ip_asset: IPAsset,
-        mock_get_ip_id,
-        mock_is_registered,
+        mock_transform_request_dependencies,
         mock_parse_ip_registered_event,
-        mock_signature_related_methods,
         mock_get_royalty_vault_address_by_ip_id,
-        mock_ip_account_impl_client,
         mock_license_registry_client,
     ):
         royalty_shares = [
@@ -1963,12 +1879,9 @@ class TestRegisterDerivativeIpAndAttachPilTermsAndDistributeRoyaltyTokens:
         ]
 
         with (
-            mock_get_ip_id(),
-            mock_is_registered(),
+            mock_transform_request_dependencies(),
             mock_parse_ip_registered_event(),
-            mock_signature_related_methods(),
             mock_get_royalty_vault_address_by_ip_id(),
-            mock_ip_account_impl_client(),
             mock_license_registry_client(),
         ):
             with (
@@ -2023,15 +1936,11 @@ class TestRegisterDerivativeIpAndAttachPilTermsAndDistributeRoyaltyTokens:
     def test_throw_error_when_transaction_failed(
         self,
         ip_asset: IPAsset,
-        mock_get_ip_id,
-        mock_is_registered,
-        mock_signature_related_methods,
+        mock_transform_request_dependencies,
         mock_license_registry_client,
     ):
         with (
-            mock_get_ip_id(),
-            mock_is_registered(),
-            mock_signature_related_methods(),
+            mock_transform_request_dependencies(),
             mock_license_registry_client(),
         ):
             with patch.object(
@@ -2060,13 +1969,12 @@ class TestRegisterDerivativeIpAndAttachPilTermsAndDistributeRoyaltyTokens:
     def test_success_with_tx_options(
         self,
         ip_asset: IPAsset,
-        mock_get_ip_id,
-        mock_is_registered,
+        mock_transform_request_dependencies,
         mock_parse_ip_registered_event,
-        mock_signature_related_methods,
         mock_get_royalty_vault_address_by_ip_id,
-        mock_ip_account_impl_client,
         mock_license_registry_client,
+        mock_ip_account_impl_client,
+        mock_signature_related_methods,
     ):
         royalty_shares = [
             RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=60.0),
@@ -2078,13 +1986,12 @@ class TestRegisterDerivativeIpAndAttachPilTermsAndDistributeRoyaltyTokens:
             "chainId": 1,
         }
         with (
-            mock_get_ip_id(),
-            mock_is_registered(),
+            mock_transform_request_dependencies(),
             mock_parse_ip_registered_event(),
-            mock_signature_related_methods(),
             mock_get_royalty_vault_address_by_ip_id(),
-            mock_ip_account_impl_client(),
             mock_license_registry_client(),
+            mock_ip_account_impl_client(),
+            mock_signature_related_methods(),
         ):
             with patch(
                 "story_protocol_python_sdk.resources.IPAsset.build_and_send_transaction"
@@ -3076,21 +2983,19 @@ class TestRegisterDerivativeIpAsset:
     def test_success_when_deriv_data_and_royalty_shares_are_provided_for_minted_nft(
         self,
         ip_asset: IPAsset,
-        mock_parse_ip_registered_event,
-        mock_get_ip_id,
-        mock_signature_related_methods,
-        mock_is_registered,
-        mock_get_royalty_vault_address_by_ip_id,
+        mock_transform_request_dependencies,
         mock_license_registry_client,
+        mock_parse_ip_registered_event,
+        mock_get_royalty_vault_address_by_ip_id,
+        mock_signature_related_methods,
         mock_ip_account_impl_client,
     ):
         with (
-            mock_get_ip_id(),
-            mock_is_registered(is_registered=False),
-            mock_parse_ip_registered_event(),
-            mock_signature_related_methods(),
-            mock_get_royalty_vault_address_by_ip_id(),
+            mock_transform_request_dependencies(),
             mock_license_registry_client(),
+            mock_parse_ip_registered_event(),
+            mock_get_royalty_vault_address_by_ip_id(),
+            mock_signature_related_methods(),
             mock_ip_account_impl_client(),
             patch.object(
                 ip_asset.royalty_token_distribution_workflows_client,

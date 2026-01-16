@@ -758,78 +758,35 @@ class IPAsset:
         :return dict: A dictionary with the transaction hash, license terms ID, and IP ID.
         """
         try:
-            ip_id = self._get_ip_id(nft_contract, token_id)
-            if self._is_registered(ip_id):
-                raise ValueError(
-                    f"The NFT with id {token_id} is already registered as IP."
-                )
-            license_terms = validate_license_terms_data(license_terms_data, self.web3)
-            calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
+            if not license_terms_data:
+                raise ValueError("License terms data must be provided.")
 
-            # Get permission signature for all required permissions
-            signature_response = self.sign_util.get_permission_signature(
-                ip_id=ip_id,
-                deadline=calculated_deadline,
-                state=self.web3.to_bytes(hexstr=HexStr(ZERO_HASH)),
-                permissions=[
-                    {
-                        "ipId": ip_id,
-                        "signer": self.license_attachment_workflows_client.contract.address,
-                        "to": self.core_metadata_module_client.contract.address,
-                        "permission": AccessPermission.ALLOW,
-                        "func": "setAll(address,string,bytes32,bytes32)",
-                    },
-                    {
-                        "ipId": ip_id,
-                        "signer": self.license_attachment_workflows_client.contract.address,
-                        "to": self.licensing_module_client.contract.address,
-                        "permission": AccessPermission.ALLOW,
-                        "func": "attachLicenseTerms(address,address,uint256)",
-                    },
-                    {
-                        "ipId": ip_id,
-                        "signer": self.license_attachment_workflows_client.contract.address,
-                        "to": self.licensing_module_client.contract.address,
-                        "permission": AccessPermission.ALLOW,
-                        "func": "setLicensingConfig(address,address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))",
-                    },
-                ],
+            transformed_request = transform_request(
+                request=RegisterRegistrationRequest(
+                    nft_contract=nft_contract,
+                    token_id=token_id,
+                    license_terms_data=license_terms_data,
+                    ip_metadata=(
+                        IPMetadataInput(
+                            ip_metadata_uri=ip_metadata["ip_metadata_uri"],
+                            ip_metadata_hash=ip_metadata["ip_metadata_hash"],
+                            nft_metadata_uri=ip_metadata["nft_metadata_uri"],
+                            nft_metadata_hash=ip_metadata["nft_metadata_hash"],
+                        )
+                        if ip_metadata
+                        else None
+                    ),
+                    deadline=deadline,
+                ),
+                web3=self.web3,
+                account=self.account,
+                chain_id=self.chain_id,
             )
-
-            metadata = {
-                "ipMetadataURI": "",
-                "ipMetadataHash": ZERO_HASH,
-                "nftMetadataURI": "",
-                "nftMetadataHash": ZERO_HASH,
-            }
-
-            if ip_metadata:
-                metadata.update(
-                    {
-                        "ipMetadataURI": ip_metadata.get("ip_metadata_uri", ""),
-                        "ipMetadataHash": ip_metadata.get(
-                            "ip_metadata_hash", ZERO_HASH
-                        ),
-                        "nftMetadataURI": ip_metadata.get("nft_metadata_uri", ""),
-                        "nftMetadataHash": ip_metadata.get(
-                            "nft_metadata_hash", ZERO_HASH
-                        ),
-                    }
-                )
-
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.license_attachment_workflows_client.build_registerIpAndAttachPILTerms_transaction,
-                nft_contract,
-                token_id,
-                metadata,
-                license_terms,
-                {
-                    "signer": self.web3.to_checksum_address(self.account.address),
-                    "deadline": calculated_deadline,
-                    "signature": signature_response["signature"],
-                },
+                *transformed_request.validated_request,
                 tx_options=tx_options,
             )
 

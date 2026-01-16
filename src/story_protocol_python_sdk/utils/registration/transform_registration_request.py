@@ -676,26 +676,20 @@ def _handle_register_with_license_terms(
         ),
     )
     abi_element_identifier = "registerIpAndAttachPILTerms"
-    validated_request = {
-        "nft_contract": nft_contract,
-        "token_id": token_id,
-        "metadata": metadata,
-        "license_terms_data": license_terms_data,
-        "signature_data": {
+    validated_request = [
+        nft_contract,
+        token_id,
+        metadata,
+        license_terms_data,
+        {
             "signer": wallet_address,
             "deadline": calculated_deadline,
             "signature": signature_data["signature"],
         },
-    }
+    ]
     encoded_data = license_attachment_workflows_client.contract.encode_abi(
         abi_element_identifier=abi_element_identifier,
-        args=[
-            validated_request["nft_contract"],
-            validated_request["token_id"],
-            validated_request["metadata"],
-            validated_request["license_terms_data"],
-            validated_request["signature_data"],
-        ],
+        args=validated_request,
     )
 
     return TransformedRegistrationRequest(

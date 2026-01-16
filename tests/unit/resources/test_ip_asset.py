@@ -436,12 +436,12 @@ class TestMint:
 
 
 class TestRegisterIpAndAttachPilTerms:
-    def test_token_id_is_already_registered(
-        self, ip_asset, mock_get_ip_id, mock_is_registered
+    def test_throw_error_when_license_terms_data_is_not_provided(
+        self, ip_asset: IPAsset, mock_transform_request_dependencies
     ):
-        with mock_get_ip_id(), mock_is_registered(True):
+        with mock_transform_request_dependencies():
             with pytest.raises(
-                ValueError, match="The NFT with id 3 is already registered as IP."
+                ValueError, match="License terms data must be provided."
             ):
                 ip_asset.register_ip_and_attach_pil_terms(
                     nft_contract=ADDRESS,
@@ -449,10 +449,26 @@ class TestRegisterIpAndAttachPilTerms:
                     license_terms_data=[],
                 )
 
-    def test_royalty_policy_commercial_rev_share_is_less_than_0(
-        self, ip_asset: IPAsset, mock_get_ip_id, mock_is_registered
+    def test_token_id_is_already_registered(
+        self, ip_asset, mock_transform_request_dependencies, mock_is_registered
     ):
-        with mock_get_ip_id(), mock_is_registered():
+        with (
+            mock_transform_request_dependencies(is_registered=True),
+            mock_is_registered(True),
+        ):
+            with pytest.raises(
+                ValueError, match="The NFT with id 3 is already registered as IP."
+            ):
+                ip_asset.register_ip_and_attach_pil_terms(
+                    nft_contract=ADDRESS,
+                    token_id=3,
+                    license_terms_data=LICENSE_TERMS_DATA,
+                )
+
+    def test_royalty_policy_commercial_rev_share_is_less_than_0(
+        self, ip_asset: IPAsset, mock_transform_request_dependencies
+    ):
+        with mock_transform_request_dependencies():
             with pytest.raises(
                 PILFlavorError, match="commercial_rev_share must be between 0 and 100."
             ):
@@ -473,18 +489,14 @@ class TestRegisterIpAndAttachPilTerms:
     def test_transaction_to_be_called_with_correct_parameters(
         self,
         ip_asset: IPAsset,
-        mock_get_ip_id,
-        mock_is_registered,
+        mock_transform_request_dependencies,
         mock_parse_ip_registered_event,
         mock_parse_tx_license_terms_attached_event,
-        mock_signature_related_methods,
     ):
         with (
-            mock_get_ip_id(),
-            mock_is_registered(),
+            mock_transform_request_dependencies(),
             mock_parse_ip_registered_event(),
             mock_parse_tx_license_terms_attached_event(),
-            mock_signature_related_methods(),
         ):
             with patch.object(
                 ip_asset.license_attachment_workflows_client,
@@ -541,41 +553,50 @@ class TestRegisterIpAndAttachPilTerms:
     def test_success(
         self,
         ip_asset: IPAsset,
-        mock_get_ip_id,
-        mock_is_registered,
+        mock_transform_request_dependencies,
         mock_parse_ip_registered_event,
-        mock_signature_related_methods,
         mock_parse_tx_license_terms_attached_event,
     ):
         with (
-            mock_get_ip_id(),
-            mock_is_registered(),
+            mock_transform_request_dependencies(),
             mock_parse_ip_registered_event(),
             mock_parse_tx_license_terms_attached_event(),
-            mock_signature_related_methods(),
         ):
-            result = ip_asset.register_ip_and_attach_pil_terms(
-                nft_contract=ADDRESS,
-                token_id=3,
-                license_terms_data=[
-                    {
-                        "terms": LICENSE_TERMS,
-                        "licensing_config": LICENSING_CONFIG,
-                    }
-                ],
-                ip_metadata={
-                    "ip_metadata_uri": "https://example.com/metadata/custom-value.json",
-                    "ip_metadata_hash": "ip_metadata_hash",
-                    "nft_metadata_uri": "https://example.com/metadata/custom-value.json",
-                    "nft_metadata_hash": "nft_metadata_hash",
-                },
-            )
-            assert result == {
-                "tx_hash": TX_HASH.hex(),
-                "ip_id": IP_ID,
-                "license_terms_ids": [1, 2],
-                "token_id": 3,
-            }
+            with patch.object(
+                ip_asset.license_attachment_workflows_client,
+                "build_registerIpAndAttachPILTerms_transaction",
+            ) as mock_build_registerIpAndAttachPILTerms_transaction:
+                result = ip_asset.register_ip_and_attach_pil_terms(
+                    nft_contract=ADDRESS,
+                    token_id=3,
+                    license_terms_data=[
+                        {
+                            "terms": LICENSE_TERMS,
+                            "licensing_config": LICENSING_CONFIG,
+                        }
+                    ],
+                    ip_metadata={
+                        "ip_metadata_uri": "https://example.com/metadata/custom-value.json",
+                        "ip_metadata_hash": "ip_metadata_hash",
+                        "nft_metadata_uri": "https://example.com/metadata/custom-value.json",
+                        "nft_metadata_hash": "nft_metadata_hash",
+                    },
+                )
+                call_args = (
+                    mock_build_registerIpAndAttachPILTerms_transaction.call_args[0]
+                )
+                assert call_args[2] == {
+                    "ipMetadataURI": "https://example.com/metadata/custom-value.json",
+                    "ipMetadataHash": "ip_metadata_hash",
+                    "nftMetadataURI": "https://example.com/metadata/custom-value.json",
+                    "nftMetadataHash": "nft_metadata_hash",
+                }
+                assert result == {
+                    "tx_hash": TX_HASH.hex(),
+                    "ip_id": IP_ID,
+                    "license_terms_ids": [1, 2],
+                    "token_id": 3,
+                }
 
 
 class TestRegisterDerivative:
@@ -2692,16 +2713,12 @@ class TestRegisterIpAsset:
         ip_asset: IPAsset,
         mock_parse_ip_registered_event,
         mock_parse_tx_license_terms_attached_event,
-        mock_get_ip_id,
-        mock_signature_related_methods,
-        mock_is_registered,
+        mock_transform_request_dependencies,
     ):
         with (
             mock_parse_ip_registered_event(),
             mock_parse_tx_license_terms_attached_event(),
-            mock_get_ip_id(),
-            mock_signature_related_methods(),
-            mock_is_registered(is_registered=False),
+            mock_transform_request_dependencies(),
             patch.object(
                 ip_asset.license_attachment_workflows_client,
                 "build_registerIpAndAttachPILTerms_transaction",
@@ -2731,16 +2748,12 @@ class TestRegisterIpAsset:
         ip_asset: IPAsset,
         mock_parse_ip_registered_event,
         mock_parse_tx_license_terms_attached_event,
-        mock_get_ip_id,
-        mock_signature_related_methods,
-        mock_is_registered,
+        mock_transform_request_dependencies,
     ):
         with (
             mock_parse_ip_registered_event(),
             mock_parse_tx_license_terms_attached_event(),
-            mock_get_ip_id(),
-            mock_signature_related_methods(),
-            mock_is_registered(is_registered=False),
+            mock_transform_request_dependencies(),
             patch.object(
                 ip_asset.license_attachment_workflows_client,
                 "build_registerIpAndAttachPILTerms_transaction",

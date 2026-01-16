@@ -881,18 +881,32 @@ class IPAsset:
         """
 
         try:
-            validated_deriv_data = DerivativeData.from_input(
-                web3=self.web3, input_data=deriv_data
-            ).get_validated_data()
+            transformed_request = transform_request(
+                request=MintAndRegisterRequest(
+                    spg_nft_contract=spg_nft_contract,
+                    recipient=recipient,
+                    ip_metadata=(
+                        IPMetadataInput(
+                            ip_metadata_uri=ip_metadata.ip_metadata_uri,
+                            ip_metadata_hash=ip_metadata.ip_metadata_hash,
+                            nft_metadata_uri=ip_metadata.nft_metadata_uri,
+                            nft_metadata_hash=ip_metadata.nft_metadata_hash,
+                        )
+                        if ip_metadata
+                        else None
+                    ),
+                    deriv_data=deriv_data,
+                    allow_duplicates=allow_duplicates,
+                ),
+                web3=self.web3,
+                account=self.account,
+                chain_id=self.chain_id,
+            )
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.derivative_workflows_client.build_mintAndRegisterIpAndMakeDerivative_transaction,
-                validate_address(spg_nft_contract),
-                validated_deriv_data,
-                IPMetadata.from_input(ip_metadata).get_validated_data(),
-                self._validate_recipient(recipient),
-                allow_duplicates,
+                *transformed_request.validated_request,
                 tx_options=tx_options,
             )
             ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[

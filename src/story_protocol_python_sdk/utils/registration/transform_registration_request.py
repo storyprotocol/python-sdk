@@ -335,24 +335,16 @@ def _handle_mint_and_register_with_derivative(
     derivative_workflows_client = DerivativeWorkflowsClient(web3)
     derivative_workflows_address = derivative_workflows_client.contract.address
     abi_element_identifier = "mintAndRegisterIpAndMakeDerivative"
-    validated_request = {
-        "spg_nft_contract": spg_nft_contract,
-        "recipient": recipient,
-        "metadata": metadata,
-        "deriv_data": deriv_data,
-        "allow_duplicates": get_allow_duplicates(
-            allow_duplicates, abi_element_identifier
-        ),
-    }
+    validated_request = [
+        spg_nft_contract,
+        deriv_data,
+        metadata,
+        recipient,
+        get_allow_duplicates(allow_duplicates, abi_element_identifier),
+    ]
     encoded_data = derivative_workflows_client.contract.encode_abi(
         abi_element_identifier=abi_element_identifier,
-        args=[
-            validated_request["spg_nft_contract"],
-            validated_request["deriv_data"],
-            validated_request["metadata"],
-            validated_request["recipient"],
-            validated_request["allow_duplicates"],
-        ],
+        args=validated_request,
     )
 
     return TransformedRegistrationRequest(

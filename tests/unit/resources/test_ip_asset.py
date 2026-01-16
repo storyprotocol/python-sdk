@@ -700,8 +700,13 @@ class TestMintAndRegisterIpAndMakeDerivative:
         ip_asset: IPAsset,
         mock_license_registry_client,
         mock_parse_ip_registered_event,
+        mock_transform_request_dependencies,
     ):
-        with mock_parse_ip_registered_event(), mock_license_registry_client():
+        with (
+            mock_transform_request_dependencies(),
+            mock_parse_ip_registered_event(),
+            mock_license_registry_client(),
+        ):
             with patch.object(
                 ip_asset.derivative_workflows_client,
                 "build_mintAndRegisterIpAndMakeDerivative_transaction",
@@ -741,10 +746,15 @@ class TestMintAndRegisterIpAndMakeDerivative:
     def test_with_custom_value(
         self,
         ip_asset: IPAsset,
+        mock_transform_request_dependencies,
         mock_license_registry_client,
         mock_parse_ip_registered_event,
     ):
-        with mock_parse_ip_registered_event(), mock_license_registry_client():
+        with (
+            mock_transform_request_dependencies(),
+            mock_parse_ip_registered_event(),
+            mock_license_registry_client(),
+        ):
             with patch.object(
                 ip_asset.derivative_workflows_client,
                 "build_mintAndRegisterIpAndMakeDerivative_transaction",
@@ -761,10 +771,8 @@ class TestMintAndRegisterIpAndMakeDerivative:
                         license_template=ADDRESS,
                     ),
                     ip_metadata=IPMetadataInput(
-                        ip_metadata_uri="https://example.com/metadata/custom-value.json",
                         ip_metadata_hash=HexStr("ip_metadata_hash"),
                         nft_metadata_uri="https://example.com/metadata/custom-value.json",
-                        nft_metadata_hash=HexStr("nft_metadata_hash"),
                     ),
                     recipient=ADDRESS,
                     allow_duplicates=False,
@@ -783,10 +791,10 @@ class TestMintAndRegisterIpAndMakeDerivative:
                 "licenseTemplate": ADDRESS,
             }
             assert mock_build_transaction.call_args[0][2] == {
-                "ipMetadataURI": "https://example.com/metadata/custom-value.json",
-                "ipMetadataHash": "ip_metadata_hash",
+                "ipMetadataURI": "",
+                "ipMetadataHash": HexStr("ip_metadata_hash"),
                 "nftMetadataURI": "https://example.com/metadata/custom-value.json",
-                "nftMetadataHash": "nft_metadata_hash",
+                "nftMetadataHash": ZERO_HASH,
             }
             assert mock_build_transaction.call_args[0][3] == ADDRESS  # recipient
             assert not mock_build_transaction.call_args[0][4]  # allowDuplicates

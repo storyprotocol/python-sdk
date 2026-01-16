@@ -367,8 +367,8 @@ class TestRegisterDerivativeIp:
                     },
                 )
 
-    def test_parent_ip_id_is_empty(self, ip_asset, mock_get_ip_id, mock_is_registered):
-        with mock_get_ip_id(), mock_is_registered():
+    def test_parent_ip_id_is_empty(self, ip_asset, mock_transform_request_dependencies):
+        with mock_transform_request_dependencies():
             with pytest.raises(ValueError, match="The parent IP IDs must be provided."):
                 ip_asset.register_derivative_ip(
                     nft_contract=ADDRESS,
@@ -382,16 +382,14 @@ class TestRegisterDerivativeIp:
     def test_success(
         self,
         ip_asset,
-        mock_get_ip_id,
-        mock_is_registered,
+        mock_transform_request_dependencies,
         mock_parse_ip_registered_event,
         mock_signature_related_methods,
         mock_get_function_signature,
         mock_license_registry_client,
     ):
         with (
-            mock_get_ip_id(),
-            mock_is_registered(),
+            mock_transform_request_dependencies(),
             mock_parse_ip_registered_event(),
             mock_get_function_signature(),
             mock_license_registry_client(),
@@ -1449,9 +1447,24 @@ class TestMintAndRegisterIpAndAttachPilTermsAndDistributeRoyaltyTokens:
                 royalty_shares=[],
             )
 
+    def test_throw_error_when_license_terms_data_is_empty(self, ip_asset: IPAsset):
+
+        with pytest.raises(
+            ValueError,
+            match="Failed to mint, register IP, attach PIL terms and distribute royalty tokens: License terms data must be provided.",
+        ):
+            ip_asset.mint_and_register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
+                spg_nft_contract=ADDRESS,
+                license_terms_data=[],
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0)
+                ],
+            )
+
     def test_success_with_default_values(
         self,
         ip_asset: IPAsset,
+        mock_transform_request_dependencies,
         mock_license_registry_client,
         mock_parse_ip_registered_event,
         mock_parse_tx_license_terms_attached_event,
@@ -1463,6 +1476,7 @@ class TestMintAndRegisterIpAndAttachPilTermsAndDistributeRoyaltyTokens:
         ]
 
         with (
+            mock_transform_request_dependencies(),
             mock_parse_ip_registered_event(),
             mock_parse_tx_license_terms_attached_event(),
             mock_license_registry_client(),
@@ -3170,16 +3184,14 @@ class TestRegisterDerivativeIpAsset:
     def test_success_when_deriv_data_only_are_provided_for_minted_nft(
         self,
         ip_asset: IPAsset,
+        mock_transform_request_dependencies,
         mock_parse_ip_registered_event,
-        mock_get_ip_id,
         mock_license_registry_client,
         mock_signature_related_methods,
-        mock_is_registered,
         mock_get_function_signature,
     ):
         with (
-            mock_get_ip_id(),
-            mock_is_registered(is_registered=False),
+            mock_transform_request_dependencies(),
             mock_parse_ip_registered_event(),
             mock_license_registry_client(),
             mock_signature_related_methods(),

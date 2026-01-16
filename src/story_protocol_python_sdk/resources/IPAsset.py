@@ -60,6 +60,7 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
     ExtraData,
     LicenseTermsDataInput,
     LinkDerivativeResponse,
+    MintAndRegisterRequest,
     MintedNFT,
     MintNFT,
     RegisterAndAttachAndDistributeRoyaltyTokensResponse,
@@ -1089,21 +1090,29 @@ class IPAsset:
         :return `RegistrationWithRoyaltyVaultAndLicenseTermsResponse`: Response with tx hash, IP ID, token ID, license terms IDs, and royalty vault address.
         """
         try:
-            validated_royalty_shares = get_royalty_shares(royalty_shares)[
-                "royalty_shares"
-            ]
-            license_terms = validate_license_terms_data(license_terms_data, self.web3)
+            if not license_terms_data:
+                raise ValueError("License terms data must be provided.")
+            if not royalty_shares:
+                raise ValueError("Royalty shares must be provided.")
 
+            transformed_request = transform_request(
+                request=MintAndRegisterRequest(
+                    spg_nft_contract=spg_nft_contract,
+                    license_terms_data=license_terms_data,
+                    royalty_shares=royalty_shares,
+                    ip_metadata=ip_metadata,
+                    recipient=recipient,
+                    allow_duplicates=allow_duplicates,
+                ),
+                web3=self.web3,
+                account=self.account,
+                chain_id=self.chain_id,
+            )
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.royalty_token_distribution_workflows_client.build_mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens_transaction,
-                validate_address(spg_nft_contract),
-                self._validate_recipient(recipient),
-                IPMetadata.from_input(ip_metadata).get_validated_data(),
-                license_terms,
-                validated_royalty_shares,
-                allow_duplicates,
+                *transformed_request.validated_request,
                 tx_options=tx_options,
             )
 

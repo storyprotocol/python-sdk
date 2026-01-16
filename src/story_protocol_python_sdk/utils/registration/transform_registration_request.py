@@ -730,26 +730,20 @@ def _handle_register_with_derivative(
         ),
     )
     abi_element_identifier = "registerIpAndMakeDerivative"
-    validated_request = {
-        "nft_contract": nft_contract,
-        "token_id": token_id,
-        "metadata": metadata,
-        "deriv_data": deriv_data,
-        "signature_data": {
+    validated_request = [
+        nft_contract,
+        token_id,
+        deriv_data,
+        metadata,
+        {
             "signer": wallet_address,
             "deadline": calculated_deadline,
             "signature": signature_data["signature"],
         },
-    }
+    ]
     encoded_data = derivative_workflows_client.contract.encode_abi(
         abi_element_identifier=abi_element_identifier,
-        args=[
-            validated_request["nft_contract"],
-            validated_request["token_id"],
-            validated_request["deriv_data"],
-            validated_request["metadata"],
-            validated_request["signature_data"],
-        ],
+        args=validated_request,
     )
 
     return TransformedRegistrationRequest(

@@ -830,55 +830,23 @@ class IPAsset:
         :return dict: Dictionary with the tx hash and IP ID.
         """
         try:
-            ip_id = self._get_ip_id(nft_contract, token_id)
-            if self._is_registered(ip_id):
-                raise ValueError(
-                    f"The NFT with id {token_id} is already registered as IP."
-                )
-            validated_deriv_data = DerivativeData.from_input(
-                web3=self.web3, input_data=deriv_data
-            ).get_validated_data()
-            calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
-            sig_register_signature = self.sign_util.get_permission_signature(
-                ip_id=ip_id,
-                deadline=calculated_deadline,
-                state=Web3.to_bytes(0),
-                permissions=[
-                    {
-                        "ipId": ip_id,
-                        "signer": self.derivative_workflows_client.contract.address,
-                        "to": self.core_metadata_module_client.contract.address,
-                        "permission": AccessPermission.ALLOW,
-                        "func": get_function_signature(
-                            self.core_metadata_module_client.contract.abi,
-                            "setAll",
-                        ),
-                    },
-                    {
-                        "ipId": ip_id,
-                        "signer": self.derivative_workflows_client.contract.address,
-                        "to": self.licensing_module_client.contract.address,
-                        "permission": AccessPermission.ALLOW,
-                        "func": get_function_signature(
-                            self.licensing_module_client.contract.abi,
-                            "registerDerivative",
-                        ),
-                    },
-                ],
+            transformed_request = transform_request(
+                request=RegisterRegistrationRequest(
+                    nft_contract=nft_contract,
+                    token_id=token_id,
+                    deriv_data=deriv_data,
+                    ip_metadata=metadata,
+                    deadline=deadline,
+                ),
+                web3=self.web3,
+                account=self.account,
+                chain_id=self.chain_id,
             )
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.derivative_workflows_client.build_registerIpAndMakeDerivative_transaction,
-                nft_contract,
-                token_id,
-                validated_deriv_data,
-                IPMetadata.from_input(metadata).get_validated_data(),
-                {
-                    "signer": self.account.address,
-                    "deadline": calculated_deadline,
-                    "signature": sig_register_signature["signature"],
-                },
+                *transformed_request.validated_request,
                 tx_options=tx_options,
             )
 

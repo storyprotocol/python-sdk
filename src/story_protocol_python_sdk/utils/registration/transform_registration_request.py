@@ -301,24 +301,16 @@ def _handle_mint_and_register_with_license_terms(
         license_attachment_workflows_client.contract.address
     )
     abi_element_identifier = "mintAndRegisterIpAndAttachPILTerms"
-    validated_request = {
-        "spg_nft_contract": spg_nft_contract,
-        "recipient": recipient,
-        "metadata": metadata,
-        "license_terms_data": license_terms_data,
-        "allow_duplicates": get_allow_duplicates(
-            allow_duplicates, abi_element_identifier
-        ),
-    }
+    validated_request = [
+        spg_nft_contract,
+        recipient,
+        metadata,
+        license_terms_data,
+        get_allow_duplicates(allow_duplicates, abi_element_identifier),
+    ]
     encoded_data = license_attachment_workflows_client.contract.encode_abi(
         abi_element_identifier=abi_element_identifier,
-        args=[
-            validated_request["spg_nft_contract"],
-            validated_request["recipient"],
-            validated_request["metadata"],
-            validated_request["license_terms_data"],
-            validated_request["allow_duplicates"],
-        ],
+        args=validated_request,
     )
 
     return TransformedRegistrationRequest(

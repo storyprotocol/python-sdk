@@ -533,44 +533,39 @@ class IPAsset:
         :return dict: Dictionary with tx hash, IP ID, token ID, and license term IDs.
         """
         try:
-            if not self.web3.is_address(spg_nft_contract):
-                raise ValueError(
-                    f"The NFT contract address {spg_nft_contract} is not valid."
-                )
-            license_terms = validate_license_terms_data(terms, self.web3)
-            metadata = {
-                "ipMetadataURI": "",
-                "ipMetadataHash": ZERO_HASH,
-                "nftMetadataURI": "",
-                "nftMetadataHash": ZERO_HASH,
-            }
 
-            if ip_metadata:
-                metadata.update(
-                    {
-                        "ipMetadataURI": ip_metadata.get("ip_metadata_uri", ""),
-                        "ipMetadataHash": ip_metadata.get(
-                            "ip_metadata_hash", ZERO_HASH
-                        ),
-                        "nftMetadataURI": ip_metadata.get("nft_metadata_uri", ""),
-                        "nftMetadataHash": ip_metadata.get(
-                            "nft_metadata_hash", ZERO_HASH
-                        ),
-                    }
-                )
-
+            transformed_request = transform_request(
+                request=MintAndRegisterRequest(
+                    spg_nft_contract=spg_nft_contract,
+                    recipient=recipient,
+                    ip_metadata=(
+                        IPMetadataInput(
+                            ip_metadata_uri=ip_metadata.get("ip_metadata_uri", ""),
+                            ip_metadata_hash=ip_metadata.get(
+                                "ip_metadata_hash", ZERO_HASH
+                            ),
+                            nft_metadata_uri=ip_metadata.get("nft_metadata_uri", ""),
+                            nft_metadata_hash=ip_metadata.get(
+                                "nft_metadata_hash", ZERO_HASH
+                            ),
+                        )
+                        if ip_metadata
+                        else None
+                    ),
+                    license_terms_data=terms,
+                    allow_duplicates=allow_duplicates,
+                ),
+                web3=self.web3,
+                account=self.account,
+                chain_id=self.chain_id,
+            )
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.license_attachment_workflows_client.build_mintAndRegisterIpAndAttachPILTerms_transaction,
-                spg_nft_contract,
-                self._validate_recipient(recipient),
-                metadata,
-                license_terms,
-                allow_duplicates,
+                *transformed_request.validated_request,
                 tx_options=tx_options,
             )
-
             ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
                 0
             ]

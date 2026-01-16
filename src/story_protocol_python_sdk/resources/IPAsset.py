@@ -98,7 +98,6 @@ from story_protocol_python_sdk.utils.registration.registration_utils import (
 from story_protocol_python_sdk.utils.registration.transform_registration_request import (
     transform_request,
 )
-from story_protocol_python_sdk.utils.royalty import get_royalty_shares
 from story_protocol_python_sdk.utils.sign import Sign
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 from story_protocol_python_sdk.utils.validation import (
@@ -1163,21 +1162,27 @@ class IPAsset:
          :return `RegistrationWithRoyaltyVaultResponse`: Dictionary with the tx hash, IP ID and token ID, royalty vault.
         """
         try:
-            validated_royalty_shares_obj = get_royalty_shares(royalty_shares)
-            validated_deriv_data = DerivativeData.from_input(
-                web3=self.web3, input_data=deriv_data
-            ).get_validated_data()
+            if not royalty_shares:
+                raise ValueError("Royalty shares must be provided.")
 
+            transformed_request = transform_request(
+                request=MintAndRegisterRequest(
+                    spg_nft_contract=spg_nft_contract,
+                    deriv_data=deriv_data,
+                    royalty_shares=royalty_shares,
+                    ip_metadata=ip_metadata,
+                    recipient=recipient,
+                    allow_duplicates=allow_duplicates,
+                ),
+                web3=self.web3,
+                account=self.account,
+                chain_id=self.chain_id,
+            )
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.royalty_token_distribution_workflows_client.build_mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens_transaction,
-                validate_address(spg_nft_contract),
-                self._validate_recipient(recipient),
-                IPMetadata.from_input(ip_metadata).get_validated_data(),
-                validated_deriv_data,
-                validated_royalty_shares_obj["royalty_shares"],
-                allow_duplicates,
+                *transformed_request.validated_request,
                 tx_options=tx_options,
             )
 

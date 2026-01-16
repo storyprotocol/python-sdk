@@ -264,26 +264,17 @@ def _handle_mint_and_register_with_derivative_and_royalty_tokens(
     abi_element_identifier = (
         "mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens"
     )
-    validated_request = {
-        "spg_nft_contract": spg_nft_contract,
-        "recipient": recipient,
-        "metadata": metadata,
-        "deriv_data": deriv_data,
-        "royalty_shares": royalty_shares,
-        "allow_duplicates": get_allow_duplicates(
-            allow_duplicates, abi_element_identifier
-        ),
-    }
+    validated_request = [
+        spg_nft_contract,
+        recipient,
+        metadata,
+        deriv_data,
+        royalty_shares,
+        get_allow_duplicates(allow_duplicates, abi_element_identifier),
+    ]
     encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
         abi_element_identifier=abi_element_identifier,
-        args=[
-            validated_request["spg_nft_contract"],
-            validated_request["recipient"],
-            validated_request["metadata"],
-            validated_request["deriv_data"],
-            validated_request["royalty_shares"],
-            validated_request["allow_duplicates"],
-        ],
+        args=validated_request,
     )
 
     return TransformedRegistrationRequest(

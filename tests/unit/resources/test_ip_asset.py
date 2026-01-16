@@ -1247,22 +1247,26 @@ class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
                 royalty_shares=[],
             )
 
-    def test_throw_error_when_deriv_data_is_invalid(self, ip_asset: IPAsset):
-        with pytest.raises(ValueError, match="The parent IP IDs must be provided."):
-            ip_asset.mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
-                spg_nft_contract=ADDRESS,
-                deriv_data=DerivativeDataInput(
-                    parent_ip_ids=[],
-                    license_terms_ids=[1],
-                ),
-                royalty_shares=[
-                    RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0)
-                ],
-            )
+    def test_throw_error_when_deriv_data_is_invalid(
+        self, ip_asset: IPAsset, mock_transform_request_dependencies
+    ):
+        with mock_transform_request_dependencies():
+            with pytest.raises(ValueError, match="The parent IP IDs must be provided."):
+                ip_asset.mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
+                    spg_nft_contract=ADDRESS,
+                    deriv_data=DerivativeDataInput(
+                        parent_ip_ids=[],
+                        license_terms_ids=[1],
+                    ),
+                    royalty_shares=[
+                        RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0)
+                    ],
+                )
 
     def test_success_with_default_values(
         self,
         ip_asset: IPAsset,
+        mock_transform_request_dependencies,
         mock_license_registry_client,
         mock_parse_ip_registered_event,
         mock_get_royalty_vault_address_by_ip_id,
@@ -1273,6 +1277,7 @@ class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
         ]
 
         with (
+            mock_transform_request_dependencies(),
             mock_parse_ip_registered_event(),
             mock_license_registry_client(),
             mock_get_royalty_vault_address_by_ip_id(),
@@ -1305,6 +1310,7 @@ class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
     def test_royalty_vault_address(
         self,
         ip_asset: IPAsset,
+        mock_transform_request_dependencies,
         mock_license_registry_client,
         mock_parse_ip_registered_event,
     ):
@@ -1314,6 +1320,7 @@ class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
         ]
 
         with (
+            mock_transform_request_dependencies(),
             mock_parse_ip_registered_event(),
             mock_license_registry_client(),
         ):
@@ -1354,6 +1361,7 @@ class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
     def test_success_with_custom_values(
         self,
         ip_asset: IPAsset,
+        mock_transform_request_dependencies,
         mock_license_registry_client,
         mock_parse_ip_registered_event,
         mock_get_royalty_vault_address_by_ip_id,
@@ -1368,6 +1376,7 @@ class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
             nft_metadata_hash="0xabcdef1234567890",
         )
         with (
+            mock_transform_request_dependencies(),
             mock_parse_ip_registered_event(),
             mock_license_registry_client(),
             mock_get_royalty_vault_address_by_ip_id(),
@@ -1411,10 +1420,15 @@ class TestMintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens:
     def test_throw_error_when_transaction_failed(
         self,
         ip_asset: IPAsset,
+        mock_transform_request_dependencies,
         mock_license_registry_client,
         mock_parse_ip_registered_event,
     ):
-        with mock_parse_ip_registered_event(), mock_license_registry_client():
+        with (
+            mock_transform_request_dependencies(),
+            mock_parse_ip_registered_event(),
+            mock_license_registry_client(),
+        ):
             with patch.object(
                 ip_asset.royalty_token_distribution_workflows_client,
                 "build_mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens_transaction",

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, TypedDict
+from typing import Callable, Literal, TypedDict
 
 from ens.ens import Address, HexStr
 
@@ -352,11 +352,15 @@ class ExtraData(TypedDict, total=False):
         deadline: [Optional] The deadline for the signature.
         max_license_tokens: [Optional] Maximum license tokens for each license term.
         license_terms_data: [Optional] The license terms data.
+        nft_contract: [Optional] The NFT contract address.
+        token_id: [Optional] The token ID.
     """
 
     royalty_shares: list[RoyaltyShareInput]
     deadline: int
     royalty_total_amount: int
+    nft_contract: Address
+    token_id: int
 
 
 @dataclass
@@ -369,10 +373,12 @@ class TransformedRegistrationRequest:
         is_use_multicall3: Whether to use multicall3 or SPG's native multicall.
         workflow_address: The workflow contract address.
         extra_data: [Optional] Extra data for post-processing.
+        contract_call: [Optional] The contract call function.
     """
 
     encoded_tx_data: bytes
     is_use_multicall3: bool
     workflow_address: Address
     validated_request: list
+    contract_call: Callable[[], HexStr]
     extra_data: ExtraData | None = None

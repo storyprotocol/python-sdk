@@ -127,25 +127,30 @@ def mock_workflow_clients(mock_web3):
         derivative_workflows_client.contract.address = (
             "derivative_workflows_client_address"
         )
-        patches = [
-            patch(
+        return {
+            "royalty_token_distribution_patch": patch(
                 "story_protocol_python_sdk.utils.registration.transform_registration_request.RoyaltyTokenDistributionWorkflowsClient",
                 return_value=royalty_token_distribution_client,
             ),
-            patch(
+            "license_attachment_patch": patch(
                 "story_protocol_python_sdk.utils.registration.transform_registration_request.LicenseAttachmentWorkflowsClient",
                 return_value=license_attachment_client,
             ),
-            patch(
+            "derivative_workflows_patch": patch(
                 "story_protocol_python_sdk.utils.registration.transform_registration_request.DerivativeWorkflowsClient",
                 return_value=derivative_workflows_client,
             ),
-        ]
-        return {
-            "patches": patches,
             "royalty_token_distribution_client": royalty_token_distribution_client,
             "license_attachment_client": license_attachment_client,
             "derivative_workflows_client": derivative_workflows_client,
+            "get_function_signature": patch(
+                "story_protocol_python_sdk.utils.registration.transform_registration_request.get_function_signature",
+                return_value="",
+            ),
+            "royalty_token_distribution_workflows_client": patch(
+                "story_protocol_python_sdk.utils.registration.transform_registration_request.RoyaltyTokenDistributionWorkflowsClient",
+                return_value=royalty_token_distribution_client,
+            ),
         }
 
     return _mock
@@ -200,17 +205,16 @@ def mock_module_clients():
         mock_licensing_client = MagicMock()
         mock_licensing_client.contract = mock_licensing_contract
 
-        patches = [
-            patch(
+        return {
+            "core_metadata_module_patch": patch(
                 "story_protocol_python_sdk.utils.registration.transform_registration_request.CoreMetadataModuleClient",
                 return_value=mock_core_metadata_client,
             ),
-            patch(
+            "licensing_module_patch": patch(
                 "story_protocol_python_sdk.utils.registration.transform_registration_request.LicensingModuleClient",
                 return_value=mock_licensing_client,
             ),
-        ]
-        return patches
+        }
 
     return _mock
 
@@ -269,15 +273,14 @@ class TestTransformRegistrationRequest:
             license_terms_data=LICENSE_TERMS_DATA,
         )
         workflow_mocks = mock_workflow_clients()
-        patches = workflow_mocks["patches"]
         license_attachment_client = workflow_mocks["license_attachment_client"]
         with (
             mock_get_public_minting(),
             mock_royalty_module_client(),
             mock_module_registry_client,
-            patches[0],
-            patches[1],
-            patches[2],
+            workflow_mocks["royalty_token_distribution_patch"],
+            workflow_mocks["license_attachment_patch"],
+            workflow_mocks["derivative_workflows_patch"],
         ):
             result = transform_request(request, mock_web3, account, CHAIN_ID)
             # Assert real encoding result (not mock value)
@@ -298,6 +301,7 @@ class TestTransformRegistrationRequest:
             assert result.workflow_address == "license_attachment_client_address"
             assert result.is_use_multicall3 is True
             assert result.extra_data is None
+            assert result.contract_call is not None
 
     def test_routes_to_register_ip_and_attach_pil_terms_when_nft_contract_and_token_id_present(
         self,
@@ -315,7 +319,6 @@ class TestTransformRegistrationRequest:
             license_terms_data=LICENSE_TERMS_DATA,
         )
         workflow_mocks = mock_workflow_clients()
-        workflow_patches = workflow_mocks["patches"]
         module_patches = mock_module_clients()
         license_attachment_client = workflow_mocks["license_attachment_client"]
         with (
@@ -323,11 +326,12 @@ class TestTransformRegistrationRequest:
             mock_sign_util(),
             mock_royalty_module_client(),
             mock_module_registry_client,
-            workflow_patches[0],
-            workflow_patches[1],
-            workflow_patches[2],
-            module_patches[0],
-            module_patches[1],
+            workflow_mocks["royalty_token_distribution_patch"],
+            workflow_mocks["license_attachment_patch"],
+            workflow_mocks["derivative_workflows_patch"],
+            workflow_mocks["get_function_signature"],
+            module_patches["core_metadata_module_patch"],
+            module_patches["licensing_module_patch"],
         ):
             result = transform_request(request, mock_web3, account, CHAIN_ID)
             # Assert real encoding result (not mock value)
@@ -349,6 +353,7 @@ class TestTransformRegistrationRequest:
             assert args[4]["signature"] == b"signature"
             assert result.extra_data is None
             assert result.is_use_multicall3 is False
+            assert result.contract_call is not None
 
     def test_raises_error_for_invalid_request_type(
         self, mock_web3, mock_ip_asset_registry_client
@@ -393,7 +398,6 @@ class TestHandleMintAndRegisterRequest:
             royalty_shares=[RoyaltyShareInput(recipient=ADDRESS, percentage=50.0)],
         )
         workflow_mocks = mock_workflow_clients()
-        patches = workflow_mocks["patches"]
         royalty_token_distribution_client = workflow_mocks[
             "royalty_token_distribution_client"
         ]
@@ -401,9 +405,9 @@ class TestHandleMintAndRegisterRequest:
             mock_get_public_minting(public_minting=True),
             mock_royalty_module_client(),
             mock_module_registry_client,
-            patches[0],
-            patches[1],
-            patches[2],
+            workflow_mocks["royalty_token_distribution_patch"],
+            workflow_mocks["license_attachment_patch"],
+            workflow_mocks["derivative_workflows_patch"],
         ):
             result = transform_request(request, mock_web3, account, CHAIN_ID)
 
@@ -431,6 +435,7 @@ class TestHandleMintAndRegisterRequest:
             assert args[4][0]["recipient"] == ADDRESS
             assert args[4][0]["percentage"] == 50 * 10**6
             assert args[5] is True  # allow_duplicates (default for this method)
+            assert result.contract_call is not None
 
     def test_mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
         self,
@@ -450,7 +455,6 @@ class TestHandleMintAndRegisterRequest:
             royalty_shares=[RoyaltyShareInput(recipient=ADDRESS, percentage=50.0)],
         )
         workflow_mocks = mock_workflow_clients()
-        patches = workflow_mocks["patches"]
         royalty_token_distribution_client = workflow_mocks[
             "royalty_token_distribution_client"
         ]
@@ -459,9 +463,9 @@ class TestHandleMintAndRegisterRequest:
             mock_pi_license_template_client(),
             mock_derivative_ip_asset_registry_client(),
             mock_license_registry_client(),
-            patches[0],
-            patches[1],
-            patches[2],
+            workflow_mocks["royalty_token_distribution_patch"],
+            workflow_mocks["license_attachment_patch"],
+            workflow_mocks["derivative_workflows_patch"],
         ):
             result = transform_request(request, mock_web3, account, CHAIN_ID)
 
@@ -486,6 +490,7 @@ class TestHandleMintAndRegisterRequest:
             assert args[4][0]["recipient"] == ADDRESS  # royalty_shares
             assert args[4][0]["percentage"] == 50 * 10**6  # royalty_shares
             assert args[5] is True  # allow_duplicates (default for this method)
+            assert result.contract_call is not None
 
     def test_mint_and_register_ip_and_make_derivative(
         self,
@@ -506,16 +511,15 @@ class TestHandleMintAndRegisterRequest:
             allow_duplicates=False,
         )
         workflow_mocks = mock_workflow_clients()
-        patches = workflow_mocks["patches"]
         derivative_workflows_client = workflow_mocks["derivative_workflows_client"]
         with (
             mock_get_public_minting(public_minting=True),
             mock_pi_license_template_client(),
             mock_derivative_ip_asset_registry_client(),
             mock_license_registry_client(),
-            patches[0],
-            patches[1],
-            patches[2],
+            workflow_mocks["royalty_token_distribution_patch"],
+            workflow_mocks["license_attachment_patch"],
+            workflow_mocks["derivative_workflows_patch"],
         ):
             result = transform_request(request, mock_web3, account, CHAIN_ID)
             # Assert real encoding result (not mock value)
@@ -536,6 +540,7 @@ class TestHandleMintAndRegisterRequest:
             assert (
                 call_args[1]["args"][4] is False
             )  # allow_duplicates (default for this method)
+            assert result.contract_call is not None
 
     def test_raises_error_for_invalid_mint_and_register_request_type(
         self,
@@ -548,12 +553,11 @@ class TestHandleMintAndRegisterRequest:
             ip_metadata=IP_METADATA,
         )
         workflow_mocks = mock_workflow_clients()
-        patches = workflow_mocks["patches"]
         with (
             mock_get_public_minting(),
-            patches[0],
-            patches[1],
-            patches[2],
+            workflow_mocks["royalty_token_distribution_patch"],
+            workflow_mocks["license_attachment_patch"],
+            workflow_mocks["derivative_workflows_patch"],
         ):
             with pytest.raises(
                 ValueError, match="Invalid mint and register request type"
@@ -581,7 +585,6 @@ class TestHandleRegisterRequest:
             deadline=2000,
         )
         workflow_mocks = mock_workflow_clients()
-        workflow_patches = workflow_mocks["patches"]
         royalty_token_distribution_client = workflow_mocks[
             "royalty_token_distribution_client"
         ]
@@ -591,11 +594,12 @@ class TestHandleRegisterRequest:
             mock_sign_util(deadline=2000),
             mock_royalty_module_client(),
             mock_module_registry_client,
-            workflow_patches[0],
-            workflow_patches[1],
-            workflow_patches[2],
-            module_patches[0],
-            module_patches[1],
+            workflow_mocks["royalty_token_distribution_patch"],
+            workflow_mocks["license_attachment_patch"],
+            workflow_mocks["derivative_workflows_patch"],
+            workflow_mocks["get_function_signature"],
+            module_patches["core_metadata_module_patch"],
+            module_patches["licensing_module_patch"],
         ):
             result = transform_request(request, mock_web3, account, CHAIN_ID)
 
@@ -629,6 +633,7 @@ class TestHandleRegisterRequest:
             assert royalty_share_dict["recipient"] == ADDRESS
             assert royalty_share_dict["percentage"] == 50 * 10**6
             assert result.extra_data["deadline"] == 2000
+            assert result.contract_call is not None
 
     def test_register_ip_and_make_derivative_and_deploy_royalty_vault(
         self,
@@ -650,7 +655,6 @@ class TestHandleRegisterRequest:
             royalty_shares=[RoyaltyShareInput(recipient=ADDRESS, percentage=50.0)],
         )
         workflow_mocks = mock_workflow_clients()
-        workflow_patches = workflow_mocks["patches"]
         royalty_token_distribution_client = workflow_mocks[
             "royalty_token_distribution_client"
         ]
@@ -661,11 +665,12 @@ class TestHandleRegisterRequest:
             mock_pi_license_template_client(),
             mock_derivative_ip_asset_registry_client(),
             mock_license_registry_client(),
-            workflow_patches[0],
-            workflow_patches[1],
-            workflow_patches[2],
-            module_patches[0],
-            module_patches[1],
+            workflow_mocks["royalty_token_distribution_patch"],
+            workflow_mocks["license_attachment_patch"],
+            workflow_mocks["derivative_workflows_patch"],
+            workflow_mocks["get_function_signature"],
+            module_patches["core_metadata_module_patch"],
+            module_patches["licensing_module_patch"],
         ):
             result = transform_request(request, mock_web3, account, CHAIN_ID)
 
@@ -693,6 +698,7 @@ class TestHandleRegisterRequest:
             assert args[4]["signer"] == ACCOUNT_ADDRESS
             assert args[4]["deadline"] == 1000
             assert args[4]["signature"] == b"signature"
+            assert result.contract_call is not None
 
     def test_register_ip_and_attach_pil_terms(
         self,
@@ -711,7 +717,6 @@ class TestHandleRegisterRequest:
             license_terms_data=LICENSE_TERMS_DATA,
         )
         workflow_mocks = mock_workflow_clients()
-        workflow_patches = workflow_mocks["patches"]
         license_attachment_client = workflow_mocks["license_attachment_client"]
         module_patches = mock_module_clients()
         with (
@@ -719,11 +724,12 @@ class TestHandleRegisterRequest:
             mock_sign_util(),
             mock_royalty_module_client(),
             mock_module_registry_client,
-            workflow_patches[0],
-            workflow_patches[1],
-            workflow_patches[2],
-            module_patches[0],
-            module_patches[1],
+            workflow_mocks["royalty_token_distribution_patch"],
+            workflow_mocks["license_attachment_patch"],
+            workflow_mocks["derivative_workflows_patch"],
+            workflow_mocks["get_function_signature"],
+            module_patches["core_metadata_module_patch"],
+            module_patches["licensing_module_patch"],
         ):
             result = transform_request(request, mock_web3, account, CHAIN_ID)
 
@@ -747,6 +753,7 @@ class TestHandleRegisterRequest:
             assert args[4]["signer"] == ACCOUNT_ADDRESS
             assert args[4]["deadline"] == 1000
             assert args[4]["signature"] == b"signature"
+            assert result.contract_call is not None
 
     def test_register_ip_and_make_derivative(
         self,
@@ -768,7 +775,6 @@ class TestHandleRegisterRequest:
             ),
         )
         workflow_mocks = mock_workflow_clients()
-        workflow_patches = workflow_mocks["patches"]
         derivative_workflows_client = workflow_mocks["derivative_workflows_client"]
         module_patches = mock_module_clients()
         with (
@@ -777,11 +783,12 @@ class TestHandleRegisterRequest:
             mock_pi_license_template_client(),
             mock_derivative_ip_asset_registry_client(),
             mock_license_registry_client(),
-            workflow_patches[0],
-            workflow_patches[1],
-            workflow_patches[2],
-            module_patches[0],
-            module_patches[1],
+            workflow_mocks["royalty_token_distribution_patch"],
+            workflow_mocks["license_attachment_patch"],
+            workflow_mocks["derivative_workflows_patch"],
+            workflow_mocks["get_function_signature"],
+            module_patches["core_metadata_module_patch"],
+            module_patches["licensing_module_patch"],
         ):
             result = transform_request(request, mock_web3, account, CHAIN_ID)
 
@@ -804,6 +811,7 @@ class TestHandleRegisterRequest:
             assert args[4]["signer"] == ACCOUNT_ADDRESS
             assert args[4]["deadline"] == 1000
             assert args[4]["signature"] == b"signature"
+            assert result.contract_call is not None
 
     def test_raises_error_when_ip_not_registered(
         self,

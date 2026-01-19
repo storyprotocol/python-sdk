@@ -248,6 +248,10 @@ def mock_transform_request_dependencies():
                 "story_protocol_python_sdk.utils.registration.registration_utils.ModuleRegistryClient",
                 return_value=mock_module_registry_client,
             ),
+            patch(
+                "story_protocol_python_sdk.utils.registration.transform_registration_request.get_function_signature",
+                return_value="",
+            ),
         ]
 
         # Return context manager that applies all patches

@@ -236,12 +236,20 @@ def _handle_mint_and_register_with_license_terms_and_royalty_tokens(
         args=validated_request,
     )
 
+    def contract_call() -> HexStr:
+        response = royalty_token_distribution_workflows_client.mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens(
+            *validated_request
+        )
+        web3.eth.wait_for_transaction_receipt(response["tx_hash"])
+        return response["tx_hash"]
+
     return TransformedRegistrationRequest(
         encoded_tx_data=encoded_data,
         is_use_multicall3=is_public_minting,
         workflow_address=royalty_token_distribution_workflows_address,
         validated_request=validated_request,
         extra_data=None,
+        contract_call=contract_call,
     )
 
 
@@ -278,12 +286,20 @@ def _handle_mint_and_register_with_derivative_and_royalty_tokens(
         args=validated_request,
     )
 
+    def contract_call() -> HexStr:
+        response = royalty_token_distribution_workflows_client.mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens(
+            *validated_request
+        )
+        web3.eth.wait_for_transaction_receipt(response["tx_hash"])
+        return response["tx_hash"]
+
     return TransformedRegistrationRequest(
         encoded_tx_data=encoded_data,
         is_use_multicall3=is_public_minting,
         workflow_address=royalty_token_distribution_workflows_address,
         validated_request=validated_request,
         extra_data=None,
+        contract_call=contract_call,
     )
 
 
@@ -314,12 +330,22 @@ def _handle_mint_and_register_with_license_terms(
         args=validated_request,
     )
 
+    def contract_call() -> HexStr:
+        response = (
+            license_attachment_workflows_client.mintAndRegisterIpAndAttachPILTerms(
+                *validated_request
+            )
+        )
+        web3.eth.wait_for_transaction_receipt(response["tx_hash"])
+        return response["tx_hash"]
+
     return TransformedRegistrationRequest(
         encoded_tx_data=encoded_data,
         is_use_multicall3=is_public_minting,
         workflow_address=license_attachment_workflows_address,
         validated_request=validated_request,
         extra_data=None,
+        contract_call=contract_call,
     )
 
 
@@ -348,12 +374,20 @@ def _handle_mint_and_register_with_derivative(
         args=validated_request,
     )
 
+    def contract_call() -> HexStr:
+        response = derivative_workflows_client.mintAndRegisterIpAndMakeDerivative(
+            *validated_request
+        )
+        web3.eth.wait_for_transaction_receipt(response["tx_hash"])
+        return response["tx_hash"]
+
     return TransformedRegistrationRequest(
         encoded_tx_data=encoded_data,
         is_use_multicall3=is_public_minting,
         workflow_address=derivative_workflows_address,
         validated_request=validated_request,
         extra_data=None,
+        contract_call=contract_call,
     )
 
 
@@ -535,6 +569,13 @@ def _handle_register_with_license_terms_and_royalty_vault(
         args=validated_request,
     )
 
+    def contract_call() -> HexStr:
+        response = royalty_token_distribution_workflows_client.registerIpAndAttachPILTermsAndDeployRoyaltyVault(
+            *validated_request
+        )
+        web3.eth.wait_for_transaction_receipt(response["tx_hash"])
+        return response["tx_hash"]
+
     return TransformedRegistrationRequest(
         encoded_tx_data=encoded_data,
         is_use_multicall3=False,
@@ -544,7 +585,10 @@ def _handle_register_with_license_terms_and_royalty_vault(
             royalty_shares=cast(list[RoyaltyShareInput], royalty_shares),
             deadline=calculated_deadline,
             royalty_total_amount=royalty_total_amount,
+            nft_contract=nft_contract,
+            token_id=token_id,
         ),
+        contract_call=contract_call,
     )
 
 
@@ -599,6 +643,13 @@ def _handle_register_with_derivative_and_royalty_vault(
         args=validated_request,
     )
 
+    def contract_call() -> HexStr:
+        response = royalty_token_distribution_workflows_client.registerIpAndMakeDerivativeAndDeployRoyaltyVault(
+            *validated_request
+        )
+        web3.eth.wait_for_transaction_receipt(response["tx_hash"])
+        return response["tx_hash"]
+
     return TransformedRegistrationRequest(
         encoded_tx_data=encoded_data,
         is_use_multicall3=False,
@@ -608,7 +659,10 @@ def _handle_register_with_derivative_and_royalty_vault(
             royalty_shares=cast(list[RoyaltyShareInput], royalty_shares),
             deadline=calculated_deadline,
             royalty_total_amount=royalty_total_amount,
+            nft_contract=nft_contract,
+            token_id=token_id,
         ),
+        contract_call=contract_call,
     )
 
 
@@ -659,12 +713,20 @@ def _handle_register_with_license_terms(
         args=validated_request,
     )
 
+    def contract_call() -> HexStr:
+        response = license_attachment_workflows_client.registerIpAndAttachPILTerms(
+            *validated_request
+        )
+        web3.eth.wait_for_transaction_receipt(response["tx_hash"])
+        return response["tx_hash"]
+
     return TransformedRegistrationRequest(
         encoded_tx_data=encoded_data,
         is_use_multicall3=False,
         workflow_address=license_attachment_workflows_address,
         validated_request=validated_request,
         extra_data=None,
+        contract_call=contract_call,
     )
 
 
@@ -713,12 +775,20 @@ def _handle_register_with_derivative(
         args=validated_request,
     )
 
+    def contract_call() -> HexStr:
+        response = derivative_workflows_client.registerIpAndMakeDerivative(
+            *validated_request
+        )
+        web3.eth.wait_for_transaction_receipt(response["tx_hash"])
+        return response["tx_hash"]
+
     return TransformedRegistrationRequest(
         encoded_tx_data=encoded_data,
         is_use_multicall3=False,
         workflow_address=derivative_workflows_address,
         validated_request=validated_request,
         extra_data=None,
+        contract_call=contract_call,
     )
 
 

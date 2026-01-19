@@ -33,6 +33,7 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
 from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
 from story_protocol_python_sdk.utils.constants import ZERO_HASH
 from story_protocol_python_sdk.utils.derivative_data import DerivativeData
+from story_protocol_python_sdk.utils.function_signature import get_function_signature
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadata
 from story_protocol_python_sdk.utils.registration.registration_utils import (
     get_public_minting,
@@ -513,8 +514,8 @@ def _handle_register_with_license_terms_and_royalty_vault(
         permissions=_get_license_terms_permissions(
             ip_id=ip_id,
             signer_address=royalty_token_distribution_workflows_address,
-            core_metadata_address=core_metadata_module_client.contract.address,
-            licensing_module_address=licensing_module_client.contract.address,
+            core_metadata_client=core_metadata_module_client,
+            licensing_module_client=licensing_module_client,
         ),
     )
     abi_element_identifier = "registerIpAndAttachPILTermsAndDeployRoyaltyVault"
@@ -577,8 +578,8 @@ def _handle_register_with_derivative_and_royalty_vault(
         permissions=_get_derivative_permissions(
             ip_id=ip_id,
             signer_address=royalty_token_distribution_workflows_address,
-            core_metadata_address=core_metadata_module_client.contract.address,
-            licensing_module_address=licensing_module_client.contract.address,
+            core_metadata_client=core_metadata_module_client,
+            licensing_module_client=licensing_module_client,
         ),
     )
     abi_element_identifier = "registerIpAndMakeDerivativeAndDeployRoyaltyVault"
@@ -637,8 +638,8 @@ def _handle_register_with_license_terms(
         permissions=_get_license_terms_permissions(
             ip_id=ip_id,
             signer_address=license_attachment_workflows_address,
-            core_metadata_address=core_metadata_module_client.contract.address,
-            licensing_module_address=licensing_module_client.contract.address,
+            core_metadata_client=core_metadata_module_client,
+            licensing_module_client=licensing_module_client,
         ),
     )
     abi_element_identifier = "registerIpAndAttachPILTerms"
@@ -691,8 +692,8 @@ def _handle_register_with_derivative(
         permissions=_get_derivative_permissions(
             ip_id=ip_id,
             signer_address=derivative_workflows_address,
-            core_metadata_address=core_metadata_module_client.contract.address,
-            licensing_module_address=licensing_module_client.contract.address,
+            core_metadata_client=core_metadata_module_client,
+            licensing_module_client=licensing_module_client,
         ),
     )
     abi_element_identifier = "registerIpAndMakeDerivative"
@@ -729,31 +730,35 @@ def _handle_register_with_derivative(
 def _get_license_terms_permissions(
     ip_id: Address,
     signer_address: Address,
-    core_metadata_address: Address,
-    licensing_module_address: Address,
+    core_metadata_client: CoreMetadataModuleClient,
+    licensing_module_client: LicensingModuleClient,
 ) -> list[dict]:
     """Get permissions for license terms operations."""
     return [
         {
             "ipId": ip_id,
             "signer": signer_address,
-            "to": core_metadata_address,
+            "to": core_metadata_client.contract.address,
             "permission": AccessPermission.ALLOW,
-            "func": "setAll(address,string,bytes32,bytes32)",
+            "func": get_function_signature(core_metadata_client.contract.abi, "setAll"),
         },
         {
             "ipId": ip_id,
             "signer": signer_address,
-            "to": licensing_module_address,
+            "to": licensing_module_client.contract.address,
             "permission": AccessPermission.ALLOW,
-            "func": "attachLicenseTerms(address,address,uint256)",
+            "func": get_function_signature(
+                licensing_module_client.contract.abi, "attachLicenseTerms"
+            ),
         },
         {
             "ipId": ip_id,
             "signer": signer_address,
-            "to": licensing_module_address,
+            "to": licensing_module_client.contract.address,
             "permission": AccessPermission.ALLOW,
-            "func": "setLicensingConfig(address,address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))",
+            "func": get_function_signature(
+                licensing_module_client.contract.abi, "setLicensingConfig"
+            ),
         },
     ]
 
@@ -761,23 +766,25 @@ def _get_license_terms_permissions(
 def _get_derivative_permissions(
     ip_id: Address,
     signer_address: Address,
-    core_metadata_address: Address,
-    licensing_module_address: Address,
+    core_metadata_client: CoreMetadataModuleClient,
+    licensing_module_client: LicensingModuleClient,
 ) -> list[dict]:
     """Get permissions for derivative operations."""
     return [
         {
             "ipId": ip_id,
             "signer": signer_address,
-            "to": core_metadata_address,
+            "to": core_metadata_client.contract.address,
             "permission": AccessPermission.ALLOW,
-            "func": "setAll(address,string,bytes32,bytes32)",
+            "func": get_function_signature(core_metadata_client.contract.abi, "setAll"),
         },
         {
             "ipId": ip_id,
             "signer": signer_address,
-            "to": licensing_module_address,
+            "to": licensing_module_client.contract.address,
             "permission": AccessPermission.ALLOW,
-            "func": "registerDerivative(address,address[],uint256[],address,bytes,uint256,uint32,address)",
+            "func": get_function_signature(
+                licensing_module_client.contract.abi, "registerDerivative"
+            ),
         },
     ]

@@ -1,8 +1,10 @@
 """Registration utilities for IP asset operations."""
 
+from collections.abc import Callable
 from dataclasses import asdict, is_dataclass, replace
+from typing import TypedDict
 
-from ens.ens import Address
+from ens.ens import Address, HexStr
 from web3 import Web3
 
 from story_protocol_python_sdk.abi.ModuleRegistry.ModuleRegistry_client import (
@@ -12,7 +14,10 @@ from story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client import (
     RoyaltyModuleClient,
 )
 from story_protocol_python_sdk.abi.SPGNFTImpl.SPGNFTImpl_client import SPGNFTImplClient
-from story_protocol_python_sdk.types.resource.IPAsset import LicenseTermsDataInput
+from story_protocol_python_sdk.types.resource.IPAsset import (
+    LicenseTermsDataInput,
+    TransformedRegistrationRequest,
+)
 from story_protocol_python_sdk.types.resource.License import LicenseTermsInput
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
 from story_protocol_python_sdk.utils.licensing_config_data import LicensingConfigData
@@ -22,6 +27,13 @@ from story_protocol_python_sdk.utils.validation import (
     get_revenue_share,
     validate_address,
 )
+
+
+class AggregatedRequestData(TypedDict):
+    """Aggregated request data structure."""
+
+    encoded_tx_data: list[bytes]
+    contract_calls: list[Callable[[], HexStr]]
 
 
 def get_public_minting(spg_nft_contract: Address, web3: Web3) -> bool:
@@ -97,3 +109,54 @@ def validate_license_terms_data(
             }
         )
     return validated_license_terms_data
+
+
+def aggregate_multicall_requests(
+    requests: list[TransformedRegistrationRequest],
+    is_use_multicall3: bool,
+    multicall_address: Address,
+) -> dict[Address, AggregatedRequestData]:
+    """
+    Aggregate multicall requests by grouping them by target address.
+
+    Groups requests that should be sent to the same multicall address together,
+    collecting their encoded transaction data and contract call functions.
+
+    Args:
+        requests: List of transformed registration requests to aggregate.
+        is_use_multicall3: Whether to use multicall3 for aggregation.
+        multicall_address: The multicall3 contract address to use when applicable.
+
+    Returns:
+        Dictionary mapping target addresses to aggregated request data:
+        - Key: Address (multicall address or workflow address)
+        - Value: AggregatedRequestData with:
+            - "encoded_tx_data": List of encoded transaction data (bytes)
+            - "contract_calls": List of contract call functions
+    """
+    aggregated_requests: dict[Address, AggregatedRequestData] = {}
+
+    for request in requests:
+        # Determine the target address for this request
+        target_address = (
+            multicall_address
+            if request.is_use_multicall3 and is_use_multicall3
+            else request.workflow_address
+        )
+
+        # Initialize entry if it doesn't exist
+        if target_address not in aggregated_requests:
+            aggregated_requests[target_address] = {
+                "encoded_tx_data": [request.encoded_tx_data],
+                "contract_calls": [request.contract_call],
+            }
+        else:
+            # Append to existing entry
+            aggregated_requests[target_address]["encoded_tx_data"].append(
+                request.encoded_tx_data
+            )
+            aggregated_requests[target_address]["contract_calls"].append(
+                request.contract_call
+            )
+
+    return aggregated_requests

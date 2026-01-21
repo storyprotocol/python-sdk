@@ -362,8 +362,7 @@ class ExtraData(TypedDict, total=False):
     Attributes:
         royalty_shares: [Optional] The royalty shares for distribution.
         deadline: [Optional] The deadline for the signature.
-        max_license_tokens: [Optional] Maximum license tokens for each license term.
-        license_terms_data: [Optional] The license terms data.
+        royalty_total_amount: [Optional] The total amount of royalty tokens to distribute.
         nft_contract: [Optional] The NFT contract address.
         token_id: [Optional] The token ID.
     """
@@ -384,15 +383,14 @@ class TransformedRegistrationRequest:
         encoded_tx_data: The encoded transaction data.
         is_use_multicall3: Whether to use multicall3 or SPG's native multicall.
         workflow_address: The workflow contract address.
+        validated_request: The validated request arguments for the contract method.
+        original_method_reference: The original method reference for building transactions.
         extra_data: [Optional] Extra data for post-processing.
-        contract_call: [Optional] The contract call function.
     """
 
     encoded_tx_data: bytes
     is_use_multicall3: bool
     workflow_address: Address
-    validated_request: list
+    validated_request: list[Address | int | str | bytes | dict | bool]
     original_method_reference: Callable[..., HexStr]
     extra_data: ExtraData | None = None
-    # Maybe not needed
-    contract_call: Callable[[], HexStr] | None = None

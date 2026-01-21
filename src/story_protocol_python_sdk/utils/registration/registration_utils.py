@@ -34,7 +34,7 @@ def aggregate_multicall_requests(
     Aggregate multicall requests by grouping them by target address.
 
     Groups requests that should be sent to the same multicall address together,
-    collecting their encoded transaction data and contract call functions.
+    collecting their encoded transaction data and method references.
 
     Args:
         requests: List of transformed registration requests to aggregate.
@@ -46,7 +46,7 @@ def aggregate_multicall_requests(
         - Key: Address (multicall address or workflow address)
         - Value: AggregatedRequestData with:
             - "encoded_tx_data": List of encoded transaction data (bytes)
-            - "contract_calls": List of contract call functions
+            - "method_reference": The method to build the transaction
     """
     aggregated_requests: dict[Address, AggregatedRequestData] = {}
     multicall3_client = Multicall3Client(web3)
@@ -54,9 +54,9 @@ def aggregate_multicall_requests(
     for request in requests:
         # Determine the target address for this request
         target_address = (
-            multicall3_client.build_aggregate3_transaction
+            multicall3_client.contract.address
             if request.is_use_multicall3 and is_use_multicall3
-            else request.original_method_reference
+            else request.workflow_address
         )
 
         # Initialize entry if it doesn't exist
@@ -64,16 +64,14 @@ def aggregate_multicall_requests(
             aggregated_requests[target_address] = {
                 "encoded_tx_data": [request.encoded_tx_data],
                 "method_reference": (
-                    target_address
-                    if target_address == multicall3_client.build_aggregate3_transaction
+                    multicall3_client.build_aggregate3_transaction
+                    if target_address == multicall3_client.contract.address
                     else request.original_method_reference
                 ),
             }
-        else:
-            # Append to existing entry
-            aggregated_requests[target_address]["encoded_tx_data"].append(
-                request.encoded_tx_data
-            )
+        aggregated_requests[target_address]["encoded_tx_data"].append(
+            request.encoded_tx_data
+        )
 
     return aggregated_requests
 
@@ -82,7 +80,7 @@ def prepare_distribute_royalty_tokens_requests(
     extra_data_list: list[ExtraData],
     web3: Web3,
     ip_registered: list[dict[str, int | Address]],
-    royalty_vault: list[Address],
+    royalty_vault: list[dict[str, Address]],
     account: LocalAccount,
     chain_id: int,
 ) -> list[TransformedRegistrationRequest]:
@@ -93,7 +91,7 @@ def prepare_distribute_royalty_tokens_requests(
         extra_data_list: The extra data for distribute royalty tokens.
         web3: Web3 instance.
         ip_registered: The IP registered.
-        royalty_vault: The royalty vault address.
+        royalty_vault: The royalty vault addresses.
         account: The account for signing and recipient fallback.
         chain_id: The chain ID for IP ID calculation.
     """
@@ -101,22 +99,20 @@ def prepare_distribute_royalty_tokens_requests(
         return []
     transformed_requests: list[TransformedRegistrationRequest] = []
     for extra_data in extra_data_list:
-        filtered_ip_registered = list(
-            filter(
-                lambda x: x["tokenContract"] == extra_data["nft_contract"]
-                and x["tokenId"] == extra_data["token_id"],
-                ip_registered,
-            )
-        )
+        filtered_ip_registered = [
+            x
+            for x in ip_registered
+            if x["tokenContract"] == extra_data["nft_contract"]
+            and x["tokenId"] == extra_data["token_id"]
+        ]
         if filtered_ip_registered:
-            ip_royalty_vault = list(
-                filter(
-                    lambda x: x["ipId"] == filtered_ip_registered[0]["ipId"],
-                    royalty_vault,
-                )
-            )[0]["ipRoyaltyVault"]
+            ip_id = filtered_ip_registered[0]["ipId"]
+            matching_vaults = [x for x in royalty_vault if x["ipId"] == ip_id]
+            if not matching_vaults:
+                continue
+            ip_royalty_vault = matching_vaults[0]["ipRoyaltyVault"]
             transformed_request = transform_distribute_royalty_tokens_request(
-                ip_id=filtered_ip_registered[0]["ipId"],
+                ip_id=ip_id,
                 royalty_vault=ip_royalty_vault,
                 deadline=extra_data["deadline"],
                 web3=web3,
@@ -143,9 +139,8 @@ def send_transactions(
             web3=web3,
         )
     )
-    tx_hashes: list[HexStr] = []
+    tx_results: list[dict[str, HexStr | dict]] = []
     for request_data in aggregated_requests.values():
-        # TODO: need to check the argument are correct
         response = build_and_send_transaction(
             web3,
             account,
@@ -153,10 +148,10 @@ def send_transactions(
             request_data["encoded_tx_data"],
             tx_options=tx_options,
         )
-        tx_hashes.append(
+        tx_results.append(
             {
                 "tx_hash": response["tx_hash"],
                 "tx_receipt": response["tx_receipt"],
             }
         )
-    return tx_hashes
+    return tx_results

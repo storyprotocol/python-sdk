@@ -10,6 +10,7 @@ from web3 import Web3
 from story_protocol_python_sdk.abi.Multicall3.Multicall3_client import Multicall3Client
 from story_protocol_python_sdk.types.resource.IPAsset import (
     ExtraData,
+    IPRoyaltyVault,
     TransformedRegistrationRequest,
 )
 from story_protocol_python_sdk.utils.registration.transform_registration_request import (
@@ -62,7 +63,7 @@ def aggregate_multicall_requests(
         # Initialize entry if it doesn't exist
         if target_address not in aggregated_requests:
             aggregated_requests[target_address] = {
-                "encoded_tx_data": [request.encoded_tx_data],
+                "encoded_tx_data": [],
                 "method_reference": (
                     multicall3_client.build_aggregate3_transaction
                     if target_address == multicall3_client.contract.address
@@ -83,7 +84,7 @@ def prepare_distribute_royalty_tokens_requests(
     royalty_vault: list[dict[str, Address]],
     account: LocalAccount,
     chain_id: int,
-) -> list[TransformedRegistrationRequest]:
+) -> tuple[list[TransformedRegistrationRequest], list[IPRoyaltyVault]]:
     """
     Prepare distribute royalty tokens requests.
 
@@ -96,8 +97,9 @@ def prepare_distribute_royalty_tokens_requests(
         chain_id: The chain ID for IP ID calculation.
     """
     if not extra_data_list:
-        return []
+        return [], []
     transformed_requests: list[TransformedRegistrationRequest] = []
+    matching_vaults: list[IPRoyaltyVault] = []
     for extra_data in extra_data_list:
         filtered_ip_registered = [
             x
@@ -107,10 +109,13 @@ def prepare_distribute_royalty_tokens_requests(
         ]
         if filtered_ip_registered:
             ip_id = filtered_ip_registered[0]["ipId"]
-            matching_vaults = [x for x in royalty_vault if x["ipId"] == ip_id]
-            if not matching_vaults:
+            matching_vault = [x for x in royalty_vault if x["ipId"] == ip_id]
+            if not matching_vault:
                 continue
-            ip_royalty_vault = matching_vaults[0]["ipRoyaltyVault"]
+            ip_royalty_vault = matching_vault[0]["ipRoyaltyVault"]
+            matching_vaults.append(
+                IPRoyaltyVault(ip_id=ip_id, royalty_vault=ip_royalty_vault)
+            )
             transformed_request = transform_distribute_royalty_tokens_request(
                 ip_id=ip_id,
                 royalty_vault=ip_royalty_vault,
@@ -122,7 +127,7 @@ def prepare_distribute_royalty_tokens_requests(
                 total_amount=extra_data["royalty_total_amount"],
             )
             transformed_requests.append(transformed_request)
-    return transformed_requests
+    return transformed_requests, matching_vaults
 
 
 def send_transactions(

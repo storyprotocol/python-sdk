@@ -57,7 +57,6 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
     BatchRegisterIpAssetsWithOptimizedWorkflowsResponse,
     BatchRegistrationResult,
     ExtraData,
-    IPRoyaltyVault,
     LicenseTermsDataInput,
     LinkDerivativeResponse,
     MintAndRegisterRequest,
@@ -1506,15 +1505,10 @@ class IPAsset:
         :return list[BatchRegistrationResult]: The list of batch registration results.
         """
         try:
+            # Transform registration requests to transformed registration requests and send them into transaction
             transformed_requests: list[TransformedRegistrationRequest] = [
                 transform_request(request, self.web3, self.account, self.chain_id)
                 for request in requests
-            ]
-            royalty_distribution_requests: list[ExtraData] = [
-                tr.extra_data
-                for tr in transformed_requests
-                if tr.extra_data is not None
-                and tr.extra_data.get("royalty_shares", None) is not None
             ]
             tx_responses: list[dict[str, HexStr]] = send_transactions(
                 transformed_requests=transformed_requests,
@@ -1523,11 +1517,22 @@ class IPAsset:
                 account=self.account,
                 tx_options=tx_options,
             )
+
+            # Extract royalty distribution requests from workflow responses that contain royalty shares
+            # We need to handle `distributeRoyaltyTokens` separately because this method requires
+            # a signature with the royalty vault address, which is only available after the initial registration
             distribute_royalty_tokens_requests: list[TransformedRegistrationRequest] = (
                 []
             )
-            response_list: list[BatchRegistrationResult] = []
+            royalty_distribution_requests: list[ExtraData] = [
+                tr.extra_data
+                for tr in transformed_requests
+                if tr.extra_data is not None
+                and tr.extra_data.get("royalty_shares", None) is not None
+            ]
 
+            # Parse the response of the registration requests and collect distribute royalty tokens requests
+            response_list: list[BatchRegistrationResult] = []
             for tx_response in tx_responses:
                 ip_registered_events = self._parse_tx_ip_registered_event(
                     tx_response["tx_receipt"]
@@ -1537,31 +1542,29 @@ class IPAsset:
                         tx_response["tx_receipt"]
                     )
                 )
-                result = prepare_distribute_royalty_tokens_requests(
-                    extra_data_list=royalty_distribution_requests,
-                    web3=self.web3,
-                    ip_registered=ip_registered_events,
-                    royalty_vault=ip_royalty_vault_deployed_events,
-                    account=self.account,
-                    chain_id=self.chain_id,
+                transferred_distribute_royalty_tokens_requests, matching_vaults = (
+                    prepare_distribute_royalty_tokens_requests(
+                        extra_data_list=royalty_distribution_requests,
+                        web3=self.web3,
+                        ip_registered=ip_registered_events,
+                        royalty_vault=ip_royalty_vault_deployed_events,
+                        account=self.account,
+                        chain_id=self.chain_id,
+                    )
                 )
-                if result:
-                    distribute_royalty_tokens_requests.extend(result)
+
+                distribute_royalty_tokens_requests.extend(
+                    transferred_distribute_royalty_tokens_requests
+                )
                 response_list.append(
-                    {
-                        "tx_hash": tx_response["tx_hash"],
-                        "registered_ips": [
+                    BatchRegistrationResult(
+                        tx_hash=tx_response["tx_hash"],
+                        registered_ips=[
                             RegisteredIP(ip_id=log["ipId"], token_id=log["tokenId"])
                             for log in ip_registered_events
                         ],
-                        "ip_royalty_vaults": [
-                            IPRoyaltyVault(
-                                ip_id=log["ipId"],
-                                royalty_vault=log["ipRoyaltyVault"],
-                            )
-                            for log in ip_royalty_vault_deployed_events
-                        ],
-                    }
+                        ip_royalty_vaults=matching_vaults,
+                    )
                 )
 
             # Send distribute royalty tokens requests
@@ -2047,7 +2050,7 @@ class IPAsset:
         """
         registered_ip_logs = self._parse_tx_ip_registered_event(tx_receipt)
         registered_ips = [
-            RegisteredIP(ip_id=log["ip_id"], token_id=log["token_id"])
+            RegisteredIP(ip_id=log["ipId"], token_id=log["tokenId"])
             for log in registered_ip_logs
         ]
         return registered_ips

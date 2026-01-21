@@ -16,6 +16,7 @@ from story_protocol_python_sdk import (
     MintNFT,
     NativeRoyaltyPolicy,
     PILFlavor,
+    RegisterRegistrationRequest,
     RoyaltyShareInput,
     StoryClient,
 )
@@ -1758,3 +1759,88 @@ class TestLinkDerivative:
         assert "tx_hash" in response
         assert isinstance(response["tx_hash"], str)
         assert len(response["tx_hash"]) > 0
+
+
+class TestBatchRegisterIpAssetsWithOptimizedWorkflows:
+    def test_batch_register_ip_assets_with_optimized_workflows_with_register_registration_request(
+        self,
+        story_client: StoryClient,
+    ):
+        """Test batch register IP assets with optimized workflows."""
+        token_id_1 = get_token_id(MockERC721, story_client.web3, story_client.account)
+        requests = [
+            # RegisterRegistrationRequest(
+            #     nft_contract=MockERC721,
+            #     token_id=token_id_1,
+            #     ip_metadata=COMMON_IP_METADATA,
+            #     deadline=100000,
+            #     license_terms_data=[
+            #         LicenseTermsDataInput(
+            #             terms=pil_flavor.PILFlavor.commercial_use(
+            #                 default_minting_fee=1000000000000000000,
+            #                 currency=MockERC20,
+            #                 royalty_policy=NativeRoyaltyPolicy.LAP,
+            #             ),
+            #             licensing_config=LicensingConfig(
+            #                 is_set=True,
+            #                 minting_fee=1000000000000000000,
+            #                 licensing_hook=ZERO_ADDRESS,
+            #                 hook_data=ZERO_HASH,
+            #                 commercial_rev_share=50,
+            #                 disabled=False,
+            #                 expect_minimum_group_reward_share=0,
+            #                 expect_group_reward_pool=ZERO_ADDRESS,
+            #             ),
+            #         )
+            #     ],
+            # ),
+            RegisterRegistrationRequest(
+                nft_contract=MockERC721,
+                token_id=token_id_1,
+                license_terms_data=[
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.non_commercial_social_remixing(),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=0,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=0,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    ),
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.commercial_use(
+                            default_minting_fee=10,
+                            currency=MockERC20,
+                            royalty_policy=NativeRoyaltyPolicy.LAP,
+                        ),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=10,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=50,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    ),
+                ],
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=50.0),
+                    RoyaltyShareInput(recipient=account_2.address, percentage=50.0),
+                ],
+            )
+        ]
+        response = story_client.IPAsset.batch_ip_asset_with_optimized_workflows(
+            requests=requests,
+            is_use_multicall=True,
+        )
+        print(
+            "-------------------------------- Batch Register IP Assets With Optimized Workflows Response --------------------------------"
+        )
+        print(response)
+        assert response is not None

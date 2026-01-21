@@ -1,120 +1,34 @@
 """Registration utilities for IP asset operations."""
 
 from collections.abc import Callable
-from dataclasses import asdict, is_dataclass, replace
 from typing import TypedDict
 
 from ens.ens import Address, HexStr
+from eth_account.signers.local import LocalAccount
 from web3 import Web3
 
-from story_protocol_python_sdk.abi.ModuleRegistry.ModuleRegistry_client import (
-    ModuleRegistryClient,
-)
-from story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client import (
-    RoyaltyModuleClient,
-)
-from story_protocol_python_sdk.abi.SPGNFTImpl.SPGNFTImpl_client import SPGNFTImplClient
+from story_protocol_python_sdk.abi.Multicall3.Multicall3_client import Multicall3Client
 from story_protocol_python_sdk.types.resource.IPAsset import (
-    LicenseTermsDataInput,
+    ExtraData,
     TransformedRegistrationRequest,
 )
-from story_protocol_python_sdk.types.resource.License import LicenseTermsInput
-from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS
-from story_protocol_python_sdk.utils.licensing_config_data import LicensingConfigData
-from story_protocol_python_sdk.utils.pil_flavor import PILFlavor
-from story_protocol_python_sdk.utils.util import convert_dict_keys_to_camel_case
-from story_protocol_python_sdk.utils.validation import (
-    get_revenue_share,
-    validate_address,
+from story_protocol_python_sdk.utils.registration.transform_registration_request import (
+    transform_distribute_royalty_tokens_request,
 )
+from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
 
 class AggregatedRequestData(TypedDict):
     """Aggregated request data structure."""
 
     encoded_tx_data: list[bytes]
-    contract_calls: list[Callable[[], HexStr]]
-
-
-def get_public_minting(spg_nft_contract: Address, web3: Web3) -> bool:
-    """
-    Check if SPG NFT contract has public minting enabled.
-
-    Args:
-        spg_nft_contract: The address of the SPG NFT contract.
-        web3: Web3 instance.
-
-    Returns:
-        True if public minting is enabled, False otherwise.
-    """
-    spg_client = SPGNFTImplClient(
-        web3, contract_address=validate_address(spg_nft_contract)
-    )
-    return spg_client.publicMinting()
-
-
-def validate_license_terms_data(
-    license_terms_data: list[LicenseTermsDataInput] | list[dict],
-    web3: Web3,
-) -> list[dict]:
-    """
-    Validate the license terms data.
-
-    Args:
-        license_terms_data: The license terms data to validate.
-        web3: Web3 instance.
-
-    Returns:
-        The validated license terms data.
-    """
-    royalty_module_client = RoyaltyModuleClient(web3)
-    module_registry_client = ModuleRegistryClient(web3)
-
-    validated_license_terms_data = []
-    for term in license_terms_data:
-        if is_dataclass(term):
-            terms_dict = asdict(term.terms)
-            licensing_config_dict = term.licensing_config
-        else:
-            terms_dict = term["terms"]
-            licensing_config_dict = term["licensing_config"]
-
-        license_terms = PILFlavor.validate_license_terms(
-            LicenseTermsInput(**terms_dict)
-        )
-        license_terms = replace(
-            license_terms,
-            commercial_rev_share=get_revenue_share(license_terms.commercial_rev_share),
-        )
-        if license_terms.royalty_policy != ZERO_ADDRESS:
-            is_whitelisted = royalty_module_client.isWhitelistedRoyaltyPolicy(
-                license_terms.royalty_policy
-            )
-            if not is_whitelisted:
-                raise ValueError("The royalty_policy is not whitelisted.")
-
-        if license_terms.currency != ZERO_ADDRESS:
-            is_whitelisted = royalty_module_client.isWhitelistedRoyaltyToken(
-                license_terms.currency
-            )
-            if not is_whitelisted:
-                raise ValueError("The currency is not whitelisted.")
-
-        validated_license_terms_data.append(
-            {
-                "terms": convert_dict_keys_to_camel_case(asdict(license_terms)),
-                "licensingConfig": LicensingConfigData.validate_license_config(
-                    module_registry_client, licensing_config_dict
-                ),
-            }
-        )
-    return validated_license_terms_data
+    method_reference: Callable[[list[bytes], dict], HexStr]
 
 
 def aggregate_multicall_requests(
     requests: list[TransformedRegistrationRequest],
     is_use_multicall3: bool,
-    multicall_address: Address,
+    web3: Web3,
 ) -> dict[Address, AggregatedRequestData]:
     """
     Aggregate multicall requests by grouping them by target address.
@@ -125,7 +39,7 @@ def aggregate_multicall_requests(
     Args:
         requests: List of transformed registration requests to aggregate.
         is_use_multicall3: Whether to use multicall3 for aggregation.
-        multicall_address: The multicall3 contract address to use when applicable.
+        web3: Web3 instance.
 
     Returns:
         Dictionary mapping target addresses to aggregated request data:
@@ -135,28 +49,114 @@ def aggregate_multicall_requests(
             - "contract_calls": List of contract call functions
     """
     aggregated_requests: dict[Address, AggregatedRequestData] = {}
+    multicall3_client = Multicall3Client(web3)
 
     for request in requests:
         # Determine the target address for this request
         target_address = (
-            multicall_address
+            multicall3_client.build_aggregate3_transaction
             if request.is_use_multicall3 and is_use_multicall3
-            else request.workflow_address
+            else request.original_method_reference
         )
 
         # Initialize entry if it doesn't exist
         if target_address not in aggregated_requests:
             aggregated_requests[target_address] = {
                 "encoded_tx_data": [request.encoded_tx_data],
-                "contract_calls": [request.contract_call],
+                "method_reference": (
+                    target_address
+                    if target_address == multicall3_client.build_aggregate3_transaction
+                    else request.original_method_reference
+                ),
             }
         else:
             # Append to existing entry
             aggregated_requests[target_address]["encoded_tx_data"].append(
                 request.encoded_tx_data
             )
-            aggregated_requests[target_address]["contract_calls"].append(
-                request.contract_call
-            )
 
     return aggregated_requests
+
+
+def prepare_distribute_royalty_tokens_requests(
+    extra_data_list: list[ExtraData],
+    web3: Web3,
+    ip_registered: list[dict[str, int | Address]],
+    royalty_vault: list[Address],
+    account: LocalAccount,
+    chain_id: int,
+) -> list[TransformedRegistrationRequest]:
+    """
+    Prepare distribute royalty tokens requests.
+
+    Args:
+        extra_data_list: The extra data for distribute royalty tokens.
+        web3: Web3 instance.
+        ip_registered: The IP registered.
+        royalty_vault: The royalty vault address.
+        account: The account for signing and recipient fallback.
+        chain_id: The chain ID for IP ID calculation.
+    """
+    if not extra_data_list:
+        return []
+    transformed_requests: list[TransformedRegistrationRequest] = []
+    for extra_data in extra_data_list:
+        filtered_ip_registered = list(
+            filter(
+                lambda x: x["tokenContract"] == extra_data["nft_contract"]
+                and x["tokenId"] == extra_data["token_id"],
+                ip_registered,
+            )
+        )
+        if filtered_ip_registered:
+            ip_royalty_vault = list(
+                filter(
+                    lambda x: x["ipId"] == filtered_ip_registered[0]["ipId"],
+                    royalty_vault,
+                )
+            )[0]["ipRoyaltyVault"]
+            transformed_request = transform_distribute_royalty_tokens_request(
+                ip_id=filtered_ip_registered[0]["ipId"],
+                royalty_vault=ip_royalty_vault,
+                deadline=extra_data["deadline"],
+                web3=web3,
+                account=account,
+                chain_id=chain_id,
+                royalty_shares=extra_data["royalty_shares"],
+                total_amount=extra_data["royalty_total_amount"],
+            )
+            transformed_requests.append(transformed_request)
+    return transformed_requests
+
+
+def send_transactions(
+    transformed_requests: list[TransformedRegistrationRequest],
+    is_use_multicall3: bool,
+    web3: Web3,
+    account: LocalAccount,
+    tx_options: dict | None = None,
+) -> list[dict[str, HexStr | dict]]:
+    aggregated_requests: dict[Address, AggregatedRequestData] = (
+        aggregate_multicall_requests(
+            requests=transformed_requests,
+            is_use_multicall3=is_use_multicall3,
+            web3=web3,
+        )
+    )
+    tx_hashes: list[HexStr] = []
+    for request_data in aggregated_requests.values():
+        # TODO: need to check the argument are correct
+        response = build_and_send_transaction(
+            web3,
+            account,
+            request_data["method_reference"],
+            request_data["encoded_tx_data"],
+            tx_options=tx_options,
+        )
+        tx_hashes.append(
+            {
+                "tx_hash": response["tx_hash"],
+                "tx_receipt": response["tx_receipt"],
+            }
+        )
+    return tx_hashes

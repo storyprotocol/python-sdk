@@ -1,5 +1,7 @@
 """Transform registration request utilities."""
 
+from dataclasses import asdict, is_dataclass, replace
+
 from ens.ens import Address, HexStr
 from eth_account.signers.local import LocalAccount
 from typing_extensions import cast
@@ -11,8 +13,14 @@ from story_protocol_python_sdk.abi.CoreMetadataModule.CoreMetadataModule_client 
 from story_protocol_python_sdk.abi.DerivativeWorkflows.DerivativeWorkflows_client import (
     DerivativeWorkflowsClient,
 )
+from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
+    IPAccountImplClient,
+)
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import (
     IPAssetRegistryClient,
+)
+from story_protocol_python_sdk.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client import (
+    IpRoyaltyVaultImplClient,
 )
 from story_protocol_python_sdk.abi.LicenseAttachmentWorkflows.LicenseAttachmentWorkflows_client import (
     LicenseAttachmentWorkflowsClient,
@@ -20,28 +28,114 @@ from story_protocol_python_sdk.abi.LicenseAttachmentWorkflows.LicenseAttachmentW
 from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import (
     LicensingModuleClient,
 )
+from story_protocol_python_sdk.abi.ModuleRegistry.ModuleRegistry_client import (
+    ModuleRegistryClient,
+)
+from story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client import (
+    RoyaltyModuleClient,
+)
 from story_protocol_python_sdk.abi.RoyaltyTokenDistributionWorkflows.RoyaltyTokenDistributionWorkflows_client import (
     RoyaltyTokenDistributionWorkflowsClient,
 )
+from story_protocol_python_sdk.abi.SPGNFTImpl.SPGNFTImpl_client import SPGNFTImplClient
 from story_protocol_python_sdk.types.common import AccessPermission
 from story_protocol_python_sdk.types.resource.IPAsset import (
     ExtraData,
+    LicenseTermsDataInput,
     MintAndRegisterRequest,
     RegisterRegistrationRequest,
     TransformedRegistrationRequest,
 )
+from story_protocol_python_sdk.types.resource.License import LicenseTermsInput
 from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
-from story_protocol_python_sdk.utils.constants import ZERO_HASH
+from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
 from story_protocol_python_sdk.utils.derivative_data import DerivativeData
 from story_protocol_python_sdk.utils.function_signature import get_function_signature
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadata
-from story_protocol_python_sdk.utils.registration.registration_utils import (
-    get_public_minting,
-    validate_license_terms_data,
-)
+from story_protocol_python_sdk.utils.licensing_config_data import LicensingConfigData
+from story_protocol_python_sdk.utils.pil_flavor import PILFlavor
 from story_protocol_python_sdk.utils.royalty import get_royalty_shares
 from story_protocol_python_sdk.utils.sign import Sign
-from story_protocol_python_sdk.utils.validation import validate_address
+from story_protocol_python_sdk.utils.util import convert_dict_keys_to_camel_case
+from story_protocol_python_sdk.utils.validation import (
+    get_revenue_share,
+    validate_address,
+)
+
+
+def get_public_minting(spg_nft_contract: Address, web3: Web3) -> bool:
+    """
+    Check if SPG NFT contract has public minting enabled.
+
+    Args:
+        spg_nft_contract: The address of the SPG NFT contract.
+        web3: Web3 instance.
+
+    Returns:
+        True if public minting is enabled, False otherwise.
+    """
+    spg_client = SPGNFTImplClient(
+        web3, contract_address=validate_address(spg_nft_contract)
+    )
+    return spg_client.publicMinting()
+
+
+def validate_license_terms_data(
+    license_terms_data: list[LicenseTermsDataInput] | list[dict],
+    web3: Web3,
+) -> list[dict]:
+    """
+    Validate the license terms data.
+
+    Args:
+        license_terms_data: The license terms data to validate.
+        web3: Web3 instance.
+
+    Returns:
+        The validated license terms data.
+    """
+    royalty_module_client = RoyaltyModuleClient(web3)
+    module_registry_client = ModuleRegistryClient(web3)
+
+    validated_license_terms_data = []
+    for term in license_terms_data:
+        if is_dataclass(term):
+            terms_dict = asdict(term.terms)
+            licensing_config_dict = term.licensing_config
+        else:
+            terms_dict = term["terms"]
+            licensing_config_dict = term["licensing_config"]
+
+        license_terms = PILFlavor.validate_license_terms(
+            LicenseTermsInput(**terms_dict)
+        )
+        license_terms = replace(
+            license_terms,
+            commercial_rev_share=get_revenue_share(license_terms.commercial_rev_share),
+        )
+        if license_terms.royalty_policy != ZERO_ADDRESS:
+            is_whitelisted = royalty_module_client.isWhitelistedRoyaltyPolicy(
+                license_terms.royalty_policy
+            )
+            if not is_whitelisted:
+                raise ValueError("The royalty_policy is not whitelisted.")
+
+        if license_terms.currency != ZERO_ADDRESS:
+            is_whitelisted = royalty_module_client.isWhitelistedRoyaltyToken(
+                license_terms.currency
+            )
+            if not is_whitelisted:
+                raise ValueError("The currency is not whitelisted.")
+
+        validated_license_terms_data.append(
+            {
+                "terms": convert_dict_keys_to_camel_case(asdict(license_terms)),
+                "licensingConfig": LicensingConfigData.validate_license_config(
+                    module_registry_client, licensing_config_dict
+                ),
+            }
+        )
+    return validated_license_terms_data
 
 
 def get_allow_duplicates(allow_duplicates: bool | None, request_type: str) -> bool:
@@ -104,6 +198,75 @@ def transform_request(
         return _handle_register_request(request, web3, account, chain_id)
     else:
         raise ValueError("Invalid registration request type")
+
+
+def transform_distribute_royalty_tokens_request(
+    ip_id: Address,
+    royalty_vault: Address,
+    deadline: int,
+    web3: Web3,
+    account: LocalAccount,
+    chain_id: int,
+    royalty_shares: list[RoyaltyShareInput],
+    total_amount: int,
+) -> TransformedRegistrationRequest:
+    """
+    Transform a distribute royalty tokens request into encoded transaction data with multicall info.
+    distributeRoyaltyTokens method don't support multicall3 due to `msg.sender` check.
+    Args:
+        ip_id: The IP ID
+        royalty_vault: The royalty vault address
+        deadline: The deadline for the transaction
+        web3: The web3 instance
+        account: The account for signing and recipient fallback
+        chain_id: The chain ID for IP ID calculation
+        royalty_shares: The validated royalty shares with recipient and percentage.
+    Returns:
+        TransformedRegistrationRequest with encoded data and multicall strategy
+    Raises:
+        ValueError: If the request is invalid
+    """
+    ip_account_impl_client = IPAccountImplClient(web3, ip_id)
+    state = ip_account_impl_client.state()
+    royalty_token_distribution_workflows_client = (
+        RoyaltyTokenDistributionWorkflowsClient(web3)
+    )
+    ip_royalty_vault_client = IpRoyaltyVaultImplClient(web3, royalty_vault)
+    signature_response = Sign(web3, chain_id, account).get_signature(
+        state=state,
+        to=royalty_vault,
+        encode_data=ip_royalty_vault_client.contract.encode_abi(
+            abi_element_identifier="approve",
+            args=[
+                RoyaltyTokenDistributionWorkflowsClient(web3).contract.address,
+                total_amount,
+            ],
+        ),
+        verifying_contract=ip_id,
+        deadline=deadline,
+    )
+    validated_request = [
+        ip_id,
+        royalty_shares,
+        {
+            "signer": web3.to_checksum_address(account.address),
+            "deadline": deadline,
+            "signature": signature_response["signature"],
+        },
+    ]
+    encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
+        abi_element_identifier="distributeRoyaltyTokens",
+        args=validated_request,
+    )
+    return TransformedRegistrationRequest(
+        encoded_tx_data=encoded_data,
+        is_use_multicall3=False,
+        workflow_address=royalty_token_distribution_workflows_client.contract.address,
+        validated_request=validated_request,
+        original_method_reference=royalty_token_distribution_workflows_client.build_multicall_transaction,
+        extra_data=None,
+        contract_call=None,
+    )
 
 
 # =============================================================================
@@ -247,6 +410,7 @@ def _handle_mint_and_register_with_license_terms_and_royalty_tokens(
         encoded_tx_data=encoded_data,
         is_use_multicall3=is_public_minting,
         workflow_address=royalty_token_distribution_workflows_address,
+        original_method_reference=royalty_token_distribution_workflows_client.build_multicall_transaction,
         validated_request=validated_request,
         extra_data=None,
         contract_call=contract_call,
@@ -300,6 +464,7 @@ def _handle_mint_and_register_with_derivative_and_royalty_tokens(
         validated_request=validated_request,
         extra_data=None,
         contract_call=contract_call,
+        original_method_reference=royalty_token_distribution_workflows_client.build_multicall_transaction,
     )
 
 
@@ -346,6 +511,7 @@ def _handle_mint_and_register_with_license_terms(
         validated_request=validated_request,
         extra_data=None,
         contract_call=contract_call,
+        original_method_reference=license_attachment_workflows_client.build_multicall_transaction,
     )
 
 
@@ -388,6 +554,7 @@ def _handle_mint_and_register_with_derivative(
         validated_request=validated_request,
         extra_data=None,
         contract_call=contract_call,
+        original_method_reference=derivative_workflows_client.build_multicall_transaction,
     )
 
 
@@ -589,6 +756,7 @@ def _handle_register_with_license_terms_and_royalty_vault(
             token_id=token_id,
         ),
         contract_call=contract_call,
+        original_method_reference=royalty_token_distribution_workflows_client.build_multicall_transaction,
     )
 
 
@@ -663,6 +831,7 @@ def _handle_register_with_derivative_and_royalty_vault(
             token_id=token_id,
         ),
         contract_call=contract_call,
+        original_method_reference=royalty_token_distribution_workflows_client.build_multicall_transaction,
     )
 
 
@@ -727,6 +896,7 @@ def _handle_register_with_license_terms(
         validated_request=validated_request,
         extra_data=None,
         contract_call=contract_call,
+        original_method_reference=license_attachment_workflows_client.build_multicall_transaction,
     )
 
 
@@ -789,6 +959,7 @@ def _handle_register_with_derivative(
         validated_request=validated_request,
         extra_data=None,
         contract_call=contract_call,
+        original_method_reference=derivative_workflows_client.build_multicall_transaction,
     )
 
 

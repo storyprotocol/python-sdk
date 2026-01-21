@@ -280,6 +280,7 @@ class MintAndRegisterRequest:
 class RegisterRegistrationRequest:
     """
     Request for register IP operations (already minted NFT).
+    license_terms_data, deriv_data and royalty_shares at least one of them is required,otherwise it will raise `invalid register request type`.
 
     Used for:
     - registerIpAndAttachPilTerms
@@ -310,6 +311,19 @@ class RegisterRegistrationRequest:
 IpRegistrationWorkflowRequest = MintAndRegisterRequest | RegisterRegistrationRequest
 
 
+class IPRoyaltyVault(TypedDict):
+    """
+    IP royalty vault.
+
+    Attributes:
+        ip_id: The IP ID.
+        royalty_vault: The royalty vault address.
+    """
+
+    ip_id: Address
+    royalty_vault: Address
+
+
 class BatchRegistrationResult(TypedDict, total=False):
     """
     Result of a single batch registration transaction.
@@ -317,14 +331,12 @@ class BatchRegistrationResult(TypedDict, total=False):
     Attributes:
         tx_hash: The transaction hash.
         registered_ips: List of registered IP assets (ip_id, token_id).
-        license_terms_ids: [Optional] The IDs of the license terms attached (applies to all IPs in this batch).
-        ip_royalty_vaults: [Optional] List of (ip_id, ip_royalty_vault) tuples for deployed royalty vaults.
+        ip_royalty_vaults: [Optional] List of IP royalty vaults for deployed royalty vaults.
     """
 
     tx_hash: HexStr
     registered_ips: list[RegisteredIP]
-    license_terms_ids: list[int]
-    ip_royalty_vaults: list[tuple[Address, Address]]
+    ip_royalty_vaults: list[IPRoyaltyVault]
 
 
 class BatchRegisterIpAssetsWithOptimizedWorkflowsResponse(TypedDict, total=False):
@@ -380,5 +392,7 @@ class TransformedRegistrationRequest:
     is_use_multicall3: bool
     workflow_address: Address
     validated_request: list
-    contract_call: Callable[[], HexStr]
+    original_method_reference: Callable[..., HexStr]
     extra_data: ExtraData | None = None
+    # Maybe not needed
+    contract_call: Callable[[], HexStr] | None = None

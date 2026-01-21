@@ -21,9 +21,6 @@ from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import (
     IPAssetRegistryClient,
 )
-from story_protocol_python_sdk.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client import (
-    IpRoyaltyVaultImplClient,
-)
 from story_protocol_python_sdk.abi.LicenseAttachmentWorkflows.LicenseAttachmentWorkflows_client import (
     LicenseAttachmentWorkflowsClient,
 )
@@ -57,7 +54,10 @@ from story_protocol_python_sdk.types.common import AccessPermission
 from story_protocol_python_sdk.types.resource.IPAsset import (
     BatchMintAndRegisterIPInput,
     BatchMintAndRegisterIPResponse,
+    BatchRegisterIpAssetsWithOptimizedWorkflowsResponse,
+    BatchRegistrationResult,
     ExtraData,
+    IPRoyaltyVault,
     LicenseTermsDataInput,
     LinkDerivativeResponse,
     MintAndRegisterRequest,
@@ -73,6 +73,7 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
     RegistrationResponse,
     RegistrationWithRoyaltyVaultAndLicenseTermsResponse,
     RegistrationWithRoyaltyVaultResponse,
+    TransformedRegistrationRequest,
 )
 from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
 from story_protocol_python_sdk.utils.constants import (
@@ -93,10 +94,13 @@ from story_protocol_python_sdk.utils.ip_metadata import (
     is_initial_ip_metadata,
 )
 from story_protocol_python_sdk.utils.registration.registration_utils import (
-    validate_license_terms_data,
+    prepare_distribute_royalty_tokens_requests,
+    send_transactions,
 )
 from story_protocol_python_sdk.utils.registration.transform_registration_request import (
+    transform_distribute_royalty_tokens_request,
     transform_request,
+    validate_license_terms_data,
 )
 from story_protocol_python_sdk.utils.sign import Sign
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
@@ -277,9 +281,7 @@ class IPAsset:
                     tx_options=tx_options,
                 )
 
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
 
             return {"tx_hash": response["tx_hash"], "ip_id": ip_registered["ip_id"]}
 
@@ -566,9 +568,7 @@ class IPAsset:
                 *transformed_request.validated_request,
                 tx_options=tx_options,
             )
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
             license_terms_ids = self._parse_tx_license_terms_attached_event(
                 response["tx_receipt"]
             )
@@ -642,9 +642,7 @@ class IPAsset:
                 tx_options=tx_options,
             )
 
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
 
             return {
                 "tx_hash": response["tx_hash"],
@@ -691,7 +689,7 @@ class IPAsset:
                 encoded_data,
                 tx_options=tx_options,
             )
-            registered_ips = self._parse_tx_ip_registered_event(response["tx_receipt"])
+            registered_ips = self._get_registered_ips(response["tx_receipt"])
             return BatchMintAndRegisterIPResponse(
                 tx_hash=response["tx_hash"],
                 registered_ips=registered_ips,
@@ -785,9 +783,7 @@ class IPAsset:
                 tx_options=tx_options,
             )
 
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
             license_terms_ids = self._parse_tx_license_terms_attached_event(
                 response["tx_receipt"]
             )
@@ -845,9 +841,7 @@ class IPAsset:
                 tx_options=tx_options,
             )
 
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
 
             return {
                 "tx_hash": response["tx_hash"],
@@ -900,9 +894,7 @@ class IPAsset:
                 *transformed_request.validated_request,
                 tx_options=tx_options,
             )
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
             return RegistrationResponse(
                 tx_hash=response["tx_hash"],
                 ip_id=ip_registered["ip_id"],
@@ -952,9 +944,7 @@ class IPAsset:
                 allow_duplicates,
                 tx_options=tx_options,
             )
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
             return RegistrationResponse(
                 tx_hash=response["tx_hash"],
                 ip_id=ip_registered["ip_id"],
@@ -1050,9 +1040,7 @@ class IPAsset:
                 tx_options=tx_options,
             )
 
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
 
             return RegistrationResponse(
                 tx_hash=response["tx_hash"],
@@ -1115,13 +1103,11 @@ class IPAsset:
                 tx_options=tx_options,
             )
 
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
             license_terms_ids = self._parse_tx_license_terms_attached_event(
                 response["tx_receipt"]
             )
-            royalty_vault = self.get_royalty_vault_address_by_ip_id(
+            royalty_vault = self._get_royalty_vault_address_by_ip_id(
                 response["tx_receipt"],
                 ip_registered["ip_id"],
             )
@@ -1186,10 +1172,8 @@ class IPAsset:
                 tx_options=tx_options,
             )
 
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
-            royalty_vault = self.get_royalty_vault_address_by_ip_id(
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
+            royalty_vault = self._get_royalty_vault_address_by_ip_id(
                 response["tx_receipt"],
                 ip_registered["ip_id"],
             )
@@ -1254,10 +1238,8 @@ class IPAsset:
                 tx_options=tx_options,
             )
 
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
-            royalty_vault = self.get_royalty_vault_address_by_ip_id(
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
+            royalty_vault = self._get_royalty_vault_address_by_ip_id(
                 response["tx_receipt"],
                 ip_registered["ip_id"],
             )
@@ -1335,13 +1317,11 @@ class IPAsset:
                 *transformed_request.validated_request,
                 tx_options=tx_options,
             )
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
             license_terms_ids = self._parse_tx_license_terms_attached_event(
                 response["tx_receipt"]
             )
-            royalty_vault = self.get_royalty_vault_address_by_ip_id(
+            royalty_vault = self._get_royalty_vault_address_by_ip_id(
                 response["tx_receipt"],
                 ip_registered["ip_id"],
             )
@@ -1510,6 +1490,98 @@ class IPAsset:
 
         except Exception as e:
             raise ValueError(f"Failed to register IP Asset: {str(e)}") from e
+
+    def batch_ip_asset_with_optimized_workflows(
+        self,
+        requests: list[RegisterRegistrationRequest],
+        is_use_multicall: bool = True,
+        tx_options: dict | None = None,
+    ) -> BatchRegisterIpAssetsWithOptimizedWorkflowsResponse:
+        """
+        Batch register IP assets with optimized workflows.
+
+        :param requests list[RegisterRegistrationRequest]: The list of registration requests.
+        :param is_use_multicall bool: [Optional] Whether to use multicall. (default: True)
+        :param tx_options dict: [Optional] Transaction options.
+        :return list[BatchRegistrationResult]: The list of batch registration results.
+        """
+        try:
+            transformed_requests: list[TransformedRegistrationRequest] = [
+                transform_request(request, self.web3, self.account, self.chain_id)
+                for request in requests
+            ]
+            royalty_distribution_requests: list[ExtraData] = [
+                tr.extra_data
+                for tr in transformed_requests
+                if tr.extra_data is not None
+                and tr.extra_data.get("royalty_shares", None) is not None
+            ]
+            tx_responses: list[dict[str, HexStr]] = send_transactions(
+                transformed_requests=transformed_requests,
+                is_use_multicall3=is_use_multicall,
+                web3=self.web3,
+                account=self.account,
+                tx_options=tx_options,
+            )
+            distribute_royalty_tokens_requests: list[TransformedRegistrationRequest] = (
+                []
+            )
+            response_list: list[BatchRegistrationResult] = []
+
+            for tx_response in tx_responses:
+                ip_registered_events = self._parse_tx_ip_registered_event(
+                    tx_response["tx_receipt"]
+                )
+                ip_royalty_vault_deployed_events = (
+                    self._parse_all_ip_royalty_vault_deployed_events(
+                        tx_response["tx_receipt"]
+                    )
+                )
+                result = prepare_distribute_royalty_tokens_requests(
+                    extra_data_list=royalty_distribution_requests,
+                    web3=self.web3,
+                    ip_registered=ip_registered_events,
+                    royalty_vault=ip_royalty_vault_deployed_events,
+                    account=self.account,
+                    chain_id=self.chain_id,
+                )
+                if result:
+                    distribute_royalty_tokens_requests.extend(result)
+                response_list.append(
+                    {
+                        "tx_hash": tx_response["tx_hash"],
+                        "registered_ips": [
+                            RegisteredIP(ip_id=log["ipId"], token_id=log["tokenId"])
+                            for log in ip_registered_events
+                        ],
+                        "ip_royalty_vaults": [
+                            IPRoyaltyVault(
+                                ip_id=log["ipId"],
+                                royalty_vault=log["ipRoyaltyVault"],
+                            )
+                            for log in ip_royalty_vault_deployed_events
+                        ],
+                    }
+                )
+
+            # Send distribute royalty tokens requests
+            distribute_royalty_tokens_tx_hashes = send_transactions(
+                transformed_requests=distribute_royalty_tokens_requests,
+                is_use_multicall3=is_use_multicall,
+                web3=self.web3,
+                account=self.account,
+                tx_options=tx_options,
+            )
+
+            return BatchRegisterIpAssetsWithOptimizedWorkflowsResponse(
+                registration_results=response_list,
+                distribute_royalty_tokens_tx_hashes=[
+                    tx_hash["tx_hash"]
+                    for tx_hash in distribute_royalty_tokens_tx_hashes
+                ],
+            )
+        except ValueError as e:
+            raise ValueError(f"Failed to batch register IP assets: {str(e)}") from e
 
     def _handle_minted_nft_registration(
         self,
@@ -1901,36 +1973,21 @@ class IPAsset:
         :return HexStr: The transaction hash.
         """
         try:
-            ip_account_impl_client = IPAccountImplClient(self.web3, ip_id)
-            state = ip_account_impl_client.state()
-
-            ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, royalty_vault)
-
-            signature_response = self.sign_util.get_signature(
-                state=state,
-                to=royalty_vault,
-                encode_data=ip_royalty_vault_client.contract.encode_abi(
-                    abi_element_identifier="approve",
-                    args=[
-                        self.royalty_token_distribution_workflows_client.contract.address,
-                        total_amount,
-                    ],
-                ),
-                verifying_contract=ip_id,
+            transformed_request = transform_distribute_royalty_tokens_request(
+                ip_id=ip_id,
+                royalty_vault=royalty_vault,
                 deadline=deadline,
+                web3=self.web3,
+                account=self.account,
+                chain_id=self.chain_id,
+                royalty_shares=royalty_shares,
+                total_amount=total_amount,
             )
-
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.royalty_token_distribution_workflows_client.build_distributeRoyaltyTokens_transaction,
-                ip_id,
-                royalty_shares,
-                {
-                    "signer": self.web3.to_checksum_address(self.account.address),
-                    "deadline": deadline,
-                    "signature": signature_response["signature"],
-                },
+                *transformed_request.validated_request,
                 tx_options=tx_options,
             )
 
@@ -1960,28 +2017,39 @@ class IPAsset:
         """
         return self.ip_asset_registry_client.isRegistered(ip_id)
 
-    def _parse_tx_ip_registered_event(self, tx_receipt: dict) -> list[RegisteredIP]:
+    def _parse_tx_ip_registered_event(
+        self, tx_receipt: dict
+    ) -> list[dict[str, int | Address]]:
         """
         Parse the IPRegistered event from a transaction receipt.
 
         :param tx_receipt dict: The transaction receipt.
-        :return int: The IP ID and token ID from the event, or None.
+        :return list[dict[str, int | Address]]: The list of IPRegistered event logs.
         """
         event_signature = self.web3.keccak(
             text="IPRegistered(address,uint256,address,uint256,string,string,uint256)"
         ).hex()
-        registered_ips: list[RegisteredIP] = []
+        registered_ip_logs: list[dict[str, int | Address]] = []
         for log in tx_receipt["logs"]:
             if log["topics"][0].hex() == event_signature:
                 event_result = self.ip_asset_registry_client.contract.events.IPRegistered.process_log(
                     log
                 )
-                registered_ips.append(
-                    RegisteredIP(
-                        ip_id=event_result["args"]["ipId"],
-                        token_id=event_result["args"]["tokenId"],
-                    )
-                )
+                registered_ip_logs.append(event_result["args"])
+        return registered_ip_logs
+
+    def _get_registered_ips(self, tx_receipt: dict) -> list[RegisteredIP]:
+        """
+        Get the registered IPs from a transaction receipt.
+
+        :param tx_receipt dict: The transaction receipt.
+        :return list[RegisteredIP]: The list of registered IPs.
+        """
+        registered_ip_logs = self._parse_tx_ip_registered_event(tx_receipt)
+        registered_ips = [
+            RegisteredIP(ip_id=log["ip_id"], token_id=log["token_id"])
+            for log in registered_ip_logs
+        ]
         return registered_ips
 
     def _parse_tx_license_term_attached_event(self, tx_receipt: dict) -> int | None:
@@ -2022,8 +2090,8 @@ class IPAsset:
 
         return license_terms_ids
 
-    def get_royalty_vault_address_by_ip_id(
-        self, tx_receipt: dict, ipId: Address
+    def _get_royalty_vault_address_by_ip_id(
+        self, tx_receipt: dict, ip_id: Address
     ) -> Address:
         """
         Parse the IpRoyaltyVaultDeployed event from a transaction receipt and return the royalty vault address for a given IP ID.
@@ -2032,16 +2100,15 @@ class IPAsset:
         :param ipId Address: The IP ID.
         :return Address: The royalty vault address.
         """
-        event_signature = Web3.keccak(
-            text="IpRoyaltyVaultDeployed(address,address)"
-        ).hex()
-        for log in tx_receipt["logs"]:
-            if log["topics"][0].hex() == event_signature:
-                event_result = self.royalty_module_client.contract.events.IpRoyaltyVaultDeployed.process_log(
-                    log
-                )
-                if event_result["args"]["ipId"] == ipId:
-                    return event_result["args"]["ipRoyaltyVault"]
+        ip_royalty_vault_deployed_events = (
+            self._parse_all_ip_royalty_vault_deployed_events(tx_receipt)
+        )
+        filtered_ip_royalty_vault_deployed_events: list[dict] = list(
+            filter(lambda x: x["ipId"] == ip_id, ip_royalty_vault_deployed_events)
+        )
+        if filtered_ip_royalty_vault_deployed_events:
+            return filtered_ip_royalty_vault_deployed_events[0]["ipRoyaltyVault"]
+        return None
 
     def _validate_recipient(self, recipient: Address | None) -> Address:
         """
@@ -2056,7 +2123,7 @@ class IPAsset:
 
     def _parse_all_ip_royalty_vault_deployed_events(
         self, tx_receipt: dict
-    ) -> list[tuple[Address, Address]]:
+    ) -> list[dict[str, Address]]:
         """
         Parse all IpRoyaltyVaultDeployed events from a transaction receipt.
 
@@ -2066,16 +2133,11 @@ class IPAsset:
         event_signature = Web3.keccak(
             text="IpRoyaltyVaultDeployed(address,address)"
         ).hex()
-        results: list[tuple[Address, Address]] = []
+        results: list[dict[str, Address]] = []
         for log in tx_receipt["logs"]:
             if log["topics"][0].hex() == event_signature:
                 event_result = self.royalty_module_client.contract.events.IpRoyaltyVaultDeployed.process_log(
                     log
                 )
-                results.append(
-                    (
-                        event_result["args"]["ipId"],
-                        event_result["args"]["ipRoyaltyVault"],
-                    )
-                )
+                results.append(event_result["args"])
         return results

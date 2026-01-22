@@ -30,6 +30,7 @@ class AggregatedRequestData(TypedDict):
     """Aggregated request data structure."""
 
     call_data: list[bytes | Multicall3Call]
+    license_terms_data: list[list[dict]]
     method_reference: Callable[[list[bytes], dict], HexStr]
 
 
@@ -71,6 +72,7 @@ def aggregate_multicall_requests(
         if target_address not in aggregated_requests:
             aggregated_requests[target_address] = {
                 "call_data": [],
+                "license_terms_data": [],
                 "method_reference": (
                     multicall3_client.build_aggregate3_transaction
                     if target_address == multicall3_client.contract.address
@@ -81,7 +83,7 @@ def aggregate_multicall_requests(
             aggregated_requests[target_address]["call_data"].append(
                 {
                     "target": request.workflow_address,
-                    "allowFailure": True,
+                    "allowFailure": False,
                     "value": 0,
                     "callData": request.encoded_tx_data,
                 }
@@ -90,6 +92,14 @@ def aggregate_multicall_requests(
             aggregated_requests[target_address]["call_data"].append(
                 request.encoded_tx_data
             )
+        license_terms_data = (
+            request.extra_data.get("license_terms_data") or []
+            if request.extra_data is not None
+            else []
+        )
+        aggregated_requests[target_address]["license_terms_data"].append(
+            license_terms_data
+        )
 
     return aggregated_requests
 
@@ -153,7 +163,7 @@ def send_transactions(
     web3: Web3,
     account: LocalAccount,
     tx_options: dict | None = None,
-) -> list[dict[str, HexStr | dict]]:
+) -> tuple[list[dict[str, HexStr | dict]], dict[Address, AggregatedRequestData]]:
     aggregated_requests: dict[Address, AggregatedRequestData] = (
         aggregate_multicall_requests(
             requests=transformed_requests,
@@ -176,4 +186,4 @@ def send_transactions(
                 "tx_receipt": response["tx_receipt"],
             }
         )
-    return tx_results
+    return tx_results, aggregated_requests

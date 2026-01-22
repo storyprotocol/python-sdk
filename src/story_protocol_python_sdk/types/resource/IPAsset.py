@@ -324,6 +324,18 @@ class IPRoyaltyVault(TypedDict):
     royalty_vault: Address
 
 
+class RegisteredIPWithLicenseTermsIds(RegisteredIP):
+    """
+    Data structure for IP and token ID with license terms IDs.
+
+    Attributes:
+        license_terms_ids: The license terms IDs of the registered IP asset.
+        If the license terms are not attached, the value is None.
+    """
+
+    license_terms_ids: list[int] | None
+
+
 class BatchRegistrationResult(TypedDict, total=False):
     """
     Result of a single batch registration transaction.
@@ -335,7 +347,7 @@ class BatchRegistrationResult(TypedDict, total=False):
     """
 
     tx_hash: HexStr
-    registered_ips: list[RegisteredIP]
+    registered_ips: list[RegisteredIPWithLicenseTermsIds]
     ip_royalty_vaults: list[IPRoyaltyVault]
 
 
@@ -365,6 +377,7 @@ class ExtraData(TypedDict, total=False):
         royalty_total_amount: [Optional] The total amount of royalty tokens to distribute.
         nft_contract: [Optional] The NFT contract address.
         token_id: [Optional] The token ID.
+        license_terms_data: [Optional] The license terms data.
     """
 
     royalty_shares: list[RoyaltyShareInput]
@@ -372,6 +385,7 @@ class ExtraData(TypedDict, total=False):
     royalty_total_amount: int
     nft_contract: Address
     token_id: int
+    license_terms_data: list[dict] | None = None
 
 
 @dataclass

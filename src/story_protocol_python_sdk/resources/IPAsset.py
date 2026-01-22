@@ -68,6 +68,7 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
     RegisterDerivativeIPAndAttachAndDistributeRoyaltyTokensResponse,
     RegisterDerivativeIpAssetResponse,
     RegisteredIP,
+    RegisteredIPWithLicenseTermsIds,
     RegisterIpAssetResponse,
     RegisterPILTermsAndAttachResponse,
     RegisterRegistrationRequest,
@@ -95,6 +96,7 @@ from story_protocol_python_sdk.utils.ip_metadata import (
     is_initial_ip_metadata,
 )
 from story_protocol_python_sdk.utils.registration.registration_utils import (
+    AggregatedRequestData,
     prepare_distribute_royalty_tokens_requests,
     send_transactions,
 )
@@ -1570,14 +1572,13 @@ class IPAsset:
                 transform_request(request, self.web3, self.account, self.chain_id)
                 for request in requests
             ]
-            tx_responses: list[dict[str, HexStr]] = send_transactions(
+            tx_responses, aggregated_requests = send_transactions(
                 transformed_requests=transformed_requests,
                 is_use_multicall3=is_use_multicall,
                 web3=self.web3,
                 account=self.account,
                 tx_options=tx_options,
             )
-
             # Extract royalty distribution requests from workflow responses that contain royalty shares
             # We need to handle `distributeRoyaltyTokens` separately because this method requires
             # a signature with the royalty vault address, which is only available after the initial registration
@@ -1620,7 +1621,11 @@ class IPAsset:
                     BatchRegistrationResult(
                         tx_hash=tx_response["tx_hash"],
                         registered_ips=[
-                            RegisteredIP(ip_id=log["ipId"], token_id=log["tokenId"])
+                            RegisteredIPWithLicenseTermsIds(
+                                ip_id=log["ipId"],
+                                token_id=log["tokenId"],
+                                license_terms_ids=[],
+                            )
                             for log in ip_registered_events
                         ],
                         ip_royalty_vaults=matching_vaults,
@@ -1628,7 +1633,7 @@ class IPAsset:
                 )
 
             # Send distribute royalty tokens requests
-            distribute_royalty_tokens_tx_hashes = send_transactions(
+            distribute_royalty_tokens_tx_responses, _ = send_transactions(
                 transformed_requests=distribute_royalty_tokens_requests,
                 is_use_multicall3=is_use_multicall,
                 web3=self.web3,
@@ -1636,15 +1641,61 @@ class IPAsset:
                 tx_options=tx_options,
             )
 
+            # Populate the license terms ids into the response
+            response_list_with_license_terms_ids = (
+                self._populate_license_terms_ids_into_response(
+                    response_list, aggregated_requests
+                )
+            )
+
             return BatchRegisterIpAssetsWithOptimizedWorkflowsResponse(
-                registration_results=response_list,
+                registration_results=response_list_with_license_terms_ids,
                 distribute_royalty_tokens_tx_hashes=[
                     tx_hash["tx_hash"]
-                    for tx_hash in distribute_royalty_tokens_tx_hashes
+                    for tx_hash in distribute_royalty_tokens_tx_responses
                 ],
             )
         except ValueError as e:
             raise ValueError(f"Failed to batch register IP assets: {str(e)}") from e
+
+    def _populate_license_terms_ids_into_response(
+        self,
+        registration_results: list[BatchRegistrationResult],
+        aggregated_requests: dict[Address, AggregatedRequestData],
+    ) -> list[BatchRegistrationResult]:
+        # Flatten all license_terms_data from aggregated requests into a single list
+        all_license_terms_data = [
+            license_terms_data
+            for value in aggregated_requests.values()
+            for license_terms_data in value["license_terms_data"]
+        ]
+        print("all_license_terms_data", all_license_terms_data)
+        # Populate license terms ids for each registered IP
+        license_terms_index = 0
+        for registration_result in registration_results:
+            for registered_ip in registration_result["registered_ips"]:
+                if license_terms_index < len(all_license_terms_data):
+                    license_terms_data = all_license_terms_data[license_terms_index]
+                    if license_terms_data:
+                        registered_ip["license_terms_ids"] = self._get_license_terms_id(
+                            license_terms_data
+                        )
+                    license_terms_index += 1
+        return registration_results
+
+    def _get_license_terms_id(self, license_terms_data: list[dict]) -> list[int]:
+        """
+        Get the license terms ids from the license terms data.
+        :param license_terms_data: The license terms data.
+        :return: The license terms ids.
+        """
+        license_terms_ids = []
+        for license_terms in license_terms_data:
+            license_terms_id = self.pi_license_template_client.getLicenseTermsId(
+                license_terms["terms"]
+            )
+            license_terms_ids.append(license_terms_id)
+        return license_terms_ids
 
     def _handle_minted_nft_registration(
         self,

@@ -1997,6 +1997,7 @@ class TestBatchRegisterIpAssetsWithOptimizedWorkflows:
                     RoyaltyShareInput(recipient=account_2.address, percentage=40.0),
                 ],
             ),
+            # Does not support the multicall3
             MintAndRegisterRequest(
                 spg_nft_contract=nft_collection,
                 license_terms_data=[
@@ -2024,6 +2025,15 @@ class TestBatchRegisterIpAssetsWithOptimizedWorkflows:
                 ],
             ),
         ]
+        # Enhanced: Thoroughly verify transaction aggregation, registration output,
+        # and cross-check the actual on-chain registered asset state with expectations.
+        #
+        # Expectations:
+        # - 3 total blockchain transactions by multicall3:
+        #   1. LicenseAttachmentWorkflowsClient: attaches license terms (1 tx)
+        #   2. RoyaltyTokenDistributionWorkflowsClient: batch of 3, merged to 1 tx (with vault creation)
+        #   3. DerivativeWorkflowsClient: creates derivatives (1 tx)
+        # - Only 1 distribute_royalty_tokens_tx_hash, even for multiple assets with royalty shares.
         response = story_client.IPAsset.batch_ip_asset_with_optimized_workflows(
             requests=requests,
             tx_options={

@@ -325,7 +325,6 @@ def _handle_mint_and_register_request(
             license_terms_data=license_terms_data,
             royalty_shares=royalty_shares,
             allow_duplicates=request.allow_duplicates,
-            is_public_minting=is_public_minting,
         )
 
     elif deriv_data and royalty_shares:
@@ -374,7 +373,6 @@ def _handle_mint_and_register_with_license_terms_and_royalty_tokens(
     license_terms_data: list[dict],
     royalty_shares: list[dict],
     allow_duplicates: bool | None,
-    is_public_minting: bool,
 ) -> TransformedRegistrationRequest:
     """Handle mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens."""
     royalty_token_distribution_workflows_client = (
@@ -406,7 +404,9 @@ def _handle_mint_and_register_with_license_terms_and_royalty_tokens(
         workflow_address=royalty_token_distribution_workflows_address,
         original_method_reference=royalty_token_distribution_workflows_client.build_multicall_transaction,
         validated_request=validated_request,
-        extra_data=None,
+        extra_data=ExtraData(
+            license_terms_data=license_terms_data,
+        ),
     )
 
 
@@ -485,7 +485,9 @@ def _handle_mint_and_register_with_license_terms(
         is_use_multicall3=is_public_minting,
         workflow_address=license_attachment_workflows_address,
         validated_request=validated_request,
-        extra_data=None,
+        extra_data=ExtraData(
+            license_terms_data=license_terms_data,
+        ),
         original_method_reference=license_attachment_workflows_client.build_multicall_transaction,
     )
 
@@ -714,6 +716,7 @@ def _handle_register_with_license_terms_and_royalty_vault(
             royalty_total_amount=royalty_total_amount,
             nft_contract=nft_contract,
             token_id=token_id,
+            license_terms_data=license_terms_data,
         ),
         original_method_reference=royalty_token_distribution_workflows_client.build_multicall_transaction,
     )
@@ -838,7 +841,9 @@ def _handle_register_with_license_terms(
         is_use_multicall3=False,
         workflow_address=license_attachment_workflows_address,
         validated_request=validated_request,
-        extra_data=None,
+        extra_data=ExtraData(
+            license_terms_data=license_terms_data,
+        ),
         original_method_reference=license_attachment_workflows_client.build_multicall_transaction,
     )
 

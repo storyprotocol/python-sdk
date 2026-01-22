@@ -12,6 +12,7 @@ from story_protocol_python_sdk import (
     LicenseTermsInput,
     LicenseTermsOverride,
     LicensingConfig,
+    MintAndRegisterRequest,
     MintedNFT,
     MintNFT,
     NativeRoyaltyPolicy,
@@ -1931,3 +1932,113 @@ class TestBatchRegisterIpAssetsWithOptimizedWorkflows:
         assert registration_results[2]["tx_hash"] is not None
         assert len(registration_results[2]["registered_ips"]) == 1
         assert len(registration_results[2]["ip_royalty_vaults"]) == 0
+
+    def test_batch_register_ip_assets_with_optimized_workflows_with_mint_and_register_ip_request(
+        self,
+        story_client: StoryClient,
+        nft_collection,
+    ):
+        """Test batch register IP assets with optimized workflows with mint and register IP request."""
+        parent_ip_and_license_terms_1 = create_parent_ip_and_license_terms(
+            story_client, nft_collection, account
+        )
+        parent_ip_and_license_terms_2 = create_parent_ip_and_license_terms(
+            story_client, nft_collection, account
+        )
+        requests = [
+            MintAndRegisterRequest(
+                spg_nft_contract=nft_collection,
+                recipient=account.address,
+                allow_duplicates=True,
+                ip_metadata=COMMON_IP_METADATA,
+                license_terms_data=[
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.commercial_use(
+                            default_minting_fee=1000000000000000000,
+                            currency=MockERC20,
+                            royalty_policy=NativeRoyaltyPolicy.LAP,
+                        ),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=1000000000000000000,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=50,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    ),
+                ],
+            ),
+            MintAndRegisterRequest(
+                spg_nft_contract=nft_collection,
+                recipient=account.address,
+                allow_duplicates=True,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[parent_ip_and_license_terms_1["parent_ip_id"]],
+                    license_terms_ids=[
+                        parent_ip_and_license_terms_1["license_terms_id"]
+                    ],
+                ),
+            ),
+            MintAndRegisterRequest(
+                spg_nft_contract=nft_collection,
+                recipient=account.address,
+                allow_duplicates=True,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[parent_ip_and_license_terms_2["parent_ip_id"]],
+                    license_terms_ids=[
+                        parent_ip_and_license_terms_2["license_terms_id"]
+                    ],
+                ),
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=60.0),
+                    RoyaltyShareInput(recipient=account_2.address, percentage=40.0),
+                ],
+            ),
+            MintAndRegisterRequest(
+                spg_nft_contract=nft_collection,
+                license_terms_data=[
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.commercial_use(
+                            default_minting_fee=0,
+                            currency=MockERC20,
+                            royalty_policy=NativeRoyaltyPolicy.LAP,
+                        ),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=0,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=50,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    ),
+                ],
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=50.0),
+                    RoyaltyShareInput(recipient=account_2.address, percentage=50.0),
+                ],
+            ),
+        ]
+        response = story_client.IPAsset.batch_ip_asset_with_optimized_workflows(
+            requests=requests,
+            tx_options={
+                "gas": 16777216,
+            },
+        )
+        print(
+            "-------------------------------- Batch Register IP Assets With Optimized Workflows Response --------------------------------"
+        )
+        print(response)
+        assert isinstance(response, dict)
+        assert "registration_results" in response
+        assert "distribute_royalty_tokens_tx_hashes" in response
+
+        registration_results = response["registration_results"]
+        assert registration_results[0]["tx_hash"] is not None
+        assert len(registration_results[0]["registered_ips"]) == 1
+        assert len(registration_results[0]["ip_royalty_vaults"]) == 0

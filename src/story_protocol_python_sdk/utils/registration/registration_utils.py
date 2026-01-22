@@ -19,10 +19,17 @@ from story_protocol_python_sdk.utils.registration.transform_registration_request
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
 
 
+class Multicall3Call(TypedDict):
+    target: Address
+    allowFailure: bool
+    value: int
+    callData: bytes
+
+
 class AggregatedRequestData(TypedDict):
     """Aggregated request data structure."""
 
-    encoded_tx_data: list[bytes]
+    call_data: list[bytes | Multicall3Call]
     method_reference: Callable[[list[bytes], dict], HexStr]
 
 
@@ -46,7 +53,7 @@ def aggregate_multicall_requests(
         Dictionary mapping target addresses to aggregated request data:
         - Key: Address (multicall address or workflow address)
         - Value: AggregatedRequestData with:
-            - "encoded_tx_data": List of encoded transaction data (bytes)
+            - "call_data": List of encoded transaction data (bytes)
             - "method_reference": The method to build the transaction
     """
     aggregated_requests: dict[Address, AggregatedRequestData] = {}
@@ -63,16 +70,26 @@ def aggregate_multicall_requests(
         # Initialize entry if it doesn't exist
         if target_address not in aggregated_requests:
             aggregated_requests[target_address] = {
-                "encoded_tx_data": [],
+                "call_data": [],
                 "method_reference": (
                     multicall3_client.build_aggregate3_transaction
                     if target_address == multicall3_client.contract.address
                     else request.original_method_reference
                 ),
             }
-        aggregated_requests[target_address]["encoded_tx_data"].append(
-            request.encoded_tx_data
-        )
+        if target_address == multicall3_client.contract.address:
+            aggregated_requests[target_address]["call_data"].append(
+                {
+                    "target": request.workflow_address,
+                    "allowFailure": True,
+                    "value": 0,
+                    "callData": request.encoded_tx_data,
+                }
+            )
+        else:
+            aggregated_requests[target_address]["call_data"].append(
+                request.encoded_tx_data
+            )
 
     return aggregated_requests
 
@@ -150,7 +167,7 @@ def send_transactions(
             web3,
             account,
             request_data["method_reference"],
-            request_data["encoded_tx_data"],
+            request_data["call_data"],
             tx_options=tx_options,
         )
         tx_results.append(

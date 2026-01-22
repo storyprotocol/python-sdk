@@ -1,5 +1,6 @@
 """Module for handling IP Account operations and transactions."""
 
+from collections.abc import Sequence
 from typing import cast
 
 from ens.ens import Address, HexStr
@@ -57,6 +58,7 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
     BatchRegisterIpAssetsWithOptimizedWorkflowsResponse,
     BatchRegistrationResult,
     ExtraData,
+    IpRegistrationWorkflowRequest,
     LicenseTermsDataInput,
     LinkDerivativeResponse,
     MintAndRegisterRequest,
@@ -1492,17 +1494,75 @@ class IPAsset:
 
     def batch_ip_asset_with_optimized_workflows(
         self,
-        requests: list[RegisterRegistrationRequest],
+        requests: Sequence[IpRegistrationWorkflowRequest],
         is_use_multicall: bool = True,
         tx_options: dict | None = None,
     ) -> BatchRegisterIpAssetsWithOptimizedWorkflowsResponse:
         """
-        Batch register IP assets with optimized workflows.
+        Batch register IP assets with optimized workflow selection.
 
-        :param requests list[RegisterRegistrationRequest]: The list of registration requests.
-        :param is_use_multicall bool: [Optional] Whether to use multicall. (default: True)
+        This method automatically selects the appropriate workflow based on input parameters and provides
+        intelligent transaction batching for better gas efficiency.
+
+        **Request Types:**
+
+        - `MintAndRegisterRequest`: Mint a new NFT from an SPG NFT contract and register as IP
+        - `RegisterRegistrationRequest`: Register an already minted NFT as IP
+
+        **Workflow Selection:**
+
+        For `MintAndRegisterRequest` (supports Multicall3 when `spg_nft_contract` has public minting enabled):
+        1. `license_terms_data` + `royalty_shares` → `mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens` (RoyaltyTokenDistributionWorkflows)
+           - Note: Always uses workflow's native multicall due to `msg.sender` limitation
+        2. `license_terms_data` → `mintAndRegisterIpAndAttachPILTerms` (LicenseAttachmentWorkflows)
+        3. `deriv_data` + `royalty_shares` → `mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens` (RoyaltyTokenDistributionWorkflows)
+        4. `deriv_data` → `mintAndRegisterIpAndMakeDerivative` (DerivativeWorkflows)
+        5. Other combinations throw `Invalid mint and register request type` error
+
+        For `RegisterRegistrationRequest` (always uses workflow's native multicall due to signature requirements):
+        1. `license_terms_data` + `royalty_shares` → `registerIpAndAttachPILTermsAndDeployRoyaltyVault` (RoyaltyTokenDistributionWorkflows)
+        2. `deriv_data` + `royalty_shares` → `registerIpAndMakeDerivativeAndDeployRoyaltyVault` (RoyaltyTokenDistributionWorkflows)
+        3. `license_terms_data` → `registerIpAndAttachPILTerms` (LicenseAttachmentWorkflows)
+        4. `deriv_data` → `registerIpAndMakeDerivative` (DerivativeWorkflows)
+        5. Other combinations throw `Invalid register request type` error
+
+        **Multicall Strategy:**
+
+        - Multicall3: Used when `is_use_multicall=True`, request is `MintAndRegisterRequest`, `spg_nft_contract` has public minting,
+        - Workflow's native multicall: Used for all other cases
+        - Requests using the same workflow are aggregated into a single multicall transaction
+
+        **Special Handling:**
+
+        Royalty token distribution is handled in a separate transaction because it requires a signature with the
+        royalty vault address, which is only available after initial registration completes.
+
+        :param requests Sequence[IpRegistrationWorkflowRequest]: The list of registration requests.
+        :param is_use_multicall bool: [Optional] Whether to use multicall3 for eligible workflows. (default: True)
         :param tx_options dict: [Optional] Transaction options.
-        :return list[BatchRegistrationResult]: The list of batch registration results.
+        :return `BatchRegisterIpAssetsWithOptimizedWorkflowsResponse`: Response with registration results and distribute royalty tokens transaction hashes.
+
+        **Example:**
+
+        ```python
+        # Mint and register with PIL terms (supports multicall3 if public minting enabled)
+        response = client.ip_asset.batch_ip_asset_with_optimized_workflows(
+            requests=[
+                MintAndRegisterRequest(
+                    spg_nft_contract="0x...",
+                    license_terms_data=[...],
+                    ip_metadata={...}
+                ),
+                RegisterRegistrationRequest(
+                    nft_contract="0x...",
+                    token_id=123,
+                    deriv_data={...},
+                    ip_metadata={...}
+                )
+            ],
+            is_use_multicall=True
+        )
+        ```
         """
         try:
             # Transform registration requests to transformed registration requests and send them into transaction

@@ -41,6 +41,7 @@ from story_protocol_python_sdk.abi.SPGNFTImpl.SPGNFTImpl_client import SPGNFTImp
 from story_protocol_python_sdk.types.common import AccessPermission
 from story_protocol_python_sdk.types.resource.IPAsset import (
     ExtraData,
+    IpRegistrationWorkflowRequest,
     LicenseTermsDataInput,
     MintAndRegisterRequest,
     RegisterRegistrationRequest,
@@ -163,7 +164,7 @@ def get_allow_duplicates(allow_duplicates: bool | None, request_type: str) -> bo
 
 
 def transform_request(
-    request: MintAndRegisterRequest | RegisterRegistrationRequest,
+    request: IpRegistrationWorkflowRequest,
     web3: Web3,
     account: LocalAccount,
     chain_id: int,
@@ -178,7 +179,7 @@ def transform_request(
     4. Determines whether to use multicall3 or SPG's native multicall
 
     Args:
-        request: The registration request (MintAndRegisterRequest or RegisterRegistrationRequest)
+        request: The registration request (`IpRegistrationWorkflowRequest`)
         web3: Web3 instance for contract interaction
         account: The account for signing and recipient fallback
         chain_id: The chain ID for IP ID calculation
@@ -400,7 +401,8 @@ def _handle_mint_and_register_with_license_terms_and_royalty_tokens(
 
     return TransformedRegistrationRequest(
         encoded_tx_data=encoded_data,
-        is_use_multicall3=is_public_minting,
+        # Because mint tokens is given `msg.sender` as the recipient, so we need to set `useMulticall3` to false.
+        is_use_multicall3=False,
         workflow_address=royalty_token_distribution_workflows_address,
         original_method_reference=royalty_token_distribution_workflows_client.build_multicall_transaction,
         validated_request=validated_request,

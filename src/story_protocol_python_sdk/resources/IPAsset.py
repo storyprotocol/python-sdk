@@ -1591,7 +1591,6 @@ class IPAsset:
                 if tr.extra_data is not None
                 and tr.extra_data.get("royalty_shares", None) is not None
             ]
-
             # Parse the response of the registration requests and collect distribute royalty tokens requests
             response_list: list[BatchRegistrationResult] = []
             for tx_response in tx_responses:
@@ -1669,7 +1668,6 @@ class IPAsset:
             for value in aggregated_requests.values()
             for license_terms_data in value["license_terms_data"]
         ]
-        print("all_license_terms_data", all_license_terms_data)
         # Populate license terms ids for each registered IP
         license_terms_index = 0
         for registration_result in registration_results:

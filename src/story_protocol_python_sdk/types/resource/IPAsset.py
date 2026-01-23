@@ -333,7 +333,7 @@ class RegisteredIPWithLicenseTermsIds(RegisteredIP):
         If the license terms are not attached, the value is None.
     """
 
-    license_terms_ids: list[int] | None
+    license_terms_ids: list[int]
 
 
 class BatchRegistrationResult(TypedDict, total=False):
@@ -385,7 +385,7 @@ class ExtraData(TypedDict, total=False):
     royalty_total_amount: int
     nft_contract: Address
     token_id: int
-    license_terms_data: list[dict] | None = None
+    license_terms_data: list[dict] | None
 
 
 @dataclass

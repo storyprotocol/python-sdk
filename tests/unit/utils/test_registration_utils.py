@@ -12,6 +12,7 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
 from story_protocol_python_sdk.utils.registration.registration_utils import (
     aggregate_multicall_requests,
     prepare_distribute_royalty_tokens_requests,
+    send_transactions,
 )
 from tests.unit.fixtures.data import ADDRESS, LICENSE_TERMS_DATA_CAMEL_CASE
 
@@ -636,3 +637,198 @@ class TestPrepareDistributeRoyaltyTokensRequests:
             ]
             # Verify transform was called twice (once for each matched item)
             assert mock_transform.call_count == 2
+
+
+@pytest.fixture
+def mock_build_and_send_transaction():
+    """Mock build_and_send_transaction function."""
+
+    def _mock():
+        return patch(
+            "story_protocol_python_sdk.utils.registration.registration_utils.build_and_send_transaction",
+        )
+
+    return _mock
+
+
+class TestSendTransactions:
+    def test_sends_single_transaction(
+        self,
+        mock_web3,
+        mock_account,
+        mock_multicall3_client,
+        mock_build_and_send_transaction,
+    ):
+        """Test sending a single transaction."""
+        with mock_multicall3_client(), mock_build_and_send_transaction() as mock_build:
+            # Setup test data
+            encoded_data = b"encoded_data"
+            method_reference = MagicMock()
+            workflow_address = ADDRESS
+
+            transformed_request = TransformedRegistrationRequest(
+                encoded_tx_data=encoded_data,
+                is_use_multicall3=False,
+                workflow_address=workflow_address,
+                validated_request=[],
+                original_method_reference=method_reference,
+            )
+
+            # Mock build_and_send_transaction return value
+            tx_hash = "0xTxHash"
+            tx_receipt = {"status": 1}
+            mock_build.return_value = {
+                "tx_hash": tx_hash,
+                "tx_receipt": tx_receipt,
+            }
+
+            result = send_transactions(
+                transformed_requests=[transformed_request],
+                is_use_multicall3=False,
+                web3=mock_web3,
+                account=mock_account,
+            )
+
+            tx_results, aggregated_requests = result
+
+            # Verify results
+            assert len(tx_results) == 1
+            assert tx_results[0]["tx_hash"] == tx_hash
+            assert tx_results[0]["tx_receipt"] == tx_receipt
+
+            # Verify aggregated_requests structure (from real aggregate function)
+            assert len(aggregated_requests) == 1
+            assert workflow_address in aggregated_requests
+            assert aggregated_requests[workflow_address]["call_data"] == [encoded_data]
+            assert (
+                aggregated_requests[workflow_address]["method_reference"]
+                == method_reference
+            )
+
+            # Verify build_and_send_transaction was called correctly
+            mock_build.assert_called_once_with(
+                mock_web3,
+                mock_account,
+                method_reference,
+                [encoded_data],
+                tx_options=None,
+            )
+
+    def test_sends_multiple_transactions_to_different_addresses(
+        self,
+        mock_web3,
+        mock_account,
+        mock_multicall3_client,
+        mock_build_and_send_transaction,
+    ):
+        """Test sending multiple transactions to different addresses."""
+        with mock_multicall3_client(), mock_build_and_send_transaction() as mock_build:
+            # Setup test data
+            workflow_address_1 = ADDRESS
+            workflow_address_2 = "0xWorkflowAddress2"
+            method_reference_1 = MagicMock()
+            method_reference_2 = MagicMock()
+
+            transformed_request_1 = TransformedRegistrationRequest(
+                encoded_tx_data=b"data1",
+                is_use_multicall3=True,
+                workflow_address=workflow_address_1,
+                validated_request=[],
+                original_method_reference=method_reference_1,
+            )
+            transformed_request_2 = TransformedRegistrationRequest(
+                encoded_tx_data=b"data2",
+                is_use_multicall3=False,
+                workflow_address=workflow_address_2,
+                validated_request=[],
+                original_method_reference=method_reference_2,
+            )
+            transformed_request_3 = TransformedRegistrationRequest(
+                encoded_tx_data=b"data3",
+                is_use_multicall3=True,
+                workflow_address=workflow_address_1,
+                validated_request=[],
+                original_method_reference=method_reference_1,
+                extra_data=ExtraData(
+                    license_terms_data=[LICENSE_TERMS_DATA_CAMEL_CASE],
+                ),
+            )
+
+            # Mock build_and_send_transaction return values
+            mock_build.side_effect = [
+                {"tx_hash": "0xHash1", "tx_receipt": {"status": 1}},
+                {"tx_hash": "0xHash2", "tx_receipt": {"status": 1}},
+            ]
+
+            result = send_transactions(
+                transformed_requests=[
+                    transformed_request_1,
+                    transformed_request_2,
+                    transformed_request_3,
+                ],
+                is_use_multicall3=True,
+                web3=mock_web3,
+                account=mock_account,
+            )
+
+            tx_results, aggregated_requests = result
+
+            # Verify results
+            assert len(tx_results) == 2
+            assert tx_results[0]["tx_hash"] == "0xHash1"
+            assert tx_results[1]["tx_hash"] == "0xHash2"
+
+            # Verify aggregated_requests structure (from real aggregate function)
+            assert len(aggregated_requests) == 2
+            assert "multicall3" in aggregated_requests
+            assert aggregated_requests["multicall3"]["call_data"] == [
+                {
+                    "target": workflow_address_1,
+                    "allowFailure": False,
+                    "value": 0,
+                    "callData": b"data1",
+                },
+                {
+                    "target": workflow_address_1,
+                    "allowFailure": False,
+                    "value": 0,
+                    "callData": b"data3",
+                },
+            ]
+            assert aggregated_requests["multicall3"]["license_terms_data"] == [
+                [],
+                [LICENSE_TERMS_DATA_CAMEL_CASE],
+            ]
+            assert workflow_address_2 in aggregated_requests
+            workflow_address_2_data = aggregated_requests[workflow_address_2]
+            assert workflow_address_2_data["call_data"] == [b"data2"]
+            assert workflow_address_2_data["method_reference"] == method_reference_2
+            assert workflow_address_2_data["license_terms_data"] == [[]]
+
+            # Verify build_and_send_transaction was called twice
+            assert mock_build.call_count == 2
+
+    def test_sends_empty_requests_list(
+        self,
+        mock_web3,
+        mock_account,
+        mock_multicall3_client,
+        mock_build_and_send_transaction,
+    ):
+        """Test sending empty requests list."""
+        with mock_multicall3_client(), mock_build_and_send_transaction() as mock_build:
+            result = send_transactions(
+                transformed_requests=[],
+                is_use_multicall3=False,
+                web3=mock_web3,
+                account=mock_account,
+            )
+
+            tx_results, aggregated_requests = result
+
+            # Verify results
+            assert tx_results == []
+            assert aggregated_requests == {}
+
+            # Verify build_and_send_transaction was not called
+            mock_build.assert_not_called()

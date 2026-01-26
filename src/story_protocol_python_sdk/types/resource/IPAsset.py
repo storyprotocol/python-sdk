@@ -406,5 +406,6 @@ class TransformedRegistrationRequest:
     is_use_multicall3: bool
     workflow_address: Address
     validated_request: list[Address | int | str | bytes | dict | bool]
+    # TODO: need to rename with multicall3 method reference
     original_method_reference: Callable[..., HexStr]
     extra_data: ExtraData | None = None

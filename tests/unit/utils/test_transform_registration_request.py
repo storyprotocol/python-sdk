@@ -24,6 +24,7 @@ from story_protocol_python_sdk.utils.ip_metadata import IPMetadata
 from story_protocol_python_sdk.utils.registration.transform_registration_request import (
     get_allow_duplicates,
     get_public_minting,
+    transform_distribute_royalty_tokens_request,
     transform_request,
     validate_license_terms_data,
 )
@@ -203,6 +204,7 @@ def mock_sign_util():
         mock_sign.get_permission_signature = MagicMock(
             return_value={"signature": signature}
         )
+        mock_sign.get_signature = MagicMock(return_value={"signature": signature})
         return patch(
             "story_protocol_python_sdk.utils.registration.transform_registration_request.Sign",
             return_value=mock_sign,
@@ -991,3 +993,106 @@ class TestHandleRegisterRequest:
             ),
         ):
             transform_request(request, mock_web3, account, CHAIN_ID)
+
+
+class TestTransformDistributeRoyaltyTokensRequest:
+    @pytest.fixture
+    def mock_ip_account_impl_client(self):
+        """Mock IPAccountImplClient."""
+
+        def _mock():
+            return patch(
+                "story_protocol_python_sdk.utils.registration.transform_registration_request.IPAccountImplClient",
+                return_value=MagicMock(state=MagicMock(return_value=123)),
+            )
+
+        return _mock
+
+    @pytest.fixture
+    def mock_ip_royalty_vault_client(self):
+        """Mock IpRoyaltyVaultImplClient."""
+
+        def _mock():
+            mock_contract = MagicMock()
+            mock_contract.encode_abi.return_value = b"encoded_approve"
+            return patch(
+                "story_protocol_python_sdk.utils.registration.transform_registration_request.IpRoyaltyVaultImplClient",
+                return_value=MagicMock(contract=mock_contract),
+            )
+
+        return _mock
+
+    @pytest.fixture
+    def mock_royalty_token_distribution_workflows_client(self):
+        """Mock RoyaltyTokenDistributionWorkflowsClient."""
+
+        def _mock():
+            mock_contract = MagicMock()
+            mock_contract.address = (
+                "royalty_token_distribution_workflows_client_address"
+            )
+            mock_contract.encode_abi.return_value = b"encoded_distribute"
+            mock_build_multicall = MagicMock()
+            return patch(
+                "story_protocol_python_sdk.utils.registration.transform_registration_request.RoyaltyTokenDistributionWorkflowsClient",
+                return_value=MagicMock(
+                    contract=mock_contract,
+                    build_multicall_transaction=mock_build_multicall,
+                ),
+            )
+
+        return _mock
+
+    def test_transforms_distribute_royalty_tokens_request_successfully(
+        self,
+        mock_web3,
+        mock_ip_account_impl_client,
+        mock_ip_royalty_vault_client,
+        mock_royalty_token_distribution_workflows_client,
+        mock_sign_util,
+    ):
+        """Test successful transformation of distribute royalty tokens request."""
+        account = Account.create()
+        ip_id = IP_ID
+        royalty_vault = "0xRoyaltyVault"
+        royalty_shares = [
+            RoyaltyShareInput(recipient="0xRecipient1", percentage=50),
+            RoyaltyShareInput(recipient="0xRecipient2", percentage=50),
+        ]
+        deadline = 1000
+        total_amount = 100
+
+        with (
+            mock_ip_account_impl_client(),
+            mock_ip_royalty_vault_client(),
+            mock_royalty_token_distribution_workflows_client(),
+            mock_sign_util(),
+        ):
+            result = transform_distribute_royalty_tokens_request(
+                ip_id=ip_id,
+                royalty_vault=royalty_vault,
+                deadline=deadline,
+                web3=mock_web3,
+                account=account,
+                chain_id=CHAIN_ID,
+                royalty_shares=royalty_shares,
+                total_amount=total_amount,
+            )
+
+            # Verify result structure
+            assert result.encoded_tx_data == b"encoded_distribute"
+            assert result.is_use_multicall3 is False
+            assert (
+                result.workflow_address
+                == "royalty_token_distribution_workflows_client_address"
+            )
+            assert result.extra_data is None
+            assert result.original_method_reference is not None
+
+            # Verify validated_request structure
+            assert result.validated_request[0] == ip_id
+            assert result.validated_request[1] == royalty_shares
+            signature_data = cast(dict, result.validated_request[2])
+            assert signature_data["signer"] == account.address
+            assert signature_data["deadline"] == deadline
+            assert signature_data["signature"] == b"signature"

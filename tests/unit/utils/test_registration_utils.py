@@ -3,13 +3,15 @@ from unittest.mock import MagicMock, patch
 import pytest
 from ens.ens import HexStr
 
+from story_protocol_python_sdk import RoyaltyShareInput
 from story_protocol_python_sdk.types.resource.IPAsset import (
     ExtraData,
+    IPRoyaltyVault,
     TransformedRegistrationRequest,
 )
-from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
 from story_protocol_python_sdk.utils.registration.registration_utils import (
     aggregate_multicall_requests,
+    prepare_distribute_royalty_tokens_requests,
 )
 from tests.unit.fixtures.data import ADDRESS, LICENSE_TERMS_DATA_CAMEL_CASE
 
@@ -392,3 +394,245 @@ class TestAggregateMulticallRequests:
 
             assert len(result) == 0
             assert isinstance(result, dict)
+
+
+@pytest.fixture
+def mock_transform_distribute_royalty_tokens_request():
+    """Mock dependencies needed by transform_distribute_royalty_tokens_request."""
+
+    def _mock():
+        return patch(
+            "story_protocol_python_sdk.utils.registration.registration_utils.transform_distribute_royalty_tokens_request",
+            return_value=TransformedRegistrationRequest(
+                encoded_tx_data=b"mock_encoded_data",
+                is_use_multicall3=False,
+                workflow_address=ADDRESS,
+                validated_request=[],
+                original_method_reference=MagicMock(),
+            ),
+        )
+
+    return _mock
+
+
+class TestPrepareDistributeRoyaltyTokensRequests:
+    def test_returns_empty_lists_when_extra_data_list_is_empty(
+        self, mock_web3, mock_account
+    ):
+        """Test that empty lists are returned when extra_data_list is empty."""
+        result = prepare_distribute_royalty_tokens_requests(
+            extra_data_list=[],
+            web3=mock_web3,
+            ip_registered=[],
+            royalty_vault=[],
+            account=mock_account,
+            chain_id=1,
+        )
+
+        transformed_requests, matching_vaults = result
+        assert transformed_requests == []
+        assert matching_vaults == []
+
+    def test_filters_and_matches_ip_and_vault_data(
+        self, mock_web3, mock_account, mock_transform_distribute_royalty_tokens_request
+    ):
+        """Test successful filtering and matching of IP and vault data."""
+        with mock_transform_distribute_royalty_tokens_request():
+            nft_contract = "0xNFTContract"
+            token_id = 123
+            ip_id = "ip_id"
+            ip_registered = [
+                {
+                    "tokenContract": nft_contract,
+                    "tokenId": token_id,
+                    "ipId": ip_id,
+                }
+            ]
+            ip_royalty_vault = "ip_royalty_vault"
+            royalty_vault = [
+                {
+                    "ipId": ip_id,
+                    "ipRoyaltyVault": ip_royalty_vault,
+                }
+            ]
+            result = prepare_distribute_royalty_tokens_requests(
+                extra_data_list=[
+                    ExtraData(
+                        nft_contract=nft_contract,
+                        token_id=token_id,
+                        deadline=1000,
+                        royalty_total_amount=5000,
+                        royalty_shares=[
+                            RoyaltyShareInput(recipient="0xRecipient", percentage=50)
+                        ],
+                    )
+                ],
+                web3=mock_web3,
+                ip_registered=ip_registered,
+                royalty_vault=royalty_vault,
+                account=mock_account,
+                chain_id=1,
+            )
+            transformed_requests, matching_vaults = result
+            assert len(transformed_requests) == 1
+            assert len(matching_vaults) == 1
+            assert matching_vaults == [
+                IPRoyaltyVault(ip_id=ip_id, royalty_vault=ip_royalty_vault)
+            ]
+
+    def test_skips_when_no_matching_ip_registered(
+        self, mock_web3, mock_account, mock_transform_distribute_royalty_tokens_request
+    ):
+        """Test that items are skipped when no matching IP is registered."""
+        with mock_transform_distribute_royalty_tokens_request() as mock_transform:
+            nft_contract = "0xNonExistentContract"
+            token_id = 999
+            ip_registered = [
+                {
+                    "tokenContract": "0xDifferentContract",
+                    "tokenId": 123,
+                    "ipId": "0xIPID",
+                }
+            ]
+            royalty_vault = [
+                {
+                    "ipId": "0xIPID",
+                    "ipRoyaltyVault": "0xRoyaltyVault",
+                }
+            ]
+            result = prepare_distribute_royalty_tokens_requests(
+                extra_data_list=[
+                    ExtraData(
+                        nft_contract=nft_contract,
+                        token_id=token_id,
+                        deadline=1000,
+                        royalty_total_amount=5000,
+                        royalty_shares=[
+                            RoyaltyShareInput(recipient="0xRecipient", percentage=50)
+                        ],
+                    )
+                ],
+                web3=mock_web3,
+                ip_registered=ip_registered,
+                royalty_vault=royalty_vault,
+                account=mock_account,
+                chain_id=1,
+            )
+            transformed_requests, matching_vaults = result
+            assert transformed_requests == []
+            assert matching_vaults == []
+            # Verify transform was not called since no IP matched
+            mock_transform.assert_not_called()
+
+    def test_skips_when_no_matching_vault(
+        self, mock_web3, mock_account, mock_transform_distribute_royalty_tokens_request
+    ):
+        """Test that items are skipped when no matching vault is found."""
+        with mock_transform_distribute_royalty_tokens_request() as mock_transform:
+            nft_contract = "0xNFTContract"
+            token_id = 123
+            ip_id = "0xIPID"
+            ip_registered = [
+                {
+                    "tokenContract": nft_contract,
+                    "tokenId": token_id,
+                    "ipId": ip_id,
+                }
+            ]
+            # Vault for different IP ID
+            royalty_vault = [
+                {
+                    "ipId": "0xDifferentIPID",
+                    "ipRoyaltyVault": "0xRoyaltyVault",
+                }
+            ]
+            result = prepare_distribute_royalty_tokens_requests(
+                extra_data_list=[
+                    ExtraData(
+                        nft_contract=nft_contract,
+                        token_id=token_id,
+                        deadline=1000,
+                        royalty_total_amount=5000,
+                        royalty_shares=[
+                            RoyaltyShareInput(recipient="0xRecipient", percentage=50)
+                        ],
+                    )
+                ],
+                web3=mock_web3,
+                ip_registered=ip_registered,
+                royalty_vault=royalty_vault,
+                account=mock_account,
+                chain_id=1,
+            )
+            transformed_requests, matching_vaults = result
+            assert transformed_requests == []
+            assert matching_vaults == []
+            # Verify transform was not called since no vault matched
+            mock_transform.assert_not_called()
+
+    def test_processes_multiple_extra_data_items(
+        self, mock_web3, mock_account, mock_transform_distribute_royalty_tokens_request
+    ):
+        """Test processing multiple extra_data items with mixed matching results."""
+        with mock_transform_distribute_royalty_tokens_request() as mock_transform:
+            # Test data - 3 items: 2 should match, 1 should not
+            ip_registered = [
+                {"tokenContract": "0xContract1", "tokenId": 1, "ipId": "0xIPID1"},
+                {"tokenContract": "0xContract2", "tokenId": 2, "ipId": "0xIPID2"},
+                {"tokenContract": "0xContract3", "tokenId": 3, "ipId": "0xIPID3"},
+            ]
+            # Only vaults for first two items
+            royalty_vault = [
+                {"ipId": "0xIPID1", "ipRoyaltyVault": "0xVault1"},
+                {"ipId": "0xIPID2", "ipRoyaltyVault": "0xVault2"},
+                # No vault for 0xIPID3
+            ]
+            result = prepare_distribute_royalty_tokens_requests(
+                extra_data_list=[
+                    # Item 1: Should match
+                    ExtraData(
+                        nft_contract="0xContract1",
+                        token_id=1,
+                        deadline=1000,
+                        royalty_total_amount=5000,
+                        royalty_shares=[
+                            RoyaltyShareInput(recipient="0xRecipient1", percentage=30)
+                        ],
+                    ),
+                    # Item 2: Should match
+                    ExtraData(
+                        nft_contract="0xContract2",
+                        token_id=2,
+                        deadline=2000,
+                        royalty_total_amount=6000,
+                        royalty_shares=[
+                            RoyaltyShareInput(recipient="0xRecipient2", percentage=40)
+                        ],
+                    ),
+                    # Item 3: Should not match (no vault)
+                    ExtraData(
+                        nft_contract="0xContract3",
+                        token_id=3,
+                        deadline=3000,
+                        royalty_total_amount=7000,
+                        royalty_shares=[
+                            RoyaltyShareInput(recipient="0xRecipient3", percentage=50)
+                        ],
+                    ),
+                ],
+                web3=mock_web3,
+                ip_registered=ip_registered,
+                royalty_vault=royalty_vault,
+                account=mock_account,
+                chain_id=1,
+            )
+            transformed_requests, matching_vaults = result
+            # Should have 2 results (first two items matched)
+            assert len(transformed_requests) == 2
+            assert len(matching_vaults) == 2
+            assert matching_vaults == [
+                IPRoyaltyVault(ip_id="0xIPID1", royalty_vault="0xVault1"),
+                IPRoyaltyVault(ip_id="0xIPID2", royalty_vault="0xVault2"),
+            ]
+            # Verify transform was called twice (once for each matched item)
+            assert mock_transform.call_count == 2

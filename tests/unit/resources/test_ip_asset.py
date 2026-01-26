@@ -71,7 +71,7 @@ def mock_parse_ip_registered_event(ip_asset):
     def _mock():
         return patch.object(
             ip_asset,
-            "_parse_tx_ip_registered_event",
+            "_get_registered_ips",
             return_value=[
                 {"ip_id": IP_ID, "token_id": 3},
                 {"ip_id": ADDRESS, "token_id": 4},
@@ -121,7 +121,7 @@ def mock_get_royalty_vault_address_by_ip_id(ip_asset):
     def _mock(royalty_vault=ADDRESS):
         return patch.object(
             ip_asset,
-            "get_royalty_vault_address_by_ip_id",
+            "_get_royalty_vault_address_by_ip_id",
             return_value=royalty_vault,
         )
 
@@ -215,9 +215,6 @@ def mock_transform_request_dependencies():
             return_value=True
         )
 
-        # Mock ModuleRegistryClient (for validate_license_terms_data)
-        mock_module_registry_client = MagicMock()
-
         # Create patches
         patches = [
             patch(
@@ -241,12 +238,8 @@ def mock_transform_request_dependencies():
                 return_value=mock_royalty_workflows_client,
             ),
             patch(
-                "story_protocol_python_sdk.utils.registration.registration_utils.RoyaltyModuleClient",
+                "story_protocol_python_sdk.utils.registration.transform_registration_request.RoyaltyModuleClient",
                 return_value=mock_royalty_module_client,
-            ),
-            patch(
-                "story_protocol_python_sdk.utils.registration.registration_utils.ModuleRegistryClient",
-                return_value=mock_module_registry_client,
             ),
             patch(
                 "story_protocol_python_sdk.utils.registration.transform_registration_request.get_function_signature",

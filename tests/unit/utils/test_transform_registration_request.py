@@ -1050,9 +1050,9 @@ class TestTransformDistributeRoyaltyTokensRequest:
         mock_ip_royalty_vault_client,
         mock_royalty_token_distribution_workflows_client,
         mock_sign_util,
+        mock_account,
     ):
         """Test successful transformation of distribute royalty tokens request."""
-        account = Account.create()
         ip_id = IP_ID
         royalty_vault = "0xRoyaltyVault"
         royalty_shares = [
@@ -1073,7 +1073,7 @@ class TestTransformDistributeRoyaltyTokensRequest:
                 royalty_vault=royalty_vault,
                 deadline=deadline,
                 web3=mock_web3,
-                account=account,
+                account=mock_account,
                 chain_id=CHAIN_ID,
                 royalty_shares=royalty_shares,
                 total_amount=total_amount,
@@ -1093,6 +1093,6 @@ class TestTransformDistributeRoyaltyTokensRequest:
             assert result.validated_request[0] == ip_id
             assert result.validated_request[1] == royalty_shares
             signature_data = cast(dict, result.validated_request[2])
-            assert signature_data["signer"] == account.address
+            assert signature_data["signer"] == ADDRESS
             assert signature_data["deadline"] == deadline
             assert signature_data["signature"] == b"signature"

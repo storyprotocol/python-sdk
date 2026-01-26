@@ -1630,14 +1630,17 @@ class IPAsset:
                         ip_royalty_vaults=matching_vaults,
                     )
                 )
-
             # Send distribute royalty tokens requests
-            distribute_royalty_tokens_tx_responses, _ = send_transactions(
-                transformed_requests=distribute_royalty_tokens_requests,
-                is_use_multicall3=is_use_multicall,
-                web3=self.web3,
-                account=self.account,
-                tx_options=tx_options,
+            distribute_royalty_tokens_tx_responses, _ = (
+                send_transactions(
+                    transformed_requests=distribute_royalty_tokens_requests,
+                    is_use_multicall3=is_use_multicall,
+                    web3=self.web3,
+                    account=self.account,
+                    tx_options=tx_options,
+                )
+                if distribute_royalty_tokens_requests
+                else ([], {})
             )
 
             # Populate the license terms ids into the response
@@ -1655,7 +1658,9 @@ class IPAsset:
                 ],
             )
         except ValueError as e:
-            raise ValueError(f"Failed to batch register IP assets: {str(e)}") from e
+            raise ValueError(
+                f"Failed to batch register IP assets with optimized workflows: {str(e)}"
+            ) from e
 
     def _populate_license_terms_ids_into_response(
         self,

@@ -1,3 +1,4 @@
+from dataclasses import asdict
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -6,21 +7,27 @@ from web3 import Web3
 
 from story_protocol_python_sdk import (
     MAX_ROYALTY_TOKEN,
+    IpRegistrationWorkflowRequest,
     LicenseTermsDataInput,
     LicenseTermsOverride,
     LicensingConfig,
+    MintAndRegisterRequest,
     MintedNFT,
     MintNFT,
     NativeRoyaltyPolicy,
     PILFlavor,
     PILFlavorError,
+    RegisterRegistrationRequest,
     RoyaltyShareInput,
 )
 from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
     IPAccountImplClient,
 )
 from story_protocol_python_sdk.resources.IPAsset import IPAsset
-from story_protocol_python_sdk.types.resource.IPAsset import BatchMintAndRegisterIPInput
+from story_protocol_python_sdk.types.resource.IPAsset import (
+    BatchMintAndRegisterIPInput,
+    TransformedRegistrationRequest,
+)
 from story_protocol_python_sdk.utils.derivative_data import DerivativeDataInput
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadata, IPMetadataInput
 from story_protocol_python_sdk.utils.royalty import get_royalty_shares
@@ -3679,3 +3686,508 @@ class TestLinkDerivative:
                 match="Failed to link derivative: Failed to register derivative with license tokens: License token id 1 must be owned by the caller.",
             ):
                 ip_asset.link_derivative(license_token_ids=[1], child_ip_id=IP_ID)
+
+
+class TestBatchIpAssetWithOptimizedWorkflows:
+    """Test batch_ip_asset_with_optimized_workflows method."""
+
+    @pytest.fixture
+    def mock_transform_request(self):
+        """Mock transform_request function."""
+
+        def _mock():
+            return patch(
+                "story_protocol_python_sdk.resources.IPAsset.transform_request"
+            )
+
+        return _mock
+
+    @pytest.fixture
+    def mock_send_transactions(self):
+        """Mock send_transactions function."""
+
+        def _mock():
+            return patch(
+                "story_protocol_python_sdk.resources.IPAsset.send_transactions"
+            )
+
+        return _mock
+
+    @pytest.fixture
+    def mock_prepare_distribute_royalty_tokens_requests(self):
+        """Mock prepare_distribute_royalty_tokens_requests function."""
+
+        def _mock():
+            return patch(
+                "story_protocol_python_sdk.resources.IPAsset.prepare_distribute_royalty_tokens_requests"
+            )
+
+        return _mock
+
+    def test_batch_mint_and_register_with_license_terms(
+        self,
+        ip_asset: IPAsset,
+        mock_transform_request,
+        mock_send_transactions,
+        mock_prepare_distribute_royalty_tokens_requests,
+    ):
+        """Test batch registration with MintAndRegisterRequest and license terms."""
+        requests = [
+            MintAndRegisterRequest(
+                spg_nft_contract=ADDRESS,
+                license_terms_data=LICENSE_TERMS_DATA,
+                ip_metadata=IP_METADATA,
+                recipient=ACCOUNT_ADDRESS,
+                allow_duplicates=True,
+            ),
+            MintAndRegisterRequest(
+                spg_nft_contract=ADDRESS,
+                license_terms_data=LICENSE_TERMS_DATA,
+            ),
+        ]
+
+        with (
+            mock_transform_request() as mock_transform,
+            mock_send_transactions() as mock_send,
+            mock_prepare_distribute_royalty_tokens_requests() as mock_prepare,
+            patch.object(
+                ip_asset,
+                "_parse_tx_ip_registered_event",
+                return_value=[
+                    {"ipId": IP_ID, "tokenId": 1},
+                    {"ipId": ADDRESS, "tokenId": 2},
+                ],
+            ),
+            patch.object(
+                ip_asset, "_parse_all_ip_royalty_vault_deployed_events", return_value=[]
+            ),
+            patch.object(
+                ip_asset.pi_license_template_client,
+                "getLicenseTermsId",
+                side_effect=[1, 2],
+            ),
+        ):
+            # Mock transform_request to return TransformedRegistrationRequest
+            mock_transformed_1 = TransformedRegistrationRequest(
+                encoded_tx_data=b"encoded_data_1",
+                is_use_multicall3=True,
+                workflow_address=ADDRESS,
+                validated_request=[],
+                original_method_reference=MagicMock(),
+                extra_data=None,
+            )
+            mock_transformed_2 = TransformedRegistrationRequest(
+                encoded_tx_data=b"encoded_data_2",
+                is_use_multicall3=True,
+                workflow_address=ADDRESS,
+                validated_request=[],
+                original_method_reference=MagicMock(),
+                extra_data=None,
+            )
+            mock_transform.side_effect = [mock_transformed_1, mock_transformed_2]
+
+            license_terms_dict = asdict(LICENSE_TERMS_DATA[0])
+            mock_send.side_effect = [
+                (
+                    [{"tx_hash": TX_HASH.hex(), "tx_receipt": {"logs": []}}],
+                    {
+                        ADDRESS: {
+                            "license_terms_data": [
+                                [license_terms_dict],
+                                [license_terms_dict],
+                            ]
+                        }
+                    },
+                ),
+                ([], {}),  # No distribute royalty tokens requests
+            ]
+
+            # Mock prepare_distribute_royalty_tokens_requests
+            mock_prepare.return_value = ([], [])
+
+            result = ip_asset.batch_ip_asset_with_optimized_workflows(
+                requests=requests, is_use_multicall=True
+            )
+
+            # Verify transform_request was called for each request
+            assert mock_transform.call_count == 2
+
+            assert mock_send.call_count == 1
+
+            # Verify response structure
+            assert isinstance(result, dict)
+            assert "registration_results" in result
+            assert "distribute_royalty_tokens_tx_hashes" in result
+            assert len(result["registration_results"]) == 1
+            assert result["registration_results"][0]["tx_hash"] == TX_HASH.hex()
+            assert len(result["distribute_royalty_tokens_tx_hashes"]) == 0
+
+            assert len(result["registration_results"][0]["registered_ips"]) == 2
+            assert result["registration_results"][0]["registered_ips"][0][
+                "license_terms_ids"
+            ] == [1]
+            # Second IP gets license_terms_ids [2] from the second LICENSE_TERMS_DATA
+            assert result["registration_results"][0]["registered_ips"][1][
+                "license_terms_ids"
+            ] == [2]
+
+    def test_batch_register_with_royalty_shares(
+        self,
+        ip_asset: IPAsset,
+        mock_transform_request,
+        mock_send_transactions,
+        mock_prepare_distribute_royalty_tokens_requests,
+        mock_parse_ip_registered_event,
+    ):
+        """Test batch registration with RegisterRegistrationRequest and royalty shares."""
+        royalty_shares = [
+            RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=50.0),
+            RoyaltyShareInput(recipient=ADDRESS, percentage=30.0),
+        ]
+
+        requests = [
+            RegisterRegistrationRequest(
+                nft_contract=ADDRESS,
+                token_id=1,
+                license_terms_data=LICENSE_TERMS_DATA,
+                royalty_shares=royalty_shares,
+                ip_metadata=IP_METADATA,
+                deadline=1000,
+            ),
+        ]
+
+        with (
+            mock_transform_request() as mock_transform,
+            mock_send_transactions() as mock_send,
+            mock_prepare_distribute_royalty_tokens_requests() as mock_prepare,
+            mock_parse_ip_registered_event(),
+        ):
+            # Mock transform_request with extra_data containing royalty_shares
+            mock_transformed = TransformedRegistrationRequest(
+                encoded_tx_data=b"encoded_data",
+                is_use_multicall3=False,
+                workflow_address=ADDRESS,
+                validated_request=[],
+                original_method_reference=MagicMock(),
+                extra_data={"royalty_shares": royalty_shares},
+            )
+            mock_transform.return_value = mock_transformed
+
+            # Mock send_transactions
+            mock_send.side_effect = [
+                (
+                    [{"tx_hash": TX_HASH.hex(), "tx_receipt": {"logs": []}}],
+                    {ADDRESS: {"license_terms_data": [LICENSE_TERMS_DATA]}},
+                ),
+                (
+                    [{"tx_hash": "0xDistributeTxHash", "tx_receipt": {"logs": []}}],
+                    {},
+                ),
+            ]
+
+            # Mock prepare_distribute_royalty_tokens_requests
+            mock_distribute_request = TransformedRegistrationRequest(
+                encoded_tx_data=b"distribute_data",
+                is_use_multicall3=False,
+                workflow_address=ADDRESS,
+                validated_request=[],
+                original_method_reference=MagicMock(),
+                extra_data=None,
+            )
+            mock_prepare.return_value = ([mock_distribute_request], [])
+
+            result = ip_asset.batch_ip_asset_with_optimized_workflows(
+                requests=requests, is_use_multicall=True
+            )
+
+            # Verify response
+            assert len(result["registration_results"]) == 1
+            assert len(result["distribute_royalty_tokens_tx_hashes"]) == 1
+            assert (
+                result["distribute_royalty_tokens_tx_hashes"][0] == "0xDistributeTxHash"
+            )
+
+    def test_batch_mixed_requests(
+        self,
+        ip_asset: IPAsset,
+        mock_transform_request,
+        mock_send_transactions,
+        mock_prepare_distribute_royalty_tokens_requests,
+        mock_parse_ip_registered_event,
+    ):
+        """Test batch registration with mixed MintAndRegisterRequest and RegisterRegistrationRequest."""
+        requests: list[IpRegistrationWorkflowRequest] = [
+            MintAndRegisterRequest(
+                spg_nft_contract=ADDRESS,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[IP_ID],
+                    license_terms_ids=[1],
+                ),
+            ),
+            RegisterRegistrationRequest(
+                nft_contract=ADDRESS,
+                token_id=2,
+                license_terms_data=LICENSE_TERMS_DATA,
+            ),
+        ]
+
+        with (
+            mock_transform_request() as mock_transform,
+            mock_send_transactions() as mock_send,
+            mock_prepare_distribute_royalty_tokens_requests() as mock_prepare,
+            mock_parse_ip_registered_event(),
+        ):
+            mock_transformed_1 = TransformedRegistrationRequest(
+                encoded_tx_data=b"encoded_data_1",
+                is_use_multicall3=True,
+                workflow_address=ADDRESS,
+                validated_request=[],
+                original_method_reference=MagicMock(),
+                extra_data=None,
+            )
+            mock_transformed_2 = TransformedRegistrationRequest(
+                encoded_tx_data=b"encoded_data_2",
+                is_use_multicall3=True,
+                workflow_address=ADDRESS,
+                validated_request=[],
+                original_method_reference=MagicMock(),
+                extra_data=None,
+            )
+            mock_transform.side_effect = [mock_transformed_1, mock_transformed_2]
+
+            mock_send.side_effect = [
+                (
+                    [
+                        {"tx_hash": TX_HASH.hex(), "tx_receipt": {"logs": []}},
+                        {"tx_hash": "0xTxHash2", "tx_receipt": {"logs": []}},
+                    ],
+                    {
+                        ADDRESS: {
+                            "license_terms_data": [[], LICENSE_TERMS_DATA],
+                        }
+                    },
+                ),
+                ([], {}),
+            ]
+
+            mock_prepare.return_value = ([], [])
+
+            result = ip_asset.batch_ip_asset_with_optimized_workflows(
+                requests=requests, is_use_multicall=True
+            )
+
+            # Verify multiple registrations
+            assert len(result["registration_results"]) == 2
+            assert result["registration_results"][0]["tx_hash"] == TX_HASH.hex()
+            assert result["registration_results"][1]["tx_hash"] == "0xTxHash2"
+
+    def test_batch_with_multicall_disabled(
+        self,
+        ip_asset: IPAsset,
+        mock_transform_request,
+        mock_send_transactions,
+        mock_prepare_distribute_royalty_tokens_requests,
+        mock_parse_ip_registered_event,
+    ):
+        """Test batch registration with is_use_multicall=False."""
+        requests: list[IpRegistrationWorkflowRequest] = [
+            MintAndRegisterRequest(
+                spg_nft_contract=ADDRESS,
+                license_terms_data=LICENSE_TERMS_DATA,
+            ),
+            RegisterRegistrationRequest(
+                nft_contract=ADDRESS,
+                token_id=1,
+                license_terms_data=LICENSE_TERMS_DATA,
+            ),
+        ]
+
+        with (
+            mock_transform_request() as mock_transform,
+            mock_send_transactions() as mock_send,
+            mock_prepare_distribute_royalty_tokens_requests() as mock_prepare,
+            mock_parse_ip_registered_event(),
+        ):
+            mock_transformed_1 = TransformedRegistrationRequest(
+                encoded_tx_data=b"encoded_data_1",
+                is_use_multicall3=True,
+                workflow_address=ADDRESS,
+                validated_request=[],
+                original_method_reference=MagicMock(),
+                extra_data=None,
+            )
+            mock_transformed_2 = TransformedRegistrationRequest(
+                encoded_tx_data=b"encoded_data_2",
+                is_use_multicall3=True,
+                workflow_address=ADDRESS,
+                validated_request=[],
+                original_method_reference=MagicMock(),
+                extra_data=None,
+            )
+            mock_transform.side_effect = [mock_transformed_1, mock_transformed_2]
+
+            mock_send.side_effect = [
+                (
+                    [{"tx_hash": TX_HASH.hex(), "tx_receipt": {"logs": []}}],
+                    {ADDRESS: {"license_terms_data": [LICENSE_TERMS_DATA]}},
+                ),
+                ([], {}),
+            ]
+
+            mock_prepare.return_value = ([], [])
+
+            result = ip_asset.batch_ip_asset_with_optimized_workflows(
+                requests=requests, is_use_multicall=False
+            )
+
+            # Verify is_use_multicall3 was passed correctly
+            assert mock_send.call_args_list[0][1]["is_use_multicall3"] is False
+            # Verify result
+            assert len(result["registration_results"]) == 1
+
+    def test_batch_with_royalty_shares_and_license_terms(
+        self,
+        ip_asset: IPAsset,
+        mock_transform_request,
+        mock_send_transactions,
+        mock_prepare_distribute_royalty_tokens_requests,
+        mock_parse_ip_registered_event,
+    ):
+        """Test batch registration with both royalty shares and license terms."""
+        royalty_shares = [
+            RoyaltyShareInput(recipient=ACCOUNT_ADDRESS, percentage=60.0),
+        ]
+
+        requests = [
+            MintAndRegisterRequest(
+                spg_nft_contract=ADDRESS,
+                license_terms_data=LICENSE_TERMS_DATA,
+                royalty_shares=royalty_shares,
+                ip_metadata=IP_METADATA,
+            ),
+        ]
+
+        with (
+            mock_transform_request() as mock_transform,
+            mock_send_transactions() as mock_send,
+            mock_prepare_distribute_royalty_tokens_requests() as mock_prepare,
+            mock_parse_ip_registered_event(),
+        ):
+            mock_transformed = TransformedRegistrationRequest(
+                encoded_tx_data=b"encoded_data",
+                is_use_multicall3=False,
+                workflow_address=ADDRESS,
+                validated_request=[],
+                original_method_reference=MagicMock(),
+                extra_data={"royalty_shares": royalty_shares},
+            )
+            mock_transform.return_value = mock_transformed
+
+            mock_send.side_effect = [
+                (
+                    [{"tx_hash": TX_HASH.hex(), "tx_receipt": {"logs": []}}],
+                    {ADDRESS: {"license_terms_data": [LICENSE_TERMS_DATA]}},
+                ),
+                (
+                    [{"tx_hash": "0xDistributeTxHash", "tx_receipt": {"logs": []}}],
+                    {},
+                ),
+            ]
+
+            mock_distribute_request = TransformedRegistrationRequest(
+                encoded_tx_data=b"distribute_data",
+                is_use_multicall3=False,
+                workflow_address=ADDRESS,
+                validated_request=[],
+                original_method_reference=MagicMock(),
+                extra_data=None,
+            )
+            mock_prepare.return_value = (
+                [mock_distribute_request],
+                [{"ip_id": IP_ID, "royalty_vault": ADDRESS}],
+            )
+
+            result = ip_asset.batch_ip_asset_with_optimized_workflows(
+                requests=requests, is_use_multicall=True
+            )
+
+            # Verify royalty distribution was handled
+            assert len(result["distribute_royalty_tokens_tx_hashes"]) == 1
+            assert len(result["registration_results"][0]["ip_royalty_vaults"]) == 1
+            assert (
+                result["registration_results"][0]["ip_royalty_vaults"][0][
+                    "royalty_vault"
+                ]
+                == ADDRESS
+            )
+
+    def test_batch_empty_requests(
+        self,
+        ip_asset: IPAsset,
+        mock_transform_request,
+        mock_send_transactions,
+        mock_prepare_distribute_royalty_tokens_requests,
+    ):
+        """Test batch registration with empty requests list."""
+        requests: list[MintAndRegisterRequest | RegisterRegistrationRequest] = []
+
+        with (
+            mock_transform_request() as mock_transform,
+            mock_send_transactions() as mock_send,
+            mock_prepare_distribute_royalty_tokens_requests() as mock_prepare,
+        ):
+            mock_send.side_effect = [
+                ([], {}),
+                ([], {}),
+            ]
+
+            mock_prepare.return_value = ([], [])
+
+            result = ip_asset.batch_ip_asset_with_optimized_workflows(
+                requests=requests, is_use_multicall=True
+            )
+
+            # Verify no transform was called
+            mock_transform.assert_not_called()
+            # Verify empty response
+            assert len(result["registration_results"]) == 0
+            assert len(result["distribute_royalty_tokens_tx_hashes"]) == 0
+
+    def test_batch_transaction_failure(
+        self,
+        ip_asset: IPAsset,
+        mock_transform_request,
+        mock_send_transactions,
+    ):
+        """Test batch registration when transaction fails."""
+        requests = [
+            MintAndRegisterRequest(
+                spg_nft_contract=ADDRESS,
+                license_terms_data=LICENSE_TERMS_DATA,
+            ),
+        ]
+
+        with (
+            mock_transform_request() as mock_transform,
+            mock_send_transactions() as mock_send,
+        ):
+            mock_transformed = TransformedRegistrationRequest(
+                encoded_tx_data=b"encoded_data",
+                is_use_multicall3=True,
+                workflow_address=ADDRESS,
+                validated_request=[],
+                original_method_reference=MagicMock(),
+                extra_data=None,
+            )
+            mock_transform.return_value = mock_transformed
+
+            # Mock send_transactions to raise an error
+            mock_send.side_effect = ValueError("Transaction failed")
+
+            with pytest.raises(
+                ValueError,
+                match="Failed to batch register IP assets with optimized workflows: Transaction failed",
+            ):
+                ip_asset.batch_ip_asset_with_optimized_workflows(
+                    requests=requests, is_use_multicall=True
+                )

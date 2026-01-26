@@ -1,3 +1,4 @@
+from dataclasses import asdict, replace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -22,7 +23,9 @@ from story_protocol_python_sdk.abi.RoyaltyTokenDistributionWorkflows.RoyaltyToke
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadata
 from story_protocol_python_sdk.utils.registration.transform_registration_request import (
     get_allow_duplicates,
+    get_public_minting,
     transform_request,
+    validate_license_terms_data,
 )
 from tests.unit.fixtures.data import (
     ADDRESS,
@@ -40,7 +43,7 @@ def mock_get_public_minting():
 
     def _mock(public_minting: bool = True):
         return patch(
-            "story_protocol_python_sdk.utils.registration.registration_utils.SPGNFTImplClient",
+            "story_protocol_python_sdk.utils.registration.transform_registration_request.SPGNFTImplClient",
             return_value=MagicMock(
                 publicMinting=MagicMock(return_value=public_minting)
             ),
@@ -55,7 +58,7 @@ def mock_royalty_module_client():
 
     def _mock(is_whitelisted_policy: bool = True, is_whitelisted_token: bool = True):
         return patch(
-            "story_protocol_python_sdk.utils.registration.registration_utils.RoyaltyModuleClient",
+            "story_protocol_python_sdk.utils.registration.transform_registration_request.RoyaltyModuleClient",
             return_value=MagicMock(
                 isWhitelistedRoyaltyPolicy=MagicMock(
                     return_value=is_whitelisted_policy
@@ -71,7 +74,7 @@ def mock_royalty_module_client():
 def mock_module_registry_client():
     """Mock ModuleRegistryClient for validate_license_terms_data."""
     return patch(
-        "story_protocol_python_sdk.utils.registration.registration_utils.ModuleRegistryClient",
+        "story_protocol_python_sdk.utils.registration.transform_registration_request.ModuleRegistryClient",
         return_value=MagicMock(),
     )
 
@@ -100,6 +103,24 @@ def mock_derivative_ip_asset_registry_client():
         return patch(
             "story_protocol_python_sdk.utils.derivative_data.IPAssetRegistryClient",
             return_value=MagicMock(isRegistered=MagicMock(return_value=is_registered)),
+        )
+
+    return _mock
+
+
+@pytest.fixture
+def mock_license_registry_client():
+    """Mock LicenseRegistryClient for DerivativeData."""
+
+    def _mock(has_attached_license_terms: bool = True, royalty_percent: int = 1000000):
+        return patch(
+            "story_protocol_python_sdk.utils.derivative_data.LicenseRegistryClient",
+            return_value=MagicMock(
+                hasIpAttachedLicenseTerms=MagicMock(
+                    return_value=has_attached_license_terms
+                ),
+                getRoyaltyPercent=MagicMock(return_value=royalty_percent),
+            ),
         )
 
     return _mock
@@ -219,6 +240,21 @@ def mock_module_clients():
     return _mock
 
 
+@pytest.fixture
+def mock_spg_nft_client():
+    """Mock SPGNFTImplClient."""
+
+    def _mock(public_minting: bool = True):
+        return patch(
+            "story_protocol_python_sdk.utils.registration.transform_registration_request.SPGNFTImplClient",
+            return_value=MagicMock(
+                publicMinting=MagicMock(return_value=public_minting)
+            ),
+        )
+
+    return _mock
+
+
 account = Account.from_key(
     "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 )
@@ -256,6 +292,118 @@ class TestGetAllowDuplicates:
 
         result = get_allow_duplicates(True, "mintAndRegisterIpAndAttachPILTerms")
         assert result is True
+
+
+class TestGetPublicMinting:
+    def test_returns_true_when_public_minting_enabled(
+        self, mock_web3, mock_spg_nft_client
+    ):
+        with mock_spg_nft_client(public_minting=True):
+            result = get_public_minting(ADDRESS, mock_web3)
+            assert result is True
+
+    def test_returns_false_when_public_minting_disabled(
+        self, mock_web3, mock_spg_nft_client
+    ):
+        with mock_spg_nft_client(public_minting=False):
+            result = get_public_minting(ADDRESS, mock_web3)
+            assert result is False
+
+    def test_throws_error_when_spg_nft_contract_invalid(self, mock_web3):
+        with pytest.raises(Exception):
+            get_public_minting("invalid_address", mock_web3)
+
+
+class TestValidateLicenseTermsData:
+    def test_validates_license_terms_with_dataclass_input(
+        self,
+        mock_web3,
+        mock_royalty_module_client,
+        mock_module_registry_client,
+    ):
+        with (
+            mock_royalty_module_client(),
+            mock_module_registry_client,
+        ):
+            result = validate_license_terms_data(LICENSE_TERMS_DATA, mock_web3)
+            assert isinstance(result, list)
+            assert len(result) == len(LICENSE_TERMS_DATA)
+            assert result[0] == LICENSE_TERMS_DATA_CAMEL_CASE
+
+    def test_validates_license_terms_with_dict_input(
+        self,
+        mock_web3,
+        mock_royalty_module_client,
+        mock_module_registry_client,
+    ):
+        with (
+            mock_royalty_module_client(),
+            mock_module_registry_client,
+        ):
+            result = validate_license_terms_data(
+                [
+                    {
+                        "terms": asdict(LICENSE_TERMS_DATA[0].terms),
+                        "licensing_config": LICENSE_TERMS_DATA[0].licensing_config,
+                    }
+                ],
+                mock_web3,
+            )
+            assert result[0] == LICENSE_TERMS_DATA_CAMEL_CASE
+
+    def test_throws_error_when_royalty_policy_not_whitelisted(
+        self,
+        mock_web3,
+        mock_royalty_module_client,
+        mock_module_registry_client,
+    ):
+        with (
+            mock_royalty_module_client(is_whitelisted_policy=False),
+            mock_module_registry_client,
+            pytest.raises(ValueError, match="The royalty_policy is not whitelisted."),
+        ):
+            validate_license_terms_data(LICENSE_TERMS_DATA, mock_web3)
+
+    def test_throws_error_when_currency_not_whitelisted(
+        self,
+        mock_web3,
+        mock_royalty_module_client,
+        mock_module_registry_client,
+    ):
+        with (
+            mock_royalty_module_client(is_whitelisted_token=False),
+            mock_module_registry_client,
+            pytest.raises(ValueError, match="The currency is not whitelisted."),
+        ):
+            validate_license_terms_data(LICENSE_TERMS_DATA, mock_web3)
+
+    def test_validates_multiple_license_terms(
+        self,
+        mock_web3,
+        mock_royalty_module_client,
+        mock_module_registry_client,
+    ):
+        # Use LICENSE_TERMS_DATA twice to test multiple terms
+        license_terms_data = LICENSE_TERMS_DATA + [
+            replace(
+                LICENSE_TERMS_DATA[0],
+                terms=replace(LICENSE_TERMS_DATA[0].terms, commercial_rev_share=20),
+            )
+        ]
+
+        with (
+            mock_royalty_module_client(),
+            mock_module_registry_client,
+        ):
+            result = validate_license_terms_data(license_terms_data, mock_web3)
+            assert result[0] == LICENSE_TERMS_DATA_CAMEL_CASE
+            assert result[1] == {
+                "terms": {
+                    **LICENSE_TERMS_DATA_CAMEL_CASE["terms"],
+                    "commercialRevShare": 20 * 10**6,
+                },
+                "licensingConfig": LICENSE_TERMS_DATA_CAMEL_CASE["licensingConfig"],
+            }
 
 
 class TestTransformRegistrationRequest:
@@ -300,8 +448,11 @@ class TestTransformRegistrationRequest:
             assert args[4] is False  # allow_duplicates (default for this method)
             assert result.workflow_address == "license_attachment_client_address"
             assert result.is_use_multicall3 is True
-            assert result.extra_data is None
-            assert result.contract_call is not None
+            assert result.extra_data is not None
+            license_terms_data = result.extra_data.get("license_terms_data")
+            assert license_terms_data is not None
+            assert license_terms_data[0] == LICENSE_TERMS_DATA_CAMEL_CASE
+            assert result.original_method_reference is not None
 
     def test_routes_to_register_ip_and_attach_pil_terms_when_nft_contract_and_token_id_present(
         self,
@@ -351,9 +502,12 @@ class TestTransformRegistrationRequest:
             assert args[4]["signer"] == ACCOUNT_ADDRESS  # signature data
             assert args[4]["deadline"] == 1000
             assert args[4]["signature"] == b"signature"
-            assert result.extra_data is None
+            assert result.extra_data is not None
+            license_terms_data = result.extra_data.get("license_terms_data")
+            assert license_terms_data is not None
+            assert license_terms_data[0] == LICENSE_TERMS_DATA_CAMEL_CASE
             assert result.is_use_multicall3 is False
-            assert result.contract_call is not None
+            assert result.original_method_reference is not None
 
     def test_raises_error_for_invalid_request_type(
         self, mock_web3, mock_ip_asset_registry_client
@@ -413,11 +567,14 @@ class TestHandleMintAndRegisterRequest:
 
             royalty_token_distribution_client.contract.encode_abi.assert_called_once()
             call_args = royalty_token_distribution_client.contract.encode_abi.call_args
-            assert result.is_use_multicall3 is True
+            assert result.is_use_multicall3 is False
             assert (
                 result.workflow_address == "royalty_token_distribution_client_address"
             )
-            assert result.extra_data is None
+            assert result.extra_data is not None
+            license_terms_data = result.extra_data.get("license_terms_data")
+            assert license_terms_data is not None
+            assert license_terms_data[0] == LICENSE_TERMS_DATA_CAMEL_CASE
             # Verify encode_abi was called with correct method and arguments
             assert call_args[1]["abi_element_identifier"] == (
                 "mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens"
@@ -435,7 +592,7 @@ class TestHandleMintAndRegisterRequest:
             assert args[4][0]["recipient"] == ADDRESS
             assert args[4][0]["percentage"] == 50 * 10**6
             assert args[5] is True  # allow_duplicates (default for this method)
-            assert result.contract_call is not None
+            assert result.original_method_reference is not None
 
     def test_mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
         self,
@@ -490,7 +647,7 @@ class TestHandleMintAndRegisterRequest:
             assert args[4][0]["recipient"] == ADDRESS  # royalty_shares
             assert args[4][0]["percentage"] == 50 * 10**6  # royalty_shares
             assert args[5] is True  # allow_duplicates (default for this method)
-            assert result.contract_call is not None
+            assert result.original_method_reference is not None
 
     def test_mint_and_register_ip_and_make_derivative(
         self,
@@ -540,7 +697,7 @@ class TestHandleMintAndRegisterRequest:
             assert (
                 call_args[1]["args"][4] is False
             )  # allow_duplicates (default for this method)
-            assert result.contract_call is not None
+            assert result.original_method_reference is not None
 
     def test_raises_error_for_invalid_mint_and_register_request_type(
         self,
@@ -633,7 +790,7 @@ class TestHandleRegisterRequest:
             assert royalty_share_dict["recipient"] == ADDRESS
             assert royalty_share_dict["percentage"] == 50 * 10**6
             assert result.extra_data["deadline"] == 2000
-            assert result.contract_call is not None
+            assert result.original_method_reference is not None
 
     def test_register_ip_and_make_derivative_and_deploy_royalty_vault(
         self,
@@ -698,7 +855,7 @@ class TestHandleRegisterRequest:
             assert args[4]["signer"] == ACCOUNT_ADDRESS
             assert args[4]["deadline"] == 1000
             assert args[4]["signature"] == b"signature"
-            assert result.contract_call is not None
+            assert result.original_method_reference is not None
 
     def test_register_ip_and_attach_pil_terms(
         self,
@@ -738,7 +895,10 @@ class TestHandleRegisterRequest:
             call_args = license_attachment_client.contract.encode_abi.call_args
             assert result.is_use_multicall3 is False
             assert result.workflow_address == "license_attachment_client_address"
-            assert result.extra_data is None
+            assert result.extra_data is not None
+            license_terms_data = result.extra_data.get("license_terms_data")
+            assert license_terms_data is not None
+            assert license_terms_data[0] == LICENSE_TERMS_DATA_CAMEL_CASE
             assert call_args[1]["abi_element_identifier"] == (
                 "registerIpAndAttachPILTerms"
             )
@@ -753,7 +913,7 @@ class TestHandleRegisterRequest:
             assert args[4]["signer"] == ACCOUNT_ADDRESS
             assert args[4]["deadline"] == 1000
             assert args[4]["signature"] == b"signature"
-            assert result.contract_call is not None
+            assert result.original_method_reference is not None
 
     def test_register_ip_and_make_derivative(
         self,
@@ -811,7 +971,7 @@ class TestHandleRegisterRequest:
             assert args[4]["signer"] == ACCOUNT_ADDRESS
             assert args[4]["deadline"] == 1000
             assert args[4]["signature"] == b"signature"
-            assert result.contract_call is not None
+            assert result.original_method_reference is not None
 
     def test_raises_error_when_ip_not_registered(
         self,

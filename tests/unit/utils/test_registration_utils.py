@@ -20,39 +20,6 @@ from tests.unit.fixtures.data import (
 
 
 @pytest.fixture
-def mock_spg_nft_client():
-    """Mock SPGNFTImplClient."""
-
-    def _mock(public_minting: bool = True):
-        return patch(
-            "story_protocol_python_sdk.utils.registration.registration_utils.SPGNFTImplClient",
-            return_value=MagicMock(
-                publicMinting=MagicMock(return_value=public_minting)
-            ),
-        )
-
-    return _mock
-
-
-@pytest.fixture
-def mock_royalty_module_client():
-    """Mock RoyaltyModuleClient."""
-
-    def _mock(is_whitelisted_policy: bool = True, is_whitelisted_token: bool = True):
-        return patch(
-            "story_protocol_python_sdk.utils.registration.registration_utils.RoyaltyModuleClient",
-            return_value=MagicMock(
-                isWhitelistedRoyaltyPolicy=MagicMock(
-                    return_value=is_whitelisted_policy
-                ),
-                isWhitelistedRoyaltyToken=MagicMock(return_value=is_whitelisted_token),
-            ),
-        )
-
-    return _mock
-
-
-@pytest.fixture
 def mock_module_registry_client():
     """Mock ModuleRegistryClient."""
     return patch(

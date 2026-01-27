@@ -1,8 +1,5 @@
 """Registration utilities for IP asset operations."""
 
-from collections.abc import Callable
-from typing import TypedDict
-
 from ens.ens import Address, HexStr
 from eth_account.signers.local import LocalAccount
 from web3 import Web3
@@ -13,25 +10,11 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
     IPRoyaltyVault,
     TransformedRegistrationRequest,
 )
+from story_protocol_python_sdk.types.utils import AggregatedRequestData
 from story_protocol_python_sdk.utils.registration.transform_registration_request import (
     transform_distribute_royalty_tokens_request,
 )
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
-
-
-class Multicall3Call(TypedDict):
-    target: Address
-    allowFailure: bool
-    value: int
-    callData: bytes
-
-
-class AggregatedRequestData(TypedDict):
-    """Aggregated request data structure."""
-
-    call_data: list[bytes | Multicall3Call]
-    license_terms_data: list[list[dict]]
-    method_reference: Callable[[list[bytes], dict], HexStr]
 
 
 def aggregate_multicall_requests(

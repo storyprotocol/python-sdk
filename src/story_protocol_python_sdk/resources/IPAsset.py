@@ -78,6 +78,7 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
     TransformedRegistrationRequest,
 )
 from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
+from story_protocol_python_sdk.types.utils import AggregatedRequestData
 from story_protocol_python_sdk.utils.constants import (
     DEADLINE,
     MAX_ROYALTY_TOKEN,
@@ -96,7 +97,6 @@ from story_protocol_python_sdk.utils.ip_metadata import (
     is_initial_ip_metadata,
 )
 from story_protocol_python_sdk.utils.registration.registration_utils import (
-    AggregatedRequestData,
     prepare_distribute_royalty_tokens_requests,
     send_transactions,
 )

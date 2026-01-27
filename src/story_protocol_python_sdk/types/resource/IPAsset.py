@@ -269,8 +269,7 @@ class MintAndRegisterRequest:
 
     spg_nft_contract: Address
     recipient: Address | None = None
-    # TODO: need to consider how to handle new method and existing method
-    allow_duplicates: bool | None = None
+    allow_duplicates: bool | None = True
     ip_metadata: IPMetadataInput | None = None
     license_terms_data: list[LicenseTermsDataInput] | None = None
     deriv_data: DerivativeDataInput | None = None

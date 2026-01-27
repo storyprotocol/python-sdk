@@ -22,7 +22,6 @@ from story_protocol_python_sdk.abi.RoyaltyTokenDistributionWorkflows.RoyaltyToke
 )
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadata
 from story_protocol_python_sdk.utils.registration.transform_registration_request import (
-    get_allow_duplicates,
     get_public_minting,
     transform_distribute_royalty_tokens_request,
     transform_request,
@@ -263,39 +262,6 @@ account = Account.from_key(
 ACCOUNT_ADDRESS = account.address
 
 
-class TestGetAllowDuplicates:
-    def test_returns_default_for_mint_and_register_ip_and_attach_pil_terms_and_distribute_royalty_tokens(
-        self,
-    ):
-        result = get_allow_duplicates(
-            None, "mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens"
-        )
-        assert result is True
-
-    def test_returns_default_for_mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
-        self,
-    ):
-        result = get_allow_duplicates(
-            None, "mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens"
-        )
-        assert result is True
-
-    def test_returns_default_for_mint_and_register_ip_and_attach_pil_terms(self):
-        result = get_allow_duplicates(None, "mintAndRegisterIpAndAttachPILTerms")
-        assert result is False
-
-    def test_returns_default_for_mint_and_register_ip_and_make_derivative(self):
-        result = get_allow_duplicates(None, "mintAndRegisterIpAndMakeDerivative")
-        assert result is True
-
-    def test_returns_provided_value_when_not_none(self):
-        result = get_allow_duplicates(False, "mintAndRegisterIpAndAttachPILTerms")
-        assert result is False
-
-        result = get_allow_duplicates(True, "mintAndRegisterIpAndAttachPILTerms")
-        assert result is True
-
-
 class TestGetPublicMinting:
     def test_returns_true_when_public_minting_enabled(
         self, mock_web3, mock_spg_nft_client
@@ -447,7 +413,7 @@ class TestTransformRegistrationRequest:
                 args[2] == IPMetadata.from_input(IP_METADATA).get_validated_data()
             )  # metadata
             assert args[3][0] == LICENSE_TERMS_DATA_CAMEL_CASE  # license_terms_data
-            assert args[4] is False  # allow_duplicates (default for this method)
+            assert args[4] is True  # allow_duplicates
             assert result.workflow_address == "license_attachment_client_address"
             assert result.is_use_multicall3 is True
             assert result.extra_data is not None
@@ -588,9 +554,7 @@ class TestHandleMintAndRegisterRequest:
             assert (
                 args[2] == IPMetadata.from_input(IP_METADATA).get_validated_data()
             )  # metadata
-            # license_terms_data is validated, so we check it's not None
             assert args[3][0] == LICENSE_TERMS_DATA_CAMEL_CASE  # license_terms_data
-            # royalty_shares is processed, so we check it's a list with correct structure
             assert args[4][0]["recipient"] == ADDRESS
             assert args[4][0]["percentage"] == 50 * 10**6
             assert args[5] is True  # allow_duplicates (default for this method)
@@ -696,9 +660,7 @@ class TestHandleMintAndRegisterRequest:
                 == IPMetadata.from_input(IP_METADATA).get_validated_data()
             )  # metadata
             assert call_args[1]["args"][3] == ACCOUNT_ADDRESS  # recipient
-            assert (
-                call_args[1]["args"][4] is False
-            )  # allow_duplicates (default for this method)
+            assert call_args[1]["args"][4] is False  # allow_duplicates
             assert result.workflow_multicall_reference is not None
 
     def test_raises_error_for_invalid_mint_and_register_request_type(

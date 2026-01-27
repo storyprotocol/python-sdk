@@ -141,30 +141,6 @@ def validate_license_terms_data(
     return validated_license_terms_data
 
 
-def get_allow_duplicates(allow_duplicates: bool | None, request_type: str) -> bool:
-    """
-    Get the allow duplicates value based on the request type.
-    Due to history reasons, we need to use different allow duplicates values for different request types.
-    In the future, we need to unified the allow duplicates logic for all request types, but it can cause breaking changes.
-    Args:
-        allow_duplicates: The allow duplicates value.
-        request_type: The request type.
-    Returns:
-        The allow duplicates value.
-    """
-    ALLOW_DUPLICATES_MAP = {
-        "mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens": True,
-        "mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens": True,
-        "mintAndRegisterIpAndAttachPILTerms": False,
-        "mintAndRegisterIpAndMakeDerivative": True,
-    }
-    return (
-        allow_duplicates
-        if allow_duplicates is not None
-        else ALLOW_DUPLICATES_MAP[request_type]
-    )
-
-
 def transform_request(
     request: IpRegistrationWorkflowRequest,
     web3: Web3,
@@ -363,7 +339,7 @@ def _handle_mint_and_register_with_license_terms_and_royalty_tokens(
         metadata,
         license_terms_data,
         royalty_shares,
-        get_allow_duplicates(allow_duplicates, abi_element_identifier),
+        allow_duplicates,
     ]
     encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
         abi_element_identifier=abi_element_identifier,
@@ -408,7 +384,7 @@ def _handle_mint_and_register_with_derivative_and_royalty_tokens(
         metadata,
         deriv_data,
         royalty_shares,
-        get_allow_duplicates(allow_duplicates, abi_element_identifier),
+        allow_duplicates,
     ]
     encoded_data = royalty_token_distribution_workflows_client.contract.encode_abi(
         abi_element_identifier=abi_element_identifier,
@@ -444,7 +420,7 @@ def _handle_mint_and_register_with_license_terms(
         recipient,
         metadata,
         license_terms_data,
-        get_allow_duplicates(allow_duplicates, abi_element_identifier),
+        allow_duplicates,
     ]
     encoded_data = license_attachment_workflows_client.contract.encode_abi(
         abi_element_identifier=abi_element_identifier,
@@ -480,7 +456,7 @@ def _handle_mint_and_register_with_derivative(
         deriv_data,
         metadata,
         recipient,
-        get_allow_duplicates(allow_duplicates, abi_element_identifier),
+        allow_duplicates,
     ]
     encoded_data = derivative_workflows_client.contract.encode_abi(
         abi_element_identifier=abi_element_identifier,

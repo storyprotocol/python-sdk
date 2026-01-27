@@ -87,7 +87,6 @@ __all__ = [
     "RegisterIpAssetResponse",
     "RegisterDerivativeIpAssetResponse",
     "LinkDerivativeResponse",
-    # Types for batch_register_ip_assets_with_optimized_workflows
     "MintAndRegisterRequest",
     "RegisterRegistrationRequest",
     "IpRegistrationWorkflowRequest",

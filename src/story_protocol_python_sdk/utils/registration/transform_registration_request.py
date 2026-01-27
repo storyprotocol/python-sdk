@@ -40,15 +40,17 @@ from story_protocol_python_sdk.abi.RoyaltyTokenDistributionWorkflows.RoyaltyToke
 from story_protocol_python_sdk.abi.SPGNFTImpl.SPGNFTImpl_client import SPGNFTImplClient
 from story_protocol_python_sdk.types.common import AccessPermission
 from story_protocol_python_sdk.types.resource.IPAsset import (
-    ExtraData,
     IpRegistrationWorkflowRequest,
     LicenseTermsDataInput,
     MintAndRegisterRequest,
     RegisterRegistrationRequest,
-    TransformedRegistrationRequest,
 )
 from story_protocol_python_sdk.types.resource.License import LicenseTermsInput
 from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
+from story_protocol_python_sdk.types.utils import (
+    ExtraData,
+    TransformedRegistrationRequest,
+)
 from story_protocol_python_sdk.utils.constants import ZERO_ADDRESS, ZERO_HASH
 from story_protocol_python_sdk.utils.derivative_data import DerivativeData
 from story_protocol_python_sdk.utils.function_signature import get_function_signature
@@ -178,19 +180,7 @@ def transform_request(
     3. Encodes the transaction data
     4. Determines whether to use multicall3 or SPG's native multicall
 
-    Args:
-        request: The registration request (`IpRegistrationWorkflowRequest`)
-        web3: Web3 instance for contract interaction
-        account: The account for signing and recipient fallback
-        chain_id: The chain ID for IP ID calculation
-
-    Returns:
-        TransformedRegistrationRequest with encoded data and multicall strategy
-
-    Raises:
-        ValueError: If the request is invalid
     """
-    # Check request type by attribute presence (following TypeScript SDK pattern)
     if hasattr(request, "spg_nft_contract"):
         return _handle_mint_and_register_request(
             cast(MintAndRegisterRequest, request), web3, account.address
@@ -211,22 +201,6 @@ def transform_distribute_royalty_tokens_request(
     royalty_shares: list[RoyaltyShareInput],
     total_amount: int,
 ) -> TransformedRegistrationRequest:
-    """
-    Transform a distribute royalty tokens request into encoded transaction data with multicall info.
-    distributeRoyaltyTokens method don't support multicall3 due to `msg.sender` check.
-    Args:
-        ip_id: The IP ID
-        royalty_vault: The royalty vault address
-        deadline: The deadline for the transaction
-        web3: The web3 instance
-        account: The account for signing and recipient fallback
-        chain_id: The chain ID for IP ID calculation
-        royalty_shares: The validated royalty shares with recipient and percentage.
-    Returns:
-        TransformedRegistrationRequest with encoded data and multicall strategy
-    Raises:
-        ValueError: If the request is invalid
-    """
     ip_account_impl_client = IPAccountImplClient(web3, ip_id)
     state = ip_account_impl_client.state()
     royalty_token_distribution_workflows_client = (
@@ -282,7 +256,7 @@ def _handle_mint_and_register_request(
     """
     Handle mintAndRegister* workflow requests.
 
-    Supports:
+    Supports (contract method):
     - mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens
     - mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens
     - mintAndRegisterIpAndAttachPILTerms
@@ -374,7 +348,6 @@ def _handle_mint_and_register_with_license_terms_and_royalty_tokens(
     royalty_shares: list[dict],
     allow_duplicates: bool | None,
 ) -> TransformedRegistrationRequest:
-    """Handle mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens."""
     royalty_token_distribution_workflows_client = (
         RoyaltyTokenDistributionWorkflowsClient(web3)
     )
@@ -420,7 +393,6 @@ def _handle_mint_and_register_with_derivative_and_royalty_tokens(
     allow_duplicates: bool | None,
     is_public_minting: bool,
 ) -> TransformedRegistrationRequest:
-    """Handle mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens."""
     royalty_token_distribution_workflows_client = (
         RoyaltyTokenDistributionWorkflowsClient(web3)
     )
@@ -462,7 +434,6 @@ def _handle_mint_and_register_with_license_terms(
     allow_duplicates: bool | None,
     is_public_minting: bool,
 ) -> TransformedRegistrationRequest:
-    """Handle mintAndRegisterIpAndAttachPILTerms."""
     license_attachment_workflows_client = LicenseAttachmentWorkflowsClient(web3)
     license_attachment_workflows_address = (
         license_attachment_workflows_client.contract.address
@@ -501,7 +472,6 @@ def _handle_mint_and_register_with_derivative(
     allow_duplicates: bool | None,
     is_public_minting: bool,
 ) -> TransformedRegistrationRequest:
-    """Handle mintAndRegisterIpAndMakeDerivative."""
     derivative_workflows_client = DerivativeWorkflowsClient(web3)
     derivative_workflows_address = derivative_workflows_client.contract.address
     abi_element_identifier = "mintAndRegisterIpAndMakeDerivative"
@@ -541,7 +511,7 @@ def _handle_register_request(
     """
     Handle register* workflow requests (already minted NFTs).
 
-    Supports:
+    Supports (contract method):
     - registerIpAndAttachPILTermsAndDeployRoyaltyVault
     - registerIpAndMakeDerivativeAndDeployRoyaltyVault
     - registerIpAndAttachPILTerms
@@ -568,6 +538,7 @@ def _handle_register_request(
         if request.license_terms_data
         else None
     )
+    # TODO:consider some validation to extract in common place
     deriv_data = (
         DerivativeData.from_input(
             web3=web3, input_data=request.deriv_data
@@ -670,7 +641,6 @@ def _handle_register_with_license_terms_and_royalty_vault(
     state: bytes,
     royalty_total_amount: int,
 ) -> TransformedRegistrationRequest:
-    """Handle registerIpAndAttachPILTermsAndDeployRoyaltyVault."""
     royalty_token_distribution_workflows_client = (
         RoyaltyTokenDistributionWorkflowsClient(web3)
     )
@@ -738,7 +708,6 @@ def _handle_register_with_derivative_and_royalty_vault(
     state: bytes,
     royalty_total_amount: int,
 ) -> TransformedRegistrationRequest:
-    """Handle registerIpAndMakeDerivativeAndDeployRoyaltyVault."""
     royalty_token_distribution_workflows_client = (
         RoyaltyTokenDistributionWorkflowsClient(web3)
     )

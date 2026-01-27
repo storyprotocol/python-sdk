@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Literal, TypedDict
+from typing import Literal, TypedDict
 
 from ens.ens import Address, HexStr
 
@@ -251,7 +251,7 @@ class MintAndRegisterRequest:
     """
     Request for mint and register IP operations.
 
-    Used for:
+    Used for(contract method):
     - mintAndRegisterIpAssetWithPilTerms
     - mintAndRegisterIpAndMakeDerivative
     - mintAndRegisterIpAndAttachPilTermsAndDistributeRoyaltyTokens
@@ -264,11 +264,12 @@ class MintAndRegisterRequest:
         ip_metadata: [Optional] The metadata for the newly minted NFT and registered IP.
         license_terms_data: [Optional] The license terms data to attach. Required if not using deriv_data.
         deriv_data: [Optional] The derivative data for creating derivative IP. Required if not using license_terms_data.
-        royalty_shares: [Optional] The royalty shares for distributing royalty tokens.
+        royalty_shares: [Optional] The royalty shares for distributing royalty tokens. Must be specified together with either `license_terms_data` or `deriv_data`.
     """
 
     spg_nft_contract: Address
     recipient: Address | None = None
+    # TODO: need to consider how to handle new method and existing method
     allow_duplicates: bool | None = None
     ip_metadata: IPMetadataInput | None = None
     license_terms_data: list[LicenseTermsDataInput] | None = None
@@ -280,11 +281,10 @@ class MintAndRegisterRequest:
 class RegisterRegistrationRequest:
     """
     Request for register IP operations (already minted NFT).
-    license_terms_data, deriv_data and royalty_shares at least one of them is required,otherwise it will raise `invalid register request type`.
 
-    Used for:
+    Used for(contract method):
     - registerIpAndAttachPilTerms
-    - registerIpAndMakeDerivative (registerDerivativeIp)
+    - registerIpAndMakeDerivative
     - registerIpAndAttachPilTermsAndDeployRoyaltyVault
     - registerIpAndMakeDerivativeAndDeployRoyaltyVault
 
@@ -295,7 +295,7 @@ class RegisterRegistrationRequest:
         deadline: [Optional] The deadline for the signature in seconds. (default: 1000)
         license_terms_data: [Optional] The license terms data to attach. Required if not using deriv_data.
         deriv_data: [Optional] The derivative data for creating derivative IP. Required if not using license_terms_data.
-        royalty_shares: [Optional] The royalty shares for distributing royalty tokens.
+        royalty_shares: [Optional] The royalty shares for distributing royalty tokens. Must be specified together with either `license_terms_data` or `deriv_data`.
     """
 
     nft_contract: Address
@@ -330,7 +330,6 @@ class RegisteredIPWithLicenseTermsIds(RegisteredIP):
 
     Attributes:
         license_terms_ids: The license terms IDs of the registered IP asset.
-        If the license terms are not attached, the value is None.
     """
 
     license_terms_ids: list[int]
@@ -342,7 +341,7 @@ class BatchRegistrationResult(TypedDict, total=False):
 
     Attributes:
         tx_hash: The transaction hash.
-        registered_ips: List of registered IP assets (ip_id, token_id).
+        registered_ips: List of registered IP assets (ip_id, token_id, license_terms_ids).
         ip_royalty_vaults: [Optional] List of IP royalty vaults for deployed royalty vaults.
     """
 
@@ -362,50 +361,3 @@ class BatchRegisterIpAssetsWithOptimizedWorkflowsResponse(TypedDict, total=False
 
     registration_results: list[BatchRegistrationResult]
     distribute_royalty_tokens_tx_hashes: list[HexStr]
-
-
-# =============================================================================
-# Transform Registration Request Types
-# =============================================================================
-class ExtraData(TypedDict, total=False):
-    """
-    Extra data for post-processing after registration.
-
-    Attributes:
-        royalty_shares: [Optional] The royalty shares for distribution.
-        deadline: [Optional] The deadline for the signature.
-        royalty_total_amount: [Optional] The total amount of royalty tokens to distribute.
-        nft_contract: [Optional] The NFT contract address.
-        token_id: [Optional] The token ID.
-        license_terms_data: [Optional] The license terms data.
-    """
-
-    royalty_shares: list[RoyaltyShareInput]
-    deadline: int
-    royalty_total_amount: int
-    nft_contract: Address
-    token_id: int
-    license_terms_data: list[dict] | None
-
-
-@dataclass
-class TransformedRegistrationRequest:
-    """
-    Transformed registration request with encoded data and multicall info.
-
-    Attributes:
-        encoded_tx_data: The encoded transaction data.
-        is_use_multicall3: Whether to use multicall3 or SPG's native multicall.
-        workflow_address: The workflow contract address.
-        validated_request: The validated request arguments for the contract method.
-        original_method_reference: The original method reference for building transactions.
-        extra_data: [Optional] Extra data for post-processing.
-    """
-
-    encoded_tx_data: bytes
-    is_use_multicall3: bool
-    workflow_address: Address
-    validated_request: list[Address | int | str | bytes | dict | bool]
-    # TODO: need to rename with multicall3 method reference
-    original_method_reference: Callable[..., HexStr]
-    extra_data: ExtraData | None = None

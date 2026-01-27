@@ -57,7 +57,6 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
     BatchMintAndRegisterIPResponse,
     BatchRegisterIpAssetsWithOptimizedWorkflowsResponse,
     BatchRegistrationResult,
-    ExtraData,
     IpRegistrationWorkflowRequest,
     LicenseTermsDataInput,
     LinkDerivativeResponse,
@@ -75,10 +74,13 @@ from story_protocol_python_sdk.types.resource.IPAsset import (
     RegistrationResponse,
     RegistrationWithRoyaltyVaultAndLicenseTermsResponse,
     RegistrationWithRoyaltyVaultResponse,
-    TransformedRegistrationRequest,
 )
 from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
-from story_protocol_python_sdk.types.utils import AggregatedRequestData
+from story_protocol_python_sdk.types.utils import (
+    AggregatedRequestData,
+    ExtraData,
+    TransformedRegistrationRequest,
+)
 from story_protocol_python_sdk.utils.constants import (
     DEADLINE,
     MAX_ROYALTY_TOKEN,
@@ -1508,8 +1510,8 @@ class IPAsset:
 
         **Request Types:**
 
-        - `MintAndRegisterRequest`: Mint a new NFT from an SPG NFT contract and register as IP
-        - `RegisterRegistrationRequest`: Register an already minted NFT as IP
+        - `MintAndRegisterRequest`: Mint a new NFT from an SPG NFT contract and register as IP ID
+        - `RegisterRegistrationRequest`: Register an already minted NFT as IP ID
 
         **Workflow Selection:**
 
@@ -1530,7 +1532,7 @@ class IPAsset:
 
         **Multicall Strategy:**
 
-        - Multicall3: Used when `is_use_multicall=True`, request is `MintAndRegisterRequest`, `spg_nft_contract` has public minting,
+        - Multicall3: Used when `is_use_multicall=True`, request is `MintAndRegisterRequest`, `spg_nft_contract` has public minting except for `mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens`.
         - Workflow's native multicall: Used for all other cases
         - Requests using the same workflow are aggregated into a single multicall transaction
 
@@ -1539,15 +1541,14 @@ class IPAsset:
         Royalty token distribution is handled in a separate transaction because it requires a signature with the
         royalty vault address, which is only available after initial registration completes.
 
-        :param requests Sequence[IpRegistrationWorkflowRequest]: The list of registration requests.
-        :param is_use_multicall bool: [Optional] Whether to use multicall3 for eligible workflows. (default: True)
-        :param tx_options dict: [Optional] Transaction options.
+        :param requests `Sequence[IpRegistrationWorkflowRequest]`: The list of registration requests.
+        :param is_use_multicall `bool`: [Optional] Whether to use multicall3 for eligible workflows. (default: True)
+        :param tx_options `dict`: [Optional] Transaction options.
         :return `BatchRegisterIpAssetsWithOptimizedWorkflowsResponse`: Response with registration results and distribute royalty tokens transaction hashes.
 
         **Example:**
 
         ```python
-        # Mint and register with PIL terms (supports multicall3 if public minting enabled)
         response = client.ip_asset.batch_ip_asset_with_optimized_workflows(
             requests=[
                 MintAndRegisterRequest(
@@ -1559,15 +1560,13 @@ class IPAsset:
                     nft_contract="0x...",
                     token_id=123,
                     deriv_data={...},
-                    ip_metadata={...}
                 )
             ],
-            is_use_multicall=True
         )
         ```
         """
         try:
-            # Transform registration requests to transformed registration requests and send them into transaction
+            # Transform registration requests and send them into transaction
             transformed_requests: list[TransformedRegistrationRequest] = [
                 transform_request(request, self.web3, self.account, self.chain_id)
                 for request in requests
@@ -1591,7 +1590,7 @@ class IPAsset:
                 if tr.extra_data is not None
                 and tr.extra_data.get("royalty_shares", None) is not None
             ]
-            # Parse the response of the registration requests and collect distribute royalty tokens requests
+            # Parse the response of the registration responses and collect distribute royalty tokens requests
             response_list: list[BatchRegistrationResult] = []
             for tx_response in tx_responses:
                 ip_registered_events = self._parse_tx_ip_registered_event(
@@ -1653,8 +1652,8 @@ class IPAsset:
             return BatchRegisterIpAssetsWithOptimizedWorkflowsResponse(
                 registration_results=response_list_with_license_terms_ids,
                 distribute_royalty_tokens_tx_hashes=[
-                    tx_hash["tx_hash"]
-                    for tx_hash in distribute_royalty_tokens_tx_responses
+                    response["tx_hash"]
+                    for response in distribute_royalty_tokens_tx_responses
                 ],
             )
         except ValueError as e:
@@ -2245,7 +2244,7 @@ class IPAsset:
         Parse all IpRoyaltyVaultDeployed events from a transaction receipt.
 
         :param tx_receipt dict: The transaction receipt.
-        :return list[tuple[Address, Address]]: List of (ip_id, ip_royalty_vault) tuples.
+        :return list[dict[str, Address]]: List of dicts with keys "ipId" and "ipRoyaltyVault".
         """
         event_signature = Web3.keccak(
             text="IpRoyaltyVaultDeployed(address,address)"

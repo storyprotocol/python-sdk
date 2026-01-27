@@ -27,18 +27,6 @@ def aggregate_multicall_requests(
 
     Groups requests that should be sent to the same multicall address together,
     collecting their encoded transaction data and method references.
-
-    Args:
-        requests: List of transformed registration requests to aggregate.
-        is_use_multicall3: Whether to use multicall3 for aggregation.
-        web3: Web3 instance.
-
-    Returns:
-        Dictionary mapping target addresses to aggregated request data:
-        - Key: Address (multicall address or workflow address)
-        - Value: AggregatedRequestData with:
-            - "call_data": List of encoded transaction data (bytes)
-            - "method_reference": The method to build the transaction
     """
     aggregated_requests: dict[Address, AggregatedRequestData] = {}
     multicall3_client = Multicall3Client(web3)
@@ -56,6 +44,7 @@ def aggregate_multicall_requests(
             aggregated_requests[target_address] = {
                 "call_data": [],
                 "license_terms_data": [],
+                # TODO: rename with multicall3 method reference
                 "method_reference": (
                     multicall3_client.build_aggregate3_transaction
                     if target_address == multicall3_client.contract.address
@@ -95,17 +84,6 @@ def prepare_distribute_royalty_tokens_requests(
     account: LocalAccount,
     chain_id: int,
 ) -> tuple[list[TransformedRegistrationRequest], list[IPRoyaltyVault]]:
-    """
-    Prepare distribute royalty tokens requests.
-
-    Args:
-        extra_data_list: The extra data for distribute royalty tokens.
-        web3: Web3 instance.
-        ip_registered: The IP registered.
-        royalty_vault: The royalty vault addresses.
-        account: The account for signing and recipient fallback.
-        chain_id: The chain ID for IP ID calculation.
-    """
     if not extra_data_list:
         return [], []
     transformed_requests: list[TransformedRegistrationRequest] = []

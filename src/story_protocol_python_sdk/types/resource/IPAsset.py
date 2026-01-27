@@ -262,8 +262,8 @@ class MintAndRegisterRequest:
         recipient: [Optional] The address to receive the NFT. Defaults to caller's wallet address.
         allow_duplicates: [Optional] Set to true to allow minting an NFT with a duplicate metadata hash. (default: True)
         ip_metadata: [Optional] The metadata for the newly minted NFT and registered IP.
-        license_terms_data: [Optional] The license terms data to attach. Required if not using deriv_data.
-        deriv_data: [Optional] The derivative data for creating derivative IP. Required if not using license_terms_data.
+        license_terms_data: [Optional] The license terms data to attach. Required if not using `deriv_data`.
+        deriv_data: [Optional] The derivative data for creating derivative IP. Required if not using `license_terms_data`.
         royalty_shares: [Optional] The royalty shares for distributing royalty tokens. Must be specified together with either `license_terms_data` or `deriv_data`.
     """
 
@@ -292,8 +292,8 @@ class RegisterRegistrationRequest:
         token_id: The token ID of the NFT.
         ip_metadata: [Optional] The metadata for the registered IP.
         deadline: [Optional] The deadline for the signature in seconds. (default: 1000)
-        license_terms_data: [Optional] The license terms data to attach. Required if not using deriv_data.
-        deriv_data: [Optional] The derivative data for creating derivative IP. Required if not using license_terms_data.
+        license_terms_data: [Optional] The license terms data to attach. Required if not using `deriv_data`.
+        deriv_data: [Optional] The derivative data for creating derivative IP. Required if not using `license_terms_data`.
         royalty_shares: [Optional] The royalty shares for distributing royalty tokens. Must be specified together with either `license_terms_data` or `deriv_data`.
     """
 

@@ -547,14 +547,10 @@ class IPAsset:
                     recipient=recipient,
                     ip_metadata=(
                         IPMetadataInput(
-                            ip_metadata_uri=ip_metadata.get("ip_metadata_uri", ""),
-                            ip_metadata_hash=ip_metadata.get(
-                                "ip_metadata_hash", ZERO_HASH
-                            ),
-                            nft_metadata_uri=ip_metadata.get("nft_metadata_uri", ""),
-                            nft_metadata_hash=ip_metadata.get(
-                                "nft_metadata_hash", ZERO_HASH
-                            ),
+                            ip_metadata_uri=ip_metadata["ip_metadata_uri"],
+                            ip_metadata_hash=ip_metadata["ip_metadata_hash"],
+                            nft_metadata_uri=ip_metadata["nft_metadata_uri"],
+                            nft_metadata_hash=ip_metadata["nft_metadata_hash"],
                         )
                         if ip_metadata
                         else None
@@ -1516,18 +1512,18 @@ class IPAsset:
         **Workflow Selection:**
 
         For `MintAndRegisterRequest` (supports Multicall3 when `spg_nft_contract` has public minting enabled):
-        1. `license_terms_data` + `royalty_shares` → `mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens` (RoyaltyTokenDistributionWorkflows)
+        1. `license_terms_data` + `royalty_shares` → `mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens` (contract method)
            - Note: Always uses workflow's native multicall due to `msg.sender` limitation
-        2. `license_terms_data` → `mintAndRegisterIpAndAttachPILTerms` (LicenseAttachmentWorkflows)
-        3. `deriv_data` + `royalty_shares` → `mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens` (RoyaltyTokenDistributionWorkflows)
-        4. `deriv_data` → `mintAndRegisterIpAndMakeDerivative` (DerivativeWorkflows)
+        2. `license_terms_data` → `mintAndRegisterIpAndAttachPILTerms`
+        3. `deriv_data` + `royalty_shares` → `mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens` (contract method)
+        4. `deriv_data` → `mintAndRegisterIpAndMakeDerivative` (contract method)
         5. Other combinations throw `Invalid mint and register request type` error
 
         For `RegisterRegistrationRequest` (always uses workflow's native multicall due to signature requirements):
-        1. `license_terms_data` + `royalty_shares` → `registerIpAndAttachPILTermsAndDeployRoyaltyVault` (RoyaltyTokenDistributionWorkflows)
-        2. `deriv_data` + `royalty_shares` → `registerIpAndMakeDerivativeAndDeployRoyaltyVault` (RoyaltyTokenDistributionWorkflows)
-        3. `license_terms_data` → `registerIpAndAttachPILTerms` (LicenseAttachmentWorkflows)
-        4. `deriv_data` → `registerIpAndMakeDerivative` (DerivativeWorkflows)
+        1. `license_terms_data` + `royalty_shares` → `registerIpAndAttachPILTermsAndDeployRoyaltyVault` (contract method)
+        2. `deriv_data` + `royalty_shares` → `registerIpAndMakeDerivativeAndDeployRoyaltyVault` (contract method)
+        3. `license_terms_data` → `registerIpAndAttachPILTerms` (contract method)
+        4. `deriv_data` → `registerIpAndMakeDerivative` (contract method)
         5. Other combinations throw `Invalid register request type` error
 
         **Multicall Strategy:**
@@ -1672,17 +1668,19 @@ class IPAsset:
             for value in aggregated_requests.values()
             for license_terms_data in value["license_terms_data"]
         ]
+
+        # Create an iterator to automatically consume license_terms_data
+        license_terms_iter = iter(all_license_terms_data)
+
         # Populate license terms ids for each registered IP
-        license_terms_index = 0
         for registration_result in registration_results:
             for registered_ip in registration_result["registered_ips"]:
-                if license_terms_index < len(all_license_terms_data):
-                    license_terms_data = all_license_terms_data[license_terms_index]
-                    if license_terms_data:
-                        registered_ip["license_terms_ids"] = self._get_license_terms_id(
-                            license_terms_data
-                        )
-                    license_terms_index += 1
+                license_terms_data = next(license_terms_iter, None)
+                if license_terms_data:
+                    registered_ip["license_terms_ids"] = self._get_license_terms_id(
+                        license_terms_data
+                    )
+
         return registration_results
 
     def _get_license_terms_id(self, license_terms_data: list[dict]) -> list[int]:
@@ -1691,13 +1689,10 @@ class IPAsset:
         :param license_terms_data: The license terms data.
         :return: The license terms ids.
         """
-        license_terms_ids = []
-        for license_terms in license_terms_data:
-            license_terms_id = self.pi_license_template_client.getLicenseTermsId(
-                license_terms["terms"]
-            )
-            license_terms_ids.append(license_terms_id)
-        return license_terms_ids
+        return [
+            self.pi_license_template_client.getLicenseTermsId(license_terms["terms"])
+            for license_terms in license_terms_data
+        ]
 
     def _handle_minted_nft_registration(
         self,
@@ -2145,13 +2140,13 @@ class IPAsset:
         event_signature = self.web3.keccak(
             text="IPRegistered(address,uint256,address,uint256,string,string,uint256)"
         ).hex()
-        registered_ip_logs: list[dict[str, int | Address]] = []
-        for log in tx_receipt["logs"]:
-            if log["topics"][0].hex() == event_signature:
-                event_result = self.ip_asset_registry_client.contract.events.IPRegistered.process_log(
-                    log
-                )
-                registered_ip_logs.append(event_result["args"])
+        registered_ip_logs: list[dict[str, int | Address]] = [
+            self.ip_asset_registry_client.contract.events.IPRegistered.process_log(log)[
+                "args"
+            ]
+            for log in tx_receipt["logs"]
+            if log["topics"][0].hex() == event_signature
+        ]
         return registered_ip_logs
 
     def _get_registered_ips(self, tx_receipt: dict) -> list[RegisteredIP]:
@@ -2162,11 +2157,10 @@ class IPAsset:
         :return list[RegisteredIP]: The list of registered IPs.
         """
         registered_ip_logs = self._parse_tx_ip_registered_event(tx_receipt)
-        registered_ips = [
+        return [
             RegisteredIP(ip_id=log["ipId"], token_id=log["tokenId"])
             for log in registered_ip_logs
         ]
-        return registered_ips
 
     def _parse_tx_license_term_attached_event(self, tx_receipt: dict) -> int | None:
         """
@@ -2219,12 +2213,14 @@ class IPAsset:
         ip_royalty_vault_deployed_events = (
             self._parse_all_ip_royalty_vault_deployed_events(tx_receipt)
         )
-        filtered_ip_royalty_vault_deployed_events: list[dict] = list(
-            filter(lambda x: x["ipId"] == ip_id, ip_royalty_vault_deployed_events)
+        return next(
+            (
+                event["ipRoyaltyVault"]
+                for event in ip_royalty_vault_deployed_events
+                if event["ipId"] == ip_id
+            ),
+            None,
         )
-        if filtered_ip_royalty_vault_deployed_events:
-            return filtered_ip_royalty_vault_deployed_events[0]["ipRoyaltyVault"]
-        return None
 
     def _validate_recipient(self, recipient: Address | None) -> Address:
         """
@@ -2249,11 +2245,12 @@ class IPAsset:
         event_signature = Web3.keccak(
             text="IpRoyaltyVaultDeployed(address,address)"
         ).hex()
-        results: list[dict[str, Address]] = []
-        for log in tx_receipt["logs"]:
-            if log["topics"][0].hex() == event_signature:
-                event_result = self.royalty_module_client.contract.events.IpRoyaltyVaultDeployed.process_log(
-                    log
-                )
-                results.append(event_result["args"])
-        return results
+        return [
+            self.royalty_module_client.contract.events.IpRoyaltyVaultDeployed.process_log(
+                log
+            )[
+                "args"
+            ]
+            for log in tx_receipt["logs"]
+            if log["topics"][0].hex() == event_signature
+        ]

@@ -88,32 +88,44 @@ def prepare_distribute_royalty_tokens_requests(
     transformed_requests: list[TransformedRegistrationRequest] = []
     matching_vaults: list[IPRoyaltyVault] = []
     for extra_data in extra_data_list:
-        filtered_ip_registered = [
-            x
-            for x in ip_registered
-            if x["tokenContract"] == extra_data["nft_contract"]
-            and x["tokenId"] == extra_data["token_id"]
-        ]
-        if filtered_ip_registered:
-            ip_id = filtered_ip_registered[0]["ipId"]
-            matching_vault = [x for x in royalty_vault if x["ipId"] == ip_id]
-            if not matching_vault:
-                continue
-            ip_royalty_vault = matching_vault[0]["ipRoyaltyVault"]
-            matching_vaults.append(
-                IPRoyaltyVault(ip_id=ip_id, royalty_vault=ip_royalty_vault)
-            )
-            transformed_request = transform_distribute_royalty_tokens_request(
-                ip_id=ip_id,
-                royalty_vault=ip_royalty_vault,
-                deadline=extra_data["deadline"],
-                web3=web3,
-                account=account,
-                chain_id=chain_id,
-                royalty_shares=extra_data["royalty_shares"],
-                total_amount=extra_data["royalty_total_amount"],
-            )
-            transformed_requests.append(transformed_request)
+        # Find matching IP registration
+        ip_registered_match = next(
+            (
+                x
+                for x in ip_registered
+                if x["tokenContract"] == extra_data["nft_contract"]
+                and x["tokenId"] == extra_data["token_id"]
+            ),
+            None,
+        )
+        if not ip_registered_match:
+            continue
+
+        ip_id = ip_registered_match["ipId"]
+
+        # Find matching royalty vault
+        matching_vault = next(
+            (x for x in royalty_vault if x["ipId"] == ip_id),
+            None,
+        )
+        if not matching_vault:
+            continue
+
+        ip_royalty_vault = matching_vault["ipRoyaltyVault"]
+        matching_vaults.append(
+            IPRoyaltyVault(ip_id=ip_id, royalty_vault=ip_royalty_vault)
+        )
+        transformed_request = transform_distribute_royalty_tokens_request(
+            ip_id=ip_id,
+            royalty_vault=ip_royalty_vault,
+            deadline=extra_data["deadline"],
+            web3=web3,
+            account=account,
+            chain_id=chain_id,
+            royalty_shares=extra_data["royalty_shares"],
+            total_amount=extra_data["royalty_total_amount"],
+        )
+        transformed_requests.append(transformed_request)
     return transformed_requests, matching_vaults
 
 

@@ -56,7 +56,7 @@ class TransformedRegistrationRequest:
         is_use_multicall3: Whether to use multicall3 or SPG's native multicall.
         workflow_address: The workflow contract address.
         validated_request: The validated request arguments for the contract method.
-        original_method_reference: The original method reference for building transactions.
+        workflow_multicall_reference: The multicall reference for the workflow.
         extra_data: [Optional] Extra data for post-processing.
     """
 

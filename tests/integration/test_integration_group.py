@@ -231,10 +231,8 @@ class TestCollectRoyaltyAndClaimReward:
             licensor_ip_id=ip_id,
             license_template=PIL_LICENSE_TEMPLATE,
             license_terms_id=license_terms_id,
-            amount=100,
+            amount=1,
             receiver=ip_id,
-            max_minting_fee=1,
-            max_revenue_share=100,
         )
 
         # Claim reward

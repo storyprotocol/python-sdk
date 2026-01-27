@@ -3771,7 +3771,7 @@ class TestBatchIpAssetWithOptimizedWorkflows:
                 is_use_multicall3=True,
                 workflow_address=ADDRESS,
                 validated_request=[],
-                original_method_reference=MagicMock(),
+                workflow_multicall_reference=MagicMock(),
                 extra_data=None,
             )
             mock_transformed_2 = TransformedRegistrationRequest(
@@ -3779,7 +3779,7 @@ class TestBatchIpAssetWithOptimizedWorkflows:
                 is_use_multicall3=True,
                 workflow_address=ADDRESS,
                 validated_request=[],
-                original_method_reference=MagicMock(),
+                workflow_multicall_reference=MagicMock(),
                 extra_data=None,
             )
             mock_transform.side_effect = [mock_transformed_1, mock_transformed_2]
@@ -3866,7 +3866,7 @@ class TestBatchIpAssetWithOptimizedWorkflows:
                 is_use_multicall3=False,
                 workflow_address=ADDRESS,
                 validated_request=[],
-                original_method_reference=MagicMock(),
+                workflow_multicall_reference=MagicMock(),
                 extra_data={"royalty_shares": royalty_shares},
             )
             mock_transform.return_value = mock_transformed
@@ -3889,7 +3889,7 @@ class TestBatchIpAssetWithOptimizedWorkflows:
                 is_use_multicall3=False,
                 workflow_address=ADDRESS,
                 validated_request=[],
-                original_method_reference=MagicMock(),
+                workflow_multicall_reference=MagicMock(),
                 extra_data=None,
             )
             mock_prepare.return_value = ([mock_distribute_request], [])
@@ -3940,7 +3940,7 @@ class TestBatchIpAssetWithOptimizedWorkflows:
                 is_use_multicall3=True,
                 workflow_address=ADDRESS,
                 validated_request=[],
-                original_method_reference=MagicMock(),
+                workflow_multicall_reference=MagicMock(),
                 extra_data=None,
             )
             mock_transformed_2 = TransformedRegistrationRequest(
@@ -3948,7 +3948,7 @@ class TestBatchIpAssetWithOptimizedWorkflows:
                 is_use_multicall3=True,
                 workflow_address=ADDRESS,
                 validated_request=[],
-                original_method_reference=MagicMock(),
+                workflow_multicall_reference=MagicMock(),
                 extra_data=None,
             )
             mock_transform.side_effect = [mock_transformed_1, mock_transformed_2]
@@ -4011,7 +4011,7 @@ class TestBatchIpAssetWithOptimizedWorkflows:
                 is_use_multicall3=True,
                 workflow_address=ADDRESS,
                 validated_request=[],
-                original_method_reference=MagicMock(),
+                workflow_multicall_reference=MagicMock(),
                 extra_data=None,
             )
             mock_transformed_2 = TransformedRegistrationRequest(
@@ -4019,7 +4019,7 @@ class TestBatchIpAssetWithOptimizedWorkflows:
                 is_use_multicall3=True,
                 workflow_address=ADDRESS,
                 validated_request=[],
-                original_method_reference=MagicMock(),
+                workflow_multicall_reference=MagicMock(),
                 extra_data=None,
             )
             mock_transform.side_effect = [mock_transformed_1, mock_transformed_2]
@@ -4076,7 +4076,7 @@ class TestBatchIpAssetWithOptimizedWorkflows:
                 is_use_multicall3=False,
                 workflow_address=ADDRESS,
                 validated_request=[],
-                original_method_reference=MagicMock(),
+                workflow_multicall_reference=MagicMock(),
                 extra_data={"royalty_shares": royalty_shares},
             )
             mock_transform.return_value = mock_transformed
@@ -4097,7 +4097,7 @@ class TestBatchIpAssetWithOptimizedWorkflows:
                 is_use_multicall3=False,
                 workflow_address=ADDRESS,
                 validated_request=[],
-                original_method_reference=MagicMock(),
+                workflow_multicall_reference=MagicMock(),
                 extra_data=None,
             )
             mock_prepare.return_value = (
@@ -4174,7 +4174,7 @@ class TestBatchIpAssetWithOptimizedWorkflows:
                 is_use_multicall3=True,
                 workflow_address=ADDRESS,
                 validated_request=[],
-                original_method_reference=MagicMock(),
+                workflow_multicall_reference=MagicMock(),
                 extra_data=None,
             )
             mock_transform.return_value = mock_transformed

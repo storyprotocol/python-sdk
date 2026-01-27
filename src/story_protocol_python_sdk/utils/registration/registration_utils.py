@@ -44,11 +44,10 @@ def aggregate_multicall_requests(
             aggregated_requests[target_address] = {
                 "call_data": [],
                 "license_terms_data": [],
-                # TODO: rename with multicall3 method reference
                 "method_reference": (
                     multicall3_client.build_aggregate3_transaction
                     if target_address == multicall3_client.contract.address
-                    else request.original_method_reference
+                    else request.workflow_multicall_reference
                 ),
             }
         if target_address == multicall3_client.contract.address:

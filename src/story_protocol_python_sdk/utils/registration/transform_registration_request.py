@@ -238,7 +238,7 @@ def transform_distribute_royalty_tokens_request(
         is_use_multicall3=False,
         workflow_address=royalty_token_distribution_workflows_client.contract.address,
         validated_request=validated_request,
-        original_method_reference=royalty_token_distribution_workflows_client.build_multicall_transaction,
+        workflow_multicall_reference=royalty_token_distribution_workflows_client.build_multicall_transaction,
         extra_data=None,
     )
 
@@ -375,7 +375,7 @@ def _handle_mint_and_register_with_license_terms_and_royalty_tokens(
         # Because mint tokens is given `msg.sender` as the recipient, so we need to set `useMulticall3` to false.
         is_use_multicall3=False,
         workflow_address=royalty_token_distribution_workflows_address,
-        original_method_reference=royalty_token_distribution_workflows_client.build_multicall_transaction,
+        workflow_multicall_reference=royalty_token_distribution_workflows_client.build_multicall_transaction,
         validated_request=validated_request,
         extra_data=ExtraData(
             license_terms_data=license_terms_data,
@@ -421,7 +421,7 @@ def _handle_mint_and_register_with_derivative_and_royalty_tokens(
         workflow_address=royalty_token_distribution_workflows_address,
         validated_request=validated_request,
         extra_data=None,
-        original_method_reference=royalty_token_distribution_workflows_client.build_multicall_transaction,
+        workflow_multicall_reference=royalty_token_distribution_workflows_client.build_multicall_transaction,
     )
 
 
@@ -459,7 +459,7 @@ def _handle_mint_and_register_with_license_terms(
         extra_data=ExtraData(
             license_terms_data=license_terms_data,
         ),
-        original_method_reference=license_attachment_workflows_client.build_multicall_transaction,
+        workflow_multicall_reference=license_attachment_workflows_client.build_multicall_transaction,
     )
 
 
@@ -493,7 +493,7 @@ def _handle_mint_and_register_with_derivative(
         workflow_address=derivative_workflows_address,
         validated_request=validated_request,
         extra_data=None,
-        original_method_reference=derivative_workflows_client.build_multicall_transaction,
+        workflow_multicall_reference=derivative_workflows_client.build_multicall_transaction,
     )
 
 
@@ -688,7 +688,7 @@ def _handle_register_with_license_terms_and_royalty_vault(
             token_id=token_id,
             license_terms_data=license_terms_data,
         ),
-        original_method_reference=royalty_token_distribution_workflows_client.build_multicall_transaction,
+        workflow_multicall_reference=royalty_token_distribution_workflows_client.build_multicall_transaction,
     )
 
 
@@ -754,7 +754,7 @@ def _handle_register_with_derivative_and_royalty_vault(
             nft_contract=nft_contract,
             token_id=token_id,
         ),
-        original_method_reference=royalty_token_distribution_workflows_client.build_multicall_transaction,
+        workflow_multicall_reference=royalty_token_distribution_workflows_client.build_multicall_transaction,
     )
 
 
@@ -813,7 +813,7 @@ def _handle_register_with_license_terms(
         extra_data=ExtraData(
             license_terms_data=license_terms_data,
         ),
-        original_method_reference=license_attachment_workflows_client.build_multicall_transaction,
+        workflow_multicall_reference=license_attachment_workflows_client.build_multicall_transaction,
     )
 
 
@@ -868,7 +868,7 @@ def _handle_register_with_derivative(
         workflow_address=derivative_workflows_address,
         validated_request=validated_request,
         extra_data=None,
-        original_method_reference=derivative_workflows_client.build_multicall_transaction,
+        workflow_multicall_reference=derivative_workflows_client.build_multicall_transaction,
     )
 
 

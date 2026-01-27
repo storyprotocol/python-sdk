@@ -454,7 +454,7 @@ class TestTransformRegistrationRequest:
             license_terms_data = result.extra_data.get("license_terms_data")
             assert license_terms_data is not None
             assert license_terms_data[0] == LICENSE_TERMS_DATA_CAMEL_CASE
-            assert result.original_method_reference is not None
+            assert result.workflow_multicall_reference is not None
 
     def test_routes_to_register_ip_and_attach_pil_terms_when_nft_contract_and_token_id_present(
         self,
@@ -509,7 +509,7 @@ class TestTransformRegistrationRequest:
             assert license_terms_data is not None
             assert license_terms_data[0] == LICENSE_TERMS_DATA_CAMEL_CASE
             assert result.is_use_multicall3 is False
-            assert result.original_method_reference is not None
+            assert result.workflow_multicall_reference is not None
 
     def test_raises_error_for_invalid_request_type(
         self, mock_web3, mock_ip_asset_registry_client
@@ -594,7 +594,7 @@ class TestHandleMintAndRegisterRequest:
             assert args[4][0]["recipient"] == ADDRESS
             assert args[4][0]["percentage"] == 50 * 10**6
             assert args[5] is True  # allow_duplicates (default for this method)
-            assert result.original_method_reference is not None
+            assert result.workflow_multicall_reference is not None
 
     def test_mint_and_register_ip_and_make_derivative_and_distribute_royalty_tokens(
         self,
@@ -649,7 +649,7 @@ class TestHandleMintAndRegisterRequest:
             assert args[4][0]["recipient"] == ADDRESS  # royalty_shares
             assert args[4][0]["percentage"] == 50 * 10**6  # royalty_shares
             assert args[5] is True  # allow_duplicates (default for this method)
-            assert result.original_method_reference is not None
+            assert result.workflow_multicall_reference is not None
 
     def test_mint_and_register_ip_and_make_derivative(
         self,
@@ -699,7 +699,7 @@ class TestHandleMintAndRegisterRequest:
             assert (
                 call_args[1]["args"][4] is False
             )  # allow_duplicates (default for this method)
-            assert result.original_method_reference is not None
+            assert result.workflow_multicall_reference is not None
 
     def test_raises_error_for_invalid_mint_and_register_request_type(
         self,
@@ -792,7 +792,7 @@ class TestHandleRegisterRequest:
             assert royalty_share_dict["recipient"] == ADDRESS
             assert royalty_share_dict["percentage"] == 50 * 10**6
             assert result.extra_data["deadline"] == 2000
-            assert result.original_method_reference is not None
+            assert result.workflow_multicall_reference is not None
 
     def test_register_ip_and_make_derivative_and_deploy_royalty_vault(
         self,
@@ -857,7 +857,7 @@ class TestHandleRegisterRequest:
             assert args[4]["signer"] == ACCOUNT_ADDRESS
             assert args[4]["deadline"] == 1000
             assert args[4]["signature"] == b"signature"
-            assert result.original_method_reference is not None
+            assert result.workflow_multicall_reference is not None
 
     def test_register_ip_and_attach_pil_terms(
         self,
@@ -915,7 +915,7 @@ class TestHandleRegisterRequest:
             assert args[4]["signer"] == ACCOUNT_ADDRESS
             assert args[4]["deadline"] == 1000
             assert args[4]["signature"] == b"signature"
-            assert result.original_method_reference is not None
+            assert result.workflow_multicall_reference is not None
 
     def test_register_ip_and_make_derivative(
         self,
@@ -973,7 +973,7 @@ class TestHandleRegisterRequest:
             assert args[4]["signer"] == ACCOUNT_ADDRESS
             assert args[4]["deadline"] == 1000
             assert args[4]["signature"] == b"signature"
-            assert result.original_method_reference is not None
+            assert result.workflow_multicall_reference is not None
 
     def test_raises_error_when_ip_not_registered(
         self,
@@ -1087,7 +1087,7 @@ class TestTransformDistributeRoyaltyTokensRequest:
                 == "royalty_token_distribution_workflows_client_address"
             )
             assert result.extra_data is None
-            assert result.original_method_reference is not None
+            assert result.workflow_multicall_reference is not None
 
             # Verify validated_request structure
             assert result.validated_request[0] == ip_id

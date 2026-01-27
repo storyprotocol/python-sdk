@@ -45,7 +45,7 @@ class TestAggregateMulticallRequests:
                 is_use_multicall3=False,
                 workflow_address=ADDRESS,
                 validated_request=[],
-                original_method_reference=contract_call,
+                workflow_multicall_reference=contract_call,
             )
             result = aggregate_multicall_requests(
                 requests=[request],
@@ -73,14 +73,14 @@ class TestAggregateMulticallRequests:
                 is_use_multicall3=False,
                 workflow_address=ADDRESS,
                 validated_request=[],
-                original_method_reference=contract_call,
+                workflow_multicall_reference=contract_call,
             )
             request_2 = TransformedRegistrationRequest(
                 encoded_tx_data=encoded_data_2,
                 is_use_multicall3=False,
                 workflow_address=ADDRESS,
                 validated_request=[],
-                original_method_reference=contract_call,
+                workflow_multicall_reference=contract_call,
                 extra_data=ExtraData(
                     license_terms_data=[LICENSE_TERMS_DATA_CAMEL_CASE],
                 ),
@@ -124,14 +124,14 @@ class TestAggregateMulticallRequests:
                 is_use_multicall3=False,
                 workflow_address=workflow_address_1,
                 validated_request=[],
-                original_method_reference=contract_call_1,
+                workflow_multicall_reference=contract_call_1,
             )
             request_2 = TransformedRegistrationRequest(
                 encoded_tx_data=encoded_data_2,
                 is_use_multicall3=False,
                 workflow_address=workflow_address_2,
                 validated_request=[],
-                original_method_reference=contract_call_2,
+                workflow_multicall_reference=contract_call_2,
                 extra_data=ExtraData(
                     license_terms_data=[LICENSE_TERMS_DATA_CAMEL_CASE],
                 ),
@@ -141,7 +141,7 @@ class TestAggregateMulticallRequests:
                 is_use_multicall3=False,
                 workflow_address=workflow_address_2,
                 validated_request=[],
-                original_method_reference=contract_call_2,
+                workflow_multicall_reference=contract_call_2,
                 extra_data=ExtraData(
                     royalty_shares=royalty_shares,
                 ),
@@ -189,14 +189,14 @@ class TestAggregateMulticallRequests:
                 is_use_multicall3=True,
                 workflow_address="workflow1",
                 validated_request=[],
-                original_method_reference=contract_call1,
+                workflow_multicall_reference=contract_call1,
             )
             request2 = TransformedRegistrationRequest(
                 encoded_tx_data=encoded_data_2,
                 is_use_multicall3=True,
                 workflow_address="workflow2",
                 validated_request=[],
-                original_method_reference=contract_call2,
+                workflow_multicall_reference=contract_call2,
                 extra_data=ExtraData(
                     license_terms_data=[LICENSE_TERMS_DATA_CAMEL_CASE],
                 ),
@@ -258,7 +258,7 @@ class TestAggregateMulticallRequests:
                 is_use_multicall3=True,  # Request wants to use multicall3
                 workflow_address="workflow1",
                 validated_request=[],
-                original_method_reference=contract_call1,
+                workflow_multicall_reference=contract_call1,
                 extra_data=ExtraData(
                     license_terms_data=[LICENSE_TERMS_DATA_CAMEL_CASE],
                 ),
@@ -268,7 +268,7 @@ class TestAggregateMulticallRequests:
                 is_use_multicall3=True,
                 workflow_address="workflow2",
                 validated_request=[],
-                original_method_reference=contract_call2,
+                workflow_multicall_reference=contract_call2,
             )
             result = aggregate_multicall_requests(
                 requests=[request1, request2],
@@ -317,7 +317,7 @@ class TestAggregateMulticallRequests:
                 is_use_multicall3=True,
                 workflow_address=workflow_address_1,
                 validated_request=[],
-                original_method_reference=contract_call_1,
+                workflow_multicall_reference=contract_call_1,
                 extra_data=ExtraData(
                     license_terms_data=[LICENSE_TERMS_DATA_CAMEL_CASE],
                 ),
@@ -328,7 +328,7 @@ class TestAggregateMulticallRequests:
                 is_use_multicall3=True,
                 workflow_address=workflow_address_2,
                 validated_request=[],
-                original_method_reference=contract_call_2,
+                workflow_multicall_reference=contract_call_2,
             )
             # Request 3: doesn't use multicall3
             request_3 = TransformedRegistrationRequest(
@@ -336,7 +336,7 @@ class TestAggregateMulticallRequests:
                 is_use_multicall3=False,
                 workflow_address=workflow_address_1,
                 validated_request=[],
-                original_method_reference=contract_call_3,
+                workflow_multicall_reference=contract_call_3,
             )
 
             result = aggregate_multicall_requests(
@@ -409,7 +409,7 @@ def mock_transform_distribute_royalty_tokens_request():
                 is_use_multicall3=False,
                 workflow_address=ADDRESS,
                 validated_request=[],
-                original_method_reference=MagicMock(),
+                workflow_multicall_reference=MagicMock(),
             ),
         )
 
@@ -671,7 +671,7 @@ class TestSendTransactions:
                 is_use_multicall3=False,
                 workflow_address=workflow_address,
                 validated_request=[],
-                original_method_reference=method_reference,
+                workflow_multicall_reference=method_reference,
             )
 
             # Mock build_and_send_transaction return value
@@ -734,21 +734,21 @@ class TestSendTransactions:
                 is_use_multicall3=True,
                 workflow_address=workflow_address_1,
                 validated_request=[],
-                original_method_reference=method_reference_1,
+                workflow_multicall_reference=method_reference_1,
             )
             transformed_request_2 = TransformedRegistrationRequest(
                 encoded_tx_data=b"data2",
                 is_use_multicall3=False,
                 workflow_address=workflow_address_2,
                 validated_request=[],
-                original_method_reference=method_reference_2,
+                workflow_multicall_reference=method_reference_2,
             )
             transformed_request_3 = TransformedRegistrationRequest(
                 encoded_tx_data=b"data3",
                 is_use_multicall3=True,
                 workflow_address=workflow_address_1,
                 validated_request=[],
-                original_method_reference=method_reference_1,
+                workflow_multicall_reference=method_reference_1,
                 extra_data=ExtraData(
                     license_terms_data=[LICENSE_TERMS_DATA_CAMEL_CASE],
                 ),

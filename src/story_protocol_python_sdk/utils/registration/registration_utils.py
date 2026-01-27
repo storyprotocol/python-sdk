@@ -5,12 +5,12 @@ from eth_account.signers.local import LocalAccount
 from web3 import Web3
 
 from story_protocol_python_sdk.abi.Multicall3.Multicall3_client import Multicall3Client
-from story_protocol_python_sdk.types.resource.IPAsset import (
+from story_protocol_python_sdk.types.resource.IPAsset import IPRoyaltyVault
+from story_protocol_python_sdk.types.utils import (
+    AggregatedRequestData,
     ExtraData,
-    IPRoyaltyVault,
     TransformedRegistrationRequest,
 )
-from story_protocol_python_sdk.types.utils import AggregatedRequestData
 from story_protocol_python_sdk.utils.registration.transform_registration_request import (
     transform_distribute_royalty_tokens_request,
 )

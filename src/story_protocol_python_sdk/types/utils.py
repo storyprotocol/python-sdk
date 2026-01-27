@@ -4,8 +4,6 @@ from typing import TypedDict
 from ens.ens import Address, HexStr
 from typing_extensions import Callable
 
-from story_protocol_python_sdk import RoyaltyShareInput
-
 
 class Multicall3Call(TypedDict):
     target: Address
@@ -38,7 +36,7 @@ class ExtraData(TypedDict, total=False):
         license_terms_data: [Optional] The license terms data.
     """
 
-    royalty_shares: list[RoyaltyShareInput]
+    royalty_shares: list[dict]
     deadline: int
     royalty_total_amount: int
     nft_contract: Address

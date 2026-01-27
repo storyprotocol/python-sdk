@@ -24,10 +24,8 @@ from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
     IPAccountImplClient,
 )
 from story_protocol_python_sdk.resources.IPAsset import IPAsset
-from story_protocol_python_sdk.types.resource.IPAsset import (
-    BatchMintAndRegisterIPInput,
-    TransformedRegistrationRequest,
-)
+from story_protocol_python_sdk.types.resource.IPAsset import BatchMintAndRegisterIPInput
+from story_protocol_python_sdk.types.utils import TransformedRegistrationRequest
 from story_protocol_python_sdk.utils.derivative_data import DerivativeDataInput
 from story_protocol_python_sdk.utils.ip_metadata import IPMetadata, IPMetadataInput
 from story_protocol_python_sdk.utils.royalty import get_royalty_shares

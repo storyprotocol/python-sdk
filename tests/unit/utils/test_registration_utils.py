@@ -4,9 +4,9 @@ import pytest
 from ens.ens import HexStr
 
 from story_protocol_python_sdk import RoyaltyShareInput
-from story_protocol_python_sdk.types.resource.IPAsset import (
+from story_protocol_python_sdk.types.resource.IPAsset import IPRoyaltyVault
+from story_protocol_python_sdk.types.utils import (
     ExtraData,
-    IPRoyaltyVault,
     TransformedRegistrationRequest,
 )
 from story_protocol_python_sdk.utils.registration.registration_utils import (

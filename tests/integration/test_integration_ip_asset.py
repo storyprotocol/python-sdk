@@ -1806,13 +1806,13 @@ class TestBatchRegisterIpAssetsWithOptimizedWorkflows:
                 license_terms_data=[
                     LicenseTermsDataInput(
                         terms=PILFlavor.commercial_use(
-                            default_minting_fee=1000000000000000000,
+                            default_minting_fee=1,
                             currency=MockERC20,
                             royalty_policy=NativeRoyaltyPolicy.LAP,
                         ),
                         licensing_config=LicensingConfig(
                             is_set=True,
-                            minting_fee=1000000000000000000,
+                            minting_fee=1,
                             licensing_hook=ZERO_ADDRESS,
                             hook_data=ZERO_HASH,
                             commercial_rev_share=50,
@@ -1899,13 +1899,13 @@ class TestBatchRegisterIpAssetsWithOptimizedWorkflows:
                 license_terms_data=[
                     LicenseTermsDataInput(
                         terms=PILFlavor.commercial_use(
-                            default_minting_fee=1000000000000000000,
+                            default_minting_fee=10,
                             currency=MockERC20,
                             royalty_policy=NativeRoyaltyPolicy.LAP,
                         ),
                         licensing_config=LicensingConfig(
                             is_set=True,
-                            minting_fee=1000000000000000000,
+                            minting_fee=10,
                             licensing_hook=ZERO_ADDRESS,
                             hook_data=ZERO_HASH,
                             commercial_rev_share=50,
@@ -1990,13 +1990,13 @@ class TestBatchRegisterIpAssetsWithOptimizedWorkflows:
                 license_terms_data=[
                     LicenseTermsDataInput(
                         terms=PILFlavor.commercial_use(
-                            default_minting_fee=1000000000000000000,
+                            default_minting_fee=10,
                             currency=MockERC20,
                             royalty_policy=NativeRoyaltyPolicy.LAP,
                         ),
                         licensing_config=LicensingConfig(
                             is_set=True,
-                            minting_fee=1000000000000000000,
+                            minting_fee=10,
                             licensing_hook=ZERO_ADDRESS,
                             hook_data=ZERO_HASH,
                             commercial_rev_share=50,
@@ -2263,13 +2263,13 @@ class TestBatchRegisterIpAssetsWithOptimizedWorkflows:
                 license_terms_data=[
                     LicenseTermsDataInput(
                         terms=PILFlavor.commercial_use(
-                            default_minting_fee=1000000000000000000,
+                            default_minting_fee=10,
                             currency=MockERC20,
                             royalty_policy=NativeRoyaltyPolicy.LAP,
                         ),
                         licensing_config=LicensingConfig(
                             is_set=True,
-                            minting_fee=1000000000000000000,
+                            minting_fee=10,
                             licensing_hook=ZERO_ADDRESS,
                             hook_data=ZERO_HASH,
                             commercial_rev_share=50,
@@ -2509,13 +2509,13 @@ class TestBatchRegisterIpAssetsWithOptimizedWorkflows:
                 license_terms_data=[
                     LicenseTermsDataInput(
                         terms=PILFlavor.commercial_use(
-                            default_minting_fee=1000000000000000000,
+                            default_minting_fee=10,
                             currency=MockERC20,
                             royalty_policy=NativeRoyaltyPolicy.LAP,
                         ),
                         licensing_config=LicensingConfig(
                             is_set=True,
-                            minting_fee=1000000000000000000,
+                            minting_fee=10,
                             licensing_hook=ZERO_ADDRESS,
                             hook_data=ZERO_HASH,
                             commercial_rev_share=50,

@@ -538,7 +538,6 @@ def _handle_register_request(
         if request.license_terms_data
         else None
     )
-    # TODO:consider some validation to extract in common place
     deriv_data = (
         DerivativeData.from_input(
             web3=web3, input_data=request.deriv_data

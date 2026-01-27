@@ -8,14 +8,17 @@ from story_protocol_python_sdk import (
     BatchMintAndRegisterIPInput,
     DerivativeDataInput,
     IPMetadataInput,
+    IpRegistrationWorkflowRequest,
     LicenseTermsDataInput,
     LicenseTermsInput,
     LicenseTermsOverride,
     LicensingConfig,
+    MintAndRegisterRequest,
     MintedNFT,
     MintNFT,
     NativeRoyaltyPolicy,
     PILFlavor,
+    RegisterRegistrationRequest,
     RoyaltyShareInput,
     StoryClient,
 )
@@ -51,6 +54,34 @@ COMMON_IP_METADATA = IPMetadataInput(
     nft_metadata_uri="https://example.com/metadata/custom-value-nft.json",
     nft_metadata_hash=web3.keccak(text="custom-value-nft-metadata"),
 )
+
+
+@pytest.fixture(scope="module")
+def public_nft_collection(story_client: StoryClient):
+    tx_data = story_client.NFTClient.create_nft_collection(
+        name="test-public-collection",
+        symbol="TEST",
+        max_supply=100,
+        is_public_minting=True,
+        mint_open=True,
+        contract_uri="test-uri",
+        mint_fee_recipient=account.address,
+    )
+    return tx_data["nft_contract"]
+
+
+@pytest.fixture(scope="module")
+def private_nft_collection(story_client: StoryClient):
+    tx_data = story_client.NFTClient.create_nft_collection(
+        name="test-private-collection",
+        symbol="TEST",
+        max_supply=100,
+        is_public_minting=False,
+        mint_open=True,
+        contract_uri="test-uri",
+        mint_fee_recipient=account.address,
+    )
+    return tx_data["nft_contract"]
 
 
 class TestIPAssetRegistration:
@@ -308,19 +339,6 @@ class TestIPAssetDerivatives:
 
 
 class TestIPAssetMinting:
-    @pytest.fixture(scope="module")
-    def nft_collection(self, story_client: StoryClient):
-        tx_data = story_client.NFTClient.create_nft_collection(
-            name="test-collection",
-            symbol="TEST",
-            max_supply=100,
-            is_public_minting=True,
-            mint_open=True,
-            contract_uri="test-uri",
-            mint_fee_recipient=account.address,
-        )
-        return tx_data["nft_contract"]
-
     def test_mint_register_attach_terms(
         self, story_client: StoryClient, nft_collection
     ):
@@ -1758,3 +1776,929 @@ class TestLinkDerivative:
         assert "tx_hash" in response
         assert isinstance(response["tx_hash"], str)
         assert len(response["tx_hash"]) > 0
+
+
+class TestBatchRegisterIpAssetsWithOptimizedWorkflows:
+    def test_batch_register_ip_assets_with_optimized_workflows_with_register_registration_request(
+        self,
+        story_client: StoryClient,
+        nft_collection,
+    ):
+        """Test batch register IP assets with optimized workflows."""
+        token_id_1 = get_token_id(MockERC721, story_client.web3, story_client.account)
+        token_id_2 = get_token_id(MockERC721, story_client.web3, story_client.account)
+        token_id_3 = get_token_id(MockERC721, story_client.web3, story_client.account)
+        token_id_4 = get_token_id(MockERC721, story_client.web3, story_client.account)
+        token_id_5 = get_token_id(MockERC721, story_client.web3, story_client.account)
+        parent_ip_and_license_terms_1 = create_parent_ip_and_license_terms(
+            story_client, nft_collection, account
+        )
+        parent_ip_and_license_terms_2 = create_parent_ip_and_license_terms(
+            story_client, nft_collection, account
+        )
+        requests = [
+            # LicenseAttachmentWorkflowsClient
+            RegisterRegistrationRequest(
+                nft_contract=MockERC721,
+                token_id=token_id_1,
+                ip_metadata=COMMON_IP_METADATA,
+                deadline=100000,
+                license_terms_data=[
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.commercial_use(
+                            default_minting_fee=1,
+                            currency=MockERC20,
+                            royalty_policy=NativeRoyaltyPolicy.LAP,
+                        ),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=1,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=50,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    )
+                ],
+            ),
+            # RoyaltyTokenDistributionWorkflowsClient
+            RegisterRegistrationRequest(
+                nft_contract=MockERC721,
+                token_id=token_id_2,
+                license_terms_data=[
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.non_commercial_social_remixing(),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=0,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=0,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    ),
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.commercial_use(
+                            default_minting_fee=10,
+                            currency=MockERC20,
+                            royalty_policy=NativeRoyaltyPolicy.LAP,
+                        ),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=10,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=50,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    ),
+                ],
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=50.0),
+                    RoyaltyShareInput(recipient=account_2.address, percentage=50.0),
+                ],
+            ),
+            # DerivativeWorkflowsClient
+            RegisterRegistrationRequest(
+                nft_contract=MockERC721,
+                token_id=token_id_3,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[parent_ip_and_license_terms_1["parent_ip_id"]],
+                    license_terms_ids=[
+                        parent_ip_and_license_terms_1["license_terms_id"]
+                    ],
+                ),
+            ),
+            # RoyaltyTokenDistributionWorkflowsClient
+            RegisterRegistrationRequest(
+                nft_contract=MockERC721,
+                token_id=token_id_4,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[parent_ip_and_license_terms_2["parent_ip_id"]],
+                    license_terms_ids=[
+                        parent_ip_and_license_terms_2["license_terms_id"]
+                    ],
+                ),
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=60.0),
+                    RoyaltyShareInput(recipient=account_2.address, percentage=40.0),
+                ],
+            ),
+            # RoyaltyTokenDistributionWorkflowsClient
+            RegisterRegistrationRequest(
+                nft_contract=MockERC721,
+                token_id=token_id_5,
+                ip_metadata=COMMON_IP_METADATA,
+                deadline=100000,
+                license_terms_data=[
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.commercial_use(
+                            default_minting_fee=10,
+                            currency=MockERC20,
+                            royalty_policy=NativeRoyaltyPolicy.LAP,
+                        ),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=10,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=50,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    )
+                ],
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=50.0),
+                    RoyaltyShareInput(recipient=account_2.address, percentage=50.0),
+                ],
+            ),
+        ]
+        # Enhanced: Thoroughly verify transaction aggregation, registration output,
+        # and cross-check the actual on-chain registered asset state with expectations.
+        #
+        # Expectations:
+        # - 3 total blockchain transactions (aggregated by workflow):
+        #   1. LicenseAttachmentWorkflowsClient: attaches license terms (1 tx) +1 license terms id
+        #   2. RoyaltyTokenDistributionWorkflowsClient: batch of 3, merged to 1 tx (with vault creation)
+        #        2.1: 2 license terms id
+        #        2.2: 0 license terms id
+        #        2.3: 1 license terms id
+        #   3. DerivativeWorkflowsClient: creates derivatives (1 tx)
+        # - Only 1 distribute_royalty_tokens_tx_hash, even for multiple assets with royalty shares.
+        response = story_client.IPAsset.batch_ip_asset_with_optimized_workflows(
+            requests=requests,
+        )
+        # Assert batch-level structure and invariants
+        assert isinstance(response, dict)
+        assert "registration_results" in response
+        assert "distribute_royalty_tokens_tx_hashes" in response
+        registration_results = response["registration_results"]
+        assert registration_results[0]["tx_hash"] is not None
+        assert len(registration_results[0]["registered_ips"]) == 1
+        assert (
+            len(registration_results[0]["registered_ips"][0]["license_terms_ids"]) == 1
+        )
+        assert len(registration_results[0]["ip_royalty_vaults"]) == 0
+
+        assert registration_results[1]["tx_hash"] is not None
+        assert len(registration_results[1]["registered_ips"]) == 3
+        assert (
+            len(registration_results[1]["registered_ips"][0]["license_terms_ids"]) == 2
+        )
+        assert (
+            len(registration_results[1]["registered_ips"][1]["license_terms_ids"]) == 0
+        )
+        assert (
+            len(registration_results[1]["registered_ips"][2]["license_terms_ids"]) == 1
+        )
+        assert len(registration_results[1]["ip_royalty_vaults"]) == 3
+
+        assert registration_results[2]["tx_hash"] is not None
+        assert len(registration_results[2]["registered_ips"]) == 1
+        assert (
+            len(registration_results[2]["registered_ips"][0]["license_terms_ids"]) == 0
+        )
+        assert len(registration_results[2]["ip_royalty_vaults"]) == 0
+
+    def test_batch_register_ip_assets_with_optimized_workflows_with_mint_and_register_ip_request(
+        self,
+        story_client: StoryClient,
+        public_nft_collection,
+        private_nft_collection,
+    ):
+        """Test batch register IP assets with optimized workflows with mint and register IP request."""
+        parent_ip_and_license_terms_1 = create_parent_ip_and_license_terms(
+            story_client, public_nft_collection, account
+        )
+        parent_ip_and_license_terms_2 = create_parent_ip_and_license_terms(
+            story_client, private_nft_collection, account
+        )
+        requests = [
+            MintAndRegisterRequest(
+                spg_nft_contract=public_nft_collection,
+                recipient=account.address,
+                allow_duplicates=True,
+                ip_metadata=COMMON_IP_METADATA,
+                license_terms_data=[
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.commercial_use(
+                            default_minting_fee=10,
+                            currency=MockERC20,
+                            royalty_policy=NativeRoyaltyPolicy.LAP,
+                        ),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=10,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=50,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    ),
+                ],
+            ),
+            MintAndRegisterRequest(
+                spg_nft_contract=public_nft_collection,
+                recipient=account.address,
+                allow_duplicates=True,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[parent_ip_and_license_terms_1["parent_ip_id"]],
+                    license_terms_ids=[
+                        parent_ip_and_license_terms_1["license_terms_id"]
+                    ],
+                ),
+            ),
+            MintAndRegisterRequest(
+                spg_nft_contract=public_nft_collection,
+                recipient=account.address,
+                allow_duplicates=True,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[parent_ip_and_license_terms_2["parent_ip_id"]],
+                    license_terms_ids=[
+                        parent_ip_and_license_terms_2["license_terms_id"]
+                    ],
+                ),
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=60.0),
+                    RoyaltyShareInput(recipient=account_2.address, percentage=40.0),
+                ],
+            ),
+            # public minting + royalty_token_distribution_workflows_client+ workflow_multicall
+            MintAndRegisterRequest(
+                spg_nft_contract=public_nft_collection,
+                license_terms_data=[
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.commercial_use(
+                            default_minting_fee=0,
+                            currency=MockERC20,
+                            royalty_policy=NativeRoyaltyPolicy.LAP,
+                        ),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=0,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=50,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    ),
+                ],
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=50.0),
+                    RoyaltyShareInput(recipient=account_2.address, percentage=50.0),
+                ],
+            ),
+            # private minting + license_attachment_workflows_client
+            MintAndRegisterRequest(
+                spg_nft_contract=private_nft_collection,
+                allow_duplicates=True,
+                license_terms_data=[
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.commercial_use(
+                            default_minting_fee=10,
+                            currency=MockERC20,
+                            royalty_policy=NativeRoyaltyPolicy.LAP,
+                        ),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=10,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=50,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    ),
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.non_commercial_social_remixing(),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=0,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=0,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    ),
+                ],
+            ),
+            # private minting + royalty_token_distribution_workflows_client
+            MintAndRegisterRequest(
+                spg_nft_contract=private_nft_collection,
+                license_terms_data=[
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.commercial_use(
+                            default_minting_fee=20,
+                            currency=MockERC20,
+                            royalty_policy=NativeRoyaltyPolicy.LAP,
+                        ),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=20,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=50,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    ),
+                ],
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=50.0),
+                    RoyaltyShareInput(recipient=account_2.address, percentage=50.0),
+                ],
+            ),
+            # # private minting + royalty_token_distribution_workflows_client
+            MintAndRegisterRequest(
+                spg_nft_contract=private_nft_collection,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[parent_ip_and_license_terms_1["parent_ip_id"]],
+                    license_terms_ids=[
+                        parent_ip_and_license_terms_1["license_terms_id"]
+                    ],
+                ),
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=50.0),
+                    RoyaltyShareInput(recipient=account_2.address, percentage=50.0),
+                ],
+            ),
+            # private minting + derivative_workflows_client
+            MintAndRegisterRequest(
+                spg_nft_contract=private_nft_collection,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[parent_ip_and_license_terms_2["parent_ip_id"]],
+                    license_terms_ids=[
+                        parent_ip_and_license_terms_2["license_terms_id"]
+                    ],
+                ),
+            ),
+        ]
+        # Enhanced: Thoroughly verify transaction aggregation, registration output,
+        # and cross-check the actual on-chain registered asset state with expectations.
+        #
+        # Enhanced verification of batch registration logic and on-chain state:
+        #
+        # Expectations:
+        # - 4 total blockchain transactions:
+        #   1. Multicall3: 3 ip_ids
+        #        1.1: 1 license_terms_id
+        #   2. royalty_token_distribution_workflows_client: 3 ip_ids
+        #        2.1: 1 license_terms_id
+        #        2.2: 1 license_terms_id
+        #        2.3:
+        #   3. license_attachment_workflows_client 1 ip_id
+        #        2.1: 2 license_terms_id
+        #   4. derivative_workflows_client 1 ip_id
+        #
+        # --- Enhanced assertions and on-chain checks follow below ---
+        response = story_client.IPAsset.batch_ip_asset_with_optimized_workflows(
+            requests=requests,
+        )
+        assert isinstance(response, dict)
+        assert "registration_results" in response
+        assert "distribute_royalty_tokens_tx_hashes" in response
+
+        registration_results = response["registration_results"]
+        assert registration_results[0]["tx_hash"] is not None
+        assert len(registration_results[0]["registered_ips"]) == 3
+        assert (
+            len(registration_results[0]["registered_ips"][0]["license_terms_ids"]) == 1
+        )
+        assert (
+            len(registration_results[0]["registered_ips"][1]["license_terms_ids"]) == 0
+        )
+        assert (
+            len(registration_results[0]["registered_ips"][2]["license_terms_ids"]) == 0
+        )
+
+        assert len(registration_results[1]["registered_ips"]) == 3
+        assert (
+            len(registration_results[1]["registered_ips"][0]["license_terms_ids"]) == 1
+        )
+        assert (
+            len(registration_results[1]["registered_ips"][1]["license_terms_ids"]) == 1
+        )
+        assert (
+            len(registration_results[1]["registered_ips"][2]["license_terms_ids"]) == 0
+        )
+
+        assert len(registration_results[2]["registered_ips"]) == 1
+        assert (
+            len(registration_results[2]["registered_ips"][0]["license_terms_ids"]) == 2
+        )
+
+        assert len(registration_results[3]["registered_ips"]) == 1
+        assert (
+            len(registration_results[3]["registered_ips"][0]["license_terms_ids"]) == 0
+        )
+
+        assert len(response["distribute_royalty_tokens_tx_hashes"]) == 0
+
+    def test_batch_register_ip_assets_with_optimized_workflows_with_mint_and_register_registration_request(
+        self,
+        story_client: StoryClient,
+        public_nft_collection,
+        private_nft_collection,
+    ):
+        """Test batch register IP assets with optimized workflows with mint and register registration request."""
+        parent_ip_and_license_terms_1 = create_parent_ip_and_license_terms(
+            story_client, public_nft_collection, account
+        )
+        parent_ip_and_license_terms_2 = create_parent_ip_and_license_terms(
+            story_client, private_nft_collection, account
+        )
+        token_id_1 = get_token_id(MockERC721, story_client.web3, story_client.account)
+        token_id_2 = get_token_id(MockERC721, story_client.web3, story_client.account)
+        token_id_3 = get_token_id(MockERC721, story_client.web3, story_client.account)
+        token_id_4 = get_token_id(MockERC721, story_client.web3, story_client.account)
+        requests: list[IpRegistrationWorkflowRequest] = [
+            # derivative_workflows_client+ workflow_multicall
+            RegisterRegistrationRequest(
+                nft_contract=MockERC721,
+                token_id=token_id_1,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[parent_ip_and_license_terms_1["parent_ip_id"]],
+                    license_terms_ids=[
+                        parent_ip_and_license_terms_1["license_terms_id"]
+                    ],
+                ),
+            ),
+            # royalty_token_distribution_workflows_client+ workflow_multicall+distribute royalty tokens
+            RegisterRegistrationRequest(
+                nft_contract=MockERC721,
+                token_id=token_id_2,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[parent_ip_and_license_terms_2["parent_ip_id"]],
+                    license_terms_ids=[
+                        parent_ip_and_license_terms_2["license_terms_id"]
+                    ],
+                ),
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=50.0),
+                    RoyaltyShareInput(recipient=account_2.address, percentage=50.0),
+                ],
+            ),
+            # public minting + royalty_token_distribution_workflows_client + workflow_multicall
+            MintAndRegisterRequest(
+                spg_nft_contract=public_nft_collection,
+                recipient=account.address,
+                allow_duplicates=True,
+                ip_metadata=COMMON_IP_METADATA,
+                license_terms_data=[
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.commercial_use(
+                            default_minting_fee=10,
+                            currency=MockERC20,
+                            royalty_policy=NativeRoyaltyPolicy.LAP,
+                        ),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=10,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=50,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    ),
+                ],
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=50.0),
+                    RoyaltyShareInput(recipient=account_2.address, percentage=50.0),
+                ],
+            ),
+            # multicall3
+            MintAndRegisterRequest(
+                spg_nft_contract=public_nft_collection,
+                recipient=account.address,
+                allow_duplicates=True,
+                ip_metadata=COMMON_IP_METADATA,
+                license_terms_data=[
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.non_commercial_social_remixing(),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=0,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=0,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    ),
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.commercial_use(
+                            default_minting_fee=10,
+                            currency=MockERC20,
+                            royalty_policy=NativeRoyaltyPolicy.LAP,
+                        ),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=10,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=50,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    ),
+                ],
+            ),
+            # royalty_token_distribution_workflows_client+ workflow_multicall
+            MintAndRegisterRequest(
+                spg_nft_contract=private_nft_collection,
+                recipient=account.address,
+                allow_duplicates=True,
+                ip_metadata=COMMON_IP_METADATA,
+                license_terms_data=[
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.commercial_use(
+                            default_minting_fee=30,
+                            currency=MockERC20,
+                            royalty_policy=NativeRoyaltyPolicy.LAP,
+                        ),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=30,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=50,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    ),
+                ],
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=50.0),
+                    RoyaltyShareInput(recipient=account_2.address, percentage=50.0),
+                ],
+            ),
+            # public minting + multicall3
+            MintAndRegisterRequest(
+                spg_nft_contract=public_nft_collection,
+                recipient=account.address,
+                allow_duplicates=True,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[parent_ip_and_license_terms_1["parent_ip_id"]],
+                    license_terms_ids=[
+                        parent_ip_and_license_terms_1["license_terms_id"]
+                    ],
+                ),
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=50.0),
+                    RoyaltyShareInput(recipient=account_2.address, percentage=50.0),
+                ],
+            ),
+            # private minting + royalty_token_distribution_workflows_client + workflow_multicall
+            MintAndRegisterRequest(
+                spg_nft_contract=private_nft_collection,
+                recipient=account.address,
+                allow_duplicates=True,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[parent_ip_and_license_terms_2["parent_ip_id"]],
+                    license_terms_ids=[
+                        parent_ip_and_license_terms_2["license_terms_id"]
+                    ],
+                ),
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=50.0),
+                    RoyaltyShareInput(recipient=account_2.address, percentage=50.0),
+                ],
+            ),
+            # derivative_workflows_client+ workflow_multicall
+            RegisterRegistrationRequest(
+                nft_contract=MockERC721,
+                token_id=token_id_3,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[parent_ip_and_license_terms_1["parent_ip_id"]],
+                    license_terms_ids=[
+                        parent_ip_and_license_terms_1["license_terms_id"]
+                    ],
+                ),
+            ),
+            # royalty_token_distribution_workflows_client+ workflow_multicall+distribute royalty tokens
+            RegisterRegistrationRequest(
+                nft_contract=MockERC721,
+                token_id=token_id_4,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[parent_ip_and_license_terms_2["parent_ip_id"]],
+                    license_terms_ids=[
+                        parent_ip_and_license_terms_2["license_terms_id"]
+                    ],
+                ),
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=50.0),
+                    RoyaltyShareInput(recipient=account_2.address, percentage=50.0),
+                ],
+            ),
+        ]
+
+        # Enhanced: Thoroughly verify transaction aggregation, registration output,
+        # and cross-check the actual on-chain registered asset state with expectations.
+        #
+        # Enhanced verification of batch registration logic and on-chain state:
+        #
+        # Expectations:
+        # - 3 total blockchain transactions:
+        #   1. derivative_workflows_client: 2 ip_ids
+        #   2. royalty_token_distribution_workflows_client: 5 ip_ids+ 2 royalty vaults
+        #        2.1: distribute royalty tokens
+        #        2.2: 1 license_terms_id
+        #        2.3: 1 license_terms_id
+        #        2.4:
+        #        2.5: distribute royalty tokens
+        #   3. multicall3 2 ip_ids
+        #        2.1: 2 license_terms_id
+        #
+        response = story_client.IPAsset.batch_ip_asset_with_optimized_workflows(
+            requests=requests,
+        )
+
+        assert isinstance(response, dict)
+        assert "registration_results" in response
+        assert "distribute_royalty_tokens_tx_hashes" in response
+
+        registration_results = response["registration_results"]
+        assert registration_results[0]["tx_hash"] is not None
+        assert len(registration_results[0]["registered_ips"]) == 2
+        assert (
+            len(registration_results[0]["registered_ips"][0]["license_terms_ids"]) == 0
+        )
+        assert (
+            len(registration_results[0]["registered_ips"][1]["license_terms_ids"]) == 0
+        )
+
+        assert registration_results[1]["tx_hash"] is not None
+        assert len(registration_results[1]["registered_ips"]) == 5
+        assert (
+            len(registration_results[1]["registered_ips"][0]["license_terms_ids"]) == 0
+        )
+        assert (
+            len(registration_results[1]["registered_ips"][1]["license_terms_ids"]) == 1
+        )
+        assert (
+            len(registration_results[1]["registered_ips"][2]["license_terms_ids"]) == 1
+        )
+        assert (
+            len(registration_results[1]["registered_ips"][3]["license_terms_ids"]) == 0
+        )
+        assert (
+            len(registration_results[1]["registered_ips"][4]["license_terms_ids"]) == 0
+        )
+
+        assert len(registration_results[1]["ip_royalty_vaults"]) == 2
+
+        assert registration_results[2]["tx_hash"] is not None
+        assert len(registration_results[2]["registered_ips"]) == 2
+        assert (
+            len(registration_results[2]["registered_ips"][0]["license_terms_ids"]) == 2
+        )
+        assert (
+            len(registration_results[2]["registered_ips"][1]["license_terms_ids"]) == 0
+        )
+
+        assert len(response["distribute_royalty_tokens_tx_hashes"]) == 1
+
+    def test_batch_register_ip_assets_with_optimized_workflows_without_multicall(
+        self,
+        story_client: StoryClient,
+        public_nft_collection,
+        private_nft_collection,
+    ):
+        """Test batch register IP assets with optimized workflows without using multicall3."""
+        # Create parent IP assets for derivative tests
+        parent_ip_and_license_terms_1 = create_parent_ip_and_license_terms(
+            story_client, public_nft_collection, account
+        )
+        parent_ip_and_license_terms_2 = create_parent_ip_and_license_terms(
+            story_client, private_nft_collection, account
+        )
+
+        # Create token IDs for RegisterRegistrationRequest
+        token_id_1 = get_token_id(MockERC721, story_client.web3, story_client.account)
+        token_id_2 = get_token_id(MockERC721, story_client.web3, story_client.account)
+        token_id_3 = get_token_id(MockERC721, story_client.web3, story_client.account)
+
+        requests: list[IpRegistrationWorkflowRequest] = [
+            # MintAndRegisterRequest with license terms data - LicenseAttachmentWorkflows
+            MintAndRegisterRequest(
+                spg_nft_contract=public_nft_collection,
+                recipient=account.address,
+                allow_duplicates=True,
+                ip_metadata=COMMON_IP_METADATA,
+                license_terms_data=[
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.commercial_use(
+                            default_minting_fee=10,
+                            currency=MockERC20,
+                            royalty_policy=NativeRoyaltyPolicy.LAP,
+                        ),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=10,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=50,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    ),
+                ],
+            ),
+            # MintAndRegisterRequest with derivative data - DerivativeWorkflows
+            MintAndRegisterRequest(
+                spg_nft_contract=public_nft_collection,
+                recipient=account.address,
+                allow_duplicates=True,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[parent_ip_and_license_terms_1["parent_ip_id"]],
+                    license_terms_ids=[
+                        parent_ip_and_license_terms_1["license_terms_id"]
+                    ],
+                ),
+            ),
+            # MintAndRegisterRequest with license terms data + royalty shares - RoyaltyTokenDistributionWorkflows
+            MintAndRegisterRequest(
+                spg_nft_contract=public_nft_collection,
+                recipient=account.address,
+                allow_duplicates=True,
+                license_terms_data=[
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.commercial_use(
+                            default_minting_fee=20,
+                            currency=MockERC20,
+                            royalty_policy=NativeRoyaltyPolicy.LAP,
+                        ),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=20,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=50,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    ),
+                ],
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=70.0),
+                    RoyaltyShareInput(recipient=account_2.address, percentage=30.0),
+                ],
+            ),
+            # MintAndRegisterRequest with derivative data + royalty shares - RoyaltyTokenDistributionWorkflows
+            MintAndRegisterRequest(
+                spg_nft_contract=public_nft_collection,
+                recipient=account.address,
+                allow_duplicates=True,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[parent_ip_and_license_terms_2["parent_ip_id"]],
+                    license_terms_ids=[
+                        parent_ip_and_license_terms_2["license_terms_id"]
+                    ],
+                ),
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=60.0),
+                    RoyaltyShareInput(recipient=account_2.address, percentage=40.0),
+                ],
+            ),
+            # RegisterRegistrationRequest with license terms data - LicenseAttachmentWorkflows
+            RegisterRegistrationRequest(
+                nft_contract=MockERC721,
+                token_id=token_id_1,
+                ip_metadata=COMMON_IP_METADATA,
+                deadline=100000,
+                license_terms_data=[
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.non_commercial_social_remixing(),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=0,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=0,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    ),
+                ],
+            ),
+            # RegisterRegistrationRequest with derivative data - DerivativeWorkflows
+            RegisterRegistrationRequest(
+                nft_contract=MockERC721,
+                token_id=token_id_2,
+                deriv_data=DerivativeDataInput(
+                    parent_ip_ids=[parent_ip_and_license_terms_1["parent_ip_id"]],
+                    license_terms_ids=[
+                        parent_ip_and_license_terms_1["license_terms_id"]
+                    ],
+                ),
+            ),
+            # RegisterRegistrationRequest with license terms data + royalty shares - RoyaltyTokenDistributionWorkflows
+            RegisterRegistrationRequest(
+                nft_contract=MockERC721,
+                token_id=token_id_3,
+                license_terms_data=[
+                    LicenseTermsDataInput(
+                        terms=PILFlavor.commercial_use(
+                            default_minting_fee=50,
+                            currency=MockERC20,
+                            royalty_policy=NativeRoyaltyPolicy.LAP,
+                        ),
+                        licensing_config=LicensingConfig(
+                            is_set=True,
+                            minting_fee=50,
+                            licensing_hook=ZERO_ADDRESS,
+                            hook_data=ZERO_HASH,
+                            commercial_rev_share=50,
+                            disabled=False,
+                            expect_minimum_group_reward_share=0,
+                            expect_group_reward_pool=ZERO_ADDRESS,
+                        ),
+                    ),
+                ],
+                royalty_shares=[
+                    RoyaltyShareInput(recipient=account.address, percentage=50.0),
+                    RoyaltyShareInput(recipient=account_2.address, percentage=50.0),
+                ],
+            ),
+        ]
+
+        # Test batch register IP assets with optimized workflows without using multicall3.
+        # Expectations:
+        # - 3 total blockchain transactions:
+        #   1. LicenseAttachmentWorkflows: 2 ip_ids
+        #        1.1: 1 license_terms_id
+        #        1.2: 1 license_terms_id
+        #   2. DerivativeWorkflows: 2 ip_ids
+        #   3. RoyaltyTokenDistributionWorkflows: 3 ip_ids + 1 royalty vaults
+        #        3.1: 1 license_terms_id
+        #        3.2:
+        #        3.3: 1 license_terms_id+distribute royalty tokens
+        response = story_client.IPAsset.batch_ip_asset_with_optimized_workflows(
+            requests=requests,
+            is_use_multicall=False,
+        )
+        # Verify response structure
+        assert isinstance(response, dict)
+        assert "registration_results" in response
+        assert "distribute_royalty_tokens_tx_hashes" in response
+
+        registration_results = response["registration_results"]
+        assert len(registration_results) == 3
+        assert registration_results[0]["tx_hash"] is not None
+        assert len(registration_results[0]["registered_ips"]) == 2
+        assert (
+            len(registration_results[0]["registered_ips"][0]["license_terms_ids"]) == 1
+        )
+        assert (
+            len(registration_results[0]["registered_ips"][1]["license_terms_ids"]) == 1
+        )
+        assert len(registration_results[0]["ip_royalty_vaults"]) == 0
+
+        assert registration_results[1]["tx_hash"] is not None
+        assert len(registration_results[1]["registered_ips"]) == 2
+        assert (
+            len(registration_results[1]["registered_ips"][0]["license_terms_ids"]) == 0
+        )
+        assert (
+            len(registration_results[1]["registered_ips"][1]["license_terms_ids"]) == 0
+        )
+        assert len(registration_results[1]["ip_royalty_vaults"]) == 0
+
+        assert registration_results[2]["tx_hash"] is not None
+        assert len(registration_results[2]["registered_ips"]) == 3
+        assert (
+            len(registration_results[2]["registered_ips"][0]["license_terms_ids"]) == 1
+        )
+        assert (
+            len(registration_results[2]["registered_ips"][1]["license_terms_ids"]) == 0
+        )
+        assert (
+            len(registration_results[2]["registered_ips"][2]["license_terms_ids"]) == 1
+        )
+        assert len(registration_results[2]["ip_royalty_vaults"]) == 1
+
+        assert len(response["distribute_royalty_tokens_tx_hashes"]) == 1

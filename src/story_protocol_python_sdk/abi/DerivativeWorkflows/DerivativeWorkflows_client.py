@@ -101,6 +101,12 @@ class DerivativeWorkflowsClient:
             ).build_transaction(tx_params)
         )
 
+    def multicall(self, data):
+        return self.contract.functions.multicall(data).transact()
+
+    def build_multicall_transaction(self, data, tx_params):
+        return self.contract.functions.multicall(data).build_transaction(tx_params)
+
     def registerIpAndMakeDerivative(
         self, nftContract, tokenId, derivData, ipMetadata, sigMetadataAndRegister
     ):

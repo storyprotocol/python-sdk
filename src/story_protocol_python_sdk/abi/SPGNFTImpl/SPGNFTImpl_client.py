@@ -19,3 +19,6 @@ class SPGNFTImplClient:
 
     def mintFeeToken(self):
         return self.contract.functions.mintFeeToken().call()
+
+    def publicMinting(self):
+        return self.contract.functions.publicMinting().call()

@@ -1,6 +1,6 @@
 """Module for handling IP Account operations and transactions."""
 
-from dataclasses import asdict, is_dataclass, replace
+from collections.abc import Sequence
 from typing import cast
 
 from ens.ens import Address, HexStr
@@ -21,9 +21,6 @@ from story_protocol_python_sdk.abi.IPAccountImpl.IPAccountImpl_client import (
 )
 from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import (
     IPAssetRegistryClient,
-)
-from story_protocol_python_sdk.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client import (
-    IpRoyaltyVaultImplClient,
 )
 from story_protocol_python_sdk.abi.LicenseAttachmentWorkflows.LicenseAttachmentWorkflows_client import (
     LicenseAttachmentWorkflowsClient,
@@ -58,22 +55,32 @@ from story_protocol_python_sdk.types.common import AccessPermission
 from story_protocol_python_sdk.types.resource.IPAsset import (
     BatchMintAndRegisterIPInput,
     BatchMintAndRegisterIPResponse,
+    BatchRegisterIpAssetsWithOptimizedWorkflowsResponse,
+    BatchRegistrationResult,
+    IpRegistrationWorkflowRequest,
     LicenseTermsDataInput,
     LinkDerivativeResponse,
+    MintAndRegisterRequest,
     MintedNFT,
     MintNFT,
     RegisterAndAttachAndDistributeRoyaltyTokensResponse,
     RegisterDerivativeIPAndAttachAndDistributeRoyaltyTokensResponse,
     RegisterDerivativeIpAssetResponse,
     RegisteredIP,
+    RegisteredIPWithLicenseTermsIds,
     RegisterIpAssetResponse,
     RegisterPILTermsAndAttachResponse,
+    RegisterRegistrationRequest,
     RegistrationResponse,
     RegistrationWithRoyaltyVaultAndLicenseTermsResponse,
     RegistrationWithRoyaltyVaultResponse,
 )
-from story_protocol_python_sdk.types.resource.License import LicenseTermsInput
 from story_protocol_python_sdk.types.resource.Royalty import RoyaltyShareInput
+from story_protocol_python_sdk.types.utils import (
+    AggregatedRequestData,
+    ExtraData,
+    TransformedRegistrationRequest,
+)
 from story_protocol_python_sdk.utils.constants import (
     DEADLINE,
     MAX_ROYALTY_TOKEN,
@@ -91,14 +98,18 @@ from story_protocol_python_sdk.utils.ip_metadata import (
     get_ip_metadata_dict,
     is_initial_ip_metadata,
 )
-from story_protocol_python_sdk.utils.licensing_config_data import LicensingConfigData
-from story_protocol_python_sdk.utils.pil_flavor import PILFlavor
-from story_protocol_python_sdk.utils.royalty import get_royalty_shares
+from story_protocol_python_sdk.utils.registration.registration_utils import (
+    prepare_distribute_royalty_tokens_requests,
+    send_transactions,
+)
+from story_protocol_python_sdk.utils.registration.transform_registration_request import (
+    transform_distribute_royalty_tokens_request,
+    transform_request,
+    validate_license_terms_data,
+)
 from story_protocol_python_sdk.utils.sign import Sign
 from story_protocol_python_sdk.utils.transaction_utils import build_and_send_transaction
-from story_protocol_python_sdk.utils.util import convert_dict_keys_to_camel_case
 from story_protocol_python_sdk.utils.validation import (
-    get_revenue_share,
     validate_address,
     validate_max_rts,
 )
@@ -275,9 +286,7 @@ class IPAsset:
                     tx_options=tx_options,
                 )
 
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
 
             return {"tx_hash": response["tx_hash"], "ip_id": ip_registered["ip_id"]}
 
@@ -531,47 +540,36 @@ class IPAsset:
         :return dict: Dictionary with tx hash, IP ID, token ID, and license term IDs.
         """
         try:
-            if not self.web3.is_address(spg_nft_contract):
-                raise ValueError(
-                    f"The NFT contract address {spg_nft_contract} is not valid."
-                )
-            license_terms = self._validate_license_terms_data(terms)
-            metadata = {
-                "ipMetadataURI": "",
-                "ipMetadataHash": ZERO_HASH,
-                "nftMetadataURI": "",
-                "nftMetadataHash": ZERO_HASH,
-            }
 
-            if ip_metadata:
-                metadata.update(
-                    {
-                        "ipMetadataURI": ip_metadata.get("ip_metadata_uri", ""),
-                        "ipMetadataHash": ip_metadata.get(
-                            "ip_metadata_hash", ZERO_HASH
-                        ),
-                        "nftMetadataURI": ip_metadata.get("nft_metadata_uri", ""),
-                        "nftMetadataHash": ip_metadata.get(
-                            "nft_metadata_hash", ZERO_HASH
-                        ),
-                    }
-                )
-
+            transformed_request = transform_request(
+                request=MintAndRegisterRequest(
+                    spg_nft_contract=spg_nft_contract,
+                    recipient=recipient,
+                    ip_metadata=(
+                        IPMetadataInput(
+                            ip_metadata_uri=ip_metadata["ip_metadata_uri"],
+                            ip_metadata_hash=ip_metadata["ip_metadata_hash"],
+                            nft_metadata_uri=ip_metadata["nft_metadata_uri"],
+                            nft_metadata_hash=ip_metadata["nft_metadata_hash"],
+                        )
+                        if ip_metadata
+                        else None
+                    ),
+                    license_terms_data=terms,
+                    allow_duplicates=allow_duplicates,
+                ),
+                web3=self.web3,
+                account=self.account,
+                chain_id=self.chain_id,
+            )
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.license_attachment_workflows_client.build_mintAndRegisterIpAndAttachPILTerms_transaction,
-                spg_nft_contract,
-                self._validate_recipient(recipient),
-                metadata,
-                license_terms,
-                allow_duplicates,
+                *transformed_request.validated_request,
                 tx_options=tx_options,
             )
-
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
             license_terms_ids = self._parse_tx_license_terms_attached_event(
                 response["tx_receipt"]
             )
@@ -645,9 +643,7 @@ class IPAsset:
                 tx_options=tx_options,
             )
 
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
 
             return {
                 "tx_hash": response["tx_hash"],
@@ -694,7 +690,7 @@ class IPAsset:
                 encoded_data,
                 tx_options=tx_options,
             )
-            registered_ips = self._parse_tx_ip_registered_event(response["tx_receipt"])
+            registered_ips = self._get_registered_ips(response["tx_receipt"])
             return BatchMintAndRegisterIPResponse(
                 tx_hash=response["tx_hash"],
                 registered_ips=registered_ips,
@@ -756,84 +752,39 @@ class IPAsset:
         :return dict: A dictionary with the transaction hash, license terms ID, and IP ID.
         """
         try:
-            ip_id = self._get_ip_id(nft_contract, token_id)
-            if self._is_registered(ip_id):
-                raise ValueError(
-                    f"The NFT with id {token_id} is already registered as IP."
-                )
-            license_terms = self._validate_license_terms_data(license_terms_data)
-            calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
+            if not license_terms_data:
+                raise ValueError("License terms data must be provided.")
 
-            # Get permission signature for all required permissions
-            signature_response = self.sign_util.get_permission_signature(
-                ip_id=ip_id,
-                deadline=calculated_deadline,
-                state=self.web3.to_bytes(hexstr=HexStr(ZERO_HASH)),
-                permissions=[
-                    {
-                        "ipId": ip_id,
-                        "signer": self.license_attachment_workflows_client.contract.address,
-                        "to": self.core_metadata_module_client.contract.address,
-                        "permission": AccessPermission.ALLOW,
-                        "func": "setAll(address,string,bytes32,bytes32)",
-                    },
-                    {
-                        "ipId": ip_id,
-                        "signer": self.license_attachment_workflows_client.contract.address,
-                        "to": self.licensing_module_client.contract.address,
-                        "permission": AccessPermission.ALLOW,
-                        "func": "attachLicenseTerms(address,address,uint256)",
-                    },
-                    {
-                        "ipId": ip_id,
-                        "signer": self.license_attachment_workflows_client.contract.address,
-                        "to": self.licensing_module_client.contract.address,
-                        "permission": AccessPermission.ALLOW,
-                        "func": "setLicensingConfig(address,address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))",
-                    },
-                ],
+            transformed_request = transform_request(
+                request=RegisterRegistrationRequest(
+                    nft_contract=nft_contract,
+                    token_id=token_id,
+                    license_terms_data=license_terms_data,
+                    ip_metadata=(
+                        IPMetadataInput(
+                            ip_metadata_uri=ip_metadata["ip_metadata_uri"],
+                            ip_metadata_hash=ip_metadata["ip_metadata_hash"],
+                            nft_metadata_uri=ip_metadata["nft_metadata_uri"],
+                            nft_metadata_hash=ip_metadata["nft_metadata_hash"],
+                        )
+                        if ip_metadata
+                        else None
+                    ),
+                    deadline=deadline,
+                ),
+                web3=self.web3,
+                account=self.account,
+                chain_id=self.chain_id,
             )
-
-            metadata = {
-                "ipMetadataURI": "",
-                "ipMetadataHash": ZERO_HASH,
-                "nftMetadataURI": "",
-                "nftMetadataHash": ZERO_HASH,
-            }
-
-            if ip_metadata:
-                metadata.update(
-                    {
-                        "ipMetadataURI": ip_metadata.get("ip_metadata_uri", ""),
-                        "ipMetadataHash": ip_metadata.get(
-                            "ip_metadata_hash", ZERO_HASH
-                        ),
-                        "nftMetadataURI": ip_metadata.get("nft_metadata_uri", ""),
-                        "nftMetadataHash": ip_metadata.get(
-                            "nft_metadata_hash", ZERO_HASH
-                        ),
-                    }
-                )
-
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.license_attachment_workflows_client.build_registerIpAndAttachPILTerms_transaction,
-                nft_contract,
-                token_id,
-                metadata,
-                license_terms,
-                {
-                    "signer": self.web3.to_checksum_address(self.account.address),
-                    "deadline": calculated_deadline,
-                    "signature": signature_response["signature"],
-                },
+                *transformed_request.validated_request,
                 tx_options=tx_options,
             )
 
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
             license_terms_ids = self._parse_tx_license_terms_attached_event(
                 response["tx_receipt"]
             )
@@ -871,61 +822,27 @@ class IPAsset:
         :return dict: Dictionary with the tx hash and IP ID.
         """
         try:
-            ip_id = self._get_ip_id(nft_contract, token_id)
-            if self._is_registered(ip_id):
-                raise ValueError(
-                    f"The NFT with id {token_id} is already registered as IP."
-                )
-            validated_deriv_data = DerivativeData.from_input(
-                web3=self.web3, input_data=deriv_data
-            ).get_validated_data()
-            calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
-            sig_register_signature = self.sign_util.get_permission_signature(
-                ip_id=ip_id,
-                deadline=calculated_deadline,
-                state=Web3.to_bytes(0),
-                permissions=[
-                    {
-                        "ipId": ip_id,
-                        "signer": self.derivative_workflows_client.contract.address,
-                        "to": self.core_metadata_module_client.contract.address,
-                        "permission": AccessPermission.ALLOW,
-                        "func": get_function_signature(
-                            self.core_metadata_module_client.contract.abi,
-                            "setAll",
-                        ),
-                    },
-                    {
-                        "ipId": ip_id,
-                        "signer": self.derivative_workflows_client.contract.address,
-                        "to": self.licensing_module_client.contract.address,
-                        "permission": AccessPermission.ALLOW,
-                        "func": get_function_signature(
-                            self.licensing_module_client.contract.abi,
-                            "registerDerivative",
-                        ),
-                    },
-                ],
+            transformed_request = transform_request(
+                request=RegisterRegistrationRequest(
+                    nft_contract=nft_contract,
+                    token_id=token_id,
+                    deriv_data=deriv_data,
+                    ip_metadata=metadata,
+                    deadline=deadline,
+                ),
+                web3=self.web3,
+                account=self.account,
+                chain_id=self.chain_id,
             )
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.derivative_workflows_client.build_registerIpAndMakeDerivative_transaction,
-                nft_contract,
-                token_id,
-                validated_deriv_data,
-                IPMetadata.from_input(metadata).get_validated_data(),
-                {
-                    "signer": self.account.address,
-                    "deadline": calculated_deadline,
-                    "signature": sig_register_signature["signature"],
-                },
+                *transformed_request.validated_request,
                 tx_options=tx_options,
             )
 
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
 
             return {
                 "tx_hash": response["tx_hash"],
@@ -959,23 +876,26 @@ class IPAsset:
         """
 
         try:
-            validated_deriv_data = DerivativeData.from_input(
-                web3=self.web3, input_data=deriv_data
-            ).get_validated_data()
+            transformed_request = transform_request(
+                request=MintAndRegisterRequest(
+                    spg_nft_contract=spg_nft_contract,
+                    recipient=recipient,
+                    ip_metadata=ip_metadata,
+                    deriv_data=deriv_data,
+                    allow_duplicates=allow_duplicates,
+                ),
+                web3=self.web3,
+                account=self.account,
+                chain_id=self.chain_id,
+            )
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.derivative_workflows_client.build_mintAndRegisterIpAndMakeDerivative_transaction,
-                validate_address(spg_nft_contract),
-                validated_deriv_data,
-                IPMetadata.from_input(ip_metadata).get_validated_data(),
-                self._validate_recipient(recipient),
-                allow_duplicates,
+                *transformed_request.validated_request,
                 tx_options=tx_options,
             )
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
             return RegistrationResponse(
                 tx_hash=response["tx_hash"],
                 ip_id=ip_registered["ip_id"],
@@ -1025,9 +945,7 @@ class IPAsset:
                 allow_duplicates,
                 tx_options=tx_options,
             )
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
             return RegistrationResponse(
                 tx_hash=response["tx_hash"],
                 ip_id=ip_registered["ip_id"],
@@ -1123,9 +1041,7 @@ class IPAsset:
                 tx_options=tx_options,
             )
 
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
 
             return RegistrationResponse(
                 tx_hash=response["tx_hash"],
@@ -1162,31 +1078,37 @@ class IPAsset:
         :return `RegistrationWithRoyaltyVaultAndLicenseTermsResponse`: Response with tx hash, IP ID, token ID, license terms IDs, and royalty vault address.
         """
         try:
-            validated_royalty_shares = get_royalty_shares(royalty_shares)[
-                "royalty_shares"
-            ]
-            license_terms = self._validate_license_terms_data(license_terms_data)
+            if not license_terms_data:
+                raise ValueError("License terms data must be provided.")
+            if not royalty_shares:
+                raise ValueError("Royalty shares must be provided.")
 
+            transformed_request = transform_request(
+                request=MintAndRegisterRequest(
+                    spg_nft_contract=spg_nft_contract,
+                    license_terms_data=license_terms_data,
+                    royalty_shares=royalty_shares,
+                    ip_metadata=ip_metadata,
+                    recipient=recipient,
+                    allow_duplicates=allow_duplicates,
+                ),
+                web3=self.web3,
+                account=self.account,
+                chain_id=self.chain_id,
+            )
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.royalty_token_distribution_workflows_client.build_mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens_transaction,
-                validate_address(spg_nft_contract),
-                self._validate_recipient(recipient),
-                IPMetadata.from_input(ip_metadata).get_validated_data(),
-                license_terms,
-                validated_royalty_shares,
-                allow_duplicates,
+                *transformed_request.validated_request,
                 tx_options=tx_options,
             )
 
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
             license_terms_ids = self._parse_tx_license_terms_attached_event(
                 response["tx_receipt"]
             )
-            royalty_vault = self.get_royalty_vault_address_by_ip_id(
+            royalty_vault = self._get_royalty_vault_address_by_ip_id(
                 response["tx_receipt"],
                 ip_registered["ip_id"],
             )
@@ -1227,28 +1149,32 @@ class IPAsset:
          :return `RegistrationWithRoyaltyVaultResponse`: Dictionary with the tx hash, IP ID and token ID, royalty vault.
         """
         try:
-            validated_royalty_shares_obj = get_royalty_shares(royalty_shares)
-            validated_deriv_data = DerivativeData.from_input(
-                web3=self.web3, input_data=deriv_data
-            ).get_validated_data()
+            if not royalty_shares:
+                raise ValueError("Royalty shares must be provided.")
 
+            transformed_request = transform_request(
+                request=MintAndRegisterRequest(
+                    spg_nft_contract=spg_nft_contract,
+                    deriv_data=deriv_data,
+                    royalty_shares=royalty_shares,
+                    ip_metadata=ip_metadata,
+                    recipient=recipient,
+                    allow_duplicates=allow_duplicates,
+                ),
+                web3=self.web3,
+                account=self.account,
+                chain_id=self.chain_id,
+            )
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.royalty_token_distribution_workflows_client.build_mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens_transaction,
-                validate_address(spg_nft_contract),
-                self._validate_recipient(recipient),
-                IPMetadata.from_input(ip_metadata).get_validated_data(),
-                validated_deriv_data,
-                validated_royalty_shares_obj["royalty_shares"],
-                allow_duplicates,
+                *transformed_request.validated_request,
                 tx_options=tx_options,
             )
 
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
-            royalty_vault = self.get_royalty_vault_address_by_ip_id(
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
+            royalty_vault = self._get_royalty_vault_address_by_ip_id(
                 response["tx_receipt"],
                 ip_registered["ip_id"],
             )
@@ -1288,73 +1214,45 @@ class IPAsset:
          :return `RegisterDerivativeIPAndAttachAndDistributeRoyaltyTokensResponse`: Response with tx hash, IP ID, token ID, royalty vault address, and distribute royalty tokens transaction hash.
         """
         try:
-            nft_contract = validate_address(nft_contract)
-            ip_id = self._get_ip_id(nft_contract, token_id)
-            if self._is_registered(ip_id):
-                raise ValueError(
-                    f"The NFT with id {token_id} is already registered as IP."
-                )
+            if not royalty_shares:
+                raise ValueError("Royalty shares must be provided.")
 
-            validated_deriv_data = DerivativeData.from_input(
-                web3=self.web3, input_data=deriv_data
-            ).get_validated_data()
-            calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
-            royalty_shares_obj = get_royalty_shares(royalty_shares)
-
-            signature_response = self.sign_util.get_permission_signature(
-                ip_id=ip_id,
-                deadline=calculated_deadline,
-                state=self.web3.to_bytes(hexstr=HexStr(ZERO_HASH)),
-                permissions=[
-                    {
-                        "ipId": ip_id,
-                        "signer": self.royalty_token_distribution_workflows_client.contract.address,
-                        "to": self.core_metadata_module_client.contract.address,
-                        "permission": AccessPermission.ALLOW,
-                        "func": "setAll(address,string,bytes32,bytes32)",
-                    },
-                    {
-                        "ipId": ip_id,
-                        "signer": self.royalty_token_distribution_workflows_client.contract.address,
-                        "to": self.licensing_module_client.contract.address,
-                        "permission": AccessPermission.ALLOW,
-                        "func": "registerDerivative(address,address[],uint256[],address,bytes,uint256,uint32,uint32)",
-                    },
-                ],
+            transformed_request = transform_request(
+                request=RegisterRegistrationRequest(
+                    nft_contract=nft_contract,
+                    token_id=token_id,
+                    deriv_data=deriv_data,
+                    royalty_shares=royalty_shares,
+                    ip_metadata=ip_metadata,
+                    deadline=deadline,
+                ),
+                web3=self.web3,
+                account=self.account,
+                chain_id=self.chain_id,
             )
 
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.royalty_token_distribution_workflows_client.build_registerIpAndMakeDerivativeAndDeployRoyaltyVault_transaction,
-                nft_contract,
-                token_id,
-                IPMetadata.from_input(ip_metadata).get_validated_data(),
-                validated_deriv_data,
-                {
-                    "signer": self.web3.to_checksum_address(self.account.address),
-                    "deadline": calculated_deadline,
-                    "signature": signature_response["signature"],
-                },
+                *transformed_request.validated_request,
                 tx_options=tx_options,
             )
 
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
-            royalty_vault = self.get_royalty_vault_address_by_ip_id(
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
+            royalty_vault = self._get_royalty_vault_address_by_ip_id(
                 response["tx_receipt"],
                 ip_registered["ip_id"],
             )
-
+            extra_data = cast(ExtraData, transformed_request.extra_data)
             # Distribute royalty tokens
             distribute_tx_hash = self._distribute_royalty_tokens(
                 ip_id=ip_registered["ip_id"],
-                royalty_shares=royalty_shares_obj["royalty_shares"],
+                royalty_shares=extra_data["royalty_shares"],
                 royalty_vault=royalty_vault,
-                total_amount=royalty_shares_obj["total_amount"],
+                total_amount=extra_data["royalty_total_amount"],
                 tx_options=tx_options,
-                deadline=calculated_deadline,
+                deadline=extra_data["deadline"],
             )
 
             return RegisterDerivativeIPAndAttachAndDistributeRoyaltyTokensResponse(
@@ -1395,79 +1293,48 @@ class IPAsset:
          :return `RegisterAndAttachAndDistributeRoyaltyTokensResponse`: Response with tx hash, license terms IDs, royalty vault address, and distribute royalty tokens transaction hash.
         """
         try:
-            nft_contract = validate_address(nft_contract)
-            ip_id = self._get_ip_id(nft_contract, token_id)
-            if self._is_registered(ip_id):
-                raise ValueError(
-                    f"The NFT with id {token_id} is already registered as IP."
-                )
+            if not royalty_shares:
+                raise ValueError("Royalty shares must be provided.")
+            if not license_terms_data:
+                raise ValueError("License terms data must be provided.")
 
-            license_terms = self._validate_license_terms_data(license_terms_data)
-            calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
-            royalty_shares_obj = get_royalty_shares(royalty_shares)
-            signature_response = self.sign_util.get_permission_signature(
-                ip_id=ip_id,
-                deadline=calculated_deadline,
-                state=self.web3.to_bytes(hexstr=HexStr(ZERO_HASH)),
-                permissions=[
-                    {
-                        "ipId": ip_id,
-                        "signer": self.royalty_token_distribution_workflows_client.contract.address,
-                        "to": self.core_metadata_module_client.contract.address,
-                        "permission": AccessPermission.ALLOW,
-                        "func": "setAll(address,string,bytes32,bytes32)",
-                    },
-                    {
-                        "ipId": ip_id,
-                        "signer": self.royalty_token_distribution_workflows_client.contract.address,
-                        "to": self.licensing_module_client.contract.address,
-                        "permission": AccessPermission.ALLOW,
-                        "func": "attachLicenseTerms(address,address,uint256)",
-                    },
-                    {
-                        "ipId": ip_id,
-                        "signer": self.royalty_token_distribution_workflows_client.contract.address,
-                        "to": self.licensing_module_client.contract.address,
-                        "permission": AccessPermission.ALLOW,
-                        "func": "setLicensingConfig(address,address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))",
-                    },
-                ],
+            transformed_request = transform_request(
+                request=RegisterRegistrationRequest(
+                    nft_contract=nft_contract,
+                    token_id=token_id,
+                    license_terms_data=license_terms_data,
+                    royalty_shares=royalty_shares,
+                    ip_metadata=ip_metadata,
+                ),
+                web3=self.web3,
+                account=self.account,
+                chain_id=self.chain_id,
             )
 
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.royalty_token_distribution_workflows_client.build_registerIpAndAttachPILTermsAndDeployRoyaltyVault_transaction,
-                nft_contract,
-                token_id,
-                IPMetadata.from_input(ip_metadata).get_validated_data(),
-                license_terms,
-                {
-                    "signer": self.web3.to_checksum_address(self.account.address),
-                    "deadline": calculated_deadline,
-                    "signature": signature_response["signature"],
-                },
+                *transformed_request.validated_request,
                 tx_options=tx_options,
             )
-            ip_registered = self._parse_tx_ip_registered_event(response["tx_receipt"])[
-                0
-            ]
+            ip_registered = self._get_registered_ips(response["tx_receipt"])[0]
             license_terms_ids = self._parse_tx_license_terms_attached_event(
                 response["tx_receipt"]
             )
-            royalty_vault = self.get_royalty_vault_address_by_ip_id(
+            royalty_vault = self._get_royalty_vault_address_by_ip_id(
                 response["tx_receipt"],
                 ip_registered["ip_id"],
             )
-
+            extra_data = cast(ExtraData, transformed_request.extra_data)
             # Distribute royalty tokens
             distribute_tx_hash = self._distribute_royalty_tokens(
                 ip_id=ip_registered["ip_id"],
-                royalty_shares=royalty_shares_obj["royalty_shares"],
+                royalty_shares=extra_data["royalty_shares"],
                 royalty_vault=royalty_vault,
-                total_amount=royalty_shares_obj["total_amount"],
+                total_amount=extra_data["royalty_total_amount"],
                 tx_options=tx_options,
-                deadline=calculated_deadline,
+                deadline=extra_data["deadline"],
             )
 
             return RegisterAndAttachAndDistributeRoyaltyTokensResponse(
@@ -1505,7 +1372,7 @@ class IPAsset:
             calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
             ip_account_impl_client = IPAccountImplClient(self.web3, ip_id)
             state = ip_account_impl_client.state()
-            license_terms = self._validate_license_terms_data(license_terms_data)
+            license_terms = validate_license_terms_data(license_terms_data, self.web3)
             signature_response = self.sign_util.get_permission_signature(
                 ip_id=ip_id,
                 deadline=calculated_deadline,
@@ -1624,6 +1491,208 @@ class IPAsset:
 
         except Exception as e:
             raise ValueError(f"Failed to register IP Asset: {str(e)}") from e
+
+    def batch_ip_asset_with_optimized_workflows(
+        self,
+        requests: Sequence[IpRegistrationWorkflowRequest],
+        is_use_multicall: bool = True,
+        tx_options: dict | None = None,
+    ) -> BatchRegisterIpAssetsWithOptimizedWorkflowsResponse:
+        """
+        Batch register IP assets with optimized workflow selection.
+
+        This method automatically selects the appropriate workflow based on input parameters and provides
+        intelligent transaction batching for better gas efficiency.
+
+        **Request Types:**
+
+        - `MintAndRegisterRequest`: Mint a new NFT from an SPG NFT contract and register as IP ID
+        - `RegisterRegistrationRequest`: Register an already minted NFT as IP ID
+
+        **Workflow Selection:**
+
+        For `MintAndRegisterRequest` (supports Multicall3 when `spg_nft_contract` has public minting enabled):
+        1. `license_terms_data` + `royalty_shares` → `mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens` (contract method)
+           - Note: Always uses workflow's native multicall due to `msg.sender` limitation
+        2. `license_terms_data` → `mintAndRegisterIpAndAttachPILTerms`
+        3. `deriv_data` + `royalty_shares` → `mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens` (contract method)
+        4. `deriv_data` → `mintAndRegisterIpAndMakeDerivative` (contract method)
+        5. Other combinations throw `Invalid mint and register request type` error
+
+        For `RegisterRegistrationRequest` (always uses workflow's native multicall due to signature requirements):
+        1. `license_terms_data` + `royalty_shares` → `registerIpAndAttachPILTermsAndDeployRoyaltyVault` (contract method)
+        2. `deriv_data` + `royalty_shares` → `registerIpAndMakeDerivativeAndDeployRoyaltyVault` (contract method)
+        3. `license_terms_data` → `registerIpAndAttachPILTerms` (contract method)
+        4. `deriv_data` → `registerIpAndMakeDerivative` (contract method)
+        5. Other combinations throw `Invalid register request type` error
+
+        **Multicall Strategy:**
+
+        - Multicall3: Used when `is_use_multicall=True`, request is `MintAndRegisterRequest`, `spg_nft_contract` has public minting except for `mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens`.
+        - Workflow's native multicall: Used for all other cases
+        - Requests using the same workflow are aggregated into a single multicall transaction
+
+        **Special Handling:**
+
+        Royalty token distribution is handled in a separate transaction because it requires a signature with the
+        royalty vault address, which is only available after initial registration completes.
+
+        :param requests `Sequence[IpRegistrationWorkflowRequest]`: The list of registration requests.
+        :param is_use_multicall `bool`: [Optional] Whether to use multicall3 for eligible workflows. (default: True)
+        :param tx_options `dict`: [Optional] Transaction options.
+        :return `BatchRegisterIpAssetsWithOptimizedWorkflowsResponse`: Response with registration results and distribute royalty tokens transaction hashes.
+
+        **Example:**
+
+        ```python
+        response = client.ip_asset.batch_ip_asset_with_optimized_workflows(
+            requests=[
+                MintAndRegisterRequest(
+                    spg_nft_contract="0x...",
+                    license_terms_data=[...],
+                    ip_metadata={...}
+                ),
+                RegisterRegistrationRequest(
+                    nft_contract="0x...",
+                    token_id=123,
+                    deriv_data={...},
+                )
+            ],
+        )
+        ```
+        """
+        try:
+            # Transform registration requests and send them into transaction
+            transformed_requests: list[TransformedRegistrationRequest] = [
+                transform_request(request, self.web3, self.account, self.chain_id)
+                for request in requests
+            ]
+            tx_responses, aggregated_requests = send_transactions(
+                transformed_requests=transformed_requests,
+                is_use_multicall3=is_use_multicall,
+                web3=self.web3,
+                account=self.account,
+                tx_options=tx_options,
+            )
+            # Extract royalty distribution requests from workflow responses that contain royalty shares
+            # We need to handle `distributeRoyaltyTokens` separately because this method requires
+            # a signature with the royalty vault address, which is only available after the initial registration
+            distribute_royalty_tokens_requests: list[TransformedRegistrationRequest] = (
+                []
+            )
+            royalty_distribution_requests: list[ExtraData] = [
+                tr.extra_data
+                for tr in transformed_requests
+                if tr.extra_data is not None
+                and tr.extra_data.get("royalty_shares", None) is not None
+            ]
+            # Parse the response of the registration responses and collect distribute royalty tokens requests
+            response_list: list[BatchRegistrationResult] = []
+            for tx_response in tx_responses:
+                ip_registered_events = self._parse_tx_ip_registered_event(
+                    tx_response["tx_receipt"]
+                )
+                ip_royalty_vault_deployed_events = (
+                    self._parse_all_ip_royalty_vault_deployed_events(
+                        tx_response["tx_receipt"]
+                    )
+                )
+                transferred_distribute_royalty_tokens_requests, matching_vaults = (
+                    prepare_distribute_royalty_tokens_requests(
+                        extra_data_list=royalty_distribution_requests,
+                        web3=self.web3,
+                        ip_registered=ip_registered_events,
+                        royalty_vault=ip_royalty_vault_deployed_events,
+                        account=self.account,
+                        chain_id=self.chain_id,
+                    )
+                )
+
+                distribute_royalty_tokens_requests.extend(
+                    transferred_distribute_royalty_tokens_requests
+                )
+                response_list.append(
+                    BatchRegistrationResult(
+                        tx_hash=tx_response["tx_hash"],
+                        registered_ips=[
+                            RegisteredIPWithLicenseTermsIds(
+                                ip_id=log["ipId"],
+                                token_id=log["tokenId"],
+                                license_terms_ids=[],
+                            )
+                            for log in ip_registered_events
+                        ],
+                        ip_royalty_vaults=matching_vaults,
+                    )
+                )
+            # Send distribute royalty tokens requests
+            distribute_royalty_tokens_tx_responses, _ = (
+                send_transactions(
+                    transformed_requests=distribute_royalty_tokens_requests,
+                    is_use_multicall3=is_use_multicall,
+                    web3=self.web3,
+                    account=self.account,
+                    tx_options=tx_options,
+                )
+                if distribute_royalty_tokens_requests
+                else ([], {})
+            )
+
+            # Populate the license terms ids into the response
+            response_list_with_license_terms_ids = (
+                self._populate_license_terms_ids_into_response(
+                    response_list, aggregated_requests
+                )
+            )
+
+            return BatchRegisterIpAssetsWithOptimizedWorkflowsResponse(
+                registration_results=response_list_with_license_terms_ids,
+                distribute_royalty_tokens_tx_hashes=[
+                    response["tx_hash"]
+                    for response in distribute_royalty_tokens_tx_responses
+                ],
+            )
+        except ValueError as e:
+            raise ValueError(
+                f"Failed to batch register IP assets with optimized workflows: {str(e)}"
+            ) from e
+
+    def _populate_license_terms_ids_into_response(
+        self,
+        registration_results: list[BatchRegistrationResult],
+        aggregated_requests: dict[Address, AggregatedRequestData],
+    ) -> list[BatchRegistrationResult]:
+        # Flatten all license_terms_data from aggregated requests into a single list
+        all_license_terms_data = [
+            license_terms_data
+            for value in aggregated_requests.values()
+            for license_terms_data in value["license_terms_data"]
+        ]
+
+        # Create an iterator to automatically consume license_terms_data
+        license_terms_iter = iter(all_license_terms_data)
+
+        # Populate license terms ids for each registered IP
+        for registration_result in registration_results:
+            for registered_ip in registration_result["registered_ips"]:
+                license_terms_data = next(license_terms_iter, None)
+                if license_terms_data:
+                    registered_ip["license_terms_ids"] = self._get_license_terms_id(
+                        license_terms_data
+                    )
+
+        return registration_results
+
+    def _get_license_terms_id(self, license_terms_data: list[dict]) -> list[int]:
+        """
+        Get the license terms ids from the license terms data.
+        :param license_terms_data: The license terms data.
+        :return: The license terms ids.
+        """
+        return [
+            self.pi_license_template_client.getLicenseTermsId(license_terms["terms"])
+            for license_terms in license_terms_data
+        ]
 
     def _handle_minted_nft_registration(
         self,
@@ -1967,75 +2036,6 @@ class IPAsset:
             token_id=token_result["token_id"],
         )
 
-    def _validate_derivative_data(self, derivative_data: dict) -> dict:
-        """
-        Validates the derivative data and returns processed internal data.
-
-        :param derivative_data dict: The derivative data to validate
-        :return dict: The processed internal derivative data
-        :raises ValueError: If validation fails
-        """
-        internal_data = {
-            "childIpId": derivative_data["childIpId"],
-            "parentIpIds": derivative_data["parentIpIds"],
-            "licenseTermsIds": [int(id) for id in derivative_data["licenseTermsIds"]],
-            "licenseTemplate": (
-                derivative_data.get("licenseTemplate")
-                if derivative_data.get("licenseTemplate") is not None
-                else self.pi_license_template_client.contract.address
-            ),
-            "royaltyContext": ZERO_ADDRESS,
-            "maxMintingFee": int(derivative_data.get("maxMintingFee", 0)),
-            "maxRts": int(derivative_data.get("maxRts", 0)),
-            "maxRevenueShare": int(derivative_data.get("maxRevenueShare", 0)),
-        }
-
-        if not internal_data["parentIpIds"]:
-            raise ValueError("The parent IP IDs must be provided.")
-
-        if not internal_data["licenseTermsIds"]:
-            raise ValueError("The license terms IDs must be provided.")
-
-        if len(internal_data["parentIpIds"]) != len(internal_data["licenseTermsIds"]):
-            raise ValueError(
-                "The number of parent IP IDs must match the number of license terms IDs."
-            )
-
-        if internal_data["maxMintingFee"] < 0:
-            raise ValueError("The maxMintingFee must be greater than 0.")
-
-        validate_max_rts(internal_data["maxRts"])
-
-        for parent_id, terms_id in zip(
-            internal_data["parentIpIds"], internal_data["licenseTermsIds"]
-        ):
-            if not self._is_registered(parent_id):
-                raise ValueError(
-                    f"The parent IP with id {parent_id} is not registered."
-                )
-
-            if not self.license_registry_client.hasIpAttachedLicenseTerms(
-                parent_id, internal_data["licenseTemplate"], terms_id
-            ):
-                raise ValueError(
-                    f"License terms id {terms_id} must be attached to the parent ipId "
-                    f"{parent_id} before registering derivative."
-                )
-
-            royalty_percent = self.license_registry_client.getRoyaltyPercent(
-                parent_id, internal_data["licenseTemplate"], terms_id
-            )
-            if (
-                internal_data["maxRevenueShare"] != 0
-                and royalty_percent > internal_data["maxRevenueShare"]
-            ):
-                raise ValueError(
-                    f"The royalty percent for the parent IP with id {parent_id} is greater "
-                    f"than the maximum revenue share {internal_data['maxRevenueShare']}."
-                )
-
-        return internal_data
-
     def _validate_license_token_ids(self, license_token_ids: list) -> list:
         """
         Validates the license token IDs and checks ownership.
@@ -2084,36 +2084,21 @@ class IPAsset:
         :return HexStr: The transaction hash.
         """
         try:
-            ip_account_impl_client = IPAccountImplClient(self.web3, ip_id)
-            state = ip_account_impl_client.state()
-
-            ip_royalty_vault_client = IpRoyaltyVaultImplClient(self.web3, royalty_vault)
-
-            signature_response = self.sign_util.get_signature(
-                state=state,
-                to=royalty_vault,
-                encode_data=ip_royalty_vault_client.contract.encode_abi(
-                    abi_element_identifier="approve",
-                    args=[
-                        self.royalty_token_distribution_workflows_client.contract.address,
-                        total_amount,
-                    ],
-                ),
-                verifying_contract=ip_id,
+            transformed_request = transform_distribute_royalty_tokens_request(
+                ip_id=ip_id,
+                royalty_vault=royalty_vault,
                 deadline=deadline,
+                web3=self.web3,
+                account=self.account,
+                chain_id=self.chain_id,
+                royalty_shares=royalty_shares,
+                total_amount=total_amount,
             )
-
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
                 self.royalty_token_distribution_workflows_client.build_distributeRoyaltyTokens_transaction,
-                ip_id,
-                royalty_shares,
-                {
-                    "signer": self.web3.to_checksum_address(self.account.address),
-                    "deadline": deadline,
-                    "signature": signature_response["signature"],
-                },
+                *transformed_request.validated_request,
                 tx_options=tx_options,
             )
 
@@ -2143,29 +2128,39 @@ class IPAsset:
         """
         return self.ip_asset_registry_client.isRegistered(ip_id)
 
-    def _parse_tx_ip_registered_event(self, tx_receipt: dict) -> list[RegisteredIP]:
+    def _parse_tx_ip_registered_event(
+        self, tx_receipt: dict
+    ) -> list[dict[str, int | Address]]:
         """
         Parse the IPRegistered event from a transaction receipt.
 
         :param tx_receipt dict: The transaction receipt.
-        :return int: The IP ID and token ID from the event, or None.
+        :return list[dict[str, int | Address]]: The list of IPRegistered event logs.
         """
         event_signature = self.web3.keccak(
             text="IPRegistered(address,uint256,address,uint256,string,string,uint256)"
         ).hex()
-        registered_ips: list[RegisteredIP] = []
-        for log in tx_receipt["logs"]:
-            if log["topics"][0].hex() == event_signature:
-                event_result = self.ip_asset_registry_client.contract.events.IPRegistered.process_log(
-                    log
-                )
-                registered_ips.append(
-                    RegisteredIP(
-                        ip_id=event_result["args"]["ipId"],
-                        token_id=event_result["args"]["tokenId"],
-                    )
-                )
-        return registered_ips
+        registered_ip_logs: list[dict[str, int | Address]] = [
+            self.ip_asset_registry_client.contract.events.IPRegistered.process_log(log)[
+                "args"
+            ]
+            for log in tx_receipt["logs"]
+            if log["topics"][0].hex() == event_signature
+        ]
+        return registered_ip_logs
+
+    def _get_registered_ips(self, tx_receipt: dict) -> list[RegisteredIP]:
+        """
+        Get the registered IPs from a transaction receipt.
+
+        :param tx_receipt dict: The transaction receipt.
+        :return list[RegisteredIP]: The list of registered IPs.
+        """
+        registered_ip_logs = self._parse_tx_ip_registered_event(tx_receipt)
+        return [
+            RegisteredIP(ip_id=log["ipId"], token_id=log["tokenId"])
+            for log in registered_ip_logs
+        ]
 
     def _parse_tx_license_term_attached_event(self, tx_receipt: dict) -> int | None:
         """
@@ -2205,8 +2200,8 @@ class IPAsset:
 
         return license_terms_ids
 
-    def get_royalty_vault_address_by_ip_id(
-        self, tx_receipt: dict, ipId: Address
+    def _get_royalty_vault_address_by_ip_id(
+        self, tx_receipt: dict, ip_id: Address
     ) -> Address:
         """
         Parse the IpRoyaltyVaultDeployed event from a transaction receipt and return the royalty vault address for a given IP ID.
@@ -2215,16 +2210,17 @@ class IPAsset:
         :param ipId Address: The IP ID.
         :return Address: The royalty vault address.
         """
-        event_signature = Web3.keccak(
-            text="IpRoyaltyVaultDeployed(address,address)"
-        ).hex()
-        for log in tx_receipt["logs"]:
-            if log["topics"][0].hex() == event_signature:
-                event_result = self.royalty_module_client.contract.events.IpRoyaltyVaultDeployed.process_log(
-                    log
-                )
-                if event_result["args"]["ipId"] == ipId:
-                    return event_result["args"]["ipRoyaltyVault"]
+        ip_royalty_vault_deployed_events = (
+            self._parse_all_ip_royalty_vault_deployed_events(tx_receipt)
+        )
+        return next(
+            (
+                event["ipRoyaltyVault"]
+                for event in ip_royalty_vault_deployed_events
+                if event["ipId"] == ip_id
+            ),
+            None,
+        )
 
     def _validate_recipient(self, recipient: Address | None) -> Address:
         """
@@ -2237,54 +2233,24 @@ class IPAsset:
             return self.account.address
         return validate_address(recipient)
 
-    def _validate_license_terms_data(
-        self, license_terms_data: list[LicenseTermsDataInput] | list[dict]
-    ) -> list:
+    def _parse_all_ip_royalty_vault_deployed_events(
+        self, tx_receipt: dict
+    ) -> list[dict[str, Address]]:
         """
-        Validate the license terms data.
+        Parse all IpRoyaltyVaultDeployed events from a transaction receipt.
 
-        :param license_terms_data `list[LicenseTermsDataInput]` or `list[dict]`: The license terms data to validate.
-        :return list: The validated license terms data.
+        :param tx_receipt dict: The transaction receipt.
+        :return list[dict[str, Address]]: List of dicts with keys "ipId" and "ipRoyaltyVault".
         """
-
-        validated_license_terms_data = []
-        for term in license_terms_data:
-            if is_dataclass(term):
-                terms_dict = asdict(term.terms)
-                licensing_config_dict = term.licensing_config
-            else:
-                terms_dict = term["terms"]
-                licensing_config_dict = term["licensing_config"]
-
-            license_terms = PILFlavor.validate_license_terms(
-                LicenseTermsInput(**terms_dict)
-            )
-            license_terms = replace(
-                license_terms,
-                commercial_rev_share=get_revenue_share(
-                    license_terms.commercial_rev_share
-                ),
-            )
-            if license_terms.royalty_policy != ZERO_ADDRESS:
-                is_whitelisted = self.royalty_module_client.isWhitelistedRoyaltyPolicy(
-                    license_terms.royalty_policy
-                )
-                if not is_whitelisted:
-                    raise ValueError("The royalty_policy is not whitelisted.")
-
-            if license_terms.currency != ZERO_ADDRESS:
-                is_whitelisted = self.royalty_module_client.isWhitelistedRoyaltyToken(
-                    license_terms.currency
-                )
-                if not is_whitelisted:
-                    raise ValueError("The currency is not whitelisted.")
-
-            validated_license_terms_data.append(
-                {
-                    "terms": convert_dict_keys_to_camel_case(asdict(license_terms)),
-                    "licensingConfig": LicensingConfigData.validate_license_config(
-                        self.module_registry_client, licensing_config_dict
-                    ),
-                }
-            )
-        return validated_license_terms_data
+        event_signature = Web3.keccak(
+            text="IpRoyaltyVaultDeployed(address,address)"
+        ).hex()
+        return [
+            self.royalty_module_client.contract.events.IpRoyaltyVaultDeployed.process_log(
+                log
+            )[
+                "args"
+            ]
+            for log in tx_receipt["logs"]
+            if log["topics"][0].hex() == event_signature
+        ]

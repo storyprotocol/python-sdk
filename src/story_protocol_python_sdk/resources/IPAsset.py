@@ -199,7 +199,7 @@ class IPAsset:
         """
         try:
             ip_id = self._get_ip_id(nft_contract, token_id)
-            if self._is_registered(ip_id):
+            if self.is_registered(ip_id):
                 return {"tx_hash": None, "ip_id": ip_id}
 
             req_object: dict = {
@@ -316,7 +316,7 @@ class IPAsset:
         :return dict: A dictionary with the transaction hash
         """
         try:
-            if not self._is_registered(child_ip_id):
+            if not self.is_registered(child_ip_id):
                 raise ValueError(
                     f"The child IP with id {child_ip_id} is not registered."
                 )
@@ -378,7 +378,7 @@ class IPAsset:
             validate_max_rts(max_rts)
 
             # Validate child IP registration
-            if not self._is_registered(child_ip_id):
+            if not self.is_registered(child_ip_id):
                 raise ValueError(
                     f"The child IP with id {child_ip_id} is not registered."
                 )
@@ -757,7 +757,7 @@ class IPAsset:
         """
         try:
             ip_id = self._get_ip_id(nft_contract, token_id)
-            if self._is_registered(ip_id):
+            if self.is_registered(ip_id):
                 raise ValueError(
                     f"The NFT with id {token_id} is already registered as IP."
                 )
@@ -872,7 +872,7 @@ class IPAsset:
         """
         try:
             ip_id = self._get_ip_id(nft_contract, token_id)
-            if self._is_registered(ip_id):
+            if self.is_registered(ip_id):
                 raise ValueError(
                     f"The NFT with id {token_id} is already registered as IP."
                 )
@@ -1061,7 +1061,7 @@ class IPAsset:
         """
         try:
             ip_id = self._get_ip_id(nft_contract, token_id)
-            if self._is_registered(ip_id):
+            if self.is_registered(ip_id):
                 raise ValueError(
                     f"The NFT with id {token_id} is already registered as IP."
                 )
@@ -1290,7 +1290,7 @@ class IPAsset:
         try:
             nft_contract = validate_address(nft_contract)
             ip_id = self._get_ip_id(nft_contract, token_id)
-            if self._is_registered(ip_id):
+            if self.is_registered(ip_id):
                 raise ValueError(
                     f"The NFT with id {token_id} is already registered as IP."
                 )
@@ -1397,7 +1397,7 @@ class IPAsset:
         try:
             nft_contract = validate_address(nft_contract)
             ip_id = self._get_ip_id(nft_contract, token_id)
-            if self._is_registered(ip_id):
+            if self.is_registered(ip_id):
                 raise ValueError(
                     f"The NFT with id {token_id} is already registered as IP."
                 )
@@ -1500,7 +1500,7 @@ class IPAsset:
          :return RegisterPILTermsAndAttachResponse: Dictionary with the tx hash and license terms IDs.
         """
         try:
-            if not self._is_registered(ip_id):
+            if not self.is_registered(ip_id):
                 raise ValueError(f"The IP with id {ip_id} is not registered.")
             calculated_deadline = self.sign_util.get_deadline(deadline=deadline)
             ip_account_impl_client = IPAccountImplClient(self.web3, ip_id)
@@ -2009,7 +2009,7 @@ class IPAsset:
         for parent_id, terms_id in zip(
             internal_data["parentIpIds"], internal_data["licenseTermsIds"]
         ):
-            if not self._is_registered(parent_id):
+            if not self.is_registered(parent_id):
                 raise ValueError(
                     f"The parent IP with id {parent_id} is not registered."
                 )
@@ -2134,13 +2134,21 @@ class IPAsset:
             self.chain_id, token_contract, token_id
         )
 
-    def _is_registered(self, ip_id: str) -> bool:
+    def is_registered(self, ip_id: str) -> bool:
         """
         Check if an IP is registered.
 
         :param ip_id str: The IP ID to check.
         :return bool: True if registered, False otherwise.
+        :raises ValueError: If the ip_id is empty or has invalid format.
         """
+        if not ip_id:
+            raise ValueError("is_registered: ip_id is required")
+
+        if not self.web3.is_address(ip_id):
+            raise ValueError(f"is_registered: invalid IP ID address format: {ip_id}")
+
+        ip_id = self.web3.to_checksum_address(ip_id)
         return self.ip_asset_registry_client.isRegistered(ip_id)
 
     def _parse_tx_ip_registered_event(self, tx_receipt: dict) -> list[RegisteredIP]:

@@ -156,9 +156,7 @@ class TestIPAssetRegister:
     ):
         with mock_get_ip_id(), mock_is_registered(True):
             response = ip_asset.register(ADDRESS, 3)
-            # IP_ID will be converted to checksum format in register method
-            expected_ip_id = ip_asset.web3.to_checksum_address(IP_ID)
-            assert response["ip_id"] == expected_ip_id
+            assert response["ip_id"] == IP_ID
             assert response["tx_hash"] is None
 
     def test_register_successful(

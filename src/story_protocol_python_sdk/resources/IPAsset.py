@@ -200,8 +200,6 @@ class IPAsset:
         try:
             ip_id = self._get_ip_id(nft_contract, token_id)
             if self.is_registered(ip_id):
-                # Ensure ip_id is in checksum format when returning
-                ip_id = self.web3.to_checksum_address(ip_id)
                 return {"tx_hash": None, "ip_id": ip_id}
 
             req_object: dict = {

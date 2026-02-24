@@ -2172,7 +2172,7 @@ class IPAsset:
                 )
                 registered_ips.append(
                     RegisteredIP(
-                        ip_id=event_result["args"]["ipId"],
+                        ip_id=self.web3.to_checksum_address(event_result["args"]["ipId"]),
                         token_id=event_result["args"]["tokenId"],
                     )
                 )

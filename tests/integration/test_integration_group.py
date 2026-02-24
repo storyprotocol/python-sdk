@@ -227,11 +227,17 @@ class TestCollectRoyaltyAndClaimReward:
         )
 
         # Mint license tokens to the IP id which doesn't have a royalty vault
+        # Note: Using amount=10 instead of 100 because:
+        # - mintLicenseTokens is a batch operation that mints multiple tokens in one transaction
+        # - Gas consumption increases linearly with amount (amount=1: ~1M, amount=50: ~12M, amount=100: ~24M+)
+        # - When amount >= 100, gas estimation exceeds RPC node limits (16M), causing estimate_gas to fail
+        # - RPC nodes have a gas limit cap (typically 16M-30M), and transactions exceeding this cap will fail
+        # - Using amount=10 keeps gas consumption reasonable (~2-3M) and avoids RPC node limits
         story_client.License.mint_license_tokens(
             licensor_ip_id=ip_id,
             license_template=PIL_LICENSE_TEMPLATE,
             license_terms_id=license_terms_id,
-            amount=100,
+            amount=10,  # Reduced from 100 to avoid RPC gas estimation limits
             receiver=ip_id,
             max_minting_fee=1,
             max_revenue_share=100,

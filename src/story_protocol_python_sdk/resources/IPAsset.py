@@ -2144,6 +2144,12 @@ class IPAsset:
         """
         if not ip_id:
             raise ValueError("is_registered: ip_id is required")
+        
+        # Convert to string if it's not already (e.g., bytes from contract call)
+        if isinstance(ip_id, bytes):
+            ip_id = self.web3.to_hex(ip_id)
+        elif not isinstance(ip_id, str):
+            ip_id = str(ip_id)
 
         if not self.web3.is_address(ip_id):
             raise ValueError(f"is_registered: invalid IP ID address format: {ip_id}")

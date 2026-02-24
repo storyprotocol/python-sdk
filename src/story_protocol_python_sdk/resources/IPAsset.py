@@ -2150,7 +2150,7 @@ class IPAsset:
         if not self.web3.is_address(ip_id):
             raise ValueError(f"is_registered: invalid IP ID address format: {ip_id}")
 
-        # Convert to checksum address format for consistency
+        # Convert to checksum address format (same as TypeScript SDK's validateAddress)
         ip_id = self.web3.to_checksum_address(ip_id)
         return self.ip_asset_registry_client.isRegistered(ip_id)
 

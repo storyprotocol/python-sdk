@@ -404,10 +404,6 @@ class Group:
         :return dict: A dictionary with the transaction hash and group ID.
         """
         try:
-            # Convert addresses to checksum format for consistency
-            group_pool = self.web3.to_checksum_address(group_pool)
-            ip_ids = [self.web3.to_checksum_address(ip_id) for ip_id in ip_ids]
-
             if not self.web3.is_address(group_pool):
                 raise ValueError(f'Group pool address "{group_pool}" is invalid.')
 
@@ -564,11 +560,6 @@ class Group:
             for ip_id in member_ip_ids:
                 if not self.web3.is_address(ip_id):
                     raise ValueError(f"Invalid member IP ID: {ip_id}")
-
-            # Convert addresses to checksum format for consistency
-            group_ip_id = self.web3.to_checksum_address(group_ip_id)
-            currency_token = self.web3.to_checksum_address(currency_token)
-            member_ip_ids = [self.web3.to_checksum_address(ip_id) for ip_id in member_ip_ids]
 
             claim_reward_param = {
                 "groupIpId": group_ip_id,

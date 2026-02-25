@@ -366,3 +366,133 @@ class TestCollectRoyaltyAndClaimReward:
         assert len(claimable_rewards) == 2
         assert claimable_rewards[0] == 10
         assert claimable_rewards[1] == 10
+
+
+class TestAddIpsToGroupAndRemoveIpsFromGroup:
+    """Integration tests for add_ips_to_group and remove_ips_from_group."""
+
+    def test_add_ips_to_group(
+        self, story_client: StoryClient, nft_collection: Address
+    ):
+        """Test adding IPs to an existing group."""
+        # Register two IPs with PIL terms
+        result1 = GroupTestHelper.mint_and_register_ip_asset_with_pil_terms(
+            story_client, nft_collection
+        )
+        result2 = GroupTestHelper.mint_and_register_ip_asset_with_pil_terms(
+            story_client, nft_collection
+        )
+        ip_id1 = result1["ip_id"]
+        ip_id2 = result2["ip_id"]
+        license_terms_id = result1["license_terms_id"]
+
+        # Register group with only the first IP
+        group_ip_id = GroupTestHelper.register_group_and_attach_license(
+            story_client, license_terms_id, [ip_id1]
+        )
+
+        # Add the second IP to the group
+        result = story_client.Group.add_ips_to_group(
+            group_ip_id=group_ip_id,
+            ip_ids=[ip_id2],
+        )
+
+        assert "tx_hash" in result
+        assert isinstance(result["tx_hash"], str)
+        assert len(result["tx_hash"]) > 0
+
+    def test_add_ips_to_group_with_max_reward_share(
+        self, story_client: StoryClient, nft_collection: Address
+    ):
+        """Test adding IPs to group with custom max_allowed_reward_share_percentage."""
+        result1 = GroupTestHelper.mint_and_register_ip_asset_with_pil_terms(
+            story_client, nft_collection
+        )
+        result2 = GroupTestHelper.mint_and_register_ip_asset_with_pil_terms(
+            story_client, nft_collection
+        )
+        ip_id1 = result1["ip_id"]
+        ip_id2 = result2["ip_id"]
+        license_terms_id = result1["license_terms_id"]
+
+        group_ip_id = GroupTestHelper.register_group_and_attach_license(
+            story_client, license_terms_id, [ip_id1]
+        )
+
+        result = story_client.Group.add_ips_to_group(
+            group_ip_id=group_ip_id,
+            ip_ids=[ip_id2],
+            max_allowed_reward_share_percentage=50,
+        )
+
+        assert "tx_hash" in result
+        assert isinstance(result["tx_hash"], str)
+
+    def test_remove_ips_from_group(
+        self, story_client: StoryClient, nft_collection: Address
+    ):
+        """Test removing IPs from a group."""
+        # Register two IPs with PIL terms
+        result1 = GroupTestHelper.mint_and_register_ip_asset_with_pil_terms(
+            story_client, nft_collection
+        )
+        result2 = GroupTestHelper.mint_and_register_ip_asset_with_pil_terms(
+            story_client, nft_collection
+        )
+        ip_id1 = result1["ip_id"]
+        ip_id2 = result2["ip_id"]
+        license_terms_id = result1["license_terms_id"]
+
+        # Register group with both IPs
+        group_ip_id = GroupTestHelper.register_group_and_attach_license(
+            story_client, license_terms_id, [ip_id1, ip_id2]
+        )
+
+        # Remove the second IP from the group
+        result = story_client.Group.remove_ips_from_group(
+            group_ip_id=group_ip_id,
+            ip_ids=[ip_id2],
+        )
+
+        assert "tx_hash" in result
+        assert isinstance(result["tx_hash"], str)
+        assert len(result["tx_hash"]) > 0
+
+    def test_add_then_remove_ips_from_group(
+        self, story_client: StoryClient, nft_collection: Address
+    ):
+        """Test add_ips_to_group then remove_ips_from_group in sequence."""
+        result1 = GroupTestHelper.mint_and_register_ip_asset_with_pil_terms(
+            story_client, nft_collection
+        )
+        result2 = GroupTestHelper.mint_and_register_ip_asset_with_pil_terms(
+            story_client, nft_collection
+        )
+        result3 = GroupTestHelper.mint_and_register_ip_asset_with_pil_terms(
+            story_client, nft_collection
+        )
+        ip_id1 = result1["ip_id"]
+        ip_id2 = result2["ip_id"]
+        ip_id3 = result3["ip_id"]
+        license_terms_id = result1["license_terms_id"]
+
+        # Register group with first IP only
+        group_ip_id = GroupTestHelper.register_group_and_attach_license(
+            story_client, license_terms_id, [ip_id1]
+        )
+
+        # Add ip_id2 and ip_id3
+        add_result = story_client.Group.add_ips_to_group(
+            group_ip_id=group_ip_id,
+            ip_ids=[ip_id2, ip_id3],
+        )
+        assert "tx_hash" in add_result
+        assert isinstance(add_result["tx_hash"], str)
+
+        # Remove ip_id2
+        remove_result = story_client.Group.remove_ips_from_group(
+            group_ip_id=group_ip_id,
+            ip_ids=[ip_id2],
+        )
+        assert "tx_hash" in remove_result
+        assert isinstance(remove_result["tx_hash"], str)

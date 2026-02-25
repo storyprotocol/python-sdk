@@ -424,6 +424,184 @@ class TestGroupClaimRewards:
                     )
 
 
+class TestGroupAddIpsToGroup:
+    """Test class for Group.add_ips_to_group method"""
+
+    def test_add_ips_to_group_invalid_group_ip_id(
+        self, group: Group, mock_web3_is_address
+    ):
+        """Test add_ips_to_group with invalid group IP ID."""
+        invalid_group_ip_id = "invalid_group_ip_id"
+        with mock_web3_is_address(False):
+            with pytest.raises(
+                ValueError,
+                match="Failed to add IP to group:",
+            ):
+                group.add_ips_to_group(
+                    group_ip_id=invalid_group_ip_id,
+                    ip_ids=[IP_ID],
+                )
+
+    def test_add_ips_to_group_invalid_ip_id(self, group: Group, mock_web3):
+        """Test add_ips_to_group with invalid IP ID."""
+        invalid_ip_id = "invalid_ip_id"
+        with patch.object(mock_web3, "is_address") as mock_is_address:
+            mock_is_address.side_effect = [True, False]
+            with pytest.raises(
+                ValueError,
+                match="Failed to add IP to group:",
+            ):
+                group.add_ips_to_group(
+                    group_ip_id=IP_ID,
+                    ip_ids=[invalid_ip_id],
+                )
+
+    def test_add_ips_to_group_success(
+        self,
+        group: Group,
+        mock_web3_is_address,
+    ):
+        """Test successful add_ips_to_group operation."""
+        with mock_web3_is_address():
+            with patch(
+                "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
+                return_value={"tx_hash": TX_HASH, "tx_receipt": {}},
+            ):
+                result = group.add_ips_to_group(
+                    group_ip_id=IP_ID,
+                    ip_ids=[IP_ID, ADDRESS],
+                )
+
+                assert "tx_hash" in result
+                assert result["tx_hash"] == TX_HASH
+
+    def test_add_ips_to_group_default_max_allowed_reward_share_percentage(
+        self,
+        group: Group,
+        mock_web3_is_address,
+    ):
+        """Test add_ips_to_group uses default max_allowed_reward_share_percentage 100."""
+        with mock_web3_is_address():
+            with patch(
+                "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
+                return_value={"tx_hash": TX_HASH, "tx_receipt": {}},
+            ) as mock_build:
+                group.add_ips_to_group(
+                    group_ip_id=IP_ID,
+                    ip_ids=[IP_ID],
+                )
+                # 100 -> 100 * 10**6
+                call_args = mock_build.call_args[0]
+                assert call_args[5] == 100 * 10**6
+
+    def test_add_ips_to_group_max_allowed_reward_share_percentage_zero(
+        self,
+        group: Group,
+        mock_web3_is_address,
+    ):
+        """Test add_ips_to_group with max_allowed_reward_share_percentage 0."""
+        with mock_web3_is_address():
+            with patch(
+                "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
+                return_value={"tx_hash": TX_HASH, "tx_receipt": {}},
+            ) as mock_build:
+                group.add_ips_to_group(
+                    group_ip_id=IP_ID,
+                    ip_ids=[IP_ID],
+                    max_allowed_reward_share_percentage=0,
+                )
+                call_args = mock_build.call_args[0]
+                assert call_args[5] == 0
+
+    def test_add_ips_to_group_transaction_fails(
+        self, group: Group, mock_web3_is_address
+    ):
+        """Test add_ips_to_group when transaction build/send fails."""
+        with mock_web3_is_address():
+            with patch(
+                "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
+                side_effect=Exception("Transaction build failed"),
+            ):
+                with pytest.raises(
+                    ValueError,
+                    match="Failed to add IP to group: Transaction build failed",
+                ):
+                    group.add_ips_to_group(
+                        group_ip_id=IP_ID,
+                        ip_ids=[IP_ID],
+                    )
+
+
+class TestGroupRemoveIpsFromGroup:
+    """Test class for Group.remove_ips_from_group method"""
+
+    def test_remove_ips_from_group_invalid_group_ip_id(
+        self, group: Group, mock_web3_is_address
+    ):
+        """Test remove_ips_from_group with invalid group IP ID."""
+        invalid_group_ip_id = "invalid_group_ip_id"
+        with mock_web3_is_address(False):
+            with pytest.raises(
+                ValueError,
+                match="Failed to remove IPs from group:",
+            ):
+                group.remove_ips_from_group(
+                    group_ip_id=invalid_group_ip_id,
+                    ip_ids=[IP_ID],
+                )
+
+    def test_remove_ips_from_group_invalid_ip_id(self, group: Group, mock_web3):
+        """Test remove_ips_from_group with invalid IP ID."""
+        invalid_ip_id = "invalid_ip_id"
+        with patch.object(mock_web3, "is_address") as mock_is_address:
+            mock_is_address.side_effect = [True, False]
+            with pytest.raises(
+                ValueError,
+                match="Failed to remove IPs from group:",
+            ):
+                group.remove_ips_from_group(
+                    group_ip_id=IP_ID,
+                    ip_ids=[invalid_ip_id],
+                )
+
+    def test_remove_ips_from_group_success(
+        self,
+        group: Group,
+        mock_web3_is_address,
+    ):
+        """Test successful remove_ips_from_group operation."""
+        with mock_web3_is_address():
+            with patch(
+                "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
+                return_value={"tx_hash": TX_HASH, "tx_receipt": {}},
+            ):
+                result = group.remove_ips_from_group(
+                    group_ip_id=IP_ID,
+                    ip_ids=[IP_ID, ADDRESS],
+                )
+
+                assert "tx_hash" in result
+                assert result["tx_hash"] == TX_HASH
+
+    def test_remove_ips_from_group_transaction_fails(
+        self, group: Group, mock_web3_is_address
+    ):
+        """Test remove_ips_from_group when transaction build/send fails."""
+        with mock_web3_is_address():
+            with patch(
+                "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
+                side_effect=Exception("Transaction build failed"),
+            ):
+                with pytest.raises(
+                    ValueError,
+                    match="Failed to remove IPs from group: Transaction build failed",
+                ):
+                    group.remove_ips_from_group(
+                        group_ip_id=IP_ID,
+                        ip_ids=[IP_ID],
+                    )
+
+
 class TestGroupGetClaimableReward:
     """Test class for Group.get_claimable_reward method"""
 

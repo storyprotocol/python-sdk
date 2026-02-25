@@ -453,6 +453,86 @@ class Group:
                 f"Failed to register group and attach license and add IPs: {str(e)}"
             )
 
+    def add_ips_to_group(
+        self,
+        group_ip_id: str,
+        ip_ids: list,
+        max_allowed_reward_share_percentage: int = 100,
+        tx_options: dict | None = None,
+    ) -> dict:
+        """
+        Add IPs to an existing group IP.
+
+        :param group_ip_id str: The ID of the group IP.
+        :param ip_ids list: List of IP IDs to add to the group.
+        :param max_allowed_reward_share_percentage int: [Optional] Maximum allowed reward share percentage (0-100). Default is 100.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash.
+        """
+        try:
+            if not self.web3.is_address(group_ip_id):
+                raise ValueError(f'Group IP ID "{group_ip_id}" is invalid.')
+
+            for ip_id in ip_ids:
+                if not self.web3.is_address(ip_id):
+                    raise ValueError(f'IP ID "{ip_id}" is invalid.')
+
+            max_allowed_reward_share = get_revenue_share(
+                max_allowed_reward_share_percentage,
+                type=RevShareType.MAX_ALLOWED_REWARD_SHARE,
+            )
+
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.grouping_module_client.build_addIp_transaction,
+                group_ip_id,
+                ip_ids,
+                max_allowed_reward_share,
+                tx_options=tx_options,
+            )
+
+            return {"tx_hash": response["tx_hash"]}
+
+        except Exception as e:
+            raise ValueError(f"Failed to add IP to group: {str(e)}")
+
+    def remove_ips_from_group(
+        self,
+        group_ip_id: str,
+        ip_ids: list,
+        tx_options: dict | None = None,
+    ) -> dict:
+        """
+        Remove IPs from a group IP.
+
+        :param group_ip_id str: The ID of the group IP.
+        :param ip_ids list: List of IP IDs to remove from the group.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash.
+        """
+        try:
+            if not self.web3.is_address(group_ip_id):
+                raise ValueError(f'Group IP ID "{group_ip_id}" is invalid.')
+
+            for ip_id in ip_ids:
+                if not self.web3.is_address(ip_id):
+                    raise ValueError(f'IP ID "{ip_id}" is invalid.')
+
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.grouping_module_client.build_removeIp_transaction,
+                group_ip_id,
+                ip_ids,
+                tx_options=tx_options,
+            )
+
+            return {"tx_hash": response["tx_hash"]}
+
+        except Exception as e:
+            raise ValueError(f"Failed to remove IPs from group: {str(e)}")
+
     def collect_and_distribute_group_royalties(
         self,
         group_ip_id: str,

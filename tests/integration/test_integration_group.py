@@ -250,6 +250,8 @@ class TestCollectRoyaltyAndClaimReward:
             member_ip_ids=[ip_id],
         )
 
+        print(result)
+
         assert "tx_hash" in result
         assert isinstance(result["tx_hash"], str)
         assert "claimed_rewards" in result

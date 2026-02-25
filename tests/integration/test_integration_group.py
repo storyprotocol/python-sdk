@@ -368,14 +368,18 @@ class TestCollectRoyaltyAndClaimReward:
         assert claimable_rewards[1] == 10
 
 
+def _normalize_address(web3, addr: str) -> str:
+    """Normalize address for comparison (checksum)."""
+    return web3.to_checksum_address(addr)
+
+
 class TestAddIpsToGroupAndRemoveIpsFromGroup:
-    """Integration tests for add_ips_to_group and remove_ips_from_group."""
+    """Integration tests for add_ips_to_group and remove_ips_from_group with strict on-chain verification."""
 
     def test_add_ips_to_group(
         self, story_client: StoryClient, nft_collection: Address
     ):
-        """Test adding IPs to an existing group."""
-        # Register two IPs with PIL terms
+        """Test adding IPs to an existing group; verify chain state via AddedIpToGroup event and get_claimable_reward."""
         result1 = GroupTestHelper.mint_and_register_ip_asset_with_pil_terms(
             story_client, nft_collection
         )
@@ -386,12 +390,10 @@ class TestAddIpsToGroupAndRemoveIpsFromGroup:
         ip_id2 = result2["ip_id"]
         license_terms_id = result1["license_terms_id"]
 
-        # Register group with only the first IP
         group_ip_id = GroupTestHelper.register_group_and_attach_license(
             story_client, license_terms_id, [ip_id1]
         )
 
-        # Add the second IP to the group
         result = story_client.Group.add_ips_to_group(
             group_ip_id=group_ip_id,
             ip_ids=[ip_id2],
@@ -400,11 +402,31 @@ class TestAddIpsToGroupAndRemoveIpsFromGroup:
         assert "tx_hash" in result
         assert isinstance(result["tx_hash"], str)
         assert len(result["tx_hash"]) > 0
+        # Strict: verify on-chain AddedIpToGroup event
+        assert "tx_receipt" in result, "add_ips_to_group must return tx_receipt for verification"
+        added_events = story_client.Group.get_added_ip_to_group_events(
+            result["tx_receipt"]
+        )
+        assert len(added_events) == 1
+        assert _normalize_address(story_client.web3, added_events[0]["groupId"]) == _normalize_address(
+            story_client.web3, group_ip_id
+        )
+        assert set(_normalize_address(story_client.web3, a) for a in added_events[0]["ipIds"]) == {
+            _normalize_address(story_client.web3, ip_id2)
+        }
+        # Verify new member is in group: get_claimable_reward for [ip_id1, ip_id2] should succeed
+        claimable = story_client.Group.get_claimable_reward(
+            group_ip_id=group_ip_id,
+            currency_token=MockERC20,
+            member_ip_ids=[ip_id1, ip_id2],
+        )
+        assert isinstance(claimable, list)
+        assert len(claimable) == 2
 
     def test_add_ips_to_group_with_max_reward_share(
         self, story_client: StoryClient, nft_collection: Address
     ):
-        """Test adding IPs to group with custom max_allowed_reward_share_percentage."""
+        """Test adding IPs to group with custom max_allowed_reward_share_percentage; verify chain via event."""
         result1 = GroupTestHelper.mint_and_register_ip_asset_with_pil_terms(
             story_client, nft_collection
         )
@@ -427,12 +449,22 @@ class TestAddIpsToGroupAndRemoveIpsFromGroup:
 
         assert "tx_hash" in result
         assert isinstance(result["tx_hash"], str)
+        assert "tx_receipt" in result
+        added_events = story_client.Group.get_added_ip_to_group_events(
+            result["tx_receipt"]
+        )
+        assert len(added_events) == 1
+        assert _normalize_address(story_client.web3, added_events[0]["groupId"]) == _normalize_address(
+            story_client.web3, group_ip_id
+        )
+        assert set(_normalize_address(story_client.web3, a) for a in added_events[0]["ipIds"]) == {
+            _normalize_address(story_client.web3, ip_id2)
+        }
 
     def test_remove_ips_from_group(
         self, story_client: StoryClient, nft_collection: Address
     ):
-        """Test removing IPs from a group."""
-        # Register two IPs with PIL terms
+        """Test removing IPs from a group; verify chain state via RemovedIpFromGroup event and get_claimable_reward."""
         result1 = GroupTestHelper.mint_and_register_ip_asset_with_pil_terms(
             story_client, nft_collection
         )
@@ -443,12 +475,10 @@ class TestAddIpsToGroupAndRemoveIpsFromGroup:
         ip_id2 = result2["ip_id"]
         license_terms_id = result1["license_terms_id"]
 
-        # Register group with both IPs
         group_ip_id = GroupTestHelper.register_group_and_attach_license(
             story_client, license_terms_id, [ip_id1, ip_id2]
         )
 
-        # Remove the second IP from the group
         result = story_client.Group.remove_ips_from_group(
             group_ip_id=group_ip_id,
             ip_ids=[ip_id2],
@@ -457,11 +487,30 @@ class TestAddIpsToGroupAndRemoveIpsFromGroup:
         assert "tx_hash" in result
         assert isinstance(result["tx_hash"], str)
         assert len(result["tx_hash"]) > 0
+        assert "tx_receipt" in result
+        removed_events = story_client.Group.get_removed_ip_from_group_events(
+            result["tx_receipt"]
+        )
+        assert len(removed_events) == 1
+        assert _normalize_address(story_client.web3, removed_events[0]["groupId"]) == _normalize_address(
+            story_client.web3, group_ip_id
+        )
+        assert set(_normalize_address(story_client.web3, a) for a in removed_events[0]["ipIds"]) == {
+            _normalize_address(story_client.web3, ip_id2)
+        }
+        # After remove, only ip_id1 remains; get_claimable_reward for [ip_id1] must succeed
+        claimable = story_client.Group.get_claimable_reward(
+            group_ip_id=group_ip_id,
+            currency_token=MockERC20,
+            member_ip_ids=[ip_id1],
+        )
+        assert isinstance(claimable, list)
+        assert len(claimable) == 1
 
     def test_add_then_remove_ips_from_group(
         self, story_client: StoryClient, nft_collection: Address
     ):
-        """Test add_ips_to_group then remove_ips_from_group in sequence."""
+        """Test add then remove in sequence; verify each step via on-chain events and final member list."""
         result1 = GroupTestHelper.mint_and_register_ip_asset_with_pil_terms(
             story_client, nft_collection
         )
@@ -476,7 +525,6 @@ class TestAddIpsToGroupAndRemoveIpsFromGroup:
         ip_id3 = result3["ip_id"]
         license_terms_id = result1["license_terms_id"]
 
-        # Register group with first IP only
         group_ip_id = GroupTestHelper.register_group_and_attach_license(
             story_client, license_terms_id, [ip_id1]
         )
@@ -487,7 +535,15 @@ class TestAddIpsToGroupAndRemoveIpsFromGroup:
             ip_ids=[ip_id2, ip_id3],
         )
         assert "tx_hash" in add_result
-        assert isinstance(add_result["tx_hash"], str)
+        assert "tx_receipt" in add_result
+        added_events = story_client.Group.get_added_ip_to_group_events(
+            add_result["tx_receipt"]
+        )
+        assert len(added_events) == 1
+        assert set(_normalize_address(story_client.web3, a) for a in added_events[0]["ipIds"]) == {
+            _normalize_address(story_client.web3, ip_id2),
+            _normalize_address(story_client.web3, ip_id3),
+        }
 
         # Remove ip_id2
         remove_result = story_client.Group.remove_ips_from_group(
@@ -495,4 +551,20 @@ class TestAddIpsToGroupAndRemoveIpsFromGroup:
             ip_ids=[ip_id2],
         )
         assert "tx_hash" in remove_result
-        assert isinstance(remove_result["tx_hash"], str)
+        assert "tx_receipt" in remove_result
+        removed_events = story_client.Group.get_removed_ip_from_group_events(
+            remove_result["tx_receipt"]
+        )
+        assert len(removed_events) == 1
+        assert set(_normalize_address(story_client.web3, a) for a in removed_events[0]["ipIds"]) == {
+            _normalize_address(story_client.web3, ip_id2)
+        }
+
+        # Final state: only ip_id1 and ip_id3 are members
+        claimable = story_client.Group.get_claimable_reward(
+            group_ip_id=group_ip_id,
+            currency_token=MockERC20,
+            member_ip_ids=[ip_id1, ip_id3],
+        )
+        assert isinstance(claimable, list)
+        assert len(claimable) == 2

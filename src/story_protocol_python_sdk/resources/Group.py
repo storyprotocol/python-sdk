@@ -492,7 +492,10 @@ class Group:
                 tx_options=tx_options,
             )
 
-            return {"tx_hash": response["tx_hash"]}
+            result = {"tx_hash": response["tx_hash"]}
+            if "tx_receipt" in response:
+                result["tx_receipt"] = response["tx_receipt"]
+            return result
 
         except Exception as e:
             raise ValueError(f"Failed to add IP to group: {str(e)}")
@@ -528,7 +531,10 @@ class Group:
                 tx_options=tx_options,
             )
 
-            return {"tx_hash": response["tx_hash"]}
+            result = {"tx_hash": response["tx_hash"]}
+            if "tx_receipt" in response:
+                result["tx_receipt"] = response["tx_receipt"]
+            return result
 
         except Exception as e:
             raise ValueError(f"Failed to remove IPs from group: {str(e)}")
@@ -927,3 +933,57 @@ class Group:
                 )
 
         return royalties_distributed
+
+    def get_added_ip_to_group_events(self, tx_receipt: dict) -> list:
+        """
+        Parse AddedIpToGroup events from a transaction receipt (for chain-state verification).
+
+        :param tx_receipt dict: The transaction receipt.
+        :return list: List of dicts with groupId and ipIds (checksum addresses).
+        """
+        events = []
+        for log in tx_receipt["logs"]:
+            try:
+                event_result = self.grouping_module_client.contract.events.AddedIpToGroup.process_log(
+                    log
+                )
+                args = event_result["args"]
+                events.append(
+                    {
+                        "groupId": self.web3.to_checksum_address(args["groupId"]),
+                        "ipIds": [
+                            self.web3.to_checksum_address(addr)
+                            for addr in args["ipIds"]
+                        ],
+                    }
+                )
+            except Exception:
+                continue
+        return events
+
+    def get_removed_ip_from_group_events(self, tx_receipt: dict) -> list:
+        """
+        Parse RemovedIpFromGroup events from a transaction receipt (for chain-state verification).
+
+        :param tx_receipt dict: The transaction receipt.
+        :return list: List of dicts with groupId and ipIds (checksum addresses).
+        """
+        events = []
+        for log in tx_receipt["logs"]:
+            try:
+                event_result = self.grouping_module_client.contract.events.RemovedIpFromGroup.process_log(
+                    log
+                )
+                args = event_result["args"]
+                events.append(
+                    {
+                        "groupId": self.web3.to_checksum_address(args["groupId"]),
+                        "ipIds": [
+                            self.web3.to_checksum_address(addr)
+                            for addr in args["ipIds"]
+                        ],
+                    }
+                )
+            except Exception:
+                continue
+        return events

@@ -155,14 +155,31 @@ class StoryClient:
             self._group = Group(self.web3, self.account, self.chain_id)
         return self._group
 
+    def get_balance(self, address: str) -> int:
+        """
+        Get the native token (IP) balance of the specified address.
+
+        :param address str: The address to query the balance for.
+        :return int: The native token balance of the specified address in wei.
+        :raises ValueError: If the address is invalid.
+        """
+        if not address:
+            raise ValueError("Address must be provided")
+
+        if not self.web3.is_address(address):
+            raise ValueError(f"Invalid address format: {address}")
+
+        checksum_address = self.web3.to_checksum_address(address)
+        return self.web3.eth.get_balance(checksum_address)
+
     def get_wallet_balance(self) -> int:
         """
-        Get the WIP token balance of the current wallet.
+        Get the native token (IP) balance of the current wallet.
 
-        :return int: The WIP token balance of the current wallet.
+        :return int: The native token balance of the current wallet in wei.
         :raises ValueError: If no account is found.
         """
         if not self.account or not hasattr(self.account, "address"):
             raise ValueError("No account found in wallet")
 
-        return self.web3.eth.get_balance(self.account.address)
+        return self.get_balance(self.account.address)

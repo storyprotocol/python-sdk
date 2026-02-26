@@ -49,6 +49,9 @@ class LicenseRegistryClient:
             ipId, licenseTemplate, licenseTermsId
         ).call()
 
+    def hasDerivativeIps(self, parentIpId):
+        return self.contract.functions.hasDerivativeIps(parentIpId).call()
+
     def hasIpAttachedLicenseTerms(self, ipId, licenseTemplate, licenseTermsId):
         return self.contract.functions.hasIpAttachedLicenseTerms(
             ipId, licenseTemplate, licenseTermsId

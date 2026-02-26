@@ -71,5 +71,8 @@ class DisputeModuleClient:
             ipIdToTag, infringerDisputeId
         ).build_transaction(tx_params)
 
+    def isIpTagged(self, ipId):
+        return self.contract.functions.isIpTagged(ipId).call()
+
     def isWhitelistedDisputeTag(self, tag):
         return self.contract.functions.isWhitelistedDisputeTag(tag).call()

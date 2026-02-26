@@ -4,6 +4,9 @@ from web3 import Web3
 from story_protocol_python_sdk.abi.CoreMetadataModule.CoreMetadataModule_client import (
     CoreMetadataModuleClient,
 )
+from story_protocol_python_sdk.abi.DisputeModule.DisputeModule_client import (
+    DisputeModuleClient,
+)
 from story_protocol_python_sdk.abi.GroupingModule.GroupingModule_client import (
     GroupingModuleClient,
 )
@@ -18,6 +21,9 @@ from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import
 )
 from story_protocol_python_sdk.abi.LicenseRegistry.LicenseRegistry_client import (
     LicenseRegistryClient,
+)
+from story_protocol_python_sdk.abi.LicenseToken.LicenseToken_client import (
+    LicenseTokenClient,
 )
 from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import (
     LicensingModuleClient,
@@ -58,9 +64,11 @@ class Group:
         self.grouping_module_client = GroupingModuleClient(web3)
         self.grouping_workflows_client = GroupingWorkflowsClient(web3)
         self.ip_asset_registry_client = IPAssetRegistryClient(web3)
+        self.dispute_module_client = DisputeModuleClient(web3)
         self.core_metadata_module_client = CoreMetadataModuleClient(web3)
         self.licensing_module_client = LicensingModuleClient(web3)
         self.license_registry_client = LicenseRegistryClient(web3)
+        self.license_token_client = LicenseTokenClient(web3)
         self.pi_license_template_client = PILicenseTemplateClient(web3)
         self.module_registry_client = ModuleRegistryClient(web3)
         self.sign_util = Sign(web3, self.chain_id, self.account)
@@ -452,6 +460,121 @@ class Group:
             raise ValueError(
                 f"Failed to register group and attach license and add IPs: {str(e)}"
             )
+
+    def add_ips_to_group(
+        self,
+        group_ip_id: str,
+        ip_ids: list,
+        max_allowed_reward_share_percentage: int = 100,
+        tx_options: dict | None = None,
+    ) -> dict:
+        """
+        Add IPs to an existing group IP.
+
+        :param group_ip_id str: The ID of the group IP.
+        :param ip_ids list: List of IP IDs to add to the group.
+        :param max_allowed_reward_share_percentage int: [Optional] Maximum allowed reward share percentage (0-100). Default is 100.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash.
+        """
+        try:
+            if not self.web3.is_address(group_ip_id):
+                raise ValueError(f'Group IP ID "{group_ip_id}" is invalid.')
+
+            for ip_id in ip_ids:
+                if not self.web3.is_address(ip_id):
+                    raise ValueError(f'IP ID "{ip_id}" is invalid.')
+
+            # Contract-level validation: groupId must not be disputed
+            if self.dispute_module_client.isIpTagged(group_ip_id):
+                raise ValueError(
+                    f'Disputed group cannot add IP: group "{group_ip_id}" is tagged by dispute module.'
+                )
+
+            # Contract-level validation: ipIds must not contain disputed IPs or groups
+            for ip_id in ip_ids:
+                if self.dispute_module_client.isIpTagged(ip_id):
+                    raise ValueError(
+                        f'Cannot add disputed IP to group: IP "{ip_id}" is tagged by dispute module.'
+                    )
+                if self.ip_asset_registry_client.isRegisteredGroup(ip_id):
+                    raise ValueError(
+                        f'Cannot add group to group: IP "{ip_id}" is a registered group.'
+                    )
+
+            max_allowed_reward_share = get_revenue_share(
+                max_allowed_reward_share_percentage,
+                type=RevShareType.MAX_ALLOWED_REWARD_SHARE,
+            )
+
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.grouping_module_client.build_addIp_transaction,
+                group_ip_id,
+                ip_ids,
+                max_allowed_reward_share,
+                tx_options=tx_options,
+            )
+
+            result = {"tx_hash": response["tx_hash"]}
+            if "tx_receipt" in response:
+                result["tx_receipt"] = response["tx_receipt"]
+            return result
+
+        except Exception as e:
+            raise ValueError(f"Failed to add IP to group: {str(e)}")
+
+    def remove_ips_from_group(
+        self,
+        group_ip_id: str,
+        ip_ids: list,
+        tx_options: dict | None = None,
+    ) -> dict:
+        """
+        Remove IPs from a group IP.
+
+        :param group_ip_id str: The ID of the group IP.
+        :param ip_ids list: List of IP IDs to remove from the group.
+        :param tx_options dict: [Optional] The transaction options.
+        :return dict: A dictionary with the transaction hash.
+        """
+        try:
+            if not self.web3.is_address(group_ip_id):
+                raise ValueError(f'Group IP ID "{group_ip_id}" is invalid.')
+
+            for ip_id in ip_ids:
+                if not self.web3.is_address(ip_id):
+                    raise ValueError(f'IP ID "{ip_id}" is invalid.')
+
+            # Contract-level validation: group must not have derivative IPs
+            if self.license_registry_client.hasDerivativeIps(group_ip_id):
+                raise ValueError(
+                    f'Group frozen: group "{group_ip_id}" has derivative IPs and cannot remove members.'
+                )
+
+            # Contract-level validation: group must not have minted license tokens
+            if self.license_token_client.getTotalTokensByLicensor(group_ip_id) > 0:
+                raise ValueError(
+                    f'Group frozen: group "{group_ip_id}" has already minted license tokens and cannot remove members.'
+                )
+
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.grouping_module_client.build_removeIp_transaction,
+                group_ip_id,
+                ip_ids,
+                tx_options=tx_options,
+            )
+
+            result = {"tx_hash": response["tx_hash"]}
+            if "tx_receipt" in response:
+                result["tx_receipt"] = response["tx_receipt"]
+            return result
+
+        except Exception as e:
+            raise ValueError(f"Failed to remove IPs from group: {str(e)}")
 
     def collect_and_distribute_group_royalties(
         self,
@@ -847,3 +970,57 @@ class Group:
                 )
 
         return royalties_distributed
+
+    def get_added_ip_to_group_events(self, tx_receipt: dict) -> list:
+        """
+        Parse AddedIpToGroup events from a transaction receipt (for chain-state verification).
+
+        :param tx_receipt dict: The transaction receipt.
+        :return list: List of dicts with groupId and ipIds (checksum addresses).
+        """
+        events = []
+        for log in tx_receipt["logs"]:
+            try:
+                event_result = self.grouping_module_client.contract.events.AddedIpToGroup.process_log(
+                    log
+                )
+                args = event_result["args"]
+                events.append(
+                    {
+                        "groupId": self.web3.to_checksum_address(args["groupId"]),
+                        "ipIds": [
+                            self.web3.to_checksum_address(addr)
+                            for addr in args["ipIds"]
+                        ],
+                    }
+                )
+            except Exception:
+                continue
+        return events
+
+    def get_removed_ip_from_group_events(self, tx_receipt: dict) -> list:
+        """
+        Parse RemovedIpFromGroup events from a transaction receipt (for chain-state verification).
+
+        :param tx_receipt dict: The transaction receipt.
+        :return list: List of dicts with groupId and ipIds (checksum addresses).
+        """
+        events = []
+        for log in tx_receipt["logs"]:
+            try:
+                event_result = self.grouping_module_client.contract.events.RemovedIpFromGroup.process_log(
+                    log
+                )
+                args = event_result["args"]
+                events.append(
+                    {
+                        "groupId": self.web3.to_checksum_address(args["groupId"]),
+                        "ipIds": [
+                            self.web3.to_checksum_address(addr)
+                            for addr in args["ipIds"]
+                        ],
+                    }
+                )
+            except Exception:
+                continue
+        return events

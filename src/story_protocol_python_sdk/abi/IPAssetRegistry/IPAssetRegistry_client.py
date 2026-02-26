@@ -51,3 +51,6 @@ class IPAssetRegistryClient:
 
     def isRegistered(self, id):
         return self.contract.functions.isRegistered(id).call()
+
+    def isRegisteredGroup(self, groupId):
+        return self.contract.functions.isRegisteredGroup(groupId).call()

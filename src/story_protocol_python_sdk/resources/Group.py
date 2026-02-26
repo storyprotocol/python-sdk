@@ -4,6 +4,9 @@ from web3 import Web3
 from story_protocol_python_sdk.abi.CoreMetadataModule.CoreMetadataModule_client import (
     CoreMetadataModuleClient,
 )
+from story_protocol_python_sdk.abi.DisputeModule.DisputeModule_client import (
+    DisputeModuleClient,
+)
 from story_protocol_python_sdk.abi.GroupingModule.GroupingModule_client import (
     GroupingModuleClient,
 )
@@ -18,6 +21,9 @@ from story_protocol_python_sdk.abi.IPAssetRegistry.IPAssetRegistry_client import
 )
 from story_protocol_python_sdk.abi.LicenseRegistry.LicenseRegistry_client import (
     LicenseRegistryClient,
+)
+from story_protocol_python_sdk.abi.LicenseToken.LicenseToken_client import (
+    LicenseTokenClient,
 )
 from story_protocol_python_sdk.abi.LicensingModule.LicensingModule_client import (
     LicensingModuleClient,
@@ -58,9 +64,11 @@ class Group:
         self.grouping_module_client = GroupingModuleClient(web3)
         self.grouping_workflows_client = GroupingWorkflowsClient(web3)
         self.ip_asset_registry_client = IPAssetRegistryClient(web3)
+        self.dispute_module_client = DisputeModuleClient(web3)
         self.core_metadata_module_client = CoreMetadataModuleClient(web3)
         self.licensing_module_client = LicensingModuleClient(web3)
         self.license_registry_client = LicenseRegistryClient(web3)
+        self.license_token_client = LicenseTokenClient(web3)
         self.pi_license_template_client = PILicenseTemplateClient(web3)
         self.module_registry_client = ModuleRegistryClient(web3)
         self.sign_util = Sign(web3, self.chain_id, self.account)
@@ -477,6 +485,23 @@ class Group:
                 if not self.web3.is_address(ip_id):
                     raise ValueError(f'IP ID "{ip_id}" is invalid.')
 
+            # Contract-level validation: groupId must not be disputed
+            if self.dispute_module_client.isIpTagged(group_ip_id):
+                raise ValueError(
+                    f'Disputed group cannot add IP: group "{group_ip_id}" is tagged by dispute module.'
+                )
+
+            # Contract-level validation: ipIds must not contain disputed IPs or groups
+            for ip_id in ip_ids:
+                if self.dispute_module_client.isIpTagged(ip_id):
+                    raise ValueError(
+                        f'Cannot add disputed IP to group: IP "{ip_id}" is tagged by dispute module.'
+                    )
+                if self.ip_asset_registry_client.isRegisteredGroup(ip_id):
+                    raise ValueError(
+                        f'Cannot add group to group: IP "{ip_id}" is a registered group.'
+                    )
+
             max_allowed_reward_share = get_revenue_share(
                 max_allowed_reward_share_percentage,
                 type=RevShareType.MAX_ALLOWED_REWARD_SHARE,
@@ -521,6 +546,18 @@ class Group:
             for ip_id in ip_ids:
                 if not self.web3.is_address(ip_id):
                     raise ValueError(f'IP ID "{ip_id}" is invalid.')
+
+            # Contract-level validation: group must not have derivative IPs
+            if self.license_registry_client.hasDerivativeIps(group_ip_id):
+                raise ValueError(
+                    f'Group frozen: group "{group_ip_id}" has derivative IPs and cannot remove members.'
+                )
+
+            # Contract-level validation: group must not have minted license tokens
+            if self.license_token_client.getTotalTokensByLicensor(group_ip_id) > 0:
+                raise ValueError(
+                    f'Group frozen: group "{group_ip_id}" has already minted license tokens and cannot remove members.'
+                )
 
             response = build_and_send_transaction(
                 self.web3,

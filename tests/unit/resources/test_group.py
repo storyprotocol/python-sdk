@@ -456,6 +456,81 @@ class TestGroupAddIpsToGroup:
                     ip_ids=[invalid_ip_id],
                 )
 
+    def test_add_ips_to_group_max_reward_share_exceeds_100(
+        self, group: Group, mock_web3_is_address
+    ):
+        """Test add_ips_to_group rejects max_allowed_reward_share_percentage > 100 (via get_revenue_share)."""
+        with mock_web3_is_address():
+            with patch.object(
+                group.dispute_module_client, "isIpTagged", return_value=False
+            ), patch.object(
+                group.ip_asset_registry_client,
+                "isRegisteredGroup",
+                return_value=False,
+            ):
+                with pytest.raises(
+                    ValueError,
+                    match="must be between 0 and 100",
+                ):
+                    group.add_ips_to_group(
+                        group_ip_id=IP_ID,
+                        ip_ids=[IP_ID],
+                        max_allowed_reward_share_percentage=101,
+                    )
+
+    def test_add_ips_to_group_disputed_group(self, group: Group, mock_web3_is_address):
+        """Test add_ips_to_group rejects disputed group."""
+        with mock_web3_is_address():
+            with patch.object(
+                group.dispute_module_client, "isIpTagged", return_value=True
+            ):
+                with pytest.raises(
+                    ValueError,
+                    match="Disputed group cannot add IP",
+                ):
+                    group.add_ips_to_group(
+                        group_ip_id=IP_ID,
+                        ip_ids=[IP_ID],
+                    )
+
+    def test_add_ips_to_group_disputed_ip(self, group: Group, mock_web3_is_address):
+        """Test add_ips_to_group rejects disputed IP in ip_ids."""
+        with mock_web3_is_address():
+            with patch.object(
+                group.dispute_module_client,
+                "isIpTagged",
+                side_effect=[False, True],  # group ok, first ip disputed
+            ):
+                with pytest.raises(
+                    ValueError,
+                    match="Cannot add disputed IP to group",
+                ):
+                    group.add_ips_to_group(
+                        group_ip_id=IP_ID,
+                        ip_ids=[IP_ID, ADDRESS],
+                    )
+
+    def test_add_ips_to_group_ip_is_registered_group(
+        self, group: Group, mock_web3_is_address
+    ):
+        """Test add_ips_to_group rejects IP that is a registered group."""
+        with mock_web3_is_address():
+            with patch.object(
+                group.dispute_module_client, "isIpTagged", return_value=False
+            ), patch.object(
+                group.ip_asset_registry_client,
+                "isRegisteredGroup",
+                side_effect=[False, True],  # first ip ok, second ip is group
+            ):
+                with pytest.raises(
+                    ValueError,
+                    match="Cannot add group to group",
+                ):
+                    group.add_ips_to_group(
+                        group_ip_id=IP_ID,
+                        ip_ids=[IP_ID, ADDRESS],
+                    )
+
     def test_add_ips_to_group_success(
         self,
         group: Group,
@@ -463,7 +538,13 @@ class TestGroupAddIpsToGroup:
     ):
         """Test successful add_ips_to_group operation."""
         with mock_web3_is_address():
-            with patch(
+            with patch.object(
+                group.dispute_module_client, "isIpTagged", return_value=False
+            ), patch.object(
+                group.ip_asset_registry_client,
+                "isRegisteredGroup",
+                return_value=False,
+            ), patch(
                 "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
                 return_value={"tx_hash": TX_HASH, "tx_receipt": {}},
             ):
@@ -482,7 +563,13 @@ class TestGroupAddIpsToGroup:
     ):
         """Test add_ips_to_group uses default max_allowed_reward_share_percentage 100."""
         with mock_web3_is_address():
-            with patch(
+            with patch.object(
+                group.dispute_module_client, "isIpTagged", return_value=False
+            ), patch.object(
+                group.ip_asset_registry_client,
+                "isRegisteredGroup",
+                return_value=False,
+            ), patch(
                 "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
                 return_value={"tx_hash": TX_HASH, "tx_receipt": {}},
             ) as mock_build:
@@ -501,7 +588,13 @@ class TestGroupAddIpsToGroup:
     ):
         """Test add_ips_to_group with max_allowed_reward_share_percentage 0."""
         with mock_web3_is_address():
-            with patch(
+            with patch.object(
+                group.dispute_module_client, "isIpTagged", return_value=False
+            ), patch.object(
+                group.ip_asset_registry_client,
+                "isRegisteredGroup",
+                return_value=False,
+            ), patch(
                 "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
                 return_value={"tx_hash": TX_HASH, "tx_receipt": {}},
             ) as mock_build:
@@ -518,7 +611,13 @@ class TestGroupAddIpsToGroup:
     ):
         """Test add_ips_to_group when transaction build/send fails."""
         with mock_web3_is_address():
-            with patch(
+            with patch.object(
+                group.dispute_module_client, "isIpTagged", return_value=False
+            ), patch.object(
+                group.ip_asset_registry_client,
+                "isRegisteredGroup",
+                return_value=False,
+            ), patch(
                 "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
                 side_effect=Exception("Transaction build failed"),
             ):
@@ -550,6 +649,48 @@ class TestGroupRemoveIpsFromGroup:
                     ip_ids=[IP_ID],
                 )
 
+    def test_remove_ips_from_group_group_has_derivative_ips(
+        self, group: Group, mock_web3_is_address
+    ):
+        """Test remove_ips_from_group rejects when group has derivative IPs."""
+        with mock_web3_is_address():
+            with patch.object(
+                group.license_registry_client,
+                "hasDerivativeIps",
+                return_value=True,
+            ):
+                with pytest.raises(
+                    ValueError,
+                    match="Group frozen:.*has derivative IPs",
+                ):
+                    group.remove_ips_from_group(
+                        group_ip_id=IP_ID,
+                        ip_ids=[IP_ID],
+                    )
+
+    def test_remove_ips_from_group_group_has_minted_license_tokens(
+        self, group: Group, mock_web3_is_address
+    ):
+        """Test remove_ips_from_group rejects when group has minted license tokens."""
+        with mock_web3_is_address():
+            with patch.object(
+                group.license_registry_client,
+                "hasDerivativeIps",
+                return_value=False,
+            ), patch.object(
+                group.license_token_client,
+                "getTotalTokensByLicensor",
+                return_value=10,
+            ):
+                with pytest.raises(
+                    ValueError,
+                    match="Group frozen:.*has already minted license tokens",
+                ):
+                    group.remove_ips_from_group(
+                        group_ip_id=IP_ID,
+                        ip_ids=[IP_ID],
+                    )
+
     def test_remove_ips_from_group_invalid_ip_id(self, group: Group, mock_web3):
         """Test remove_ips_from_group with invalid IP ID."""
         invalid_ip_id = "invalid_ip_id"
@@ -571,7 +712,15 @@ class TestGroupRemoveIpsFromGroup:
     ):
         """Test successful remove_ips_from_group operation."""
         with mock_web3_is_address():
-            with patch(
+            with patch.object(
+                group.license_registry_client,
+                "hasDerivativeIps",
+                return_value=False,
+            ), patch.object(
+                group.license_token_client,
+                "getTotalTokensByLicensor",
+                return_value=0,
+            ), patch(
                 "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
                 return_value={"tx_hash": TX_HASH, "tx_receipt": {}},
             ):
@@ -588,7 +737,15 @@ class TestGroupRemoveIpsFromGroup:
     ):
         """Test remove_ips_from_group when transaction build/send fails."""
         with mock_web3_is_address():
-            with patch(
+            with patch.object(
+                group.license_registry_client,
+                "hasDerivativeIps",
+                return_value=False,
+            ), patch.object(
+                group.license_token_client,
+                "getTotalTokensByLicensor",
+                return_value=0,
+            ), patch(
                 "story_protocol_python_sdk.resources.Group.build_and_send_transaction",
                 side_effect=Exception("Transaction build failed"),
             ):

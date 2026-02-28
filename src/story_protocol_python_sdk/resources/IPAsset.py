@@ -312,6 +312,12 @@ class IPAsset:
     ) -> dict:
         """
         Batch register multiple NFTs as IPs, creating corresponding IP records.
+        
+        This method uses the low-level register() method internally for encoding transactions.
+        While register() is deprecated for direct use, it remains the appropriate choice for
+        batch operations as it provides the necessary flexibility for encoding individual
+        registration calls before batching them via multicall.
+        
         :param args list[dict]: List of registration arguments, each containing:
             :param nft_contract str: The address of the NFT.
             :param token_id int: The token identifier of the NFT.

@@ -3544,3 +3544,153 @@ class TestLinkDerivative:
                 match="Failed to link derivative: Failed to register derivative with license tokens: License token id 1 must be owned by the caller.",
             ):
                 ip_asset.link_derivative(license_token_ids=[1], child_ip_id=IP_ID)
+
+
+class TestIPAssetBatchRegister:
+    def test_batch_register_missing_required_fields(self, ip_asset):
+        with pytest.raises(ValueError, match="Each arg must contain 'nft_contract' and 'token_id'"):
+            ip_asset.batch_register(
+                args=[{"nft_contract": ADDRESS}],
+            )
+
+    def test_batch_register_successful_without_metadata(
+        self,
+        ip_asset,
+        mock_get_ip_id,
+        mock_is_registered,
+    ):
+        with mock_get_ip_id(), mock_is_registered():
+            with patch.object(
+                ip_asset.ip_asset_registry_client.contract.functions,
+                "register",
+                return_value=type("MockFunction", (), {
+                    "build_transaction": lambda self, opts: {"data": "0x1234"}
+                })(),
+            ):
+                with patch.object(
+                    ip_asset,
+                    "_parse_tx_ip_registered_event",
+                    return_value=[
+                        {"ip_id": IP_ID, "token_id": 3, "nft_contract": ADDRESS},
+                        {"ip_id": ADDRESS, "token_id": 4, "nft_contract": ADDRESS},
+                    ],
+                ):
+                    result = ip_asset.batch_register(
+                        args=[
+                            {"nft_contract": ADDRESS, "token_id": 3},
+                            {"nft_contract": ADDRESS, "token_id": 4},
+                        ],
+                    )
+                    assert result["tx_hash"] == TX_HASH.hex()
+                    assert result["spg_tx_hash"] is None
+                    assert len(result["results"]) == 2
+                    assert result["results"][0]["ip_id"] == IP_ID
+                    assert result["results"][0]["token_id"] == 3
+                    assert result["results"][1]["ip_id"] == ADDRESS
+                    assert result["results"][1]["token_id"] == 4
+
+    def test_batch_register_successful_with_metadata(
+        self,
+        ip_asset,
+        mock_get_ip_id,
+        mock_is_registered,
+        mock_signature_related_methods,
+    ):
+        with mock_get_ip_id(), mock_is_registered(), mock_signature_related_methods():
+            with patch.object(
+                ip_asset.registration_workflows_client.contract.functions,
+                "registerIp",
+                return_value=type("MockFunction", (), {
+                    "build_transaction": lambda self, opts: {"data": "0x5678"}
+                })(),
+            ):
+                with patch.object(
+                    ip_asset,
+                    "_parse_tx_ip_registered_event",
+                    return_value=[
+                        {"ip_id": IP_ID, "token_id": 3, "nft_contract": ADDRESS},
+                    ],
+                ):
+                    result = ip_asset.batch_register(
+                        args=[
+                            {
+                                "nft_contract": ADDRESS,
+                                "token_id": 3,
+                                "ip_metadata": {
+                                    "ip_metadata_uri": "test_uri",
+                                    "ip_metadata_hash": ZERO_HASH,
+                                },
+                            },
+                        ],
+                    )
+                    assert result["spg_tx_hash"] == TX_HASH.hex()
+                    assert result["tx_hash"] is None
+                    assert len(result["results"]) == 1
+                    assert result["results"][0]["ip_id"] == IP_ID
+
+    def test_batch_register_mixed_with_and_without_metadata(
+        self,
+        ip_asset,
+        mock_get_ip_id,
+        mock_is_registered,
+        mock_signature_related_methods,
+    ):
+        with mock_get_ip_id(), mock_is_registered(), mock_signature_related_methods():
+            with patch.object(
+                ip_asset.ip_asset_registry_client.contract.functions,
+                "register",
+                return_value=type("MockFunction", (), {
+                    "build_transaction": lambda self, opts: {"data": "0x1234"}
+                })(),
+            ):
+                with patch.object(
+                    ip_asset.registration_workflows_client.contract.functions,
+                    "registerIp",
+                    return_value=type("MockFunction", (), {
+                        "build_transaction": lambda self, opts: {"data": "0x5678"}
+                    })(),
+                ):
+                    with patch.object(
+                        ip_asset,
+                        "_parse_tx_ip_registered_event",
+                        side_effect=[
+                            [{"ip_id": ADDRESS, "token_id": 4, "nft_contract": ADDRESS}],
+                            [{"ip_id": IP_ID, "token_id": 3, "nft_contract": ADDRESS}],
+                        ],
+                    ):
+                        result = ip_asset.batch_register(
+                            args=[
+                                {"nft_contract": ADDRESS, "token_id": 4},
+                                {
+                                    "nft_contract": ADDRESS,
+                                    "token_id": 3,
+                                    "ip_metadata": {
+                                        "ip_metadata_uri": "test_uri",
+                                        "ip_metadata_hash": ZERO_HASH,
+                                    },
+                                },
+                            ],
+                        )
+                        assert result["tx_hash"] == TX_HASH.hex()
+                        assert result["spg_tx_hash"] == TX_HASH.hex()
+                        assert len(result["results"]) == 2
+
+    def test_batch_register_encoding_failure(
+        self,
+        ip_asset,
+        mock_get_ip_id,
+        mock_is_registered,
+    ):
+        with mock_get_ip_id(), mock_is_registered():
+            with patch.object(
+                ip_asset,
+                "register",
+                side_effect=Exception("Encoding failed"),
+            ):
+                with pytest.raises(
+                    ValueError,
+                    match=f"Failed to encode registration for {ADDRESS}:3: Encoding failed",
+                ):
+                    ip_asset.batch_register(
+                        args=[{"nft_contract": ADDRESS, "token_id": 3}],
+                    )

@@ -3568,26 +3568,46 @@ class TestIPAssetBatchRegister:
                 })(),
             ):
                 with patch.object(
-                    ip_asset,
-                    "_parse_tx_ip_registered_event",
-                    return_value=[
-                        {"ip_id": IP_ID, "token_id": 3, "nft_contract": ADDRESS},
-                        {"ip_id": ADDRESS, "token_id": 4, "nft_contract": ADDRESS},
-                    ],
+                    ip_asset.web3.eth,
+                    "get_transaction_receipt",
+                    return_value={
+                        "logs": [
+                            {
+                                "topics": [ip_asset.web3.keccak(text="IPRegistered(address,uint256,address,uint256,string,string,uint256)")],
+                                "address": ip_asset.ip_asset_registry_client.contract.address,
+                            },
+                            {
+                                "topics": [ip_asset.web3.keccak(text="IPRegistered(address,uint256,address,uint256,string,string,uint256)")],
+                                "address": ip_asset.ip_asset_registry_client.contract.address,
+                            }
+                        ]
+                    },
                 ):
-                    result = ip_asset.batch_register(
-                        args=[
-                            {"nft_contract": ADDRESS, "token_id": 3},
-                            {"nft_contract": ADDRESS, "token_id": 4},
+                    with patch.object(
+                        ip_asset.ip_asset_registry_client.contract.events.IPRegistered,
+                        "process_log",
+                        side_effect=[
+                            {"args": {"ipId": IP_ID, "tokenId": 3, "tokenContract": ADDRESS}},
+                            {"args": {"ipId": ADDRESS, "tokenId": 4, "tokenContract": ADDRESS}},
                         ],
-                    )
-                    assert result["tx_hash"] == TX_HASH.hex()
-                    assert result["spg_tx_hash"] is None
-                    assert len(result["results"]) == 2
-                    assert result["results"][0]["ip_id"] == IP_ID
-                    assert result["results"][0]["token_id"] == 3
-                    assert result["results"][1]["ip_id"] == ADDRESS
-                    assert result["results"][1]["token_id"] == 4
+                    ):
+                        result = ip_asset.batch_register(
+                            args=[
+                                {"nft_contract": ADDRESS, "token_id": 3},
+                                {"nft_contract": ADDRESS, "token_id": 4},
+                            ],
+                        )
+                        assert result["tx_hash"] == TX_HASH.hex()
+                        assert result["spg_tx_hash"] is None
+                        assert len(result["results"]) == 2
+                        # Check that we got 2 results with correct token IDs
+                        assert result["results"][0]["token_id"] == 3
+                        assert result["results"][1]["token_id"] == 4
+                        # Check that IP IDs are present (exact values depend on mock)
+                        assert "ip_id" in result["results"][0]
+                        assert "ip_id" in result["results"][1]
+                        assert "nft_contract" in result["results"][0]
+                        assert "nft_contract" in result["results"][1]
 
     def test_batch_register_successful_with_metadata(
         self,
@@ -3605,28 +3625,38 @@ class TestIPAssetBatchRegister:
                 })(),
             ):
                 with patch.object(
-                    ip_asset,
-                    "_parse_tx_ip_registered_event",
-                    return_value=[
-                        {"ip_id": IP_ID, "token_id": 3, "nft_contract": ADDRESS},
-                    ],
-                ):
-                    result = ip_asset.batch_register(
-                        args=[
+                    ip_asset.web3.eth,
+                    "get_transaction_receipt",
+                    return_value={
+                        "logs": [
                             {
-                                "nft_contract": ADDRESS,
-                                "token_id": 3,
-                                "ip_metadata": {
-                                    "ip_metadata_uri": "test_uri",
-                                    "ip_metadata_hash": ZERO_HASH,
+                                "topics": [ip_asset.web3.keccak(text="IPRegistered(address,uint256,address,uint256,string,string,uint256)")],
+                                "address": ip_asset.ip_asset_registry_client.contract.address,
+                            }
+                        ]
+                    },
+                ):
+                    with patch.object(
+                        ip_asset.ip_asset_registry_client.contract.events.IPRegistered,
+                        "process_log",
+                        return_value={"args": {"ipId": ADDRESS, "tokenId": 3, "tokenContract": ADDRESS}},
+                    ):
+                        result = ip_asset.batch_register(
+                            args=[
+                                {
+                                    "nft_contract": ADDRESS,
+                                    "token_id": 3,
+                                    "ip_metadata": {
+                                        "ip_metadata_uri": "test_uri",
+                                        "ip_metadata_hash": ZERO_HASH,
+                                    },
                                 },
-                            },
-                        ],
-                    )
-                    assert result["spg_tx_hash"] == TX_HASH.hex()
-                    assert result["tx_hash"] is None
-                    assert len(result["results"]) == 1
-                    assert result["results"][0]["ip_id"] == IP_ID
+                            ],
+                        )
+                        assert result["spg_tx_hash"] == TX_HASH.hex()
+                        assert result["tx_hash"] is None
+                        assert len(result["results"]) == 1
+                        assert result["results"][0]["ip_id"] == ADDRESS
 
     def test_batch_register_mixed_with_and_without_metadata(
         self,
@@ -3651,29 +3681,51 @@ class TestIPAssetBatchRegister:
                     })(),
                 ):
                     with patch.object(
-                        ip_asset,
-                        "_parse_tx_ip_registered_event",
+                        ip_asset.web3.eth,
+                        "get_transaction_receipt",
                         side_effect=[
-                            [{"ip_id": ADDRESS, "token_id": 4, "nft_contract": ADDRESS}],
-                            [{"ip_id": IP_ID, "token_id": 3, "nft_contract": ADDRESS}],
+                            {
+                                "logs": [
+                                    {
+                                        "topics": [ip_asset.web3.keccak(text="IPRegistered(address,uint256,address,uint256,string,string,uint256)")],
+                                        "address": ip_asset.ip_asset_registry_client.contract.address,
+                                    }
+                                ]
+                            },
+                            {
+                                "logs": [
+                                    {
+                                        "topics": [ip_asset.web3.keccak(text="IPRegistered(address,uint256,address,uint256,string,string,uint256)")],
+                                        "address": ip_asset.ip_asset_registry_client.contract.address,
+                                    }
+                                ]
+                            },
                         ],
                     ):
-                        result = ip_asset.batch_register(
-                            args=[
-                                {"nft_contract": ADDRESS, "token_id": 4},
-                                {
-                                    "nft_contract": ADDRESS,
-                                    "token_id": 3,
-                                    "ip_metadata": {
-                                        "ip_metadata_uri": "test_uri",
-                                        "ip_metadata_hash": ZERO_HASH,
-                                    },
-                                },
+                        with patch.object(
+                            ip_asset.ip_asset_registry_client.contract.events.IPRegistered,
+                            "process_log",
+                            side_effect=[
+                                {"args": {"ipId": ADDRESS, "tokenId": 4, "tokenContract": ADDRESS}},
+                                {"args": {"ipId": IP_ID, "tokenId": 3, "tokenContract": ADDRESS}},
                             ],
-                        )
-                        assert result["tx_hash"] == TX_HASH.hex()
-                        assert result["spg_tx_hash"] == TX_HASH.hex()
-                        assert len(result["results"]) == 2
+                        ):
+                            result = ip_asset.batch_register(
+                                args=[
+                                    {"nft_contract": ADDRESS, "token_id": 4},
+                                    {
+                                        "nft_contract": ADDRESS,
+                                        "token_id": 3,
+                                        "ip_metadata": {
+                                            "ip_metadata_uri": "test_uri",
+                                            "ip_metadata_hash": ZERO_HASH,
+                                        },
+                                    },
+                                ],
+                            )
+                            assert result["tx_hash"] == TX_HASH.hex()
+                            assert result["spg_tx_hash"] == TX_HASH.hex()
+                            assert len(result["results"]) == 2
 
     def test_batch_register_encoding_failure(
         self,

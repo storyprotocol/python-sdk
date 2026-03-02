@@ -12,6 +12,7 @@ from story_protocol_python_sdk.abi.IpRoyaltyVaultImpl.IpRoyaltyVaultImpl_client 
     IpRoyaltyVaultImplClient,
 )
 from story_protocol_python_sdk.abi.MockERC20.MockERC20_client import MockERC20Client
+from story_protocol_python_sdk.abi.Multicall3.Multicall3_client import Multicall3Client
 from story_protocol_python_sdk.abi.RoyaltyModule.RoyaltyModule_client import (
     RoyaltyModuleClient,
 )
@@ -56,6 +57,7 @@ class Royalty:
         self.mock_erc20_client = MockERC20Client(web3)
         self.royalty_policy_lrp_client = RoyaltyPolicyLRPClient(web3)
         self.wrapped_ip_client = WrappedIPClient(web3)
+        self.multicall3_client = Multicall3Client(web3)
 
     def get_royalty_vault_address(self, ip_id: str) -> str:
         """
@@ -221,6 +223,165 @@ class Royalty:
 
         except Exception as e:
             raise ValueError(f"Failed to claim all revenue: {str(e)}")
+
+    def batch_claim_all_revenue(
+        self,
+        ancestor_ips: list[dict],
+        claim_options: dict | None = None,
+        options: dict | None = None,
+        tx_options: dict | None = None,
+    ) -> dict:
+        """
+        Batch claims all revenue from the child IPs of multiple ancestor IPs.
+        If multicall is disabled, it will call claim_all_revenue for each ancestor IP.
+        Then transfer all claimed tokens to the wallet if the wallet owns the IP or is the claimer.
+        If claimed token is WIP, it will also be converted back to native tokens.
+
+        Even if there are no child IPs, you must still populate `currency_tokens` in each ancestor IP
+        with the token addresses you wish to claim. This is required for the claim operation to know which
+        token balances to process.
+
+        :param ancestor_ips list[dict]: List of ancestor IP configurations, each containing:
+            :param ip_id str: The IP ID of the ancestor.
+            :param claimer str: The address of the claimer.
+            :param child_ip_ids list: List of child IP IDs.
+            :param royalty_policies list: List of royalty policy addresses.
+            :param currency_tokens list: List of currency token addresses.
+        :param claim_options dict: [Optional] Options for auto_transfer_all_claimed_tokens_from_ip and auto_unwrap_ip_tokens. Default values are True.
+        :param options dict: [Optional] Options for use_multicall_when_possible. Default is True.
+        :param tx_options dict: [Optional] Transaction options.
+        :return dict: Dictionary with transaction hashes, receipts, and claimed tokens.
+            :return tx_hashes list[str]: List of transaction hashes.
+            :return receipts list[dict]: List of transaction receipts.
+            :return claimed_tokens list[dict]: Aggregated list of claimed tokens.
+        """
+        try:
+            tx_hashes = []
+            receipts = []
+            claimed_tokens = []
+
+            use_multicall = options.get("use_multicall_when_possible", True) if options else True
+
+            # If only 1 ancestor IP or multicall is disabled, call claim_all_revenue for each
+            if len(ancestor_ips) == 1 or not use_multicall:
+                for ancestor_ip in ancestor_ips:
+                    result = self.claim_all_revenue(
+                        ancestor_ip_id=ancestor_ip["ip_id"],
+                        claimer=ancestor_ip["claimer"],
+                        child_ip_ids=ancestor_ip["child_ip_ids"],
+                        royalty_policies=ancestor_ip["royalty_policies"],
+                        currency_tokens=ancestor_ip["currency_tokens"],
+                        claim_options={
+                            "auto_transfer_all_claimed_tokens_from_ip": False,
+                            "auto_unwrap_ip_tokens": False,
+                        },
+                        tx_options=tx_options,
+                    )
+                    tx_hashes.extend(result["tx_hashes"])
+                    receipts.append(result["receipt"])
+                    if result.get("claimed_tokens"):
+                        claimed_tokens.extend(result["claimed_tokens"])
+            else:
+                # Batch claimAllRevenue calls into a single multicall
+                encoded_txs = []
+                for ancestor_ip in ancestor_ips:
+                    encoded_data = self.royalty_workflows_client.contract.functions.claimAllRevenue(
+                        validate_address(ancestor_ip["ip_id"]),
+                        validate_address(ancestor_ip["claimer"]),
+                        validate_addresses(ancestor_ip["child_ip_ids"]),
+                        validate_addresses(ancestor_ip["royalty_policies"]),
+                        validate_addresses(ancestor_ip["currency_tokens"]),
+                    )._encode_transaction_data()
+                    encoded_txs.append(encoded_data)
+
+                response = build_and_send_transaction(
+                    self.web3,
+                    self.account,
+                    self.royalty_workflows_client.build_multicall_transaction,
+                    encoded_txs,
+                    tx_options=tx_options,
+                )
+                tx_hashes.append(response["tx_hash"])
+                receipts.append(response["tx_receipt"])
+
+                # Parse claimed tokens from the receipt
+                claimed_token_logs = self._parse_tx_revenue_token_claimed_event(
+                    response["tx_receipt"]
+                )
+                claimed_tokens.extend(claimed_token_logs)
+
+            # Aggregate claimed tokens by claimer and token address
+            aggregated_claimed_tokens = {}
+            for token in claimed_tokens:
+                key = f"{token['claimer']}_{token['token']}"
+                if key not in aggregated_claimed_tokens:
+                    aggregated_claimed_tokens[key] = dict(token)
+                else:
+                    aggregated_claimed_tokens[key]["amount"] += token["amount"]
+
+            aggregated_claimed_tokens = list(aggregated_claimed_tokens.values())
+
+            # Get unique claimers
+            claimers = list(set(ancestor_ip["claimer"] for ancestor_ip in ancestor_ips))
+
+            auto_transfer = (
+                claim_options.get("auto_transfer_all_claimed_tokens_from_ip", True)
+                if claim_options
+                else True
+            )
+            auto_unwrap = (
+                claim_options.get("auto_unwrap_ip_tokens", True)
+                if claim_options
+                else True
+            )
+
+            wip_claimable_amounts = 0
+
+            for claimer in claimers:
+                owns_claimer, is_claimer_ip, ip_account = self._get_claimer_info(claimer)
+
+                # If ownsClaimer is false, skip
+                if not owns_claimer:
+                    continue
+
+                filter_claimed_tokens = [
+                    token for token in aggregated_claimed_tokens if token["claimer"] == claimer
+                ]
+
+                # Transfer claimed tokens from IP to wallet if wallet owns IP
+                if auto_transfer and is_claimer_ip and owns_claimer:
+                    hashes = self._transfer_claimed_tokens_from_ip_to_wallet(
+                        ip_account, filter_claimed_tokens
+                    )
+                    tx_hashes.extend(hashes)
+
+                # Sum up the amount of WIP tokens claimed
+                for token in filter_claimed_tokens:
+                    if token["token"] == WIP_TOKEN_ADDRESS:
+                        wip_claimable_amounts += token["amount"]
+
+            # Unwrap WIP tokens if needed
+            if wip_claimable_amounts > 0 and auto_unwrap:
+                hashes = self._unwrap_claimed_tokens_from_ip_to_wallet(
+                    [
+                        {
+                            "token": WIP_TOKEN_ADDRESS,
+                            "amount": wip_claimable_amounts,
+                            "claimer": self.account.address,
+                        }
+                    ]
+                )
+                tx_hashes.extend(hashes)
+
+            return {
+                "receipts": receipts,
+                "claimed_tokens": aggregated_claimed_tokens,
+                "tx_hashes": tx_hashes,
+            }
+
+        except Exception as e:
+            error_msg = str(e).replace("Failed to claim all revenue: ", "").strip()
+            raise ValueError(f"Failed to batch claim all revenue: {error_msg}")
 
     def transfer_to_vault(
         self,

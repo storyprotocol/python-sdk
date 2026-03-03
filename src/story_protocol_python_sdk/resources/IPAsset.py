@@ -195,11 +195,15 @@ class IPAsset:
             :param nft_metadata_hash str: [Optional] Metadata hash for the NFT.
         :param deadline int: [Optional] Signature deadline in seconds. (default: 1000 seconds)
         :param tx_options dict: [Optional] Transaction options.
-        :return dict: Dictionary with the transaction hash and IP ID.
+            :param encodedTxDataOnly bool: [Optional] If True, return only encoded transaction data without sending.
+        :return dict: Dictionary with the transaction hash and IP ID, or encoded transaction data if encodedTxDataOnly is True.
         """
         try:
+            tx_options = tx_options or {}
+            encoded_tx_data_only = tx_options.get("encodedTxDataOnly", False)
+
             ip_id = self._get_ip_id(nft_contract, token_id)
-            if self.is_registered(ip_id):
+            if self.is_registered(ip_id) and not encoded_tx_data_only:
                 return {"tx_hash": None, "ip_id": ip_id}
 
             req_object: dict = {
@@ -254,6 +258,15 @@ class IPAsset:
                     "signature": signature_response["signature"],
                 }
 
+                if encoded_tx_data_only:
+                    encoded_data = self.registration_workflows_client.contract.functions.registerIp(
+                        req_object["nftContract"],
+                        req_object["tokenId"],
+                        req_object["ipMetadata"],
+                        req_object["sigMetadata"],
+                    ).build_transaction({"from": self.account.address})["data"]
+                    return {"encoded_tx_data": encoded_data, "has_metadata": True}
+
                 response = build_and_send_transaction(
                     self.web3,
                     self.account,
@@ -265,6 +278,14 @@ class IPAsset:
                     tx_options=tx_options,
                 )
             else:
+                if encoded_tx_data_only:
+                    encoded_data = self.ip_asset_registry_client.contract.functions.register(
+                        self.chain_id,
+                        nft_contract,
+                        token_id,
+                    ).build_transaction({"from": self.account.address})["data"]
+                    return {"encoded_tx_data": encoded_data, "has_metadata": False}
+
                 response = build_and_send_transaction(
                     self.web3,
                     self.account,
@@ -280,6 +301,132 @@ class IPAsset:
             ]
 
             return {"tx_hash": response["tx_hash"], "ip_id": ip_registered["ip_id"]}
+
+        except Exception as e:
+            raise e
+
+    def batch_register(
+        self,
+        args: list[dict],
+        tx_options: dict | None = None,
+    ) -> dict:
+        """
+        Batch register multiple NFTs as IPs, creating corresponding IP records.
+        
+        This method uses the low-level register() method internally for encoding transactions.
+        While register() is deprecated for direct use, it remains the appropriate choice for
+        batch operations as it provides the necessary flexibility for encoding individual
+        registration calls before batching them via multicall.
+        
+        :param args list[dict]: List of registration arguments, each containing:
+            :param nft_contract str: The address of the NFT.
+            :param token_id int: The token identifier of the NFT.
+            :param ip_metadata dict: [Optional] Metadata for the IP.
+            :param deadline int: [Optional] Signature deadline in seconds.
+        :param tx_options dict: [Optional] Transaction options (excluding encodedTxDataOnly).
+        :return dict: Dictionary with transaction hashes and results.
+            :return tx_hash str: [Optional] Transaction hash for registrations without metadata.
+            :return spg_tx_hash str: [Optional] Transaction hash for registrations with metadata (SPG workflow).
+            :return results list[dict]: List of results, each containing:
+                :return ip_id str: The IP ID.
+                :return token_id int: The token ID.
+                :return nft_contract str: The NFT contract address.
+        """
+        try:
+            tx_options = tx_options or {}
+            spg_contracts = []
+            registry_contracts = []
+
+            for arg in args:
+                nft_contract = arg.get("nft_contract")
+                token_id = arg.get("token_id")
+                ip_metadata = arg.get("ip_metadata")
+                deadline = arg.get("deadline")
+
+                if not nft_contract or token_id is None:
+                    raise ValueError("Each arg must contain 'nft_contract' and 'token_id'")
+
+                try:
+                    result = self.register(
+                        nft_contract=nft_contract,
+                        token_id=token_id,
+                        ip_metadata=ip_metadata,
+                        deadline=deadline,
+                        tx_options={"encodedTxDataOnly": True},
+                    )
+                    encoded_data = result["encoded_tx_data"]
+                    has_metadata = result["has_metadata"]
+                except Exception as e:
+                    error_msg = str(e).replace("Failed to register IP:", "").strip()
+                    raise ValueError(f"Failed to encode registration for {nft_contract}:{token_id}: {error_msg}")
+
+                if has_metadata:
+                    spg_contracts.append(encoded_data)
+                else:
+                    registry_contracts.append({
+                        "target": self.ip_asset_registry_client.contract.address,
+                        "allowFailure": False,
+                        "callData": encoded_data,
+                    })
+
+            spg_tx_hash = None
+            tx_hash = None
+
+            if spg_contracts:
+                spg_response = build_and_send_transaction(
+                    self.web3,
+                    self.account,
+                    self.registration_workflows_client.build_multicall_transaction,
+                    spg_contracts,
+                    tx_options=tx_options,
+                )
+                spg_tx_hash = spg_response["tx_hash"]
+
+            if registry_contracts:
+                registry_response = build_and_send_transaction(
+                    self.web3,
+                    self.account,
+                    self.multicall3_client.build_aggregate3_transaction,
+                    registry_contracts,
+                    tx_options=tx_options,
+                )
+                tx_hash = registry_response["tx_hash"]
+
+            results = []
+
+            if tx_hash:
+                tx_receipt = self.web3.eth.get_transaction_receipt(tx_hash)
+                event_signature = self.web3.keccak(
+                    text="IPRegistered(address,uint256,address,uint256,string,string,uint256)"
+                ).hex()
+                for log in tx_receipt["logs"]:
+                    if log["topics"][0].hex() == event_signature:
+                        event_result = self.ip_asset_registry_client.contract.events.IPRegistered.process_log(log)
+                        results.append({
+                            "ip_id": self.web3.to_checksum_address(event_result["args"]["ipId"]),
+                            "token_id": event_result["args"]["tokenId"],
+                            "nft_contract": self.web3.to_checksum_address(event_result["args"]["tokenContract"]),
+                        })
+
+            if spg_tx_hash:
+                spg_receipt = self.web3.eth.get_transaction_receipt(spg_tx_hash)
+                event_signature = self.web3.keccak(
+                    text="IPRegistered(address,uint256,address,uint256,string,string,uint256)"
+                ).hex()
+                for log in spg_receipt["logs"]:
+                    if log["topics"][0].hex() == event_signature:
+                        event_result = self.ip_asset_registry_client.contract.events.IPRegistered.process_log(log)
+                        results.append({
+                            "ip_id": self.web3.to_checksum_address(event_result["args"]["ipId"]),
+                            "token_id": event_result["args"]["tokenId"],
+                            "nft_contract": self.web3.to_checksum_address(event_result["args"]["tokenContract"]),
+                        })
+
+            return {
+                "tx_hash": tx_hash,
+                "spg_tx_hash": spg_tx_hash,
+                "results": results,
+            }
 
         except Exception as e:
             raise e

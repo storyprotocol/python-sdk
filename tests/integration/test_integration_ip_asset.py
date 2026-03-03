@@ -1758,3 +1758,113 @@ class TestLinkDerivative:
         assert "tx_hash" in response
         assert isinstance(response["tx_hash"], str)
         assert len(response["tx_hash"]) > 0
+
+
+class TestIPAssetBatchRegister:
+    def test_batch_register_without_metadata(self, story_client: StoryClient):
+        """Batch register multiple NFTs without metadata."""
+        token_id_1 = get_token_id(MockERC721, story_client.web3, story_client.account)
+        token_id_2 = get_token_id(MockERC721, story_client.web3, story_client.account)
+
+        response = story_client.IPAsset.batch_register(
+            args=[
+                {"nft_contract": MockERC721, "token_id": token_id_1},
+                {"nft_contract": MockERC721, "token_id": token_id_2},
+            ],
+        )
+
+        assert response is not None
+        assert "tx_hash" in response
+        assert response["tx_hash"] is not None
+        assert "spg_tx_hash" in response
+        assert response["spg_tx_hash"] is None
+        assert "results" in response
+        assert len(response["results"]) == 2
+        assert all("ip_id" in result for result in response["results"])
+        assert all("token_id" in result for result in response["results"])
+        assert all("nft_contract" in result for result in response["results"])
+        assert response["results"][0]["token_id"] == token_id_1
+        assert response["results"][1]["token_id"] == token_id_2
+
+    def test_batch_register_with_metadata(self, story_client: StoryClient):
+        """Batch register multiple NFTs with metadata."""
+        token_id_1 = get_token_id(MockERC721, story_client.web3, story_client.account)
+        token_id_2 = get_token_id(MockERC721, story_client.web3, story_client.account)
+
+        metadata_1 = {
+            "ip_metadata_uri": "test-uri-1",
+            "ip_metadata_hash": web3.to_hex(web3.keccak(text="test-metadata-1")),
+            "nft_metadata_uri": "test-nft-uri-1",
+            "nft_metadata_hash": web3.to_hex(web3.keccak(text="test-nft-metadata-1")),
+        }
+        metadata_2 = {
+            "ip_metadata_uri": "test-uri-2",
+            "ip_metadata_hash": web3.to_hex(web3.keccak(text="test-metadata-2")),
+            "nft_metadata_uri": "test-nft-uri-2",
+            "nft_metadata_hash": web3.to_hex(web3.keccak(text="test-nft-metadata-2")),
+        }
+
+        response = story_client.IPAsset.batch_register(
+            args=[
+                {
+                    "nft_contract": MockERC721,
+                    "token_id": token_id_1,
+                    "ip_metadata": metadata_1,
+                },
+                {
+                    "nft_contract": MockERC721,
+                    "token_id": token_id_2,
+                    "ip_metadata": metadata_2,
+                },
+            ],
+        )
+
+        assert response is not None
+        assert "spg_tx_hash" in response
+        assert response["spg_tx_hash"] is not None
+        assert "tx_hash" in response
+        assert response["tx_hash"] is None
+        assert "results" in response
+        assert len(response["results"]) == 2
+        assert response["results"][0]["token_id"] == token_id_1
+        assert response["results"][1]["token_id"] == token_id_2
+
+    def test_batch_register_mixed_with_and_without_metadata(
+        self, story_client: StoryClient
+    ):
+        """Batch register with mixed metadata and non-metadata NFTs."""
+        token_id_1 = get_token_id(MockERC721, story_client.web3, story_client.account)
+        token_id_2 = get_token_id(MockERC721, story_client.web3, story_client.account)
+        token_id_3 = get_token_id(MockERC721, story_client.web3, story_client.account)
+
+        metadata = {
+            "ip_metadata_uri": "test-uri",
+            "ip_metadata_hash": web3.to_hex(web3.keccak(text="test-metadata")),
+            "nft_metadata_uri": "test-nft-uri",
+            "nft_metadata_hash": web3.to_hex(web3.keccak(text="test-nft-metadata")),
+        }
+
+        response = story_client.IPAsset.batch_register(
+            args=[
+                {"nft_contract": MockERC721, "token_id": token_id_1},
+                {
+                    "nft_contract": MockERC721,
+                    "token_id": token_id_2,
+                    "ip_metadata": metadata,
+                },
+                {"nft_contract": MockERC721, "token_id": token_id_3},
+            ],
+        )
+
+        assert response is not None
+        assert "tx_hash" in response
+        assert response["tx_hash"] is not None
+        assert "spg_tx_hash" in response
+        assert response["spg_tx_hash"] is not None
+        assert "results" in response
+        assert len(response["results"]) == 3
+        
+        result_token_ids = [r["token_id"] for r in response["results"]]
+        assert token_id_1 in result_token_ids
+        assert token_id_2 in result_token_ids
+        assert token_id_3 in result_token_ids

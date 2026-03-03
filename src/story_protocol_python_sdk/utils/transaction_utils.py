@@ -55,6 +55,10 @@ def _get_transaction_options(
         if "maxFeePerGas" in tx_options:
             opts["maxFeePerGas"] = tx_options["maxFeePerGas"]
 
+    # Gas limit: use explicit gas if provided to avoid estimation
+    if "gas" in tx_options:
+        opts["gas"] = tx_options["gas"]
+
     return opts
 
 

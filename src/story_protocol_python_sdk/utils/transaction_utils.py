@@ -44,9 +44,7 @@ def _get_transaction_options(
     # Gas: bump for replacement, or use tx_options
     if bump_gas:
         try:
-            opts["gasPrice"] = int(
-                web3.eth.gas_price * REPLACEMENT_GAS_BUMP_RATIO
-            )
+            opts["gasPrice"] = int(web3.eth.gas_price * REPLACEMENT_GAS_BUMP_RATIO)
         except Exception:
             opts["gasPrice"] = web3.to_wei(2, "gwei")
     else:
@@ -65,10 +63,7 @@ def _get_transaction_options(
 def _is_retryable_send_error(exc: Exception) -> bool:
     """True if we should retry send (same nonce, higher gas)."""
     msg = str(exc).lower()
-    return (
-        "replacement transaction underpriced" in msg
-        or "nonce too low" in msg
-    )
+    return "replacement transaction underpriced" in msg or "nonce too low" in msg
 
 
 def _send_one(

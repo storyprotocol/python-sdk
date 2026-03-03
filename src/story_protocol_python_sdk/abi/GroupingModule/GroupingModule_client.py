@@ -47,9 +47,9 @@ class GroupingModuleClient:
         return self.contract.functions.removeIp(groupIpId, ipIds).transact()
 
     def build_removeIp_transaction(self, groupIpId, ipIds, tx_params):
-        return self.contract.functions.removeIp(
-            groupIpId, ipIds
-        ).build_transaction(tx_params)
+        return self.contract.functions.removeIp(groupIpId, ipIds).build_transaction(
+            tx_params
+        )
 
     def claimReward(self, groupId, token, ipIds):
         return self.contract.functions.claimReward(groupId, token, ipIds).transact()

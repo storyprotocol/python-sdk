@@ -153,7 +153,7 @@ class TestRoyalty:
 
     def test_batch_claim_all_revenue_single_ancestor(self, story_client: StoryClient):
         """Test batch claiming revenue using the same pattern as test_claim_all_revenue
-        
+
         This test verifies that batch_claim_all_revenue works correctly by:
         1. Creating a derivative chain A->B->C
         2. Using batch_claim_all_revenue to claim revenue for A
@@ -242,8 +242,12 @@ class TestRoyalty:
 
         # Build derivative chain: A -> B -> C -> D (same as test_claim_all_revenue)
         ip_b = wrapper_derivative_with_wip(ip_a, license_terms_id)  # B pays 100 WIP
-        ip_c = wrapper_derivative_with_wip(ip_b, license_terms_id)  # C pays 100 WIP (10 to A, 90 to B)
-        wrapper_derivative_with_wip(ip_c, license_terms_id)  # D pays 100 WIP (10 to A, 10 to B, 80 to C)
+        ip_c = wrapper_derivative_with_wip(
+            ip_b, license_terms_id
+        )  # C pays 100 WIP (10 to A, 90 to B)
+        wrapper_derivative_with_wip(
+            ip_c, license_terms_id
+        )  # D pays 100 WIP (10 to A, 10 to B, 80 to C)
 
         # Batch claim revenue for IP A (should get 120 WIP: 100 from B + 10 from C + 10 from D)
         # Note: Only pass [ip_b, ip_c] as child_ip_ids, not ip_d, matching test_claim_all_revenue
@@ -271,13 +275,15 @@ class TestRoyalty:
         assert len(response["receipts"]) >= 1
         assert "claimed_tokens" in response
         assert len(response["claimed_tokens"]) >= 1
-        
+
         # Verify IP A received 120 WIP tokens (100 from B + 10 from C + 10 from D)
         assert response["claimed_tokens"][0]["amount"] == 120
 
-    def test_batch_claim_all_revenue_multiple_ancestors(self, story_client: StoryClient):
+    def test_batch_claim_all_revenue_multiple_ancestors(
+        self, story_client: StoryClient
+    ):
         """Test batch claiming revenue from multiple ancestor IPs
-        
+
         This test creates two independent derivative chains and claims revenue for both ancestors:
         - Chain 1: A1 -> B1 -> C1 -> D1 (A1 gets 120 WIP)
         - Chain 2: A2 -> B2 -> C2 (A2 gets 110 WIP)
@@ -373,7 +379,7 @@ class TestRoyalty:
             spg_nft_contract=spg_nft_contract,
         )
         ip_a2 = ip_a2_response["ip_id"]
-        
+
         # Attach the same license terms to IP A2
         story_client.License.attach_license_terms(
             ip_id=ip_a2,
@@ -383,7 +389,7 @@ class TestRoyalty:
 
         # Build derivative chain 2: A2 -> B2 -> C2
         ip_b2 = wrapper_derivative_with_wip(ip_a2, license_terms_id)
-        ip_c2 = wrapper_derivative_with_wip(ip_b2, license_terms_id)
+        wrapper_derivative_with_wip(ip_b2, license_terms_id)
 
         # Batch claim revenue for both ancestors (disable multicall to avoid potential issues)
         response = story_client.Royalty.batch_claim_all_revenue(
@@ -420,11 +426,13 @@ class TestRoyalty:
         assert len(response["receipts"]) >= 2
         assert "claimed_tokens" in response
         assert len(response["claimed_tokens"]) == 2  # Two ancestors claimed
-        
+
         # Verify both ancestors received their expected amounts
         # A1 should get 120 WIP (100 from B1 + 10 from C1 + 10 from D1)
         # A2 should get 110 WIP (100 from B2 + 10 from C2)
-        claimed_amounts = {token["claimer"]: token["amount"] for token in response["claimed_tokens"]}
+        claimed_amounts = {
+            token["claimer"]: token["amount"] for token in response["claimed_tokens"]
+        }
         assert claimed_amounts[ip_a1] == 120
         assert claimed_amounts[ip_a2] == 110
 

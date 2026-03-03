@@ -2144,7 +2144,7 @@ class IPAsset:
         """
         if not ip_id:
             raise ValueError("is_registered: ip_id is required")
-        
+
         if not self.web3.is_address(ip_id):
             raise ValueError(f"is_registered: invalid IP ID address format: {ip_id}")
 
@@ -2170,7 +2170,9 @@ class IPAsset:
                 )
                 registered_ips.append(
                     RegisteredIP(
-                        ip_id=self.web3.to_checksum_address(event_result["args"]["ipId"]),
+                        ip_id=self.web3.to_checksum_address(
+                            event_result["args"]["ipId"]
+                        ),
                         token_id=event_result["args"]["tokenId"],
                     )
                 )

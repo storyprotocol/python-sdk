@@ -32,9 +32,7 @@ class LicenseTokenClient:
         self.contract = self.web3.eth.contract(address=contract_address, abi=abi)
 
     def getTotalTokensByLicensor(self, licensorIpId):
-        return self.contract.functions.getTotalTokensByLicensor(
-            licensorIpId
-        ).call()
+        return self.contract.functions.getTotalTokensByLicensor(licensorIpId).call()
 
     def ownerOf(self, tokenId):
         return self.contract.functions.ownerOf(tokenId).call()

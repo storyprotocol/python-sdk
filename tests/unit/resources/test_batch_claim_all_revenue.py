@@ -78,30 +78,35 @@ class TestBatchClaimAllRevenue:
                 ],
             ):
                 with patch.object(
-                    royalty_client, "_get_claimer_info", return_value=(False, False, None)
+                    royalty_client,
+                    "_get_claimer_info",
+                    return_value=(False, False, None),
                 ):
                     with patch(
                         "story_protocol_python_sdk.resources.Royalty.build_and_send_transaction",
-                        return_value={"tx_hash": TX_HASH.hex(), "tx_receipt": {"logs": []}},
+                        return_value={
+                            "tx_hash": TX_HASH.hex(),
+                            "tx_receipt": {"logs": []},
+                        },
                     ):
                         result = royalty_client.batch_claim_all_revenue(
-                        ancestor_ips=[
-                            {
-                                "ip_id": ADDRESS,
-                                "claimer": ADDRESS,
-                                "child_ip_ids": [],
-                                "royalty_policies": [],
-                                "currency_tokens": [WIP_TOKEN_ADDRESS],
-                            },
-                            {
-                                "ip_id": ACCOUNT_ADDRESS,
-                                "claimer": ACCOUNT_ADDRESS,
-                                "child_ip_ids": [],
-                                "royalty_policies": [],
-                                "currency_tokens": [WIP_TOKEN_ADDRESS],
-                            },
-                        ],
-                    )
+                            ancestor_ips=[
+                                {
+                                    "ip_id": ADDRESS,
+                                    "claimer": ADDRESS,
+                                    "child_ip_ids": [],
+                                    "royalty_policies": [],
+                                    "currency_tokens": [WIP_TOKEN_ADDRESS],
+                                },
+                                {
+                                    "ip_id": ACCOUNT_ADDRESS,
+                                    "claimer": ACCOUNT_ADDRESS,
+                                    "child_ip_ids": [],
+                                    "royalty_policies": [],
+                                    "currency_tokens": [WIP_TOKEN_ADDRESS],
+                                },
+                            ],
+                        )
                     assert len(result["tx_hashes"]) == 1
                     assert len(result["receipts"]) == 1
                     assert len(result["claimed_tokens"]) == 2

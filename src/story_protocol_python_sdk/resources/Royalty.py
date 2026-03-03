@@ -260,7 +260,9 @@ class Royalty:
             receipts = []
             claimed_tokens = []
 
-            use_multicall = options.get("use_multicall_when_possible", True) if options else True
+            use_multicall = (
+                options.get("use_multicall_when_possible", True) if options else True
+            )
 
             # If only 1 ancestor IP or multicall is disabled, call claim_all_revenue for each
             if len(ancestor_ips) == 1 or not use_multicall:
@@ -338,14 +340,18 @@ class Royalty:
             wip_claimable_amounts = 0
 
             for claimer in claimers:
-                owns_claimer, is_claimer_ip, ip_account = self._get_claimer_info(claimer)
+                owns_claimer, is_claimer_ip, ip_account = self._get_claimer_info(
+                    claimer
+                )
 
                 # If ownsClaimer is false, skip
                 if not owns_claimer:
                     continue
 
                 filter_claimed_tokens = [
-                    token for token in aggregated_claimed_tokens if token["claimer"] == claimer
+                    token
+                    for token in aggregated_claimed_tokens
+                    if token["claimer"] == claimer
                 ]
 
                 # Transfer claimed tokens from IP to wallet if wallet owns IP

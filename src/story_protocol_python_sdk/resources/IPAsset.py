@@ -704,6 +704,18 @@ class IPAsset:
                     }
                 )
 
+            # Check if only encoded transaction data is requested
+            if tx_options and tx_options.get("encodedTxDataOnly"):
+                # Build transaction to get encoded data
+                tx_data = self.license_attachment_workflows_client.contract.functions.mintAndRegisterIpAndAttachPILTerms(
+                    spg_nft_contract,
+                    self._validate_recipient(recipient),
+                    metadata,
+                    license_terms,
+                    allow_duplicates,
+                ).build_transaction({"from": self.account.address, "gas": 0})
+                return {"encoded_tx_data": tx_data["data"]}
+
             response = build_and_send_transaction(
                 self.web3,
                 self.account,
@@ -732,6 +744,120 @@ class IPAsset:
 
         except Exception as e:
             raise e
+
+    def batch_mint_and_register_ip_asset_with_pil_terms(
+        self,
+        args: list[dict],
+        tx_options: dict | None = None,
+    ) -> dict:
+        """
+        Batch mint NFTs from collections and register them as IPs with PIL terms attached.
+
+        :param args list[dict]: List of mint and register configurations, each containing:
+            :param spg_nft_contract str: The address of the NFT collection.
+            :param terms list: An array of license terms to attach.
+                :param terms dict: The license terms configuration.
+                    :param transferable bool: Transferability of the license.
+                    :param royalty_policy str: Address of the royalty policy contract.
+                    :param default_minting_fee int: Fee for minting a license.
+                    :param expiration int: License expiration.
+                    :param commercial_use bool: Whether commercial use is allowed.
+                    :param commercial_attribution bool: Whether attribution is needed for commercial use.
+                    :param commercializer_checker str: Allowed commercializers or zero address for none.
+                    :param commercializer_checker_data str: Data for checker contract.
+                    :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor. Must be between 0 and 100 (where 100% represents 100,000,000).
+                    :param commercial_rev_ceiling int: Maximum commercial revenue.
+                    :param derivatives_allowed bool: Whether derivatives are allowed.
+                    :param derivatives_attribution bool: Whether attribution is needed for derivatives.
+                    :param derivatives_approval bool: Whether licensor approval is required for derivatives.
+                    :param derivatives_reciprocal bool: Whether derivatives must use the same license terms.
+                    :param derivative_rev_ceiling int: Max derivative revenue.
+                    :param currency str: ERC20 token for the minting fee.
+                    :param uri str: URI for offchain license terms.
+                :param licensing_config dict: The configuration for the license.
+                    :param is_set bool: Whether the configuration is set or not.
+                    :param minting_fee int: The fee to be paid when minting tokens.
+                    :param hook_data str: The data used by the licensing hook.
+                    :param licensing_hook str: The licensing hook contract address or address(0) if none.
+                    :param commercial_rev_share int: Percentage of revenue that must be shared with the licensor. Must be between 0 and 100 (where 100% represents 100,000,000).
+                    :param disabled bool: Whether the license is disabled.
+                    :param expect_minimum_group_reward_share int: Minimum group reward share percentage. Must be between 0 and 100 (where 100% represents 100,000,000).
+                    :param expect_group_reward_pool str: Address of the expected group reward pool.
+            :param ip_metadata dict: [Optional] NFT and IP metadata.
+                :param ip_metadata_uri str: [Optional] IP metadata URI.
+                :param ip_metadata_hash str: [Optional] IP metadata hash.
+                :param nft_metadata_uri str: [Optional] NFT metadata URI.
+                :param nft_metadata_hash str: [Optional] NFT metadata hash.
+            :param recipient str: [Optional] Recipient address (defaults to caller).
+            :param allow_duplicates bool: [Optional] Whether to allow duplicates.
+        :param tx_options dict: [Optional] Transaction options.
+        :return dict: Dictionary with tx hash and list of results for each minted IP.
+            :return tx_hash str: The transaction hash.
+            :return results list[dict]: List of results, each containing:
+                :return ip_id str: The ID of the registered IP.
+                :return token_id int: The ID of the minted NFT.
+                :return spg_nft_contract str: The address of the NFT collection.
+                :return license_terms_ids list[int]: The IDs of the attached license terms.
+        """
+        try:
+            # Encode all mint and register calls
+            calldata = []
+            for arg in args:
+                # Use encodedTxDataOnly to get the encoded transaction data
+                arg_with_encoded_option = arg.copy()
+                arg_with_encoded_option["tx_options"] = {"encodedTxDataOnly": True}
+                
+                result = self.mint_and_register_ip_asset_with_pil_terms(
+                    spg_nft_contract=arg["spg_nft_contract"],
+                    terms=arg["terms"],
+                    ip_metadata=arg.get("ip_metadata"),
+                    recipient=arg.get("recipient"),
+                    allow_duplicates=arg.get("allow_duplicates", False),
+                    tx_options=arg_with_encoded_option["tx_options"],
+                )
+                calldata.append(result["encoded_tx_data"])
+
+            # Send multicall transaction
+            response = build_and_send_transaction(
+                self.web3,
+                self.account,
+                self.license_attachment_workflows_client.build_multicall_transaction,
+                calldata,
+                tx_options=tx_options,
+            )
+
+            # Parse IPRegistered events with full details
+            event_signature = self.web3.keccak(
+                text="IPRegistered(address,uint256,address,uint256,string,string,uint256)"
+            ).hex()
+            
+            results = []
+            for log in response["tx_receipt"]["logs"]:
+                if log["topics"][0].hex() == event_signature:
+                    event_result = self.ip_asset_registry_client.contract.events.IPRegistered.process_log(log)
+                    ip_id = self.web3.to_checksum_address(event_result["args"]["ipId"])
+                    token_id = event_result["args"]["tokenId"]
+                    token_contract = self.web3.to_checksum_address(event_result["args"]["tokenContract"])
+                    
+                    # Parse license terms for this IP
+                    license_terms_ids = self._parse_tx_license_terms_attached_event_for_ip(
+                        response["tx_receipt"], ip_id
+                    )
+                    
+                    results.append({
+                        "ip_id": ip_id,
+                        "token_id": token_id,
+                        "spg_nft_contract": token_contract,
+                        "license_terms_ids": license_terms_ids,
+                    })
+
+            return {
+                "tx_hash": response["tx_hash"],
+                "results": results,
+            }
+
+        except Exception as e:
+            raise ValueError(f"Failed to batch mint and register IP and attach PIL terms: {str(e)}")
 
     @deprecated("Use register_ip_asset() instead.")
     def mint_and_register_ip(
@@ -2358,6 +2484,31 @@ class IPAsset:
                 data = log["data"]
                 license_terms_id = int.from_bytes(data[-32:], byteorder="big")
                 license_terms_ids.append(license_terms_id)
+
+        return license_terms_ids
+
+    def _parse_tx_license_terms_attached_event_for_ip(self, tx_receipt: dict, ip_id: str) -> list[int]:
+        """
+        Parse the LicenseTermsAttached events for a specific IP from a transaction receipt.
+
+        :param tx_receipt dict: The transaction receipt.
+        :param ip_id str: The IP ID to filter events for.
+        :return list: A list of license terms IDs for the specified IP.
+        """
+        event_signature = self.web3.keccak(
+            text="LicenseTermsAttached(address,address,address,uint256)"
+        ).hex()
+        license_terms_ids = []
+
+        for log in tx_receipt["logs"]:
+            if log["topics"][0].hex() == event_signature:
+                # Parse the full event to get ipId
+                event_result = self.licensing_module_client.contract.events.LicenseTermsAttached.process_log(log)
+                log_ip_id = event_result["args"]["ipId"]
+                
+                if log_ip_id.lower() == ip_id.lower():
+                    license_terms_id = event_result["args"]["licenseTermsId"]
+                    license_terms_ids.append(license_terms_id)
 
         return license_terms_ids
 

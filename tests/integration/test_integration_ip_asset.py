@@ -1186,6 +1186,135 @@ class TestBatchMethods:
             assert isinstance(ip_registered["ip_id"], str) and ip_registered["ip_id"]
             assert isinstance(ip_registered["token_id"], int)
 
+    def test_batch_mint_and_register_ip_asset_with_pil_terms(
+        self, story_client: StoryClient, public_nft_collection
+    ):
+        """Test batch minting and registering IP with PIL terms"""
+
+        # Define license terms template
+        license_terms_template = {
+            "terms": {
+                "transferable": True,
+                "royalty_policy": ROYALTY_POLICY,
+                "default_minting_fee": 100,
+                "expiration": 0,
+                "commercial_use": True,
+                "commercial_attribution": False,
+                "commercializer_checker": ZERO_ADDRESS,
+                "commercializer_checker_data": ZERO_ADDRESS,
+                "commercial_rev_share": 10,
+                "commercial_rev_ceiling": 0,
+                "derivatives_allowed": True,
+                "derivatives_attribution": True,
+                "derivatives_approval": False,
+                "derivatives_reciprocal": True,
+                "derivative_rev_ceiling": 0,
+                "currency": WIP_TOKEN_ADDRESS,
+                "uri": "",
+            },
+            "licensing_config": {
+                "is_set": True,
+                "minting_fee": 100,
+                "hook_data": ZERO_ADDRESS,
+                "licensing_hook": ZERO_ADDRESS,
+                "commercial_rev_share": 0,
+                "disabled": False,
+                "expect_minimum_group_reward_share": 0,
+                "expect_group_reward_pool": ZERO_ADDRESS,
+            },
+        }
+
+        # Test with two IPs (use allow_duplicates=True to avoid duplicate license terms error)
+        response = story_client.IPAsset.batch_mint_and_register_ip_asset_with_pil_terms(
+            args=[
+                {
+                    "spg_nft_contract": public_nft_collection,
+                    "terms": [license_terms_template],
+                    "allow_duplicates": True,
+                },
+                {
+                    "spg_nft_contract": public_nft_collection,
+                    "terms": [license_terms_template],
+                    "allow_duplicates": True,
+                },
+            ]
+        )
+
+        # Verify response structure
+        assert isinstance(response["tx_hash"], str) and response["tx_hash"]
+        assert isinstance(response["results"], list)
+        assert len(response["results"]) == 2
+
+        # Verify each result
+        for result in response["results"]:
+            assert isinstance(result["ip_id"], str) and result["ip_id"]
+            assert isinstance(result["token_id"], int)
+            assert isinstance(result["spg_nft_contract"], str)
+            assert isinstance(result["license_terms_ids"], list)
+            assert len(result["license_terms_ids"]) >= 1
+
+        # Verify IPs are registered
+        for result in response["results"]:
+            is_registered = story_client.IPAsset.is_registered(result["ip_id"])
+            assert is_registered is True
+
+    def test_batch_mint_with_metadata_and_recipient(
+        self, story_client: StoryClient, public_nft_collection
+    ):
+        """Test batch minting with metadata and custom recipient"""
+
+        license_terms_template = {
+            "terms": {
+                "transferable": True,
+                "royalty_policy": ROYALTY_POLICY,
+                "default_minting_fee": 100,
+                "expiration": 0,
+                "commercial_use": True,
+                "commercial_attribution": False,
+                "commercializer_checker": ZERO_ADDRESS,
+                "commercializer_checker_data": ZERO_ADDRESS,
+                "commercial_rev_share": 10,
+                "commercial_rev_ceiling": 0,
+                "derivatives_allowed": True,
+                "derivatives_attribution": True,
+                "derivatives_approval": False,
+                "derivatives_reciprocal": True,
+                "derivative_rev_ceiling": 0,
+                "currency": WIP_TOKEN_ADDRESS,
+                "uri": "",
+            },
+            "licensing_config": {
+                "is_set": True,
+                "minting_fee": 100,
+                "hook_data": ZERO_ADDRESS,
+                "licensing_hook": ZERO_ADDRESS,
+                "commercial_rev_share": 0,
+                "disabled": False,
+                "expect_minimum_group_reward_share": 0,
+                "expect_group_reward_pool": ZERO_ADDRESS,
+            },
+        }
+
+        response = story_client.IPAsset.batch_mint_and_register_ip_asset_with_pil_terms(
+            args=[
+                {
+                    "spg_nft_contract": public_nft_collection,
+                    "terms": [license_terms_template],
+                    "ip_metadata": {
+                        "ip_metadata_uri": "https://example.com/ip1",
+                        "ip_metadata_hash": web3.keccak(text="ip1-metadata"),
+                    },
+                    "recipient": account_2.address,
+                    "allow_duplicates": True,
+                }
+            ]
+        )
+
+        assert isinstance(response["tx_hash"], str) and response["tx_hash"]
+        assert len(response["results"]) == 1
+        assert isinstance(response["results"][0]["ip_id"], str)
+        assert isinstance(response["results"][0]["license_terms_ids"], list)
+
 
 class TestRegisterIpAsset:
     """Test suite for the unified register_ip_asset method that supports 6 different workflows"""
